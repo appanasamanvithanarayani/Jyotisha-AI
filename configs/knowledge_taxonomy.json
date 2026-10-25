@@ -1,0 +1,31 @@
+{
+  "taxonomy_version": "1.0.0",
+  "description": "Organizational slots only; no interpretive claims or verified rules.",
+  "categories": [
+    "foundation", "graha", "rashi", "bhava", "nakshatra", "drishti_relationship",
+    "yoga", "dasha", "varga", "gochara", "predictive_method",
+    "astronomical_calculation", "jathakam_workflow", "other"
+  ],
+  "traditions": ["parashari", "jaimini", "other_identified", "unknown"],
+  "topics": {
+    "foundation": ["terminology", "zodiac_framework", "sidereal_tropical_distinction", "ayanamsha_configuration", "birth_data_assumptions"],
+    "graha": ["surya", "chandra", "mangala", "budha", "guru", "shukra", "shani", "rahu", "ketu", "significations", "benefic_malefic_classification", "dignity", "relationships", "strength"],
+    "rashi": ["sign_framework", "sign_lords", "house_lord_placement"],
+    "bhava": ["house_significations", "house_lords", "placement_conditions", "exceptions"],
+    "nakshatra": ["pada", "classifications", "significations"],
+    "drishti_relationship": ["planetary_aspect", "sign_aspect", "conjunction", "natural_relationship", "temporary_relationship"],
+    "yoga": ["raja_yoga", "dhana_yoga", "pancha_mahapurusha_yoga", "other_named_yoga", "formation", "exception", "cancellation"],
+    "dasha": ["vimshottari", "other_system", "starting_condition", "sequence", "duration", "interpretation"],
+    "varga": ["construction", "interpretive_scope"],
+    "gochara": ["transit_framework", "interpretation"],
+    "predictive_method": ["timing", "bhava_based_interpretation", "source_disagreement"],
+    "astronomical_calculation": ["planetary_position", "ayanamsha", "lagna", "house_construction", "dasha_arithmetic"],
+    "jathakam_workflow": ["birth_data_validation", "timezone", "location", "chart_representation", "source_grounded_explanation"]
+  },
+  "numbered_slots": {
+    "rashi": {"prefix": "rashi_", "first": 1, "last": 12},
+    "bhava": {"prefix": "bhava_", "first": 1, "last": 12},
+    "nakshatra": {"prefix": "nakshatra_", "first": 1, "last": 27, "subslots": {"prefix": "pada_", "first": 1, "last": 4}},
+    "varga": {"prefix": "D", "first": 1, "last": 60}
+  }
+}

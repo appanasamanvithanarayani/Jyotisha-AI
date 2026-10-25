@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==75.8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jyotisha-ai"
+version = "0.3.0"
+description = "Research foundation for a source-grounded Jyotisha AI system"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Jyotisha AI Contributors" }]
+dependencies = ["pypdf==5.9.0", "astronomy-engine==2.1.19"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.5"]
+
+[project.scripts]
+jyotisha-ai = "jyotisha_ai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers -ra"
+testpaths = ["tests"]
+

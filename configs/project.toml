@@ -1,0 +1,22 @@
+[project]
+name = "jyotisha-ai"
+environment = "development"
+
+[versions]
+source_manifest_schema = "1.1.0"
+corpus_format = "1.0.0"
+dataset_format = "0.1.0"
+model_format = "0.1.0"
+knowledge_schema = "1.0.0"
+taxonomy = "1.0.0"
+knowledge_inventory = "1.0.0"
+graha_research_checklist = "1.0.0"
+chart_engine = "0.1.0"
+
+[reproducibility]
+default_seed = 1729
+
+[logging]
+level = "INFO"
+format = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+
