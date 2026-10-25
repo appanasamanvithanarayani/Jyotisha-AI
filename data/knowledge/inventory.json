@@ -1,0 +1,148 @@
+{
+  "inventory_version": "1.0.0",
+  "areas": [
+    {
+      "area_id": "graha_significations",
+      "title": "Grahas and traditional significations",
+      "taxonomy_categories": ["graha"],
+      "knowledge_kinds": ["classical_textual_statement", "traditional_interpretation", "modern_explanation"],
+      "scope": "Nine Grahas, terminology, attributed significations, classifications, and tradition-specific qualifications.",
+      "evidence_needed": ["Permitted exact-edition references for each assertion", "Original-language wording or independently authored notes where lawful"],
+      "review_requirements": ["Verify each locator and translation", "Separate source statement from interpretation and disputed claims"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "rashi_framework",
+      "title": "Rashis",
+      "taxonomy_categories": ["rashi"],
+      "knowledge_kinds": ["classical_textual_statement", "traditional_interpretation", "modern_explanation"],
+      "scope": "Twelve Rashi slots, names, attributes, and interpretive uses once sourced.",
+      "evidence_needed": ["Permitted source locators for names and attributes", "Edition-specific context for interpretive claims"],
+      "review_requirements": ["Check all twelve slots against sources", "Keep calculations and interpretations distinct"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "bhava_house_lords",
+      "title": "Bhavas and house lords",
+      "taxonomy_categories": ["bhava", "rashi"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "Twelve Bhava slots, house significations, lord assignment, placements, conditions, and exceptions.",
+      "evidence_needed": ["Documented house convention", "Exact-edition references for interpretive statements"],
+      "review_requirements": ["Verify the calculation convention separately", "Check conditions and exceptions for each sourced rule"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "nakshatra_padas",
+      "title": "Nakshatras and padas",
+      "taxonomy_categories": ["nakshatra"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "Twenty-seven Nakshatra slots with four pada slots each, boundaries, names, classifications, and sourced interpretations.",
+      "evidence_needed": ["Documented coordinate convention", "Permitted edition locators for names and interpretations"],
+      "review_requirements": ["Test boundary calculations independently", "Review each textual claim and language rendering"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "planetary_dignity_strength_aspects",
+      "title": "Planetary dignity, strength, and aspects",
+      "taxonomy_categories": ["graha", "drishti_relationship"],
+      "knowledge_kinds": ["classical_textual_statement", "traditional_interpretation", "astronomical_calculation"],
+      "scope": "Dignity, strength assessment, planetary and sign aspects, conjunctions, and planetary relationships by system.",
+      "evidence_needed": ["Exact source locators per system", "Explicit definitions for any numeric calculation"],
+      "review_requirements": ["Keep Parashari, Jaimini, and other systems separate", "Review exceptions and arithmetic independently"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "yoga_conditions",
+      "title": "Yogas and their conditions",
+      "taxonomy_categories": ["yoga"],
+      "knowledge_kinds": ["classical_textual_statement", "traditional_interpretation", "modern_explanation"],
+      "scope": "Named Yogas, formation conditions, exceptions, cancellations, and source disagreements.",
+      "evidence_needed": ["Permitted exact-edition rule references", "Separate references for conditions and exceptions"],
+      "review_requirements": ["Check formation and cancellation against source wording", "Do not infer a result from a name alone"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "vimshottari_dasha",
+      "title": "Vimshottari Dasha",
+      "taxonomy_categories": ["dasha", "astronomical_calculation"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "Starting assumptions, sequence and duration calculations, and separately sourced interpretations.",
+      "evidence_needed": ["Documented calculation convention and independent test cases", "Exact-edition references for interpretive rules"],
+      "review_requirements": ["Verify arithmetic and boundary cases", "Separate calculated periods from predicted meanings"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "other_dasha_systems",
+      "title": "Other identified Dasha systems",
+      "taxonomy_categories": ["dasha"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "Dasha systems selected after identifying a source and tradition; no specific additional system is asserted here.",
+      "evidence_needed": ["Named system and exact source", "Starting conditions, sequence, durations, and calculation convention"],
+      "review_requirements": ["Review applicability before implementation", "Keep system-specific interpretation separate"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "varga_divisional_charts",
+      "title": "Divisional charts (Vargas)",
+      "taxonomy_categories": ["varga", "astronomical_calculation"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "D1 through D60 inventory slots; construction formulas and interpretive scope only where independently verified.",
+      "evidence_needed": ["Documented formula and convention for each implemented Varga", "Exact sources for interpretive scope"],
+      "review_requirements": ["Test mathematical definitions with independent cases", "Do not generalize one Varga's interpretation to another"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "gochara_transits",
+      "title": "Gochara and transit interpretation",
+      "taxonomy_categories": ["gochara", "predictive_method"],
+      "knowledge_kinds": ["astronomical_calculation", "classical_textual_statement", "traditional_interpretation"],
+      "scope": "Transit calculation inputs, reference frames, timing, and separately sourced interpretation rules.",
+      "evidence_needed": ["Documented ephemeris and calculation settings", "Exact source locators for interpretation"],
+      "review_requirements": ["Verify position and timing calculations", "Review predictive qualifications and disagreements"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "jathakam_inputs_astronomy",
+      "title": "Jathakam inputs and astronomical settings",
+      "taxonomy_categories": ["jathakam_workflow", "astronomical_calculation"],
+      "knowledge_kinds": ["astronomical_calculation", "project_workflow_note"],
+      "scope": "DOB, TOB, POB, timezone, location, ayanamsha choice, planetary positions, Lagna, and documented chart conventions.",
+      "evidence_needed": ["Reliable input and timezone data", "Documented settings and independent calculation test cases"],
+      "review_requirements": ["Validate inputs and reproduce chart calculations", "Do not use a language model to calculate numeric chart facts"],
+      "status": "not_researched",
+      "linked_knowledge_ids": ["workflow.ayanamsha_configuration"]
+    },
+    {
+      "area_id": "multilingual_terminology",
+      "title": "Sanskrit, transliteration, English, and Telugu terminology",
+      "taxonomy_categories": ["foundation"],
+      "knowledge_kinds": ["classical_textual_statement", "modern_explanation"],
+      "scope": "Term identity, Devanagari spelling, transliteration scheme, English explanation, and Telugu explanation as separate fields.",
+      "evidence_needed": ["Permitted term sources and language-specific references", "Documented transliteration convention and qualified translation review"],
+      "review_requirements": ["Check Unicode and transliteration without silent correction", "Review each language independently"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    },
+    {
+      "area_id": "tradition_conflicts",
+      "title": "Conflicting interpretations and Jyotisha traditions",
+      "taxonomy_categories": ["predictive_method", "drishti_relationship"],
+      "knowledge_kinds": ["classical_textual_statement", "traditional_interpretation", "modern_explanation"],
+      "scope": "Separate Parashari, Jaimini, and other identified traditions; record explicit disagreements without merging them.",
+      "evidence_needed": ["Exact source and edition for each side of a disagreement", "Context and translation notes for differing claims"],
+      "review_requirements": ["Review each claim independently", "Link disputed records and document why they conflict"],
+      "status": "not_researched",
+      "linked_knowledge_ids": []
+    }
+  ]
+}

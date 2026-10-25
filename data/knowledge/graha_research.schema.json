@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jyotisha-ai.local/schemas/graha-research-1.0.0.json",
+  "title": "Graha research checklist",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["checklist_version", "area_id", "grahas"],
+  "properties": {
+    "checklist_version": {"const": "1.0.0"},
+    "area_id": {"const": "graha_significations"},
+    "grahas": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["graha_id", "display_name", "original_sanskrit_term", "sanskrit_transliteration", "english_explanation", "telugu_explanation", "source_reference", "evidence_type", "conditions", "qualifications", "review_status", "review_notes"],
+        "properties": {
+          "graha_id": {"enum": ["surya", "chandra", "mangala", "budha", "guru", "shukra", "shani", "rahu", "ketu"]},
+          "display_name": {"type": "string", "minLength": 1},
+          "original_sanskrit_term": {"type": ["string", "null"]},
+          "sanskrit_transliteration": {"type": ["string", "null"]},
+          "english_explanation": {"type": ["string", "null"]},
+          "telugu_explanation": {"type": ["string", "null"]},
+          "source_reference": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "edition", "chapter", "page", "verse"],
+            "properties": {
+              "source_id": {"type": ["string", "null"]},
+              "edition": {"type": ["string", "null"]},
+              "chapter": {"type": ["string", "null"]},
+              "page": {"type": ["string", "null"]},
+              "verse": {"type": ["string", "null"]}
+            }
+          },
+          "evidence_type": {"enum": [null, "original_text", "translation", "commentary", "reviewer_explanation"]},
+          "conditions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "qualifications": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "review_status": {"enum": ["not_started", "source_identified", "drafted", "needs_review", "reviewed", "blocked"]},
+          "review_notes": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
