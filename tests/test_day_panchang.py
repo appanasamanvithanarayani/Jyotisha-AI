@@ -128,3 +128,14 @@ def test_day_panchang_reports_planet_signs_for_the_transit_outlook():
     assert all(1 <= value <= 12 for value in signs.values())
     assert signs["Sun"] == 7          # Libra at this date (sidereal)
     assert (signs["Rahu"] - signs["Ketu"]) % 12 == 6   # the nodes are always opposite
+
+
+def test_month_calendar_rows_carry_moon_and_planet_signs_for_the_month_outlook():
+    from jyotisha_ai.day_panchang import month_calendar
+
+    month = month_calendar(Path(__file__).resolve().parents[1], 2026, 11, "Bengaluru, IN")
+    first = month["days"][0]
+    assert 1 <= first["moon_rashi_index"] <= 12
+    assert set(first["planet_rashis"]) == {"Sun", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"}
+    day = day_panchang(Path(__file__).resolve().parents[1], first["date"], "Bengaluru, IN")
+    assert day["planet_rashis"] == first["planet_rashis"] and day["moon_rashi"][0]["index"] == first["moon_rashi_index"]

@@ -148,15 +148,7 @@ def day_panchang(root: Path, iso_date: str, place_query: str) -> dict:
             varjyam.append({"nakshatra_index": row["index"], "starts_at": local(begins), "ends_at": local(ends)})
 
     sun_longitude = _sidereal(astronomy.Body.Sun, sunrise, ayanamsha)
-    # Sidereal signs at sunrise for the transit (Gochara) outlook; Rahu is the mean node, Ketu is opposite.
-    planet_signs = {name: int(_sidereal(body, sunrise, ayanamsha) // 30.0) + 1 for name, body in (
-        ("Sun", astronomy.Body.Sun), ("Mars", astronomy.Body.Mars), ("Mercury", astronomy.Body.Mercury),
-        ("Jupiter", astronomy.Body.Jupiter), ("Venus", astronomy.Body.Venus), ("Saturn", astronomy.Body.Saturn))}
-    from jyotisha_ai.kundli_details import mean_node_longitude
-
-    rahu = (mean_node_longitude(sunrise.tt) - ayanamsha) % 360.0
-    planet_signs["Rahu"] = int(rahu // 30.0) + 1
-    planet_signs["Ketu"] = int(((rahu + 180.0) % 360.0) // 30.0) + 1
+    planet_signs = _planet_signs(sunrise, ayanamsha)
     weekday = selected.weekday()
     eighth, fifteenth, night_fifteenth = day_length / 8.0, day_length / 15.0, night_length / 15.0
 
@@ -210,6 +202,19 @@ def day_panchang(root: Path, iso_date: str, place_query: str) -> dict:
     }
 
 
+def _planet_signs(moment: astronomy.Time, ayanamsha: float) -> dict[str, int]:
+    """Sidereal sign (1..12) of each transiting planet at ``moment``; Rahu is the mean node and Ketu is opposite."""
+    from jyotisha_ai.kundli_details import mean_node_longitude
+
+    signs = {name: int(_sidereal(body, moment, ayanamsha) // 30.0) + 1 for name, body in (
+        ("Sun", astronomy.Body.Sun), ("Mars", astronomy.Body.Mars), ("Mercury", astronomy.Body.Mercury),
+        ("Jupiter", astronomy.Body.Jupiter), ("Venus", astronomy.Body.Venus), ("Saturn", astronomy.Body.Saturn))}
+    rahu = (mean_node_longitude(moment.tt) - ayanamsha) % 360.0
+    signs["Rahu"] = int(rahu // 30.0) + 1
+    signs["Ketu"] = int(((rahu + 180.0) % 360.0) // 30.0) + 1
+    return signs
+
+
 def month_calendar(root: Path, year: int, month: int, place_query: str) -> dict:
     """Tithi and Nakshatra at each local sunrise of one month, for calendar grids.
 
@@ -237,7 +242,7 @@ def month_calendar(root: Path, year: int, month: int, place_query: str) -> dict:
         current = date(year, month, day)
         start = _astro_time(datetime.combine(current, time(0, 0), tzinfo=zone))
         sunrise = astronomy.SearchRiseSet(astronomy.Body.Sun, observer, astronomy.Direction.Rise, start, 1.0)
-        row = {"date": current.isoformat(), "sunrise": None, "tithi_index": None, "nakshatra_index": None}
+        row = {"date": current.isoformat(), "sunrise": None, "tithi_index": None, "nakshatra_index": None, "moon_rashi_index": None, "planet_rashis": None}
         if sunrise is not None:
             ayanamsha, _ = true_lahiri_for_utc(_to_utc(sunrise))
             angles = angles_at(sunrise, ayanamsha)
@@ -246,6 +251,8 @@ def month_calendar(root: Path, year: int, month: int, place_query: str) -> dict:
                 "sunrise": rounded.astimezone(zone).strftime("%H:%M"),
                 "tithi_index": division_index("tithi", angles["tithi"]) + 1,
                 "nakshatra_index": division_index("nakshatra", angles["nakshatra"]) + 1,
+                "moon_rashi_index": division_index("moon_rashi", angles["moon_rashi"]) + 1,
+                "planet_rashis": _planet_signs(sunrise, ayanamsha),
             })
         days.append(row)
     cache_key = (place["name"], place["country_code"], year, month)

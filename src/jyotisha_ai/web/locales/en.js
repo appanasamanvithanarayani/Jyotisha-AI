@@ -114,6 +114,7 @@
       "myLagna": "My Lagna",
       "viewDay": "Day",
       "viewWeek": "Week",
+      "viewMonth": "Month",
       "aiChatTitle": "Chat with AI about your life",
       "aiChatSub": "Tap a question and get an answer from your own chart.",
       "aiQ1": "How is my life going?",

@@ -209,3 +209,18 @@ test('sign forecasts include life-area verdicts, and the week view summarises se
     assert.doesNotMatch(text, /\{\w+\}|Better days|Take extra care|Work goes|Money is steady|Career and work/, code);
   }
 });
+
+test('month view aggregates the whole month and lists the days planets change sign', () => {
+  const days = Array.from({ length: 30 }, (_unused, n) => ({ date: `2026-11-${String(n + 1).padStart(2, '0')}`, moon_rashi: [{ index: n % 12 + 1 }],
+    planet_rashis: { Sun: n < 16 ? 7 : 8, Mars: 4, Mercury: 7, Jupiter: 5, Venus: n < 20 ? 7 : 8, Saturn: 12, Rahu: 11, Ketu: 5 } }));
+  const month = ui.monthOutlook(days, 'en', iso => String(Number(iso.slice(8))));
+  assert.equal(month.length, 12); assert.equal(month[0].strip.length, 30);
+  assert.match(month[0].best, /^Better days: /); assert.match(month[0].verdict, /month/);
+  const moves = ui.planetMoves(days, 'en', iso => iso.slice(5));
+  assert.deepEqual(moves, ['Sun → Scorpio · 11-17', 'Venus → Scorpio · 11-21']);
+  assert.deepEqual(ui.planetMoves(days.slice(0, 5), 'en', x => x), ['No planet changes sign this month.']);
+  for (const code of ['te', 'hi', 'ta', 'kn', 'ml', 'mr', 'bn', 'gu']) {
+    const text = month.map((_, i) => ui.monthOutlook(days, code, iso => iso)[i].verdict).join() + ui.planetMoves(days, code, iso => iso).join() + ui.monthMovesHead(code);
+    assert.doesNotMatch(text, /month|Planet sign|Sun →/i, code);
+  }
+});

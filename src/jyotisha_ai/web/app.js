@@ -326,7 +326,8 @@
     if (!state.week || state.week.key !== key) { $('rashi-moon').textContent = t('dpLoading'); void loadWeek(); return; }
     const days = state.week.days;
     if (!days.length) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
-    $('rashi-moon').textContent = `${calendarUI.formatDate(state.lang, days[0].date, 'dayMonth')} – ${calendarUI.formatDate(state.lang, days[days.length - 1].date, 'dayMonth')}`;
+    const range = `${calendarUI.formatDate(state.lang, days[0].date, 'dayMonth')} – ${calendarUI.formatDate(state.lang, days[days.length - 1].date, 'dayMonth')}`;
+    $('rashi-moon').textContent = `${t('viewWeek')}: ${range}`;
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     for (const item of chartUI.weekOutlook(days, state.lang, dayLabel)) {
       const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
@@ -334,13 +335,48 @@
       const head = el('summary', null);
       head.appendChild(el('strong', null, `${tinted(item.tone)} ${item.name}`));
       if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
+      head.appendChild(el('span', 'rashi-count', range));
       card.appendChild(head);
       card.appendChild(el('p', 'rashi-verdict', item.verdict));
       const strip = el('div', 'week-strip');
-      for (const day of item.strip) { const cell = el('span', `week-day ${day.tone}`); cell.append(el('b', null, day.label), el('i', null, tinted(day.tone))); strip.appendChild(cell); }
+      for (const day of item.strip) { const cell = el('span', `week-day ${day.tone}`); cell.append(el('b', null, day.label), el('small', null, String(day.day)), el('i', null, tinted(day.tone))); strip.appendChild(cell); }
       card.appendChild(strip);
       card.appendChild(el('p', null, item.best)); card.appendChild(el('p', null, item.care));
       card.appendChild(el('h4', null, chartUI.weekHead(state.lang))); card.appendChild(areaBlock(item.areas));
+      card.appendChild(el('h4', null, chartUI.slowHead(state.lang)));
+      const planets = el('ul', 'rashi-planets');
+      for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
+      card.appendChild(planets);
+      $('rashi-list').appendChild(card);
+    }
+  }
+  function renderRashiMonth() {
+    const month = state.month;
+    if (!month || month.year !== state.view.year || month.month !== state.view.month) { $('rashi-moon').textContent = t('dpLoading'); return; }
+    const days = month.days.filter(row => row.moon_rashi_index && row.planet_rashis).map(row => ({ date: row.date, moon_rashi: [{ index: row.moon_rashi_index }], planet_rashis: row.planet_rashis }));
+    if (!days.length) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
+    $('rashi-moon').textContent = `${t('viewMonth')}: ${calendarUI.monthTitle(month.year, month.month, state.lang)}`;
+    const dayNumber = iso => String(Number(iso.slice(8)));
+    const moves = el('div', 'rashi-moves');
+    moves.appendChild(el('h4', null, chartUI.monthMovesHead(state.lang)));
+    const list = el('ul', 'rashi-planets');
+    for (const line of chartUI.planetMoves(days, state.lang, iso => calendarUI.formatDate(state.lang, iso, 'dayMonth'))) list.appendChild(el('li', null, line));
+    moves.appendChild(list);
+    $('rashi-list').appendChild(moves);
+    const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
+    for (const item of chartUI.monthOutlook(days, state.lang, dayNumber)) {
+      const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
+      if (item.rashi === mine) card.open = true;
+      const head = el('summary', null);
+      head.appendChild(el('strong', null, `${tinted(item.tone)} ${item.name}`));
+      if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
+      card.appendChild(head);
+      card.appendChild(el('p', 'rashi-verdict', item.verdict));
+      const grid = el('div', 'month-strip');
+      for (const day of item.strip) { const cell = el('span', `month-day ${day.tone}`); cell.append(el('b', null, day.label), el('i', null, tinted(day.tone))); grid.appendChild(cell); }
+      card.appendChild(grid);
+      card.appendChild(el('p', null, item.best)); card.appendChild(el('p', null, item.care));
+      card.appendChild(areaBlock(item.areas));
       card.appendChild(el('h4', null, chartUI.slowHead(state.lang)));
       const planets = el('ul', 'rashi-planets');
       for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
@@ -352,13 +388,13 @@
     $('rashi-list').replaceChildren();
     $('rashi-title').textContent = t('rashiphal');
     document.querySelectorAll('#rashi-mode button').forEach(button => button.classList.toggle('on', button.dataset.rmode === state.rashiMode));
-    const week = state.rashiMode === 'week';
-    $('rashi-prev').textContent = week ? `‹ ${t('viewWeek')}` : t('previousDay');
-    $('rashi-next').textContent = week ? `${t('viewWeek')} ›` : t('nextDay');
-    if (week) renderRashiWeek(); else renderRashiDay();
+    const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
+    $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
+    $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
+    if (state.rashiMode === 'week') renderRashiWeek(); else if (state.rashiMode === 'month') renderRashiMonth(); else renderRashiDay();
   }
   document.querySelectorAll('#rashi-mode button').forEach(button => button.addEventListener('click', () => { state.rashiMode = button.dataset.rmode; renderRashi(); }));
-  const rashiStep = days => selectDate(shiftIso(state.selectedDate || localIso(new Date()), state.rashiMode === 'week' ? days * 7 : days));
+  const rashiStep = days => { if (state.rashiMode === 'month') moveMonth(days); else selectDate(shiftIso(state.selectedDate || localIso(new Date()), state.rashiMode === 'week' ? days * 7 : days)); };
   $('rashi-prev').addEventListener('click', () => rashiStep(-1));
   $('rashi-next').addEventListener('click', () => rashiStep(1));
   $('rashi-today').addEventListener('click', () => selectDate(state.todayIso || localIso(new Date())));
@@ -512,7 +548,7 @@
       state.month = ok && body && body.days ? body : null;
       if (state.month && state.month.today_local_date) state.todayIso = state.month.today_local_date;
     } catch (_error) { if (request === state.monthRequest) state.month = null; }
-    renderCalendar(); renderDayEvents();
+    renderCalendar(); renderDayEvents(); if (state.rashiMode === 'month') renderRashi();
   }
   function selectDate(iso) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
@@ -528,7 +564,7 @@
     const year = target.getUTCFullYear();
     if (year < 1970 || year > 2100) return;
     state.view = { year, month: target.getUTCMonth() + 1 }; state.month = null;
-    renderCalendar(); void loadMonth();
+    renderCalendar(); void loadMonth(); if (state.rashiMode === 'month') renderRashi();
   }
   function renderHome() { renderDay(); renderCalendar(); renderDayEvents(); }
   $('month-prev').addEventListener('click', () => moveMonth(-1));

@@ -907,30 +907,57 @@
     });
   }
   // days: array of /api/day-panchang day objects (one per date). weekday(iso) -> short weekday label. Returns 12 cards.
-  function weekOutlook(days, language, weekday) {
+  function periodOutlook(days, language, weekday, kind) {
     const text = AREA_TEXT[language] || AREA_TEXT.en, g = GOCHARA_TEXT[language] || GOCHARA_TEXT.en;
     const usable = days.filter(day => day && day.moon_rashi && day.moon_rashi[0] && day.planet_rashis);
     if (!usable.length) return [];
     const perDay = usable.map(day => gocharaOutlook(day, language));
     return Array.from({ length: 12 }, (_unused, index) => {
-      const strip = usable.map((day, n) => ({ date: day.date, label: weekday(day.date), tone: perDay[n][index].tone, favourable: perDay[n][index].favourable }));
+      const strip = usable.map((day, n) => ({ date: day.date, day: Number(day.date.slice(8)), label: weekday(day.date), tone: perDay[n][index].tone, favourable: perDay[n][index].favourable }));
       const better = strip.filter(item => item.tone === 'good').map(item => item.label), care = strip.filter(item => item.tone === 'caution').map(item => item.label);
       const goodCount = better.length, careCount = care.length;
       const mid = perDay[Math.floor(perDay.length / 2)][index];
       const slow = mid.rows.filter(row => ['Jupiter', 'Saturn', 'Rahu', 'Ketu'].includes(row.name));
       const slowRows = mid.rows.filter(row => ['Jupiter', 'Saturn', 'Rahu', 'Ketu'].includes(row.name));
       const slowGood = slow.filter(row => row.good).length;
-      const overall = goodCount - careCount + (slowGood >= 3 ? 1 : slowGood <= 1 ? -1 : 0);
-      const tone = overall >= 2 ? 'good' : overall <= -2 ? 'caution' : 'mixed';
+      const overall = (goodCount - careCount) / strip.length + (slowGood >= 3 ? 0.2 : slowGood <= 1 ? -0.2 : 0);
+      const tone = overall >= 0.25 ? 'good' : overall <= -0.25 ? 'caution' : 'mixed';
       const first = perDay[0][index];
       return {
         rashi: index + 1, name: first.name, tone, strip,
-        verdict: text.weekVerdict[tone === 'good' ? 0 : tone === 'caution' ? 2 : 1],
+        verdict: (kind === 'month' ? (MONTH_TEXT[language] || MONTH_TEXT.en).verdict : text.weekVerdict)[tone === 'good' ? 0 : tone === 'caution' ? 2 : 1],
         best: fillText(text.weekBest, { days: better.length ? better.join(', ') : text.none }), care: fillText(text.weekCare, { days: care.length ? care.join(', ') : text.none }),
         areas: areaVerdicts(mid.rows.filter(row => !['Moon'].includes(row.name)), null, language), slowRows
       };
     });
   }
+
+  // ---- Month view: same method over a whole month, plus when each planet changes sign ----
+  const MONTH_TEXT = Object.freeze({
+    en: { verdict: ['A mostly supportive month: a good time to push your plans forward.', 'A balanced month with ups and downs: stay flexible and steady.', 'A demanding month: go slowly, protect your energy and avoid big risks.'], moves: 'Planet sign changes this month', none: 'No planet changes sign this month.' },
+    te: { verdict: ['ఎక్కువగా అనుకూలమైన నెల: మీ ప్రణాళికలను ముందుకు తీసుకెళ్లడానికి మంచి సమయం.', 'ఎత్తుపల్లాలతో సమతుల్యమైన నెల: అనువుగా, స్థిరంగా ఉండండి.', 'కఠినమైన నెల: నెమ్మదిగా వెళ్లండి, శక్తిని కాపాడుకోండి, పెద్ద రిస్క్‌లు మానండి.'], moves: 'ఈ నెలలో గ్రహాల రాశి మార్పులు', none: 'ఈ నెలలో ఏ గ్రహమూ రాశి మారదు.' },
+    hi: { verdict: ['ज्यादातर अनुकूल महीना: अपनी योजनाओं को आगे बढ़ाने का अच्छा समय।', 'उतार-चढ़ाव वाला संतुलित महीना: लचीले और स्थिर रहें।', 'कठिन महीना: धीरे चलें, ऊर्जा बचाएँ और बड़े जोखिम से बचें।'], moves: 'इस महीने ग्रहों के राशि परिवर्तन', none: 'इस महीने कोई ग्रह राशि नहीं बदलता।' },
+    ta: { verdict: ['பெரும்பாலும் சாதகமான மாதம்: உங்கள் திட்டங்களை முன்னெடுக்க நல்ல நேரம்.', 'ஏற்ற இறக்கங்களுடன் சமநிலையான மாதம்: நெகிழ்வாகவும் நிலையாகவும் இருங்கள்.', 'சவாலான மாதம்: மெதுவாகச் செல்லுங்கள், சக்தியைப் பாதுகாத்து பெரிய ஆபத்தைத் தவிருங்கள்.'], moves: 'இந்த மாதம் கிரகங்களின் ராசி மாற்றங்கள்', none: 'இந்த மாதம் எந்த கிரகமும் ராசி மாறாது.' },
+    kn: { verdict: ['ಹೆಚ್ಚಾಗಿ ಅನುಕೂಲಕರ ತಿಂಗಳು: ನಿಮ್ಮ ಯೋಜನೆಗಳನ್ನು ಮುಂದುವರಿಸಲು ಒಳ್ಳೆಯ ಸಮಯ.', 'ಏರಿಳಿತಗಳೊಂದಿಗೆ ಸಮತೋಲಿತ ತಿಂಗಳು: ಹೊಂದಿಕೊಳ್ಳುವ, ಸ್ಥಿರ ಮನೋಭಾವ ಇರಲಿ.', 'ಕಠಿಣ ತಿಂಗಳು: ನಿಧಾನವಾಗಿ ಸಾಗಿ, ಶಕ್ತಿ ಕಾಪಾಡಿ, ದೊಡ್ಡ ಅಪಾಯ ತಪ್ಪಿಸಿ.'], moves: 'ಈ ತಿಂಗಳು ಗ್ರಹಗಳ ರಾಶಿ ಬದಲಾವಣೆ', none: 'ಈ ತಿಂಗಳು ಯಾವ ಗ್ರಹವೂ ರಾಶಿ ಬದಲಾಯಿಸುವುದಿಲ್ಲ.' },
+    ml: { verdict: ['മിക്കവാറും അനുകൂലമായ മാസം: നിങ്ങളുടെ പദ്ധതികൾ മുന്നോട്ട് കൊണ്ടുപോകാൻ നല്ല സമയം.', 'ഏറ്റക്കുറച്ചിലുകളുള്ള സമതുലിത മാസം: അയവോടെയും സ്ഥിരതയോടെയും ഇരിക്കുക.', 'വെല്ലുവിളി നിറഞ്ഞ മാസം: പതുക്കെ പോകുക, ഊർജ്ജം സംരക്ഷിക്കുക, വലിയ അപകടം ഒഴിവാക്കുക.'], moves: 'ഈ മാസത്തെ ഗ്രഹങ്ങളുടെ രാശിമാറ്റം', none: 'ഈ മാസം ഒരു ഗ്രഹവും രാശി മാറുന്നില്ല.' },
+    mr: { verdict: ['बहुतांश अनुकूल महिना: तुमच्या योजना पुढे नेण्यासाठी चांगला काळ.', 'चढ-उतारांसह संतुलित महिना: लवचिक आणि स्थिर राहा.', 'कठीण महिना: हळू चला, ऊर्जा जपा आणि मोठी जोखीम टाळा.'], moves: 'या महिन्यातील ग्रहांचे राशी परिवर्तन', none: 'या महिन्यात कोणताही ग्रह राशी बदलत नाही.' },
+    bn: { verdict: ['বেশিরভাগই অনুকূল মাস: আপনার পরিকল্পনা এগিয়ে নেওয়ার ভালো সময়।', 'উত্থান-পতনসহ ভারসাম্যপূর্ণ মাস: নমনীয় ও স্থির থাকুন।', 'কঠিন মাস: ধীরে চলুন, শক্তি রক্ষা করুন এবং বড় ঝুঁকি এড়ান।'], moves: 'এই মাসে গ্রহের রাশি পরিবর্তন', none: 'এই মাসে কোনো গ্রহ রাশি বদলায় না।' },
+    gu: { verdict: ['મોટે ભાગે અનુકૂળ મહિનો: તમારી યોજનાઓ આગળ વધારવાનો સારો સમય.', 'ચડાવ-ઉતાર સાથે સંતુલિત મહિનો: લવચીક અને સ્થિર રહો.', 'કઠિન મહિનો: ધીમે ચાલો, ઊર્જા સાચવો અને મોટા જોખમ ટાળો.'], moves: 'આ મહિને ગ્રહોના રાશિ પરિવર્તન', none: 'આ મહિને કોઈ ગ્રહ રાશિ બદલતો નથી.' }
+  });
+  const monthMovesHead = language => (MONTH_TEXT[language] || MONTH_TEXT.en).moves;
+  // Returns lines such as "Sun → Scorpio · 17 Nov" for every day on which a transiting planet is in a new sign.
+  function planetMoves(days, language, label) {
+    const lines = [];
+    const usable = days.filter(day => day && day.planet_rashis);
+    for (let n = 1; n < usable.length; n += 1) {
+      for (const name of ['Sun', 'Mars', 'Mercury', 'Venus', 'Jupiter', 'Saturn', 'Rahu', 'Ketu']) {
+        if (usable[n].planet_rashis[name] !== usable[n - 1].planet_rashis[name]) lines.push(`${bodyName(name, language)} → ${signName(usable[n].planet_rashis[name], language)} · ${label(usable[n].date)}`);
+      }
+    }
+    return lines.length ? lines : [(MONTH_TEXT[language] || MONTH_TEXT.en).none];
+  }
+  const weekOutlook = (days, language, weekday) => periodOutlook(days, language, weekday, 'week');
+  const monthOutlook = (days, language, weekday) => periodOutlook(days, language, weekday, 'month');
 
   // North Indian chart on a 400x400 square: houses are fixed (house 1 is the top diamond,
   // then anticlockwise); the sign in each house follows from the Lagna.
@@ -944,7 +971,7 @@
     }));
   }
 
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, signName, bodyName });
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
