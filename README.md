@@ -192,6 +192,13 @@ are git-ignored and excluded from the image. Place data © GeoNames, CC BY 4.0.
 Example (Google Cloud Run): `gcloud run deploy jyotisha --source . --region asia-south1
 --allow-unauthenticated --set-env-vars JYOTISHA_ALLOWED_HOSTS=<your-domain>,JYOTISHA_CONTACT=<email>`.
 
+**Installable app (PWA) and Play Store.** The site ships a web app manifest, icons and a
+service worker, so Chrome offers "Install app" / "Add to Home screen". The Android
+wrapper (Trusted Web Activity, built with PWABuilder or Bubblewrap) opens your HTTPS
+domain; to verify it, set `JYOTISHA_ANDROID_PACKAGE` (your package name) and
+`JYOTISHA_ANDROID_SHA256` (the app-signing certificate fingerprint(s) from Play Console,
+comma separated) and the server then serves `/.well-known/assetlinks.json`.
+
 **DigitalOcean.** Easiest: App Platform, which builds the `Dockerfile` from GitHub and
 gives HTTPS (`.do/app.yaml` is a ready spec; set the secret `GEMINI_API_KEY` and
 `JYOTISHA_ALLOWED_HOSTS` in the console). Cheaper/more control: a Droplet with Docker;

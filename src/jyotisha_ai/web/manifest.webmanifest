@@ -1,0 +1,19 @@
+{
+  "name": "Jyotisha AI",
+  "short_name": "Jyotisha",
+  "description": "Daily Panchang, festival calendar, Kundli, Rashiphal and chat in 17 Indian languages.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#150d2e",
+  "theme_color": "#150d2e",
+  "lang": "en",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

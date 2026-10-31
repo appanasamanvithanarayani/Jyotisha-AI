@@ -668,7 +668,10 @@ def test_public_mode_checks_hosts_origins_health_privacy_and_security_headers(pu
     assert request(public_server, "POST", "/api/ask", payload, same)[0] in (200, 422)
 
 
-def test_public_mode_rate_limits_each_visitor_separately_and_the_assistant_more_tightly(public_server):
+def test_public_mode_rate_limits_each_visitor_separately_and_the_assistant_more_tightly(public_server, monkeypatch):
+    from jyotisha_ai import assistant
+
+    monkeypatch.setattr(assistant, "_setting", lambda name: "")   # never reach a real provider from a unit test
     payload = json.dumps({"question": "q", "language": "en", "facts": ["x"]})
 
     def post(ip):
@@ -677,3 +680,35 @@ def test_public_mode_rate_limits_each_visitor_separately_and_the_assistant_more_
     statuses = [post("203.0.113.5") for _ in range(10)]
     assert statuses[:8] == [200] * 8 and statuses[8:] == [429, 429]
     assert post("198.51.100.9") == 200        # a different visitor is not blocked
+
+
+def test_installable_app_files_are_served_with_correct_types(local_server):
+    status, headers, body = request(local_server, "GET", "/manifest.webmanifest", headers={"Host": f"127.0.0.1:{local_server.server_port}"})
+    manifest = json.loads(body)
+    assert status == 200 and headers["Content-Type"].startswith("application/manifest+json")
+    assert manifest["display"] == "standalone" and manifest["start_url"] == "/" and {icon["sizes"] for icon in manifest["icons"]} == {"192x192", "512x512"}
+    for icon in manifest["icons"]:
+        status, headers, data = request(local_server, "GET", icon["src"])
+        assert status == 200 and headers["Content-Type"] == "image/png" and data[:8] == b"\x89PNG\r\n\x1a\n"
+        width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+        assert f"{width}x{height}" == icon["sizes"]
+    status, headers, body = request(local_server, "GET", "/sw.js")
+    assert status == 200 and headers["Content-Type"].startswith("application/javascript") and b"addEventListener('fetch'" in body and b"/api/" in body
+    status, headers, body = request(local_server, "GET", "/")
+    assert b'rel="manifest"' in body and b"apple-touch-icon" in body
+    csp = headers["Content-Security-Policy"]
+    assert "manifest-src 'self'" in csp and "worker-src 'self'" in csp and "img-src 'self'" in csp
+
+
+def test_asset_links_appear_only_when_the_android_wrapper_is_configured(local_server, monkeypatch):
+    for name in ("JYOTISHA_ANDROID_PACKAGE", "JYOTISHA_ANDROID_SHA256"):
+        monkeypatch.delenv(name, raising=False)
+    assert request(local_server, "GET", "/.well-known/assetlinks.json")[0] == 404
+    fingerprint = ":".join(["AB"] * 32)
+    monkeypatch.setenv("JYOTISHA_ANDROID_PACKAGE", "com.example.jyotisha")
+    monkeypatch.setenv("JYOTISHA_ANDROID_SHA256", fingerprint)
+    status, _, body = request(local_server, "GET", "/.well-known/assetlinks.json")
+    target = json.loads(body)[0]["target"]
+    assert status == 200 and target["package_name"] == "com.example.jyotisha" and target["sha256_cert_fingerprints"] == [fingerprint]
+    monkeypatch.setenv("JYOTISHA_ANDROID_SHA256", "not-a-fingerprint")
+    assert request(local_server, "GET", "/.well-known/assetlinks.json")[0] == 404

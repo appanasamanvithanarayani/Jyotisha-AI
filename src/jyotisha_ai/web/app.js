@@ -933,6 +933,8 @@
   document.querySelectorAll('.prompt').forEach(button => button.addEventListener('click', () => ask(button.textContent, button.dataset.question, true)));
 
   /* ----------------------------------------------------------------- start */
+  // Installable app: the service worker keeps the shell available and shows a friendly page offline.
+  try { if (navigator.serviceWorker) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (_error) { /* not supported */ }
   fetch('/api/birth-readiness', { cache: 'no-store' }).then(response => response.json()).then(readiness => {
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;

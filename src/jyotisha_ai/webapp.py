@@ -13,6 +13,7 @@ import ipaddress
 import html
 import json
 import math
+import re
 import time as clock_time
 from collections import deque
 from threading import Lock
@@ -75,6 +76,19 @@ def _validated_bind_host(host: str) -> str:
     if not any(address in network for network in PRIVATE_LAN_RANGES):
         raise ValueError("LAN IP must be an explicit private IPv4 address")
     return str(address)
+
+
+def _asset_links() -> list | None:
+    """Digital Asset Links for the Android wrapper (Trusted Web Activity); None until it is configured.
+
+    Set JYOTISHA_ANDROID_PACKAGE (e.g. com.example.jyotisha) and JYOTISHA_ANDROID_SHA256 (the app signing
+    certificate fingerprint(s) from Play Console, comma separated, like AB:CD:...).
+    """
+    package = os.environ.get("JYOTISHA_ANDROID_PACKAGE", "").strip()
+    prints = [item.strip().upper() for item in os.environ.get("JYOTISHA_ANDROID_SHA256", "").split(",") if item.strip()]
+    if not package or not prints or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+", package) or not all(re.fullmatch(r"([0-9A-F]{2}:){31}[0-9A-F]{2}", item) for item in prints):
+        return None
+    return [{"relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "android_app", "package_name": package, "sha256_cert_fingerprints": prints}}]
 
 
 def _project_root() -> Path:
@@ -462,7 +476,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'")
+        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'")
         if self.server.public and self.headers.get("X-Forwarded-Proto") == "https":
             self.send_header("Strict-Transport-Security", "max-age=31536000")
         for name, value in (extra_headers or {}).items():
@@ -488,6 +502,17 @@ class LocalHandler(BaseHTTPRequestHandler):
         if path == "/":
             body = files("jyotisha_ai.web").joinpath("birth.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")
+        elif path in ("/manifest.webmanifest", "/sw.js"):
+            body = files("jyotisha_ai.web").joinpath(path[1:]).read_bytes()
+            self._send(200, body, "application/manifest+json" if path.endswith(".webmanifest") else "application/javascript; charset=utf-8")
+        elif path in ("/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"):
+            self._send(200, files("jyotisha_ai.web").joinpath(path[1:]).read_bytes(), "image/png", {"Cache-Control": "public, max-age=86400"})
+        elif path == "/.well-known/assetlinks.json":
+            links = _asset_links()
+            if links is None:
+                self._json(404, {"error": "not found"})
+            else:
+                self._json(200, links)
         elif path == "/privacy":
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
             self._send(200, page.replace("{{CONTACT}}", html.escape(os.environ.get("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
