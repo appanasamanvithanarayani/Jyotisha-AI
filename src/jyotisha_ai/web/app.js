@@ -125,6 +125,32 @@
     if (!state.onboarded) return;
     try { window.localStorage.setItem(STORE_KEY, JSON.stringify({ lang: state.lang, city: state.city, useLocation: state.useLocation })); } catch (_error) { /* not persisted */ }
   }
+  // The birth details of the last chart are kept on this device only (never on the server) so they need not be typed again.
+  const PROFILE_KEY = 'jyotisha.profile.v1';
+  function loadProfile() {
+    try {
+      const raw = window.localStorage && window.localStorage.getItem(PROFILE_KEY);
+      const value = raw ? JSON.parse(raw) : null;
+      if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.dob) && /^\d{2}:\d{2}$/.test(value.tob) && typeof value.pob === 'string' && value.pob.trim().length >= 2) {
+        return { dob: value.dob, pob: value.pob.trim().slice(0, 200), tob: value.tob };
+      }
+    } catch (_error) { /* unreadable: treat as none */ }
+    return null;
+  }
+  function saveProfile(profile) {
+    try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ dob: profile.dob, pob: profile.pob, tob: profile.tob })); } catch (_error) { /* not persisted */ }
+  }
+  function forgetProfile() {
+    try { window.localStorage.removeItem(PROFILE_KEY); } catch (_error) { /* nothing to remove */ }
+  }
+  async function restoreProfile() {
+    const profile = loadProfile();
+    if (!profile) return;
+    try {
+      const { ok, body } = await post('/api/birth-chart', profile);
+      if (ok && body && body.chart) { applyChart(body, profile); intake.step = null; resetChat(t('chartReady')); }
+    } catch (_error) { /* offline or unavailable: the chat simply asks for the details again */ }
+  }
   function startHome() {
     const today = localIso(new Date());
     state.todayIso = today; state.selectedDate = today;
@@ -745,6 +771,7 @@
       $('result').textContent = ok && body && body.chart ? t('chartReady') : t('chartFailed');
       if (ok && body && body.chart) {
         state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
+        saveProfile({ dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
         renderChart(); $('chart').hidden = false;
         setChatEnabled(true); intake.step = null; resetChat(t('chartReady'));
         showPage('kundli');
@@ -836,6 +863,7 @@
       const { ok, body } = await post('/api/birth-chart', { dob: intake.dob, pob: intake.pob, tob: intake.tob });
       if (ok && body && body.chart) {
         applyChart(body, { dob: intake.dob, pob: intake.pob, tob: intake.tob });
+        saveProfile({ dob: intake.dob, pob: intake.pob, tob: intake.tob });
         const pending = intake.pending; intake.step = null; intake.pending = null;
         addMessage('assistant', t('chartReady'));
         if (pending) route(pending); else addJathakam();
@@ -948,5 +976,12 @@
     startHome();
     if (saved.useLocation) void refreshCityFromLocation();
   } else applyLanguage('en');
+  void restoreProfile();
+  $('forget-profile').addEventListener('click', () => {
+    forgetProfile();
+    state.chart = null; state.details = null; state.resolved = null;
+    $('chart').hidden = true;
+    setChatEnabled(true); startIntake();
+  });
   $('availability').textContent = t('availabilityChecking');
 })();

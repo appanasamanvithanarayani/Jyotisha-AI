@@ -46,6 +46,7 @@ function boot(setup = {}) {
     if (url === '/api/birth-readiness') return reply({ can_calculate: true });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, date: JSON.parse(options.body).date } });
+    if (url === '/api/birth-chart') return reply(setup.birth || {});
     if (url === '/api/nearby-place') return reply({ status: 'candidate', candidate: { value: setup.nearby || 'Mysuru, IN' } });
     return reply({ suggestions: [] });
   };
@@ -179,7 +180,7 @@ test('festivals and holidays are marked on the calendar, listed under it, and sh
 
 function memoryStorage(initial) {
   const data = new Map(initial ? [['jyotisha.settings.v1', JSON.stringify(initial)]] : []);
-  return { getItem: key => (data.has(key) ? data.get(key) : null), setItem: (key, value) => data.set(key, String(value)), read: () => JSON.parse(data.get('jyotisha.settings.v1') || 'null') };
+  return { getItem: key => (data.has(key) ? data.get(key) : null), setItem: (key, value) => data.set(key, String(value)), removeItem: key => data.delete(key), read: () => JSON.parse(data.get('jyotisha.settings.v1') || 'null') };
 }
 const geolocation = () => ({ calls: 0, getCurrentPosition(ok) { this.calls += 1; ok({ coords: { latitude: 12.97, longitude: 77.59 } }); } });
 const dayRequests = app => app.requests.filter(r => r.url === '/api/day-panchang');
@@ -276,4 +277,51 @@ test('location is read only on request or when the browser already granted it, a
   await settle();
   assert.equal(manual.calls, 0);
   assert.deepEqual([...new Set(dayRequests(typed).map(r => r.body.place))], ['Bengaluru, IN']);
+});
+
+
+const syntheticBirth = {
+  chart: {
+    input: { birth_datetime: '1995-08-15T06:30:00+05:30' },
+    ascendant: { rashi_index: 5, sidereal_longitude: 124.3 },
+    positions: Object.fromEntries(['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'].map((name, n) => [name, { rashi_index: n + 1, sidereal_longitude: 10 + n * 30, tropical_longitude: 34 + n * 30, whole_sign_bhava: (n + 1 - 5 + 12) % 12 + 1 }])),
+    panchanga_at_birth: { tithi_index: 3, nakshatra_index: 17, nakshatra_pada: 2, yoga_index: 4, karana_half_tithi_index: 5 },
+    vimshottari: { starting_lord: 'Saturn', balance_years_at_birth: 13.6 }
+  },
+  details: null, resolved_birth: null
+};
+const birthRequests = app => app.requests.filter(r => r.url === '/api/birth-chart');
+
+test('saved birth details restore the chart on the next visit, so the chat does not ask again', async () => {
+  const profile = { dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify(profile));
+  const app = boot({ storage, birth: syntheticBirth });
+  await settle();
+  assert.deepEqual(birthRequests(app)[0].body, profile);
+  assert.equal(app.element('chart').hidden, false);
+  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chartReady'));
+});
+
+test('without saved details nothing is calculated, and corrupt saved details are ignored', async () => {
+  for (const raw of [null, '{"dob":"15-08-1995","pob":"x","tob":"6:30"}', 'not json']) {
+    const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+    if (raw) storage.setItem('jyotisha.profile.v1', raw);
+    const app = boot({ storage, birth: syntheticBirth });
+    await settle();
+    assert.equal(birthRequests(app).length, 0);
+    assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
+  }
+});
+
+test('the forget button removes the saved birth details and the chart', async () => {
+  const profile = { dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify(profile));
+  const app = boot({ storage, birth: syntheticBirth });
+  await settle();
+  app.element('forget-profile').listeners.click();
+  assert.equal(storage.getItem('jyotisha.profile.v1'), null);
+  assert.equal(app.element('chart').hidden, true);
+  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
 });
