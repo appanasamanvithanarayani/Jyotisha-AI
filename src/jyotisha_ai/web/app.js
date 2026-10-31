@@ -299,6 +299,14 @@
     for (const item of areas) { const row = el('p', null); row.append(el('strong', null, `${tinted(item.tone)} ${item.name}: `), item.text); box.appendChild(row); }
     return box;
   }
+  function remedyBlock(card, lines) {
+    if (!lines || !lines.length) return;
+    card.appendChild(el('h4', null, chartUI.remedyHead(state.lang)));
+    const list = el('ul', 'rashi-planets remedies');
+    for (const line of lines) list.appendChild(el('li', null, line));
+    card.appendChild(list);
+    card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
+  }
   function renderRashiDay() {
     const day = state.day;
     if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
@@ -324,6 +332,7 @@
         const planets = el('ul', 'rashi-planets');
         for (const row of more.rows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
         card.appendChild(planets);
+        remedyBlock(card, more.remedies);
       }
       $('rashi-list').appendChild(card);
     }
@@ -373,6 +382,7 @@
       const planets = el('ul', 'rashi-planets');
       for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
       card.appendChild(planets);
+      remedyBlock(card, item.remedies);
       $('rashi-list').appendChild(card);
     }
   }
@@ -407,6 +417,7 @@
       const planets = el('ul', 'rashi-planets');
       for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
       card.appendChild(planets);
+      remedyBlock(card, item.remedies);
       $('rashi-list').appendChild(card);
     }
   }

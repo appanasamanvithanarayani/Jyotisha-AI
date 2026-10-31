@@ -413,6 +413,7 @@
     const nth = n => ({ n, o: ordinal(n) });
     const lines = [fillText(text.title, { label: text.labels[key] })];
     let good = 0, hard = 0;
+    const needs = [];
     for (const house of topic.houses) {
       const rashi = (lagna + house - 2) % 12 + 1, lord = SIGN_LORD[rashi - 1], lp = place(lord), lordHouse = lp ? lp.whole_sign_bhava : null;
       const occupants = Object.keys(chart.positions).filter(name => chart.positions[name].whole_sign_bhava === house);
@@ -422,8 +423,8 @@
       if (!lp) tone = text.na;
       else if (lp.dignity === 'exalted') { tone = text.exalted; good += 1; }
       else if (lp.dignity === 'own') { tone = text.own; good += 1; }
-      else if (lp.dignity === 'debilitated') { tone = text.debil; hard += 1; }
-      else if (HARD_HOUSES.includes(lordHouse)) { tone = fillText(text.hard, { inh }); hard += 1; }
+      else if (lp.dignity === 'debilitated') { tone = text.debil; hard += 1; needs.push(lord); }
+      else if (HARD_HOUSES.includes(lordHouse)) { tone = fillText(text.hard, { inh }); hard += 1; needs.push(lord); }
       else if ([1, 4, 5, 7, 9, 10, 11].includes(lordHouse)) { tone = fillText(text.good, { inh }); good += 1; }
       else tone = fillText(text.plain, { inh });
       let line = fillText(text.house, { hn: fillText(text.hn, nth(house)), sign: sign(rashi), lord: body(lord), tone });
@@ -440,7 +441,7 @@
       const bit = p.dignity === 'exalted' ? text.bits.exalted : p.dignity === 'own' ? text.bits.own : p.dignity === 'debilitated' ? text.bits.debil : '';
       lines.push(fillText(text.karaka, { body: body(karaka), sign: sign(p.rashi_index), h: fillText(text.h, nth(p.whole_sign_bhava)), bit, retro: p.retrograde ? text.retro : '' }));
       if (p.dignity === 'exalted' || p.dignity === 'own') good += 1;
-      if (p.dignity === 'debilitated') hard += 1;
+      if (p.dignity === 'debilitated') { hard += 1; needs.push(karaka); }
     }
     const dasha = details && details.dasha;
     if (dasha && dasha.current_mahadasha) {
@@ -456,6 +457,8 @@
       lines.push(fillText(text.today, { when: today.isToday ? text.whenToday : fillText(text.whenDate, { date: today.date }), sign: sign(today.moonRashi), kind }));
     }
     lines.push(good - hard >= 2 ? text.verdict[0] : hard - good >= 2 ? text.verdict[2] : text.verdict[1]);
+    const remedies = remedyLines(needs, language);
+    if (remedies.length) lines.push(remedyHead(language) + ':', ...remedies, remedyNote(language));
     lines.push(text.disclaimer);
     return lines;
   }
@@ -587,6 +590,7 @@
     const moon = day.moon_rashi && day.moon_rashi[0], nak = day.nakshatra && day.nakshatra[0];
     const lines = [fillText(text.title, { date: day.date })];
     let score = 0;
+    const needs = [];
     if (moon) {
       const house = (moon.index - chart.positions.Moon.rashi_index + 12) % 12 + 1;
       const rd = READING_TEXT[language] || READING_TEXT.en;
@@ -594,11 +598,13 @@
       lines.push(fillText(rd.today, { when: rd.whenToday, sign: sign(moon.index), kind }));
       lines.push(fillText(text.areaLine, { ...nth(house), area: text.areas[house - 1] }));
       score += house === 8 ? -2 : [1, 3, 6, 7, 10, 11].includes(house) ? 1 : 0;
+      if (house === 8) needs.push('Moon');
     }
     if (nak) {
       const birth = chart.panchanga_at_birth.nakshatra_index, count = (nak.index - birth + 27) % 27 + 1, tara = ((nak.index - birth) % 27 + 27) % 27 % 9 + 1, good = [2, 4, 6, 8, 9].includes(tara);
       lines.push(fillText(text.tara, { nak: names.nakshatraName(nak.index, language), birth: names.nakshatraName(birth, language), n: count, o: ordinal(count), taraName: text.taraNames[tara - 1], kind: good ? text.taraGood : text.taraBad }));
       score += good ? 1 : -1;
+      if (!good) needs.push('Moon');
     }
     const dasha = details && details.dasha;
     if (dasha && dasha.current_mahadasha) {
@@ -609,6 +615,8 @@
     if (t && t.abhijit) lines.push(fillText(text.best, { from: fmt(t.abhijit[0]), to: fmt(t.abhijit[1]) }));
     if (t && t.rahu_kalam) lines.push(fillText(text.avoid, { from: fmt(t.rahu_kalam[0]), to: fmt(t.rahu_kalam[1]) }));
     lines.push(score >= 2 ? text.verdict[0] : score <= -1 ? text.verdict[2] : text.verdict[1]);
+    const remedies = remedyLines(needs, language);
+    if (remedies.length) lines.push(remedyHead(language) + ':', ...remedies, remedyNote(language));
     lines.push((READING_TEXT[language] || READING_TEXT.en).disclaimer);
     return lines;
   }
@@ -673,6 +681,127 @@
       return { rashi, house, tone, name: signName(rashi, language), area: fillText(rd.areaLine, { ...nth(house), area: text.areas[house - 1] }), kind: kind.charAt(0).toUpperCase() + kind.slice(1) };
     });
   }
+
+  // ---- Parihara: simple, low-cost traditional practices for the planets marked unfavourable ----
+  // Customs only (prayer, mantra, temple visit, pradakshina, charity, kindness); never gems, never paid rituals.
+  const REMEDY_ORDER = ['Saturn', 'Rahu', 'Ketu', 'Mars', 'Sun', 'Jupiter', 'Mercury', 'Venus', 'Moon'];
+  const REMEDY_TEXT = Object.freeze({
+    en: {
+      head: 'Simple remedies (Parihara)', note: 'Traditional practices you may follow if you wish: prayer, mantra, temple visits and kindness. They are optional.',
+      Sun: 'Offer water to the Sun at sunrise, do Surya Namaskar and recite Aditya Hridayam on Sundays.',
+      Moon: 'Offer water or milk to Lord Shiva on Mondays, chant "Om Namah Shivaya" and spend some quiet time in prayer.',
+      Mars: 'Visit a Hanuman or Subramanya temple on Tuesdays, recite the Hanuman Chalisa and keep your temper in check.',
+      Mercury: 'Pray to Lord Vishnu or Ganesha on Wednesdays, recite Vishnu Sahasranamam and feed cows with fresh greens.',
+      Jupiter: 'Pray to Dakshinamurthy or your guru on Thursdays, respect teachers and elders, and help someone with their studies.',
+      Venus: 'Worship Goddess Lakshmi on Fridays, keep your home clean and fragrant, and be kind to your partner and family.',
+      Saturn: 'On Saturdays light a sesame-oil lamp at a Shani or Hanuman temple, do pradakshina, feed crows and help the elderly or workers.',
+      Rahu: 'Worship Goddess Durga, light a lamp during Rahu Kalam and do nine pradakshinas at a Navagraha shrine.',
+      Ketu: 'Worship Lord Ganesha, chant "Om Gam Ganapataye Namah", do pradakshina at a temple and feed street dogs.'
+    },
+    te: {
+      head: 'సులభమైన పరిహారాలు', note: 'మీరు కోరితే పాటించగల సంప్రదాయ ఆచారాలు: ప్రార్థన, మంత్రం, ఆలయ సందర్శన, దయ. ఇవి ఐచ్ఛికం మాత్రమే.',
+      Sun: 'సూర్యోదయ సమయంలో సూర్యునికి అర్ఘ్యం ఇవ్వండి, సూర్య నమస్కారాలు చేయండి, ఆదివారాల్లో ఆదిత్య హృదయం పఠించండి.',
+      Moon: 'సోమవారాల్లో శివునికి నీరు లేదా పాలతో అభిషేకం చేయండి, "ఓం నమః శివాయ" జపించండి, కాసేపు ప్రశాంతంగా ప్రార్థన చేయండి.',
+      Mars: 'మంగళవారాల్లో హనుమాన్ లేదా సుబ్రహ్మణ్య ఆలయాన్ని దర్శించండి, హనుమాన్ చాలీసా పఠించండి, కోపాన్ని అదుపులో ఉంచుకోండి.',
+      Mercury: 'బుధవారాల్లో విష్ణువు లేదా గణపతిని ప్రార్థించండి, విష్ణు సహస్రనామం పఠించండి, గోవులకు పచ్చి గడ్డి పెట్టండి.',
+      Jupiter: 'గురువారాల్లో దక్షిణామూర్తిని లేదా మీ గురువును ప్రార్థించండి, గురువులను పెద్దలను గౌరవించండి, ఎవరికైనా చదువులో సహాయం చేయండి.',
+      Venus: 'శుక్రవారాల్లో లక్ష్మీదేవిని పూజించండి, ఇంటిని శుభ్రంగా సువాసనగా ఉంచండి, భాగస్వామి, కుటుంబంతో ప్రేమగా ఉండండి.',
+      Saturn: 'శనివారాల్లో శని లేదా హనుమాన్ ఆలయంలో నువ్వుల నూనె దీపం వెలిగించండి, ప్రదక్షిణ చేయండి, కాకులకు ఆహారం పెట్టండి, వృద్ధులకు, శ్రామికులకు సహాయం చేయండి.',
+      Rahu: 'దుర్గాదేవిని పూజించండి, రాహుకాలంలో దీపం వెలిగించండి, నవగ్రహ మండపంలో తొమ్మిది ప్రదక్షిణలు చేయండి.',
+      Ketu: 'గణపతిని పూజించండి, "ఓం గం గణపతయే నమః" జపించండి, ఆలయంలో ప్రదక్షిణ చేయండి, వీధి కుక్కలకు ఆహారం పెట్టండి.'
+    },
+    hi: {
+      head: 'सरल उपाय (परिहार)', note: 'पारंपरिक उपाय जो आप चाहें तो अपना सकते हैं: प्रार्थना, मंत्र, मंदिर दर्शन और दया। ये वैकल्पिक हैं।',
+      Sun: 'सूर्योदय पर सूर्य को जल अर्पित करें, सूर्य नमस्कार करें और रविवार को आदित्य हृदय स्तोत्र पढ़ें।',
+      Moon: 'सोमवार को शिवजी को जल या दूध चढ़ाएँ, "ॐ नमः शिवाय" जपें और कुछ देर शांति से प्रार्थना करें।',
+      Mars: 'मंगलवार को हनुमान या सुब्रमण्य मंदिर जाएँ, हनुमान चालीसा पढ़ें और गुस्से पर काबू रखें।',
+      Mercury: 'बुधवार को विष्णु या गणेशजी की प्रार्थना करें, विष्णु सहस्रनाम पढ़ें और गाय को हरा चारा खिलाएँ।',
+      Jupiter: 'गुरुवार को दक्षिणामूर्ति या अपने गुरु की प्रार्थना करें, शिक्षकों और बड़ों का सम्मान करें और किसी की पढ़ाई में मदद करें।',
+      Venus: 'शुक्रवार को लक्ष्मीजी की पूजा करें, घर को साफ और सुगंधित रखें और जीवनसाथी व परिवार के प्रति दयालु रहें।',
+      Saturn: 'शनिवार को शनि या हनुमान मंदिर में तिल के तेल का दीपक जलाएँ, परिक्रमा करें, कौओं को खिलाएँ और बुजुर्गों व मजदूरों की मदद करें।',
+      Rahu: 'दुर्गा माता की पूजा करें, राहुकाल में दीपक जलाएँ और नवग्रह मंदिर में नौ परिक्रमा करें।',
+      Ketu: 'गणेशजी की पूजा करें, "ॐ गं गणपतये नमः" जपें, मंदिर में परिक्रमा करें और सड़क के कुत्तों को खिलाएँ।'
+    },
+    ta: {
+      head: 'எளிய பரிகாரங்கள்', note: 'விருப்பம் இருந்தால் பின்பற்றக்கூடிய பாரம்பரிய வழக்கங்கள்: பிரார்த்தனை, மந்திரம், கோயில் தரிசனம், கருணை. இவை விருப்பத்திற்கு உட்பட்டவை.',
+      Sun: 'சூரிய உதயத்தில் சூரியனுக்கு நீர் அர்ப்பணியுங்கள், சூரிய நமஸ்காரம் செய்யுங்கள், ஞாயிறுகளில் ஆதித்ய ஹிருதயம் படியுங்கள்.',
+      Moon: 'திங்கட்கிழமைகளில் சிவனுக்கு நீர் அல்லது பால் அபிஷேகம் செய்து "ஓம் நமசிவாய" ஜபியுங்கள், சிறிது நேரம் அமைதியாகப் பிரார்த்தியுங்கள்.',
+      Mars: 'செவ்வாய்க்கிழமைகளில் அனுமன் அல்லது முருகன் கோயிலுக்குச் சென்று அனுமன் சாலிசா படியுங்கள், கோபத்தைக் கட்டுப்படுத்துங்கள்.',
+      Mercury: 'புதன்கிழமைகளில் விஷ்ணு அல்லது கணபதியை வணங்கி விஷ்ணு சஹஸ்ரநாமம் படியுங்கள், பசுவுக்குப் பசுந்தீவனம் கொடுங்கள்.',
+      Jupiter: 'வியாழக்கிழமைகளில் தட்சிணாமூர்த்தி அல்லது உங்கள் குருவை வணங்குங்கள், ஆசிரியர்களையும் பெரியவர்களையும் மதியுங்கள், ஒருவரின் படிப்புக்கு உதவுங்கள்.',
+      Venus: 'வெள்ளிக்கிழமைகளில் லட்சுமியை வழிபடுங்கள், வீட்டைச் சுத்தமாகவும் மணமாகவும் வைத்திருங்கள், துணைவரிடமும் குடும்பத்திடமும் அன்பாக இருங்கள்.',
+      Saturn: 'சனிக்கிழமைகளில் சனீஸ்வரர் அல்லது அனுமன் கோயிலில் எள் எண்ணெய் தீபம் ஏற்றி வலம் வாருங்கள், காகங்களுக்கு உணவளியுங்கள், முதியவர்களுக்கும் உழைப்பாளிகளுக்கும் உதவுங்கள்.',
+      Rahu: 'துர்க்கையை வழிபடுங்கள், ராகு காலத்தில் தீபம் ஏற்றுங்கள், நவகிரக சந்நிதியில் ஒன்பது முறை வலம் வாருங்கள்.',
+      Ketu: 'விநாயகரை வழிபடுங்கள், "ஓம் கம் கணபதயே நமஹ" ஜபியுங்கள், கோயிலில் வலம் வாருங்கள், தெருநாய்களுக்கு உணவளியுங்கள்.'
+    },
+    kn: {
+      head: 'ಸರಳ ಪರಿಹಾರಗಳು', note: 'ನೀವು ಬಯಸಿದರೆ ಪಾಲಿಸಬಹುದಾದ ಸಾಂಪ್ರದಾಯಿಕ ಆಚರಣೆಗಳು: ಪ್ರಾರ್ಥನೆ, ಮಂತ್ರ, ದೇವಾಲಯ ದರ್ಶನ, ದಯೆ. ಇವು ಐಚ್ಛಿಕ.',
+      Sun: 'ಸೂರ್ಯೋದಯದಲ್ಲಿ ಸೂರ್ಯನಿಗೆ ಅರ್ಘ್ಯ ನೀಡಿ, ಸೂರ್ಯ ನಮಸ್ಕಾರ ಮಾಡಿ, ಭಾನುವಾರ ಆದಿತ್ಯ ಹೃದಯ ಪಠಿಸಿ.',
+      Moon: 'ಸೋಮವಾರ ಶಿವನಿಗೆ ನೀರು ಅಥವಾ ಹಾಲಿನ ಅಭಿಷೇಕ ಮಾಡಿ, "ಓಂ ನಮಃ ಶಿವಾಯ" ಜಪಿಸಿ, ಸ್ವಲ್ಪ ಹೊತ್ತು ಶಾಂತವಾಗಿ ಪ್ರಾರ್ಥಿಸಿ.',
+      Mars: 'ಮಂಗಳವಾರ ಹನುಮಾನ್ ಅಥವಾ ಸುಬ್ರಹ್ಮಣ್ಯ ದೇವಾಲಯಕ್ಕೆ ಹೋಗಿ, ಹನುಮಾನ್ ಚಾಲೀಸಾ ಪಠಿಸಿ, ಕೋಪವನ್ನು ನಿಯಂತ್ರಿಸಿ.',
+      Mercury: 'ಬುಧವಾರ ವಿಷ್ಣು ಅಥವಾ ಗಣೇಶನನ್ನು ಪ್ರಾರ್ಥಿಸಿ, ವಿಷ್ಣು ಸಹಸ್ರನಾಮ ಪಠಿಸಿ, ಹಸುವಿಗೆ ಹಸಿರು ಮೇವು ನೀಡಿ.',
+      Jupiter: 'ಗುರುವಾರ ದಕ್ಷಿಣಾಮೂರ್ತಿ ಅಥವಾ ನಿಮ್ಮ ಗುರುವನ್ನು ಪ್ರಾರ್ಥಿಸಿ, ಗುರು-ಹಿರಿಯರನ್ನು ಗೌರವಿಸಿ, ಯಾರಿಗಾದರೂ ಓದಿಗೆ ಸಹಾಯ ಮಾಡಿ.',
+      Venus: 'ಶುಕ್ರವಾರ ಲಕ್ಷ್ಮಿಯನ್ನು ಪೂಜಿಸಿ, ಮನೆಯನ್ನು ಸ್ವಚ್ಛ ಮತ್ತು ಪರಿಮಳಯುಕ್ತವಾಗಿಡಿ, ಸಂಗಾತಿ ಮತ್ತು ಕುಟುಂಬದೊಂದಿಗೆ ದಯೆಯಿಂದಿರಿ.',
+      Saturn: 'ಶನಿವಾರ ಶನಿ ಅಥವಾ ಹನುಮಾನ್ ದೇವಾಲಯದಲ್ಲಿ ಎಳ್ಳೆಣ್ಣೆ ದೀಪ ಹಚ್ಚಿ ಪ್ರದಕ್ಷಿಣೆ ಮಾಡಿ, ಕಾಗೆಗಳಿಗೆ ಆಹಾರ ನೀಡಿ, ವೃದ್ಧರಿಗೆ ಮತ್ತು ಕಾರ್ಮಿಕರಿಗೆ ಸಹಾಯ ಮಾಡಿ.',
+      Rahu: 'ದುರ್ಗಾದೇವಿಯನ್ನು ಪೂಜಿಸಿ, ರಾಹುಕಾಲದಲ್ಲಿ ದೀಪ ಹಚ್ಚಿ, ನವಗ್ರಹ ಸನ್ನಿಧಿಯಲ್ಲಿ ಒಂಬತ್ತು ಪ್ರದಕ್ಷಿಣೆ ಮಾಡಿ.',
+      Ketu: 'ಗಣೇಶನನ್ನು ಪೂಜಿಸಿ, "ಓಂ ಗಂ ಗಣಪತಯೇ ನಮಃ" ಜಪಿಸಿ, ದೇವಾಲಯದಲ್ಲಿ ಪ್ರದಕ್ಷಿಣೆ ಮಾಡಿ, ಬೀದಿ ನಾಯಿಗಳಿಗೆ ಆಹಾರ ನೀಡಿ.'
+    },
+    ml: {
+      head: 'ലളിതമായ പരിഹാരങ്ങൾ', note: 'നിങ്ങൾ ആഗ്രഹിച്ചാൽ പിന്തുടരാവുന്ന പാരമ്പര്യ ആചാരങ്ങൾ: പ്രാർത്ഥന, മന്ത്രം, ക്ഷേത്ര ദർശനം, ദയ. ഇവ ഐച്ഛികമാണ്.',
+      Sun: 'സൂര്യോദയത്തിൽ സൂര്യന് ജലം അർപ്പിക്കുക, സൂര്യനമസ്കാരം ചെയ്യുക, ഞായറാഴ്ചകളിൽ ആദിത്യഹൃദയം ചൊല്ലുക.',
+      Moon: 'തിങ്കളാഴ്ചകളിൽ ശിവന് ജലമോ പാലോ അഭിഷേകം ചെയ്യുക, "ഓം നമഃ ശിവായ" ജപിക്കുക, അല്പസമയം ശാന്തമായി പ്രാർത്ഥിക്കുക.',
+      Mars: 'ചൊവ്വാഴ്ചകളിൽ ഹനുമാൻ അല്ലെങ്കിൽ സുബ്രഹ്മണ്യ ക്ഷേത്രം സന്ദർശിക്കുക, ഹനുമാൻ ചാലീസ ചൊല്ലുക, ദേഷ്യം നിയന്ത്രിക്കുക.',
+      Mercury: 'ബുധനാഴ്ചകളിൽ വിഷ്ണുവിനെയോ ഗണപതിയെയോ പ്രാർത്ഥിക്കുക, വിഷ്ണു സഹസ്രനാമം ചൊല്ലുക, പശുവിന് പച്ചപ്പുല്ല് നൽകുക.',
+      Jupiter: 'വ്യാഴാഴ്ചകളിൽ ദക്ഷിണാമൂർത്തിയെയോ ഗുരുവിനെയോ പ്രാർത്ഥിക്കുക, അധ്യാപകരെയും മുതിർന്നവരെയും ബഹുമാനിക്കുക, ആരുടെയെങ്കിലും പഠനത്തിന് സഹായിക്കുക.',
+      Venus: 'വെള്ളിയാഴ്ചകളിൽ ലക്ഷ്മീദേവിയെ ആരാധിക്കുക, വീട് വൃത്തിയായും സുഗന്ധമായും സൂക്ഷിക്കുക, പങ്കാളിയോടും കുടുംബത്തോടും ദയ കാണിക്കുക.',
+      Saturn: 'ശനിയാഴ്ചകളിൽ ശനി അല്ലെങ്കിൽ ഹനുമാൻ ക്ഷേത്രത്തിൽ എള്ളെണ്ണ വിളക്ക് കത്തിച്ച് പ്രദക്ഷിണം ചെയ്യുക, കാക്കകൾക്ക് ഭക്ഷണം നൽകുക, വൃദ്ധരെയും തൊഴിലാളികളെയും സഹായിക്കുക.',
+      Rahu: 'ദുർഗ്ഗാദേവിയെ ആരാധിക്കുക, രാഹുകാലത്ത് വിളക്ക് കത്തിക്കുക, നവഗ്രഹ സന്നിധിയിൽ ഒമ്പത് പ്രദക്ഷിണം ചെയ്യുക.',
+      Ketu: 'ഗണപതിയെ ആരാധിക്കുക, "ഓം ഗം ഗണപതയേ നമഃ" ജപിക്കുക, ക്ഷേത്രത്തിൽ പ്രദക്ഷിണം ചെയ്യുക, തെരുവ് നായ്ക്കൾക്ക് ഭക്ഷണം നൽകുക.'
+    },
+    mr: {
+      head: 'सोपे उपाय (परिहार)', note: 'तुम्हाला हवे असल्यास पाळता येतील अशा पारंपरिक प्रथा: प्रार्थना, मंत्र, मंदिर दर्शन आणि दया. हे ऐच्छिक आहे.',
+      Sun: 'सूर्योदयाला सूर्याला अर्घ्य द्या, सूर्यनमस्कार करा आणि रविवारी आदित्य हृदय म्हणा.',
+      Moon: 'सोमवारी शिवाला पाणी किंवा दूध अर्पण करा, "ॐ नमः शिवाय" जपा आणि थोडा वेळ शांतपणे प्रार्थना करा.',
+      Mars: 'मंगळवारी हनुमान किंवा सुब्रह्मण्य मंदिरात जा, हनुमान चालीसा म्हणा आणि रागावर नियंत्रण ठेवा.',
+      Mercury: 'बुधवारी विष्णू किंवा गणपतीची प्रार्थना करा, विष्णुसहस्रनाम म्हणा आणि गायीला हिरवा चारा द्या.',
+      Jupiter: 'गुरुवारी दक्षिणामूर्ती किंवा तुमच्या गुरूंची प्रार्थना करा, शिक्षक आणि वडीलधाऱ्यांचा आदर करा आणि कोणाच्या तरी शिक्षणात मदत करा.',
+      Venus: 'शुक्रवारी लक्ष्मीची पूजा करा, घर स्वच्छ आणि सुगंधित ठेवा आणि जोडीदार व कुटुंबाशी प्रेमाने वागा.',
+      Saturn: 'शनिवारी शनी किंवा हनुमान मंदिरात तिळाच्या तेलाचा दिवा लावा, प्रदक्षिणा करा, कावळ्यांना खाऊ घाला आणि वृद्धांना व कामगारांना मदत करा.',
+      Rahu: 'दुर्गादेवीची पूजा करा, राहुकाळात दिवा लावा आणि नवग्रह मंदिरात नऊ प्रदक्षिणा करा.',
+      Ketu: 'गणपतीची पूजा करा, "ॐ गं गणपतये नमः" जपा, मंदिरात प्रदक्षिणा करा आणि भटक्या कुत्र्यांना खाऊ घाला.'
+    },
+    bn: {
+      head: 'সহজ প্রতিকার (পরিহার)', note: 'আপনি চাইলে অনুসরণ করতে পারেন এমন ঐতিহ্যগত রীতি: প্রার্থনা, মন্ত্র, মন্দির দর্শন ও দয়া। এগুলো ঐচ্ছিক।',
+      Sun: 'সূর্যোদয়ে সূর্যকে জল অর্পণ করুন, সূর্য নমস্কার করুন এবং রবিবার আদিত্য হৃদয় পাঠ করুন।',
+      Moon: 'সোমবার শিবকে জল বা দুধ অর্পণ করুন, "ওঁ নমঃ শিবায়" জপ করুন এবং কিছুক্ষণ শান্তভাবে প্রার্থনা করুন।',
+      Mars: 'মঙ্গলবার হনুমান বা সুব্রহ্মণ্য মন্দিরে যান, হনুমান চালিসা পাঠ করুন এবং রাগ নিয়ন্ত্রণে রাখুন।',
+      Mercury: 'বুধবার বিষ্ণু বা গণেশের প্রার্থনা করুন, বিষ্ণু সহস্রনাম পাঠ করুন এবং গরুকে সবুজ ঘাস খাওয়ান।',
+      Jupiter: 'বৃহস্পতিবার দক্ষিণামূর্তি বা আপনার গুরুর প্রার্থনা করুন, শিক্ষক ও বড়দের সম্মান করুন এবং কারও পড়াশোনায় সাহায্য করুন।',
+      Venus: 'শুক্রবার লক্ষ্মীর পূজা করুন, ঘর পরিষ্কার ও সুগন্ধি রাখুন এবং সঙ্গী ও পরিবারের প্রতি সদয় থাকুন।',
+      Saturn: 'শনিবার শনি বা হনুমান মন্দিরে তিলের তেলের প্রদীপ জ্বালান, প্রদক্ষিণ করুন, কাকদের খাওয়ান এবং বৃদ্ধ ও শ্রমিকদের সাহায্য করুন।',
+      Rahu: 'দুর্গা মাতার পূজা করুন, রাহুকালে প্রদীপ জ্বালান এবং নবগ্রহ মন্দিরে নয়বার প্রদক্ষিণ করুন।',
+      Ketu: 'গণেশের পূজা করুন, "ওঁ গং গণপতয়ে নমঃ" জপ করুন, মন্দিরে প্রদক্ষিণ করুন এবং পথের কুকুরদের খাওয়ান।'
+    },
+    gu: {
+      head: 'સરળ ઉપાયો (પરિહાર)', note: 'તમે ઈચ્છો તો પાળી શકો એવી પરંપરાગત પ્રથાઓ: પ્રાર્થના, મંત્ર, મંદિર દર્શન અને દયા. આ વૈકલ્પિક છે.',
+      Sun: 'સૂર્યોદયે સૂર્યને જળ અર્પણ કરો, સૂર્ય નમસ્કાર કરો અને રવિવારે આદિત્ય હૃદય વાંચો.',
+      Moon: 'સોમવારે શિવજીને જળ કે દૂધ ચઢાવો, "ૐ નમઃ શિવાય" જપો અને થોડો સમય શાંતિથી પ્રાર્થના કરો.',
+      Mars: 'મંગળવારે હનુમાન કે સુબ્રમણ્ય મંદિરે જાઓ, હનુમાન ચાલીસા વાંચો અને ગુસ્સા પર કાબૂ રાખો.',
+      Mercury: 'બુધવારે વિષ્ણુ કે ગણેશજીની પ્રાર્થના કરો, વિષ્ણુ સહસ્રનામ વાંચો અને ગાયને લીલો ચારો ખવડાવો.',
+      Jupiter: 'ગુરુવારે દક્ષિણામૂર્તિ કે તમારા ગુરુની પ્રાર્થના કરો, શિક્ષકો અને વડીલોનું સન્માન કરો અને કોઈના અભ્યાસમાં મદદ કરો.',
+      Venus: 'શુક્રવારે લક્ષ્મીજીની પૂજા કરો, ઘર સ્વચ્છ અને સુગંધિત રાખો અને જીવનસાથી તથા પરિવાર સાથે દયાળુ રહો.',
+      Saturn: 'શનિવારે શનિ કે હનુમાન મંદિરમાં તલના તેલનો દીવો કરો, પ્રદક્ષિણા કરો, કાગડાઓને ખવડાવો અને વૃદ્ધો તથા મજૂરોને મદદ કરો.',
+      Rahu: 'દુર્ગા માતાની પૂજા કરો, રાહુકાળમાં દીવો કરો અને નવગ્રહ મંદિરમાં નવ પ્રદક્ષિણા કરો.',
+      Ketu: 'ગણેશજીની પૂજા કરો, "ૐ ગં ગણપતયે નમઃ" જપો, મંદિરમાં પ્રદક્ષિણા કરો અને રખડતા કૂતરાઓને ખવડાવો.'
+    }
+  });
+  function remedyLines(names, language) {
+    const text = REMEDY_TEXT[language] || REMEDY_TEXT.en;
+    const wanted = REMEDY_ORDER.filter(name => names.includes(name)).slice(0, 3);
+    return wanted.map(name => `${bodyName(name, language)} — ${text[name]}`);
+  }
+  const remedyHead = language => (REMEDY_TEXT[language] || REMEDY_TEXT.en).head;
+  const remedyNote = language => (REMEDY_TEXT[language] || REMEDY_TEXT.en).note;
 
   // ---- Gochara: classical favourable houses of each transiting planet, counted from a sign (Moon sign) ----
   const GOCHARA_GOOD = Object.freeze({
@@ -771,6 +900,7 @@
       const tone = favourable >= 6 ? 'good' : favourable <= 2 ? 'caution' : 'mixed';
       return {
         areas: areaVerdicts(rows, moonRow, language),
+        remedies: remedyLines([...rows.filter(item => !item.good).map(item => item.name), ...(moonRow.good ? [] : ['Moon'])], language),
         rashi, tone, favourable, count: fillText(text.count, { n: favourable }), verdict: text.verdict[tone === 'good' ? 0 : tone === 'caution' ? 2 : 1], name: signName(rashi, language),
         moonLine: `${bodyName('Moon', language)} — ${fillText(rd.h, { n: moonRow.house, o: ordinal(moonRow.house) })} ${moonRow.good ? '✔' : '✖'}`,
         rows: rows.map(item => ({ ...item, text: fillText(text.line, { body: bodyName(item.name, language), h: fillText(rd.h, { n: item.house, o: ordinal(item.house) }), mark: item.good ? '✔' : '✖', phrase: text[item.name][item.good ? 0 : 1] }) }))
@@ -927,7 +1057,8 @@
         rashi: index + 1, name: first.name, tone, strip,
         verdict: (kind === 'month' ? (MONTH_TEXT[language] || MONTH_TEXT.en).verdict : text.weekVerdict)[tone === 'good' ? 0 : tone === 'caution' ? 2 : 1],
         best: fillText(text.weekBest, { days: better.length ? better.join(', ') : text.none }), care: fillText(text.weekCare, { days: care.length ? care.join(', ') : text.none }),
-        areas: areaVerdicts(mid.rows.filter(row => !['Moon'].includes(row.name)), null, language), slowRows
+        areas: areaVerdicts(mid.rows.filter(row => !['Moon'].includes(row.name)), null, language), slowRows,
+        remedies: remedyLines(slowRows.filter(row => !row.good).map(row => row.name), language)
       };
     });
   }
@@ -971,7 +1102,7 @@
     }));
   }
 
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, signName, bodyName });
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

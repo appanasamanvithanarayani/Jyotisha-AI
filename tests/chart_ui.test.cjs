@@ -224,3 +224,26 @@ test('month view aggregates the whole month and lists the days planets change si
     assert.doesNotMatch(text, /month|Planet sign|Sun →/i, code);
   }
 });
+
+test('simple remedies (parihara) accompany unfavourable placements, in the selected language, and are never gems or paid rituals', () => {
+  const planets = { Sun: 7, Mars: 4, Mercury: 7, Jupiter: 5, Venus: 7, Saturn: 12, Rahu: 11, Ketu: 5 };
+  const day = { date: '2026-10-31', moon_rashi: [{ index: 8 }], planet_rashis: planets, nakshatra: [{ index: 5 }], timings: {} };
+  const cards = ui.gocharaOutlook(day, 'en');
+  const aries = cards[0];
+  assert.ok(aries.remedies.length >= 1 && aries.remedies.length <= 3);
+  assert.match(aries.remedies[0], /^Saturn — .*(lamp|pradakshina)/);   // Saturn is unfavourable from Aries and is listed first
+  assert.ok(cards.every(card => card.remedies.every(line => !/(gems?|gemstones?|rings?|pay|fees?|guarantee[sd]?)/i.test(line))));
+  const week = ui.weekOutlook(Array.from({ length: 7 }, (_u, n) => ({ ...day, date: `2026-11-0${n + 1}` })), 'en', x => x);
+  assert.ok(week[0].remedies.length >= 1 && week[0].remedies.every(line => /^(Saturn|Rahu|Ketu|Jupiter) — /.test(line)));
+  // personal readings: a debilitated or badly placed lord brings its remedy, and a weak Moon day brings the Moon remedy
+  const chart2 = { ascendant: { rashi_index: 10, sidereal_longitude: 275 }, positions: { ...chart.positions, Mars: { rashi_index: 5, sidereal_longitude: 135, whole_sign_bhava: 8 } } };
+  const details = { planets: { Mars: { rashi_index: 4, whole_sign_bhava: 7, dignity: 'debilitated' }, Rahu: { rashi_index: 4, whole_sign_bhava: 7 }, Ketu: { rashi_index: 10, whole_sign_bhava: 1 } }, dasha: null };
+  const life = ui.readLife(chart2, details, 'money', 'en', null).join('\n');
+  assert.match(life, /Simple remedies \(Parihara\):/);
+  const todayLines = ui.readToday(chart, null, { date: '2026-10-31', moon_rashi: [{ index: 3 }], nakshatra: [{ index: 12 }], timings: {} }, 'en', x => x).join('\n');
+  assert.match(todayLines, /Simple remedies \(Parihara\):[\s\S]*Moon — Offer water or milk to Lord Shiva/);
+  for (const code of ['te', 'hi', 'ta', 'kn', 'ml', 'mr', 'bn', 'gu']) {
+    const text = ui.remedyHead(code) + ui.remedyNote(code) + ui.gocharaOutlook(day, code).map(card => card.remedies.join(' ')).join(' ');
+    assert.doesNotMatch(text, /Offer water|pradakshina|Simple remedies|lamp|Traditional practices/, code);
+  }
+});

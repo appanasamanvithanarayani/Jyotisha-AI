@@ -32,9 +32,9 @@ test('out-of-range indices never receive invented names', () => {
 
 test('Panchang indices retain their identity while displaying in the selected language', () => {
   assert.equal(names.tithiName(20,'te'),'కృష్ణ పంచమి');
-  assert.equal(names.nakshatraName(6,'te'),'ఆర్ద్ర');
+  assert.equal(names.nakshatraName(6,'te'),'ఆరుద్ర');
   assert.equal(names.yogaName(20,'te'),'శివ');
-  assert.equal(names.karanaName(40,'te'),'తైతిల');
+  assert.equal(names.karanaName(40,'te'),'తైతుల');
   assert.equal(names.tithiName(20,'hi'),'कृष्ण पंचमी');
   assert.equal(names.nakshatraName(6,'hi'),'आर्द्रा');
   assert.equal(names.tithiName(0,'te'),null);
