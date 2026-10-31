@@ -207,6 +207,13 @@ copy `deploy/digitalocean/env.example` to `.env`, fill it in, and run
 (Caddy fetches the HTTPS certificate for `DOMAIN`; a free `<ip>.sslip.io` name works
 if you have no domain).
 
+**Ads (off by default).** Set `JYOTISHA_ADSENSE_CLIENT=ca-pub-...` to turn on Google AdSense:
+the page then loads Google's ad script, the Content-Security-Policy allows Google's ad domains,
+`/ads.txt` is served, and `/privacy` describes advertising. Without it none of this is active.
+Use a domain you own (AdSense does not accept shared hostnames such as sslip.io), switch on
+Google's consent message in AdSense (Privacy & messaging), and keep ads out of the installed
+Android wrapper unless Google's policies for your setup allow it.
+
 **Settings are remembered** on the device (`localStorage`: language, city, and
 whether the city follows your location). Onboarding (welcome, language, city)
 runs only on a fresh install and the app defaults to English; afterwards it opens

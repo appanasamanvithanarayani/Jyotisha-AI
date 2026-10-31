@@ -736,3 +736,24 @@ def test_finished_panchang_results_are_cached_and_the_cache_expires_and_stays_bo
     assert other["day"]["date"] == "2026-11-01" and len(calls) == 2
     with pytest.raises(ValueError):
         webapp.day_panchang_status({"date": 5, "place": "Bengaluru, IN"})
+
+
+def test_ads_are_off_by_default_and_switch_on_only_with_a_valid_adsense_id(local_server, monkeypatch):
+    monkeypatch.delenv("JYOTISHA_ADSENSE_CLIENT", raising=False)
+    status, headers, body = request(local_server, "GET", "/privacy")
+    assert b"do not run advertising" in body and b"AdSense" not in body
+    assert "googlesyndication" not in headers["Content-Security-Policy"]
+    assert request(local_server, "GET", "/ads.txt")[0] == 404
+    assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["adsense_client"] is None
+
+    monkeypatch.setenv("JYOTISHA_ADSENSE_CLIENT", "not-an-id")           # malformed ids are ignored
+    assert request(local_server, "GET", "/ads.txt")[0] == 404
+
+    monkeypatch.setenv("JYOTISHA_ADSENSE_CLIENT", "ca-pub-1234567890123456")
+    status, _, body = request(local_server, "GET", "/ads.txt")
+    assert status == 200 and body == b"google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n"
+    status, headers, body = request(local_server, "GET", "/privacy")
+    assert b"Google AdSense" in body and b"do not run advertising" not in body and b"{{ADS_ITEM}}" not in body
+    csp = headers["Content-Security-Policy"]
+    assert "https://pagead2.googlesyndication.com" in csp and "frame-src" in csp and "default-src 'none'" in csp
+    assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["adsense_client"] == "ca-pub-1234567890123456"

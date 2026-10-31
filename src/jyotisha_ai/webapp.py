@@ -106,6 +106,36 @@ def _validated_bind_host(host: str) -> str:
     return str(address)
 
 
+BASE_CSP = ("default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; "
+            "worker-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'")
+ADS_SCRIPT = "https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagservices.com https://partner.googleadservices.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
+ADS_FRAME = "https://googleads.g.doubleclick.net https://*.googlesyndication.com https://tpc.googlesyndication.com https://www.google.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
+ADS_CONNECT = "https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
+
+
+def _adsense_client() -> str:
+    """Google AdSense publisher id (ca-pub-...) from JYOTISHA_ADSENSE_CLIENT, or '' while ads are off (the default)."""
+    value = os.environ.get("JYOTISHA_ADSENSE_CLIENT", "").strip()
+    return value if re.fullmatch(r"ca-pub-\d{10,20}", value) else ""
+
+
+def _content_security_policy() -> str:
+    if not _adsense_client():
+        return BASE_CSP
+    return (BASE_CSP.replace("script-src 'self' 'unsafe-inline'", f"script-src 'self' 'unsafe-inline' {ADS_SCRIPT}")
+            .replace("img-src 'self' data:", "img-src 'self' data: https:")
+            .replace("connect-src 'self'", f"connect-src 'self' {ADS_CONNECT}") + f"; frame-src {ADS_FRAME}")
+
+
+def _privacy_ads_item() -> str:
+    if not _adsense_client():
+        return "<li>We do not run advertising or analytics and do not sell data. Our hosting provider may keep standard technical request records (such as IP address and time) for a short period for security.</li>"
+    return ("<li><b>Advertising.</b> This site shows ads from Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, "
+            "and, where you agree, to personalise them. You can manage this through the consent message shown to you, and see or change your ad settings at "
+            "<a href=\"https://adssettings.google.com\">adssettings.google.com</a>; see also <a href=\"https://policies.google.com/technologies/ads\">how Google uses data from sites that use its services</a>. "
+            "We do not run our own analytics and do not sell data. Our hosting provider may keep standard technical request records (such as IP address and time) for a short period for security.</li>")
+
+
 def _asset_links() -> list | None:
     """Digital Asset Links for the Android wrapper (Trusted Web Activity); None until it is configured.
 
@@ -520,7 +550,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'")
+        self.send_header("Content-Security-Policy", _content_security_policy())
         if self.server.public and self.headers.get("X-Forwarded-Proto") == "https":
             self.send_header("Strict-Transport-Security", "max-age=31536000")
         for name, value in (extra_headers or {}).items():
@@ -559,7 +589,14 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(200, links)
         elif path == "/privacy":
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
+            page = page.replace("{{ADS_ITEM}}", _privacy_ads_item())
             self._send(200, page.replace("{{CONTACT}}", html.escape(os.environ.get("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
+        elif path == "/ads.txt":
+            client = _adsense_client()
+            if not client:
+                self._json(404, {"error": "not found"})
+            else:
+                self._send(200, f"google.com, pub-{client[len('ca-pub-'):]}, DIRECT, f08c47fec0942fa0\n".encode("utf-8"), "text/plain; charset=utf-8")
         elif path == "/research":
             body = files("jyotisha_ai.web").joinpath("index.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")
@@ -584,6 +621,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/api/birth-readiness":
             readiness = birth_chart_readiness(self.server.project_root)
             readiness["assistant_available"] = assistant.available()
+            readiness["adsense_client"] = _adsense_client() or None
             self._json(200 if readiness["can_calculate"] else 503, readiness)
         elif path == "/api/deployment-readiness":
             self._json(503, deployment_readiness())

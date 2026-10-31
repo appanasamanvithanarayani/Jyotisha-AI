@@ -978,6 +978,15 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
+    // Ads are off unless the server was configured with an AdSense publisher id.
+    if (/^ca-pub-\d{10,20}$/.test(readiness.adsense_client || '')) {
+      try {
+        const ad = document.createElement('script');
+        ad.async = true; ad.crossOrigin = 'anonymous';
+        ad.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${readiness.adsense_client}`;
+        document.head.appendChild(ad);
+      } catch (_error) { /* ads are optional */ }
+    }
   }).catch(() => { $('availability').textContent = t('inputDisabled'); });
   const saved = loadSettings();
   if (saved) {
