@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-jyotisha-ai.invalid/schemas/skyfield-kernel-manifest-1.0.json",
+  "title": "Isolated Skyfield local-kernel provenance manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "filename", "publisher", "official_source_url", "retrieved_at_utc", "size_bytes", "sha256", "publisher_checksum", "coverage", "terms_review", "approval"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "filename": {"type": "string", "pattern": "^[A-Za-z0-9_-]+\\.bsp$"},
+    "publisher": {"type": "string", "minLength": 1},
+    "official_source_url": {"type": "string", "pattern": "^https://"},
+    "retrieved_at_utc": {"type": "string", "format": "date-time"},
+    "size_bytes": {"type": "integer", "minimum": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "publisher_checksum": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "value", "source_url"],
+      "properties": {
+        "algorithm": {"enum": ["MD5", "SHA-256"]},
+        "value": {"type": "string", "minLength": 32},
+        "source_url": {"type": "string", "pattern": "^https://"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publisher_timescale", "publisher_start", "publisher_end", "approved_utc_start", "approved_utc_end"],
+      "properties": {
+        "publisher_timescale": {"type": "string", "minLength": 1},
+        "publisher_start": {"type": "string", "minLength": 1},
+        "publisher_end": {"type": "string", "minLength": 1},
+        "approved_utc_start": {"type": "string", "format": "date-time"},
+        "approved_utc_end": {"type": "string", "format": "date-time"}
+      }
+    },
+    "terms_review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "terms_url", "reviewer", "review_record"],
+      "properties": {
+        "status": {"enum": ["pending", "approved_for_isolated_evaluation", "rejected"]},
+        "terms_url": {"type": "string", "pattern": "^https://"},
+        "reviewer": {"type": "string", "minLength": 1},
+        "review_record": {"type": "string", "minLength": 1}
+      }
+    },
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "approved_by", "approval_record"],
+      "properties": {
+        "status": {"enum": ["pending", "approved_for_isolated_evaluation", "rejected"]},
+        "approved_by": {"type": "string", "minLength": 1},
+        "approval_record": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

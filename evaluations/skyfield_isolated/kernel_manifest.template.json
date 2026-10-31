@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "filename": null,
+  "publisher": null,
+  "official_source_url": null,
+  "retrieved_at_utc": null,
+  "size_bytes": null,
+  "sha256": null,
+  "publisher_checksum": {
+    "algorithm": null,
+    "value": null,
+    "source_url": null
+  },
+  "coverage": {
+    "publisher_timescale": null,
+    "publisher_start": null,
+    "publisher_end": null,
+    "approved_utc_start": null,
+    "approved_utc_end": null
+  },
+  "terms_review": {
+    "status": "pending",
+    "terms_url": null,
+    "reviewer": null,
+    "review_record": null
+  },
+  "approval": {
+    "status": "pending",
+    "approved_by": null,
+    "approval_record": null
+  }
+}

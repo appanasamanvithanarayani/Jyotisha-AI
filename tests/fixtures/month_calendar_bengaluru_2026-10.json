@@ -1,0 +1,231 @@
+{
+ "status": "experimental_sunrise_month",
+ "year": 2026,
+ "month": 10,
+ "place": "Bengaluru",
+ "country_code": "IN",
+ "timezone": "Asia/Kolkata",
+ "today_local_date": "2026-10-30",
+ "days": [
+  {
+   "date": "2026-10-01",
+   "sunrise": "06:09",
+   "tithi_index": 20,
+   "nakshatra_index": 4
+  },
+  {
+   "date": "2026-10-02",
+   "sunrise": "06:09",
+   "tithi_index": 21,
+   "nakshatra_index": 5
+  },
+  {
+   "date": "2026-10-03",
+   "sunrise": "06:09",
+   "tithi_index": 22,
+   "nakshatra_index": 6
+  },
+  {
+   "date": "2026-10-04",
+   "sunrise": "06:09",
+   "tithi_index": 24,
+   "nakshatra_index": 7
+  },
+  {
+   "date": "2026-10-05",
+   "sunrise": "06:09",
+   "tithi_index": 25,
+   "nakshatra_index": 8
+  },
+  {
+   "date": "2026-10-06",
+   "sunrise": "06:09",
+   "tithi_index": 26,
+   "nakshatra_index": 9
+  },
+  {
+   "date": "2026-10-07",
+   "sunrise": "06:09",
+   "tithi_index": 27,
+   "nakshatra_index": 10
+  },
+  {
+   "date": "2026-10-08",
+   "sunrise": "06:09",
+   "tithi_index": 28,
+   "nakshatra_index": 11
+  },
+  {
+   "date": "2026-10-09",
+   "sunrise": "06:09",
+   "tithi_index": 29,
+   "nakshatra_index": 12
+  },
+  {
+   "date": "2026-10-10",
+   "sunrise": "06:09",
+   "tithi_index": 30,
+   "nakshatra_index": 13
+  },
+  {
+   "date": "2026-10-11",
+   "sunrise": "06:09",
+   "tithi_index": 1,
+   "nakshatra_index": 14
+  },
+  {
+   "date": "2026-10-12",
+   "sunrise": "06:10",
+   "tithi_index": 2,
+   "nakshatra_index": 15
+  },
+  {
+   "date": "2026-10-13",
+   "sunrise": "06:10",
+   "tithi_index": 3,
+   "nakshatra_index": 16
+  },
+  {
+   "date": "2026-10-14",
+   "sunrise": "06:10",
+   "tithi_index": 4,
+   "nakshatra_index": 17
+  },
+  {
+   "date": "2026-10-15",
+   "sunrise": "06:10",
+   "tithi_index": 5,
+   "nakshatra_index": 18
+  },
+  {
+   "date": "2026-10-16",
+   "sunrise": "06:10",
+   "tithi_index": 6,
+   "nakshatra_index": 18
+  },
+  {
+   "date": "2026-10-17",
+   "sunrise": "06:10",
+   "tithi_index": 7,
+   "nakshatra_index": 19
+  },
+  {
+   "date": "2026-10-18",
+   "sunrise": "06:10",
+   "tithi_index": 7,
+   "nakshatra_index": 20
+  },
+  {
+   "date": "2026-10-19",
+   "sunrise": "06:10",
+   "tithi_index": 8,
+   "nakshatra_index": 21
+  },
+  {
+   "date": "2026-10-20",
+   "sunrise": "06:11",
+   "tithi_index": 9,
+   "nakshatra_index": 22
+  },
+  {
+   "date": "2026-10-21",
+   "sunrise": "06:11",
+   "tithi_index": 10,
+   "nakshatra_index": 23
+  },
+  {
+   "date": "2026-10-22",
+   "sunrise": "06:11",
+   "tithi_index": 11,
+   "nakshatra_index": 24
+  },
+  {
+   "date": "2026-10-23",
+   "sunrise": "06:11",
+   "tithi_index": 12,
+   "nakshatra_index": 25
+  },
+  {
+   "date": "2026-10-24",
+   "sunrise": "06:11",
+   "tithi_index": 13,
+   "nakshatra_index": 26
+  },
+  {
+   "date": "2026-10-25",
+   "sunrise": "06:12",
+   "tithi_index": 14,
+   "nakshatra_index": 27
+  },
+  {
+   "date": "2026-10-26",
+   "sunrise": "06:12",
+   "tithi_index": 15,
+   "nakshatra_index": 1
+  },
+  {
+   "date": "2026-10-27",
+   "sunrise": "06:12",
+   "tithi_index": 16,
+   "nakshatra_index": 2
+  },
+  {
+   "date": "2026-10-28",
+   "sunrise": "06:12",
+   "tithi_index": 18,
+   "nakshatra_index": 3
+  },
+  {
+   "date": "2026-10-29",
+   "sunrise": "06:12",
+   "tithi_index": 19,
+   "nakshatra_index": 4
+  },
+  {
+   "date": "2026-10-30",
+   "sunrise": "06:13",
+   "tithi_index": 20,
+   "nakshatra_index": 5
+  },
+  {
+   "date": "2026-10-31",
+   "sunrise": "06:13",
+   "tithi_index": 21,
+   "nakshatra_index": 6
+  }
+ ],
+ "events": [
+  {
+   "date": "2026-10-02",
+   "key": "gandhi_jayanti",
+   "holiday": true
+  },
+  {
+   "date": "2026-10-11",
+   "key": "navaratri",
+   "holiday": false
+  },
+  {
+   "date": "2026-10-19",
+   "key": "durga_ashtami",
+   "holiday": false
+  },
+  {
+   "date": "2026-10-20",
+   "key": "maha_navami",
+   "holiday": false
+  },
+  {
+   "date": "2026-10-20",
+   "key": "vijayadashami",
+   "holiday": true
+  },
+  {
+   "date": "2026-10-25",
+   "key": "sharad_purnima",
+   "holiday": false
+  }
+ ],
+ "method": "astronomy-engine 2.1.19; lahiri_iae1985_true_1956_iau1976_wahr1980_v1 at each sunrise; approved GeoNames and pinned IANA tzdata",
+ "message": "Experimental Tithi and Nakshatra at local sunrise. Festival dates come from simple conventional rules (lunar month, Tithi and time of day) and can differ by a day from a printed Panchang; Islamic and state holidays are not included."
+}

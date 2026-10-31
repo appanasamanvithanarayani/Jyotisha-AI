@@ -35,8 +35,10 @@ data/raw/**
 data/processed/**
 data/tokenized/**
 data/manifests/sources.jsonl
+data/manifests/geonames_cities15000.json
 data/knowledge/records.jsonl
 data/knowledge/reports/
+data/review/*.jsonl
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/tokenized/.gitkeep
@@ -44,6 +46,12 @@ data/knowledge/reports/
 # Generated model/tokenizer artifacts and experiment logs
 artifacts/**
 !artifacts/.gitkeep
+evaluations/skyfield_isolated/kernels/
+evaluations/skyfield_isolated/.venv/
+evaluations/skyfield_isolated/venv/
+evaluations/skyfield_isolated/local_manifests/
+*.bsp
+*.spk
 checkpoints/
 runs/
 wandb/
@@ -52,3 +60,6 @@ wandb/
 *.pth
 *.safetensors
 
+
+# Local secrets (assistant API key)
+.env

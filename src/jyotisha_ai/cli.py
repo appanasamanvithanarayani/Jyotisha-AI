@@ -32,6 +32,10 @@ def _parser() -> argparse.ArgumentParser:
     chart.add_argument("--longitude", required=True, type=float, help="degrees east")
     chart.add_argument("--ayanamsha-degrees", required=True, type=float, help="explicit numeric sidereal offset")
     chart.add_argument("--ayanamsha-id", required=True, help="provenance label for the supplied offset")
+    web = subparsers.add_parser("serve", help="run the local-only experimental research app")
+    web.add_argument("--port", type=int, default=8765, help="localhost port (default: 8765)")
+    web.add_argument("--lan-ip", help="authenticated LAN access on this exact private IPv4 address until stopped")
+    web.add_argument("--lan-minutes", type=int, help="optional LAN shutdown after 1..120 minutes; otherwise run until stopped")
     sources = subparsers.add_parser("sources", help="manage the local source catalog")
     sources_sub = sources.add_subparsers(dest="sources_command", required=True)
     sources_sub.add_parser("validate", help="validate data/manifests/sources.jsonl")
@@ -71,6 +75,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     root = _project_root()
     try:
+        if args.command == "serve":
+            from jyotisha_ai.webapp import serve
+
+            serve(args.port, lan_ip=args.lan_ip, lan_minutes=args.lan_minutes)
+            return 0
         if args.command == "chart":
             report = calculate_chart(
                 datetime.fromisoformat(args.datetime), args.latitude, args.longitude,

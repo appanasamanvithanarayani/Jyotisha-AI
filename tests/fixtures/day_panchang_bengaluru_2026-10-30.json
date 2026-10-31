@@ -1,0 +1,174 @@
+{
+ "status": "experimental_sunrise_day",
+ "date": "2026-10-30",
+ "place": "Bengaluru",
+ "country_code": "IN",
+ "timezone": "Asia/Kolkata",
+ "today_local_date": "2026-10-30",
+ "weekday_index_sunday_first": 6,
+ "sunrise": "2026-10-30T06:13",
+ "sunset": "2026-10-30T17:54",
+ "next_sunrise": "2026-10-31T06:13",
+ "moonrise": "2026-10-30T21:56",
+ "moonset": "2026-10-30T10:20",
+ "madhyahna": "2026-10-30T12:03",
+ "dinamana_minutes": 701,
+ "ratrimana_minutes": 739,
+ "paksha": "krishna",
+ "sun_rashi_index": 7,
+ "tithi": [
+  {
+   "index": 20,
+   "starts_at": "2026-10-29T22:11",
+   "ends_at": "2026-10-30T19:25"
+  },
+  {
+   "index": 21,
+   "starts_at": "2026-10-30T19:25",
+   "ends_at": "2026-10-31T16:58"
+  }
+ ],
+ "karana_half_tithi": [
+  {
+   "index": 39,
+   "starts_at": "2026-10-29T22:11",
+   "ends_at": "2026-10-30T08:46"
+  },
+  {
+   "index": 40,
+   "starts_at": "2026-10-30T08:46",
+   "ends_at": "2026-10-30T19:25"
+  },
+  {
+   "index": 41,
+   "starts_at": "2026-10-30T19:25",
+   "ends_at": "2026-10-31T06:09"
+  },
+  {
+   "index": 42,
+   "starts_at": "2026-10-31T06:09",
+   "ends_at": "2026-10-31T16:58"
+  }
+ ],
+ "nakshatra": [
+  {
+   "index": 5,
+   "starts_at": "2026-10-29T11:12",
+   "ends_at": "2026-10-30T09:05",
+   "good_tara_nakshatras": [
+    2,
+    4,
+    6,
+    7,
+    9,
+    11,
+    13,
+    15,
+    16,
+    18,
+    20,
+    22,
+    24,
+    25,
+    27
+   ]
+  },
+  {
+   "index": 6,
+   "starts_at": "2026-10-30T09:05",
+   "ends_at": "2026-10-31T07:12",
+   "good_tara_nakshatras": [
+    1,
+    3,
+    5,
+    7,
+    8,
+    10,
+    12,
+    14,
+    16,
+    17,
+    19,
+    21,
+    23,
+    25,
+    26
+   ]
+  }
+ ],
+ "yoga": [
+  {
+   "index": 20,
+   "starts_at": "2026-10-30T00:06",
+   "ends_at": "2026-10-30T20:42"
+  },
+  {
+   "index": 21,
+   "starts_at": "2026-10-30T20:42",
+   "ends_at": "2026-10-31T17:32"
+  }
+ ],
+ "moon_rashi": [
+  {
+   "index": 3,
+   "starts_at": "2026-10-29T22:07",
+   "ends_at": "2026-11-01T00:01",
+   "good_chandrabalam_rashis": [
+    1,
+    3,
+    5,
+    6,
+    9,
+    10
+   ],
+   "ashtama_chandra_rashi": 8
+  }
+ ],
+ "varjyam": [
+  {
+   "nakshatra_index": 6,
+   "starts_at": "2026-10-30T16:49",
+   "ends_at": "2026-10-30T18:18"
+  }
+ ],
+ "timings": {
+  "brahma_muhurta": [
+   "2026-10-30T04:34",
+   "2026-10-30T05:23"
+  ],
+  "pratah_sandhya": [
+   "2026-10-30T04:59",
+   "2026-10-30T06:13"
+  ],
+  "abhijit": [
+   "2026-10-30T11:40",
+   "2026-10-30T12:27"
+  ],
+  "vijaya_muhurta": [
+   "2026-10-30T14:00",
+   "2026-10-30T14:47"
+  ],
+  "sayahna_sandhya": [
+   "2026-10-30T17:54",
+   "2026-10-30T19:08"
+  ],
+  "nishita_muhurta": [
+   "2026-10-30T23:39",
+   "2026-10-31T00:28"
+  ],
+  "rahu_kalam": [
+   "2026-10-30T10:36",
+   "2026-10-30T12:03"
+  ],
+  "yamaganda": [
+   "2026-10-30T14:58",
+   "2026-10-30T16:26"
+  ],
+  "gulika_kalam": [
+   "2026-10-30T07:40",
+   "2026-10-30T09:08"
+  ]
+ },
+ "method": "astronomy-engine 2.1.19; lahiri_iae1985_true_1956_iau1976_wahr1980_v1 at sunrise; approved GeoNames and pinned IANA tzdata",
+ "message": "Experimental sunrise-to-sunrise Panchang with each element's true start and end time. Rise/set use upper-limb standard refraction at sea level; muhurta, Chandrabalam, Tarabalam and Varjyam use conventional rules, not reviewed ones. No lunar month, festival, or prediction is calculated."
+}

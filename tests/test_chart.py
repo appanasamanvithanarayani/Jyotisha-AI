@@ -73,6 +73,38 @@ def test_usno_approximate_solar_reference_at_j2000():
     assert chart["positions"]["Sun"]["tropical_longitude"] == pytest.approx(usno_approx, abs=0.03)
 
 
+@pytest.mark.parametrize("moment, latitude, longitude, reference, ascendant", [
+    (
+        datetime(2000, 1, 1, 12, tzinfo=timezone.utc), 0.0, 0.0,
+        {"Sun": (280, 22, 8.1072), "Moon": (223, 19, 25.5052),
+         "Mercury": (271, 53, 21.3974), "Venus": (241, 33, 56.8382),
+         "Mars": (327, 57, 47.8891), "Jupiter": (25, 15, 11.1138),
+         "Saturn": (40, 23, 44.3886)}, (11, 22, 26.0386),
+    ),
+    (
+        datetime(2020, 1, 1, 0, tzinfo=timezone.utc), 28.6139, 77.209,
+        {"Sun": (280, 0, 34.2261), "Moon": (346, 8, 18.2932),
+         "Mercury": (274, 22, 59.9908), "Venus": (314, 24, 34.2298),
+         "Mars": (238, 23, 4.6406), "Jupiter": (276, 40, 13.2671),
+         "Saturn": (291, 23, 41.8947)}, (255, 25, 22.9389),
+    ),
+])
+def test_synthetic_tropical_chart_against_online_swetest(moment, latitude, longitude, reference, ascendant):
+    # Astrodienst swetest online 2.10.04, queried 2026-10-29:
+    # -ut12/-ut0 -eswe -house{lon},{lat},P -p0123456 -fTPL.
+    # The site returned no fallback warning, but actual server files are not
+    # independently inspectable. This is a limited comparison, not certification.
+    chart = calculate_chart(moment, latitude, longitude, 0, "synthetic-zero")
+    def degrees(parts):
+        d, m, s = parts
+        return d + m / 60 + s / 3600
+    def arcsecond_gap(actual, expected):
+        return abs((actual - expected + 180) % 360 - 180) * 3600
+    for body, expected in reference.items():
+        assert arcsecond_gap(chart["positions"][body]["tropical_longitude"], degrees(expected)) < 10
+    assert arcsecond_gap(chart["ascendant"]["tropical_longitude"], degrees(ascendant)) < 1
+
+
 @pytest.mark.parametrize("invalid", [datetime(2000, 1, 1, 12), datetime(1799, 1, 1, tzinfo=timezone.utc)])
 def test_invalid_time_is_rejected(invalid):
     with pytest.raises(ValueError):

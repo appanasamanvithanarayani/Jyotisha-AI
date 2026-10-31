@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#150d2e">
+  <title>Jyotisha AI</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="onboarding-active">
+  <div class="sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <section id="welcome-screen" class="welcome-screen" aria-labelledby="welcome-title"><div class="welcome-orb" aria-hidden="true">✦</div><span class="eyebrow">Jyotisha AI</span><form id="welcome-form">
+    <div id="step-welcome" class="onboarding-step"><h1 id="welcome-title" data-i18n="welcome">Welcome to Jyotisha AI</h1><p data-i18n="welcomeIntro">Explore your calendar and chart, one step at a time.</p><button id="welcome-next" type="button" data-i18n="getStarted">Get started</button></div>
+    <div id="step-language" class="onboarding-step" hidden><h1 data-i18n="choose">Choose your language</h1><label for="language-choice" data-i18n="choose">Choose your language</label><select id="language-choice" name="language"></select><p class="welcome-language-note" data-i18n="languageNote">Results, Panchang names and chart answers follow the language you choose.</p><button id="language-next" type="button" data-i18n="continue">Continue</button></div>
+    <div id="step-location" class="onboarding-step" hidden><h1 data-i18n="locationTitle">Set your calendar city</h1><p data-i18n="locationIntro">Allow location to suggest a nearby city, or enter one yourself.</p><button id="allow-location" type="button" data-i18n="allowLocation">Allow location</button><p id="location-status" class="location-status" role="status" aria-live="polite"></p><label for="welcome-city" data-i18n="city">Your city for the calendar</label><input id="welcome-city" name="city" type="text" list="place-suggestions" maxlength="200" autocomplete="off" data-i18n-placeholder="placePlaceholder" placeholder="Start typing a city" required><button type="submit" data-i18n="continue">Continue</button></div>
+  </form></section>
+  <datalist id="place-suggestions"></datalist>
+  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span>Jyotisha<span class="brand-accent">AI</span></span></a><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></header>
+  <main id="top">
+  <section id="day-panchang" aria-labelledby="dp-title">
+    <div class="hero-card">
+      <div class="hero-top"><span id="dp-moon" class="moon-icon" aria-hidden="true">🌙</span><div><h2 id="dp-title" class="eyebrow" data-i18n="dpTitle">Daily Panchang</h2><p id="dp-date-title" class="hero-date"></p><p id="dp-subtitle" class="hero-sub"></p></div></div>
+      <div id="dp-events" class="event-chips"></div>
+      <div id="city-panel" class="city-panel" hidden>
+        <label><span data-i18n="city">Your city for the calendar</span><input id="city-input" type="text" list="place-suggestions" maxlength="200" autocomplete="off" data-i18n-placeholder="placePlaceholder" placeholder="Start typing a city"></label>
+        <div class="city-actions"><button id="city-location" type="button" class="chip-btn" data-i18n="allowLocation">Allow location</button><button id="city-save" type="button" class="chip-btn solid" data-i18n="continue">Continue</button></div>
+        <p id="city-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="hero-place"><span id="dp-place"></span><button id="dp-city" type="button" class="chip-btn" data-i18n="changeCity">Change city</button></div>
+      <div id="dp-sun-strip" class="sun-strip"></div>
+      <div id="dp-key" class="key-chips"></div>
+    </div>
+    <div id="home-chat" class="card ai-card">
+      <div class="ai-head"><span class="ai-orb" aria-hidden="true">✨</span><div><h2 data-i18n="aiChatTitle">Chat with AI about your life</h2><p class="section-intro" data-i18n="aiChatSub">Tap a question and get an answer from your own chart.</p></div></div>
+      <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button><button type="button" class="ai-chip" data-i18n="aiQ4">Is this a good time to change my job?</button><button type="button" class="ai-chip" data-i18n="aiQ5">How is my health?</button><button type="button" class="ai-chip" data-i18n="aiQ6">How will today go for me?</button></div>
+    </div>
+    <div class="card cal-card">
+      <div class="month-controls"><button id="month-prev" type="button" data-i18n-aria="previous" aria-label="Previous month">‹</button><strong id="month-title"></strong><button id="month-next" type="button" data-i18n-aria="next" aria-label="Next month">›</button></div>
+      <div id="month-calendar" class="month-calendar" role="group" data-i18n-aria="daysAria" aria-label="Calendar days"></div>
+      <p id="cal-legend" class="legend"></p>
+      <p class="hint" data-i18n="calendarTap">Tap a day to see its full Panchang.</p>
+      <div id="month-events" class="cal-events"></div>
+    </div>
+    <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
+    <label class="date-pick"><span data-i18n="calendarDate">Calendar date</span><input id="dp-date" type="date" min="1970-01-01" max="2100-12-31"></label>
+    <p id="dp-status" role="status" aria-live="polite"></p>
+    <div id="dp-tables"></div>
+    <p id="dp-note" class="note"></p>
+  </section>
+  <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><details><summary><span data-i18n="servicesSummary">Horoscopes, love &amp; festivals</span> <span class="coming-soon" data-i18n="comingSoon">In development</span></summary><ul><li data-i18n="services1">Daily, weekly, monthly, and yearly readings need reviewed Jyotisha knowledge.</li><li data-i18n="services2">Love readings and compatibility scores are not calculated.</li><li data-i18n="services3">Festival dates need a validated, location-specific calendar.</li></ul></details></section>
+  <section id="kundli" class="card" aria-labelledby="kundli-title">
+    <span class="eyebrow" data-i18n="eyebrowBirth">Birth chart</span><h2 id="kundli-title" data-i18n="chartTitle">Create your Kundli</h2>
+    <p class="section-intro" data-i18n="chartIntro">Enter date, place, and local time of birth.</p>
+    <p id="availability" role="status"></p>
+    <form id="birth-form">
+      <fieldset id="birth-fields" disabled>
+      <label><span data-i18n="dob">Date of birth</span><input name="dob" type="date" min="1800-01-01" max="2100-12-31" required></label>
+      <label><span data-i18n="pob">Place of birth</span><input name="pob" type="text" list="place-suggestions" maxlength="200" autocomplete="off" data-i18n-placeholder="placePlaceholder" placeholder="Start typing a city" required></label>
+      <p class="place-hint" data-i18n="placeHint">Choose a matching city from the offline list; ambiguous names are not auto-selected.</p>
+      <label><span data-i18n="tob">Local time of birth</span><input name="tob" type="time" step="60" required></label>
+      <button type="submit"><span data-i18n="viewChart">View birth chart</span> <span aria-hidden="true">→</span></button>
+      </fieldset>
+    </form>
+    <p id="result" role="status" aria-live="polite"></p>
+  </section>
+  <section id="chart" class="card" hidden aria-labelledby="chart-title">
+    <span class="eyebrow" data-i18n="yourChart">Your chart</span><h2 id="chart-title"><span data-i18n="eyebrowBirth">Birth chart</span></h2>
+    <p id="chart-summary" class="section-intro"></p>
+    <div id="chart-stats" class="k-stats"></div>
+    <p id="chart-janma" class="section-intro"></p>
+    <div class="k-toggles">
+      <div id="style-toggle" class="seg" role="group"><button type="button" data-style="south" data-i18n="southIndian">South Indian</button><button type="button" data-style="north" data-i18n="chartStyleNorth">North Indian</button></div>
+      <div id="division-toggle" class="seg" role="group"><button type="button" data-division="d1" data-i18n="divD1">Rashi (D1)</button><button type="button" data-division="d9" data-i18n="divD9">Navamsa (D9)</button></div>
+    </div>
+    <div class="chart-frame">
+      <div id="d1-grid" class="d1-grid" role="img" data-i18n-aria="chartAria" aria-label="Birth chart"></div>
+      <div id="north-chart" class="north-chart" role="img" data-i18n-aria="chartAria" aria-label="Birth chart" hidden></div>
+    </div>
+    <p id="chart-legend" class="chart-legend"></p>
+    <p class="muted-note" style="text-align:center" data-i18n="chartLayout">Outlined sign is the Lagna · seven calculated planets plus mean-node Rahu and Ketu</p>
+    <h3 class="sub-h" data-i18n="detailsTitle">Planetary details</h3>
+    <div class="scroll"><table class="k-table"><thead><tr><th data-i18n="body">Body</th><th data-i18n="rashi">Rashi</th><th data-i18n="colDegree">Degree</th><th data-i18n="colNakshatra">Nakshatra · Pada</th><th data-i18n="colBhava">Bhava</th><th data-i18n="colStatus">Status</th></tr></thead><tbody id="details-body"></tbody></table></div>
+    <p class="muted-note" data-i18n="nodeNote">Rahu and Ketu use the mean node.</p>
+    <h3 class="sub-h" data-i18n="birthPanchangTitle">Panchang at birth</h3>
+    <div class="scroll"><table class="k-table"><tbody id="birth-panchang"></tbody></table></div>
+    <details id="dasha-details" class="fold" open><summary data-i18n="dashaTitle">Vimshottari Dasha</summary>
+      <div class="scroll"><table class="k-table"><thead><tr><th data-i18n="mahadashaTitle">Mahadasha</th><th data-i18n="colStart">Start</th><th data-i18n="colEnd">End</th></tr></thead><tbody id="mahadasha-body"></tbody></table></div>
+      <h3 id="antardasha-title" class="sub-h"></h3>
+      <div class="scroll"><table class="k-table"><thead><tr><th data-i18n="colLord">Lord</th><th data-i18n="colStart">Start</th><th data-i18n="colEnd">End</th></tr></thead><tbody id="antardasha-body"></tbody></table></div>
+      <p class="muted-note" data-i18n="dashaNote">Dates use 365.25-day years and are approximate.</p>
+    </details>
+    <details class="fold"><summary data-i18n="showPositions">Show numerical positions</summary><div class="scroll"><table class="k-table"><thead><tr><th data-i18n="body">Body</th><th data-i18n="tropical">Tropical °</th><th data-i18n="sidereal">Sidereal °</th><th data-i18n="rashi">Rashi</th><th data-i18n="house">Whole-sign bhava</th></tr></thead><tbody id="chart-positions"></tbody></table></div></details>
+  </section>
+  <section id="rashi" class="card" aria-labelledby="rashi-title">
+    <h2 id="rashi-title"></h2>
+    <p id="rashi-intro" class="section-intro" data-i18n="rashiIntro">Today's outlook for each Moon sign, from where the Moon is today.</p>
+    <div id="rashi-mode" class="seg" role="group"><button type="button" data-rmode="day" class="on" data-i18n="viewDay">Day</button><button type="button" data-rmode="week" data-i18n="viewWeek">Week</button></div>
+    <div class="day-bar"><button id="rashi-prev" type="button" data-i18n="previousDay">Previous day</button><button id="rashi-today" type="button" data-i18n="today">Today</button><button id="rashi-next" type="button" data-i18n="nextDay">Next day</button></div>
+    <p id="rashi-moon" class="muted-note"></p>
+    <div id="rashi-list" class="rashi-list"></div>
+  </section>
+  <section id="chat" class="card" aria-labelledby="chat-title">
+    <span class="eyebrow" data-i18n="eyebrowGuide">Chart guide</span><h2 id="chat-title" data-i18n="chartQuestion">Ask about your chart</h2>
+    <p class="section-intro" data-i18n="chartLanguage">Answers report calculated facts only; interpretations are unavailable.</p>
+    <div id="chat-log" class="chat-log" role="log" aria-live="polite"></div>
+    <div class="prompts"><button type="button" class="prompt prompt-main" data-question="Give me my Jathakam" data-i18n="myJathakam">My Jathakam</button><button type="button" class="prompt" data-question="What is my Lagna?" data-i18n="myLagna">My Lagna</button><button type="button" class="prompt" data-question="Where is the Moon?" data-i18n="moonPosition">Moon position</button><button type="button" class="prompt" data-question="Which planets are in house 1?" data-i18n="firstHouse">1st house</button></div>
+    <form id="chat-form" class="chat-controls"><label><span data-i18n="question">Question</span><input id="chat-question" type="text" maxlength="300" autocomplete="off" required></label><button id="chat-send" type="submit" data-i18n="send">Ask</button></form>
+  </section>
+  </main>
+  <nav class="bottom-nav" aria-label="App navigation"><a href="#home" class="active"><span aria-hidden="true">🏠</span><span data-i18n="home">Home</span></a><a href="#kundli"><span aria-hidden="true">🪐</span><span data-i18n="kundli">Kundli</span></a><a href="#chat"><span aria-hidden="true">💬</span><span data-i18n="ask">Ask</span></a><a href="#rashi"><span aria-hidden="true">🔮</span><span data-i18n="rashiphal">Rashiphal</span></a></nav>
+  <script src="/locales.js"></script>
+  <script src="/chart-ui.js"></script>
+  <script src="/calendar-ui.js"></script>
+  <script src="/panchang-names.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

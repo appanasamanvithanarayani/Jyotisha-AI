@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jyotisha AI · Research Studio</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0d1020;--panel:#171b30;--line:#30364d;--text:#f4f0e8;--muted:#b7b9c9;--gold:#e8bd6e;--green:#8dd9b2;--red:#f29ca4}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#2a2751 0,transparent 34%),var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    header,main,footer{max-width:1120px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.brand{font-weight:750;letter-spacing:.04em;font-size:1.2rem}.brand span{color:var(--gold)}.pill{border:1px solid #876c42;border-radius:99px;color:var(--gold);padding:5px 12px;font-size:.8rem}h1{font-size:clamp(2.1rem,5vw,4rem);line-height:1.05;margin:28px 0 12px}h2{font-size:1.35rem;margin:0 0 16px}p{color:var(--muted)}.lede{font-size:1.15rem;max-width:750px}.grid{display:grid;grid-template-columns:minmax(300px,1.15fr) minmax(280px,.85fr);gap:20px;margin-top:28px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 14px 35px #05071348}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.wide{grid-column:1/-1}label{display:block;color:#e1dfdf;font-size:.9rem;font-weight:600}input{display:block;width:100%;margin-top:6px;padding:11px 12px;background:#0e1222;border:1px solid #434861;border-radius:9px;color:var(--text);font:inherit}input:focus{outline:2px solid var(--gold);outline-offset:1px}.hint{font-size:.8rem;color:var(--muted);margin:4px 0 0}.check{display:flex;gap:10px;align-items:flex-start;margin:18px 0;color:var(--muted);font-size:.88rem}.check input{width:auto;margin:4px 0 0}button{background:var(--gold);color:#1e1a16;border:0;padding:12px 18px;border-radius:9px;font:inherit;font-weight:750;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.status{margin-top:12px;min-height:24px}.error{color:var(--red)}.good{color:var(--green)}.metric{padding:14px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.metric strong{color:var(--gold)}.notice{border-left:3px solid var(--gold);padding-left:14px;margin-top:20px}.notice p{margin:8px 0}.results{margin-top:22px}.results[hidden]{display:none}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted)}.scroll{overflow:auto}.tag{font-size:.78rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em}footer{font-size:.85rem;color:var(--muted)}@media(max-width:760px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.wide{grid-column:auto}header{gap:10px;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <header><div class="brand">✦ <span>Jyotisha</span> AI</div><div class="pill">Local research preview · no trained AI</div></header>
+  <main>
+    <div class="tag">Birth chart laboratory</div>
+    <h1>Explore the calculation.<br>Keep the evidence visible.</h1>
+    <p class="lede">A private, local interface for the project's experimental birth-instant calculator. It shows arithmetic and provenance—not predictions, verified Jyotisha rules, or a trained language model.</p>
+    <div class="grid">
+      <section class="panel" aria-labelledby="chart-title">
+        <h2 id="chart-title">Birth details</h2>
+        <form id="chart-form">
+          <div class="fields">
+            <label>Date and local time<input name="birth_datetime" type="datetime-local" step="1" required></label>
+            <label>Historical UTC offset<input name="utc_offset" type="text" placeholder="+05:30" pattern="[+-](0[0-9]|1[0-4]):[0-5][0-9]" required><span class="hint">Enter explicitly; no timezone lookup.</span></label>
+            <label>Latitude ° north<input name="latitude" type="number" min="-90" max="90" step="any" required></label>
+            <label>Longitude ° east<input name="longitude" type="number" min="-180" max="180" step="any" required></label>
+            <label>Ayanamsha value °<input name="ayanamsha_degrees" type="number" min="-40" max="40" step="any" required></label>
+            <label>Ayanamsha ID<input name="ayanamsha_id" type="text" maxlength="120" placeholder="Named setting" required></label>
+            <label class="wide">Source of ayanamsha value<input name="ayanamsha_source" type="text" maxlength="300" placeholder="Edition/table or documented calculation source" required><span class="hint">A source label is not automatic verification.</span></label>
+          </div>
+          <label class="check"><input name="experimental_ack" type="checkbox" required><span>I understand this calculator is not independently benchmarked and will not treat its output as a verified horoscope or prediction.</span></label>
+          <button type="submit">Calculate experimental chart</button>
+          <div id="message" class="status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+      <aside class="panel" aria-labelledby="readiness-title">
+        <h2 id="readiness-title">Project readiness</h2>
+        <div class="metric"><span>Knowledge records</span><strong id="records">—</strong></div>
+        <div class="metric"><span>Research areas</span><strong id="areas">—</strong></div>
+        <div class="metric"><span>Reviewed Jyotisha records</span><strong id="reviewed">—</strong></div>
+        <div class="metric"><span>Model</span><strong>Not trained</strong></div>
+        <div class="notice"><strong>Deliberate boundaries</strong><p>No source is silently approved. No pretrained model or external AI API runs here. The browser sends inputs only to this computer; the server does not persist them.</p><p>Rahu/Ketu, Vargas, full sunrise Panchanga and interpretive readings are not provided by this preview.</p></div>
+      </aside>
+    </div>
+    <section id="results" class="panel results" hidden aria-labelledby="result-title">
+      <div class="tag">Experimental output · not independently benchmarked</div><h2 id="result-title">Birth-instant calculation</h2>
+      <p id="result-summary"></p><div class="scroll"><table><thead><tr><th>Body</th><th>Tropical longitude</th><th>Sidereal longitude</th><th>Rashi index</th><th>Whole-sign bhava</th></tr></thead><tbody id="positions"></tbody></table></div>
+      <p id="indices"></p><p id="dasha"></p><p id="conventions" class="hint"></p>
+    </section>
+  </main>
+  <footer>Project Jyotisha AI · Calculations and research review are separate from future model training. Nothing on this page is a personal prediction.</footer>
+  <script>
+    const form=document.getElementById('chart-form');
+    const message=document.getElementById('message');
+    const resultBox=document.getElementById('results');
+    const setText=(id,value)=>{document.getElementById(id).textContent=String(value)};
+    fetch('/api/status',{cache:'no-store'}).then(r=>r.json()).then(s=>{
+      setText('records',s.knowledge_records);setText('areas',s.inventory_areas);
+      setText('reviewed',s.knowledge_by_review_status.reviewed||0);
+    }).catch(()=>{setText('records','Unavailable');setText('areas','Unavailable');setText('reviewed','Unavailable')});
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();resultBox.hidden=true;message.textContent='Calculating locally…';message.className='status';
+      const data=new FormData(form);
+      const payload={birth_datetime:data.get('birth_datetime')+data.get('utc_offset'),latitude:Number(data.get('latitude')),longitude:Number(data.get('longitude')),ayanamsha_degrees:Number(data.get('ayanamsha_degrees')),ayanamsha_id:data.get('ayanamsha_id'),ayanamsha_source:data.get('ayanamsha_source'),experimental_ack:data.get('experimental_ack')==='on'};
+      try{
+        const response=await fetch('/api/chart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});
+        const out=await response.json();if(!response.ok)throw new Error(out.error||'Calculation blocked');
+        message.textContent='Calculation complete. This is not a verified chart.';message.className='status good';
+        setText('result-summary',`Ascendant: ${out.ascendant.sidereal_longitude.toFixed(4)}° sidereal · Rashi ${out.ascendant.rashi_index}. UTC: ${out.input.utc_datetime}`);
+        const rows=document.getElementById('positions');rows.replaceChildren();
+        for(const [name,position] of Object.entries(out.positions)){
+          const tr=document.createElement('tr');
+          for(const value of [name,position.tropical_longitude.toFixed(4)+'°',position.sidereal_longitude.toFixed(4)+'°',position.rashi_index,position.whole_sign_bhava]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}
+          rows.appendChild(tr);
+        }
+        const p=out.panchanga_at_birth;
+        setText('indices',`At-birth indices only: Tithi ${p.tithi_index} · Half-tithi ${p.karana_half_tithi_index} · Nakshatra ${p.nakshatra_index}, pada ${p.nakshatra_pada} · Yoga ${p.yoga_index}. Not a sunrise Panchanga.`);
+        setText('dasha',`Vimshottari arithmetic: starting lord ${out.vimshottari.starting_lord}; remaining ${out.vimshottari.balance_years_at_birth} abstract years. Calendar dates are unavailable.`);
+        setText('conventions',`${out.conventions.ephemeris}; ${out.conventions.houses}. Ayanamsha: ${out.input.ayanamsha_id} (${out.input.ayanamsha_degrees}°), source supplied: ${out.input.ayanamsha_source}.`);
+        resultBox.hidden=false;
+      }catch(error){message.textContent=error.message;message.className='status error'}
+    });
+  </script>
+</body>
+</html>
