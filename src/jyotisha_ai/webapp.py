@@ -40,6 +40,34 @@ PUBLIC_ASK_PER_MINUTE = 8
 PUBLIC_ASK_PER_DAY = 60
 
 
+class TTLCache:
+    """Small in-memory cache of finished calculations (the same date and city always gives the same Panchang)."""
+
+    def __init__(self, max_entries: int = 4000, ttl_seconds: float = 1800.0) -> None:
+        self._items: dict[object, tuple[float, object]] = {}
+        self._max, self._ttl = max_entries, ttl_seconds
+        self._lock = Lock()
+
+    def get(self, key: object, now: float | None = None):
+        now = clock_time.monotonic() if now is None else now
+        with self._lock:
+            hit = self._items.get(key)
+            if hit is None or now - hit[0] >= self._ttl:
+                self._items.pop(key, None)
+                return None
+            return hit[1]
+
+    def put(self, key: object, value: object, now: float | None = None) -> None:
+        now = clock_time.monotonic() if now is None else now
+        with self._lock:
+            if len(self._items) >= self._max:
+                self._items.pop(next(iter(self._items)))   # drop the oldest entry
+            self._items[key] = (now, value)
+
+
+_RESULT_CACHE = TTLCache()
+
+
 class RateLimiter:
     """Small in-memory sliding-window limiter; fine for one instance, use one per process."""
 
@@ -301,21 +329,37 @@ def day_panchang_status(payload: object, root: Path | None = None) -> dict:
     """Sunrise-based day Panchang for one date and city; no result on any failure."""
     if not isinstance(payload, dict) or set(payload) != {"date", "place"}:
         raise ValueError("provide only date and place")
+    if not isinstance(payload["date"], str) or not isinstance(payload["place"], str):
+        raise ValueError("date and place must be text")
+    base = root or _project_root()
+    key = ("day", str(base), payload["date"].strip(), payload["place"].strip().lower())
+    if key is not None and (cached := _RESULT_CACHE.get(key)) is not None:
+        return cached
     try:
-        day = day_panchang(root or _project_root(), payload["date"], payload["place"])
+        day = day_panchang(base, payload["date"], payload["place"])
     except (DayPanchangError, ChartValidationError, AyanamshaUnavailableError) as exc:
         return {"status": "calculation_unavailable", "day": None, "message": f"No day Panchang was calculated: {exc}."}
-    return {"status": day["status"], "day": day, "message": day["message"]}
+    result = {"status": day["status"], "day": day, "message": day["message"]}
+    if key is not None:
+        _RESULT_CACHE.put(key, result)
+    return result
 
 
 def month_calendar_status(payload: object, root: Path | None = None) -> dict:
     """Sunrise Tithi/Nakshatra for every day of a month; no result on any failure."""
     if not isinstance(payload, dict) or set(payload) != {"year", "month", "place"}:
         raise ValueError("provide only year, month, and place")
+    base = root or _project_root()
+    key = ("month", str(base), payload["year"], payload["month"], payload["place"].strip().lower()) if isinstance(payload["place"], str) and type(payload["year"]) is int and type(payload["month"]) is int else None
+    if key is not None and (cached := _RESULT_CACHE.get(key)) is not None:
+        return cached
     try:
-        return month_calendar(root or _project_root(), payload["year"], payload["month"], payload["place"])
+        result = month_calendar(base, payload["year"], payload["month"], payload["place"])
     except (DayPanchangError, ChartValidationError, AyanamshaUnavailableError) as exc:
         return {"status": "calculation_unavailable", "days": None, "message": f"No calendar was calculated: {exc}."}
+    if key is not None:
+        _RESULT_CACHE.put(key, result)
+    return result
 
 
 def place_suggestions_status(payload: object, root: Path | None = None) -> dict:

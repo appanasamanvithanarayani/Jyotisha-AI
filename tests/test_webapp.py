@@ -712,3 +712,27 @@ def test_asset_links_appear_only_when_the_android_wrapper_is_configured(local_se
     assert status == 200 and target["package_name"] == "com.example.jyotisha" and target["sha256_cert_fingerprints"] == [fingerprint]
     monkeypatch.setenv("JYOTISHA_ANDROID_SHA256", "not-a-fingerprint")
     assert request(local_server, "GET", "/.well-known/assetlinks.json")[0] == 404
+
+
+def test_finished_panchang_results_are_cached_and_the_cache_expires_and_stays_bounded(monkeypatch):
+    from jyotisha_ai import webapp
+    from jyotisha_ai.webapp import TTLCache
+
+    cache = TTLCache(max_entries=2, ttl_seconds=10.0)
+    cache.put("a", 1, now=0.0); cache.put("b", 2, now=1.0)
+    assert cache.get("a", now=5.0) == 1
+    cache.put("c", 3, now=6.0)                    # over the limit: the oldest entry goes
+    assert cache.get("a", now=6.5) is None and cache.get("b", now=6.5) == 2
+    assert cache.get("b", now=11.5) is None       # expired
+
+    calls = []
+    real = webapp.day_panchang
+    monkeypatch.setattr(webapp, "_RESULT_CACHE", TTLCache())
+    monkeypatch.setattr(webapp, "day_panchang", lambda *args: calls.append(args) or real(*args))
+    first = webapp.day_panchang_status({"date": "2026-10-31", "place": "Bengaluru, IN"})
+    again = webapp.day_panchang_status({"date": "2026-10-31", "place": " bengaluru, in "})
+    assert first["day"] is not None and again is first and len(calls) == 1
+    other = webapp.day_panchang_status({"date": "2026-11-01", "place": "Bengaluru, IN"})
+    assert other["day"]["date"] == "2026-11-01" and len(calls) == 2
+    with pytest.raises(ValueError):
+        webapp.day_panchang_status({"date": 5, "place": "Bengaluru, IN"})
