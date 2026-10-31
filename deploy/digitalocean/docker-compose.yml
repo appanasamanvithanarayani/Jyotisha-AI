@@ -1,0 +1,33 @@
+# Droplet setup: the app plus Caddy, which gets a free HTTPS certificate automatically.
+# Usage (on the server, inside the repo folder):  cp deploy/digitalocean/env.example .env  &&  nano .env
+#                                               docker compose -f deploy/digitalocean/docker-compose.yml --env-file .env up -d --build
+services:
+  app:
+    build: ../..
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      JYOTISHA_ALLOWED_HOSTS: ${DOMAIN}
+      JYOTISHA_TRUST_PROXY: "1"
+      JYOTISHA_CONTACT: ${CONTACT_EMAIL}
+      JYOTISHA_ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      JYOTISHA_ASK_DAILY_LIMIT: ${ASK_DAILY_LIMIT:-1000}
+    expose:
+      - "8080"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - app
+volumes:
+  caddy_data:

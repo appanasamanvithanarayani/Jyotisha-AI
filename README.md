@@ -192,6 +192,14 @@ are git-ignored and excluded from the image. Place data © GeoNames, CC BY 4.0.
 Example (Google Cloud Run): `gcloud run deploy jyotisha --source . --region asia-south1
 --allow-unauthenticated --set-env-vars JYOTISHA_ALLOWED_HOSTS=<your-domain>,JYOTISHA_CONTACT=<email>`.
 
+**DigitalOcean.** Easiest: App Platform, which builds the `Dockerfile` from GitHub and
+gives HTTPS (`.do/app.yaml` is a ready spec; set the secret `GEMINI_API_KEY` and
+`JYOTISHA_ALLOWED_HOSTS` in the console). Cheaper/more control: a Droplet with Docker;
+copy `deploy/digitalocean/env.example` to `.env`, fill it in, and run
+`docker compose -f deploy/digitalocean/docker-compose.yml --env-file .env up -d --build`
+(Caddy fetches the HTTPS certificate for `DOMAIN`; a free `<ip>.sslip.io` name works
+if you have no domain).
+
 **Settings are remembered** on the device (`localStorage`: language, city, and
 whether the city follows your location). Onboarding (welcome, language, city)
 runs only on a fresh install and the app defaults to English; afterwards it opens

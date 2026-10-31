@@ -1,0 +1,31 @@
+# DigitalOcean App Platform spec: builds the Dockerfile from GitHub and gives you an HTTPS address.
+# Create with: doctl apps create --spec .do/app.yaml   (or paste into the console: Apps > Create > Edit spec)
+name: jyotisha-ai
+region: blr
+services:
+  - name: web
+    github:
+      repo: appanasamanvithanarayani/Jyotisha-AI
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xs
+    health_check:
+      http_path: /healthz
+    envs:
+      - key: JYOTISHA_TRUST_PROXY
+        value: "1"
+      - key: JYOTISHA_ASSISTANT_PROVIDER
+        value: gemini
+      - key: JYOTISHA_ASK_DAILY_LIMIT
+        value: "1000"
+      - key: JYOTISHA_CONTACT
+        value: "CHANGE-ME@example.com"
+      # After the first deploy, set this to your app's domain (the *.ondigitalocean.app address or your own).
+      - key: JYOTISHA_ALLOWED_HOSTS
+        value: "CHANGE-ME.ondigitalocean.app"
+      - key: GEMINI_API_KEY
+        type: SECRET
+        value: ""
