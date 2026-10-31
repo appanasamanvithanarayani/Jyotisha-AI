@@ -10,8 +10,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 import hmac
 import ipaddress
+import html
 import json
 import math
+import time as clock_time
+from collections import deque
+from threading import Lock
 import os
 from pathlib import Path
 import secrets
@@ -30,6 +34,31 @@ from jyotisha_ai.knowledge.inventory import inventory_report
 
 
 MAX_REQUEST_BYTES = 8192
+PUBLIC_API_PER_MINUTE = 120
+PUBLIC_ASK_PER_MINUTE = 8
+PUBLIC_ASK_PER_DAY = 60
+
+
+class RateLimiter:
+    """Small in-memory sliding-window limiter; fine for one instance, use one per process."""
+
+    def __init__(self) -> None:
+        self._hits: dict[str, deque] = {}
+        self._lock = Lock()
+
+    def allow(self, key: str, limit: int, window_seconds: float, now: float | None = None) -> bool:
+        now = clock_time.monotonic() if now is None else now
+        with self._lock:
+            hits = self._hits.setdefault(key, deque())
+            while hits and now - hits[0] >= window_seconds:
+                hits.popleft()
+            if len(hits) >= limit:
+                return False
+            hits.append(now)
+            if len(self._hits) > 20000:   # forget idle clients so memory stays bounded
+                for stale in [name for name, queue in self._hits.items() if not queue or now - queue[-1] >= window_seconds][:10000]:
+                    self._hits.pop(stale, None)
+            return True
 MAX_ASK_BYTES = 49152  # chart facts for the optional assistant
 DEFAULT_PORT = 8765
 PRIVATE_LAN_RANGES = tuple(ipaddress.IPv4Network(value) for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
@@ -49,7 +78,9 @@ def _validated_bind_host(host: str) -> str:
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    """Folder holding data/. JYOTISHA_HOME wins (installed images); otherwise the source checkout."""
+    configured = os.environ.get("JYOTISHA_HOME")
+    return Path(configured).resolve() if configured else Path(__file__).resolve().parents[2]
 
 
 def research_status(root: Path) -> dict:
@@ -341,11 +372,22 @@ class LocalServer(ThreadingHTTPServer):
     # requests to alternate between old and new code after a restart.
     allow_reuse_address = False
 
-    def __init__(self, port: int = DEFAULT_PORT, root: Path | None = None, *, bind_host: str = "127.0.0.1", lan_passcode: str | None = None):
+    def __init__(self, port: int = DEFAULT_PORT, root: Path | None = None, *, bind_host: str = "127.0.0.1", lan_passcode: str | None = None,
+                 public: bool = False, allowed_hosts: tuple[str, ...] = (), trust_proxy: bool = False, ask_daily_limit: int = 1000):
         if isinstance(port, bool) or not isinstance(port, int) or not 0 <= port <= 65535:
             raise ValueError("port must be an integer in 0..65535")
-        host = _validated_bind_host(bind_host)
-        self.lan_enabled = host != "127.0.0.1"
+        self.public = bool(public)
+        if self.public:
+            if bind_host not in ("0.0.0.0", "127.0.0.1"):
+                raise ValueError("public mode binds 0.0.0.0 (or 127.0.0.1 for tests)")
+            host = bind_host
+        else:
+            host = _validated_bind_host(bind_host)
+        self.allowed_hosts = tuple(name.strip().lower() for name in allowed_hosts if name.strip())
+        self.trust_proxy = bool(trust_proxy)
+        self.ask_daily_limit = int(ask_daily_limit)
+        self.limiter = RateLimiter()
+        self.lan_enabled = host != "127.0.0.1" and not self.public
         if self.lan_enabled and (not isinstance(lan_passcode, str) or len(lan_passcode) < 16):
             raise ValueError("LAN preview requires a passcode of at least 16 characters")
         self.lan_passcode = lan_passcode if self.lan_enabled else None
@@ -357,7 +399,40 @@ class LocalHandler(BaseHTTPRequestHandler):
     server: LocalServer
 
     def _local_host(self) -> bool:
+        if self.server.public:
+            host = (self.headers.get("Host") or "").strip().lower()
+            name = host if host.startswith("[") else host.rsplit(":", 1)[0]
+            return bool(name) and (not self.server.allowed_hosts or name in self.server.allowed_hosts)
         return self.headers.get("Host") == f"{self.server.server_address[0]}:{self.server.server_port}"
+
+    def _origin_ok(self) -> bool:
+        origin = self.headers.get("Origin")
+        if origin is None:
+            return True
+        if self.server.public:
+            return urlsplit(origin).netloc.lower() == (self.headers.get("Host") or "").strip().lower()
+        return origin == f"http://{self.server.server_address[0]}:{self.server.server_port}"
+
+    def _client(self) -> str:
+        if self.server.trust_proxy:
+            forwarded = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+            if forwarded:
+                return forwarded[:64]
+        return self.client_address[0]
+
+    def _limited(self, path: str) -> bool:
+        """Public mode only: answer 429 and return True when this client is over its allowance."""
+        if not self.server.public or not path.startswith("/api/"):
+            return False
+        who, limiter = self._client(), self.server.limiter
+        allowed = limiter.allow(f"api:{who}", PUBLIC_API_PER_MINUTE, 60.0)
+        if allowed and path == "/api/ask":
+            today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
+            allowed = (limiter.allow(f"ask-min:{who}", PUBLIC_ASK_PER_MINUTE, 60.0) and limiter.allow(f"ask-day:{who}", PUBLIC_ASK_PER_DAY, 86400.0)
+                       and limiter.allow(f"ask-all:{today}", self.server.ask_daily_limit, 86400.0))
+        if not allowed:
+            self._json(429, {"error": "too many requests, please try again later"}, {"Retry-After": "60"})
+        return not allowed
 
     def _authorized(self) -> bool:
         if not self.server.lan_enabled:
@@ -388,6 +463,8 @@ class LocalHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'")
+        if self.server.public and self.headers.get("X-Forwarded-Proto") == "https":
+            self.send_header("Strict-Transport-Security", "max-age=31536000")
         for name, value in (extra_headers or {}).items():
             self.send_header(name, value)
         self.end_headers()
@@ -397,15 +474,23 @@ class LocalHandler(BaseHTTPRequestHandler):
         self._send(status, json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8"), "application/json; charset=utf-8", extra_headers)
 
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+        path = urlsplit(self.path).path
+        if path == "/healthz":
+            self._json(200, {"ok": True})
+            return
         if not self._local_host():
             self._json(403, {"error": "local host required"})
             return
         if not self._authorized():
             return
-        path = urlsplit(self.path).path
+        if self._limited(path):
+            return
         if path == "/":
             body = files("jyotisha_ai.web").joinpath("birth.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")
+        elif path == "/privacy":
+            page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
+            self._send(200, page.replace("{{CONTACT}}", html.escape(os.environ.get("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/research":
             body = files("jyotisha_ai.web").joinpath("index.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")
@@ -446,8 +531,10 @@ class LocalHandler(BaseHTTPRequestHandler):
         if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask"):
             self._json(404, {"error": "not found"})
             return
-        if self.headers.get("Origin") not in (None, f"http://{self.server.server_address[0]}:{self.server.server_port}"):
+        if not self._origin_ok():
             self._json(403, {"error": "cross-origin requests are blocked"})
+            return
+        if self._limited(path):
             return
         if self.headers.get_content_type() != "application/json":
             self._json(415, {"error": "JSON required"})
@@ -484,6 +571,24 @@ class LocalHandler(BaseHTTPRequestHandler):
             self._json(400, {"error": str(exc)})
             return
         self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
+
+
+def serve_public(port: int | None = None) -> None:
+    """Internet-facing mode for a container host: HTTPS is terminated by the platform in front of this process."""
+    listen = port if port is not None else int(os.environ.get("PORT", "8080"))
+    allowed = tuple((os.environ.get("JYOTISHA_ALLOWED_HOSTS") or "").split(","))
+    trust_proxy = os.environ.get("JYOTISHA_TRUST_PROXY", "1") != "0"
+    ask_limit = int(os.environ.get("JYOTISHA_ASK_DAILY_LIMIT", "1000"))
+    with LocalServer(listen, bind_host="0.0.0.0", public=True, allowed_hosts=allowed, trust_proxy=trust_proxy, ask_daily_limit=ask_limit) as server:
+        print(f"Jyotisha app (public mode) listening on 0.0.0.0:{server.server_port}", flush=True)
+        if not server.allowed_hosts:
+            print("Warning: JYOTISHA_ALLOWED_HOSTS is not set, so any Host header is accepted.", flush=True)
+        if assistant.available():
+            print(f"Chat assistant ON ({assistant.provider()}): daily cap {ask_limit} questions; per visitor {PUBLIC_ASK_PER_DAY}/day.", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
 
 
 def serve(port: int = DEFAULT_PORT, *, lan_ip: str | None = None, lan_minutes: int | None = None) -> None:

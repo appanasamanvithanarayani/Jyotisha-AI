@@ -1,0 +1,10 @@
+.git
+.venv
+.env
+**/__pycache__
+.pytest_cache
+node_modules
+evaluations
+tests
+data/raw/*
+!data/raw/cities15000.zip

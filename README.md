@@ -178,6 +178,20 @@ The existing optional Anthropic provider remains available by setting
 present and no provider is chosen, online Ask stays off to avoid an accidental
 external request. `JYOTISHA_ASSISTANT_PROVIDER=offline` forces offline Ask.
 
+**Deploying to the internet.** `python -m jyotisha_ai serve --public` (what the
+`Dockerfile` runs) listens on `$PORT`, checks the `Host` header against
+`JYOTISHA_ALLOWED_HOSTS` (comma separated; set it to your domain), rate-limits every
+`/api/` call per visitor, caps chat questions per visitor and per day
+(`JYOTISHA_ASK_DAILY_LIMIT`, default 1000), and serves `/healthz` and `/privacy`
+(set `JYOTISHA_CONTACT` to your support email). HTTPS must be provided by the
+platform in front (Cloud Run, Render, Railway, Fly.io all do this). Set the AI
+provider key (`GEMINI_API_KEY` or `ANTHROPIC_API_KEY`, plus
+`JYOTISHA_ASSISTANT_PROVIDER`) as a secret in the platform, never in the image.
+Only the GeoNames place list under `data/raw` is shipped; the research source books
+are git-ignored and excluded from the image. Place data © GeoNames, CC BY 4.0.
+Example (Google Cloud Run): `gcloud run deploy jyotisha --source . --region asia-south1
+--allow-unauthenticated --set-env-vars JYOTISHA_ALLOWED_HOSTS=<your-domain>,JYOTISHA_CONTACT=<email>`.
+
 **Settings are remembered** on the device (`localStorage`: language, city, and
 whether the city follows your location). Onboarding (welcome, language, city)
 runs only on a fresh install and the app defaults to English; afterwards it opens

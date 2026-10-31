@@ -627,3 +627,53 @@ def test_assistant_continues_the_conversation_from_history(monkeypatch):
     for bad in ([{"role": "system", "text": "x"}], [{"role": "user", "text": ""}], [{"role": "user", "text": "x"}] * 13, "no"):
         with pytest.raises(ValueError):
             assistant.ask_status({"question": "q", "language": "en", "facts": ["x"], "history": bad})
+
+
+def test_rate_limiter_blocks_over_the_limit_and_recovers_after_the_window():
+    from jyotisha_ai.webapp import RateLimiter
+
+    limiter = RateLimiter()
+    assert all(limiter.allow("a", 3, 60.0, now=t) for t in (0.0, 1.0, 2.0))
+    assert not limiter.allow("a", 3, 60.0, now=3.0)
+    assert limiter.allow("b", 3, 60.0, now=3.0)          # other clients are unaffected
+    assert limiter.allow("a", 3, 60.0, now=61.0)          # the oldest hit has aged out
+
+
+@pytest.fixture
+def public_server():
+    server = LocalServer(port=0, bind_host="127.0.0.1", public=True, allowed_hosts=("app.example.com", "127.0.0.1"), trust_proxy=True, ask_daily_limit=1000)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield server
+    finally:
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()
+
+
+def test_public_mode_checks_hosts_origins_health_privacy_and_security_headers(public_server):
+    status, _, body = request(public_server, "GET", "/healthz", headers={"Host": "anything.invalid"})
+    assert status == 200 and json.loads(body) == {"ok": True}
+    status, _, _ = request(public_server, "GET", "/", headers={"Host": "evil.example.net"})
+    assert status == 403
+    status, headers, body = request(public_server, "GET", "/", headers={"Host": "app.example.com", "X-Forwarded-Proto": "https"})
+    assert status == 200 and headers.get("Strict-Transport-Security", "").startswith("max-age=")
+    status, _, body = request(public_server, "GET", "/privacy", headers={"Host": "app.example.com"})
+    assert status == 200 and b"Privacy and terms" in body and b"{{CONTACT}}" not in body and b"GeoNames" in body
+    payload = json.dumps({"question": "q", "language": "en", "facts": ["x"]})
+    same = {"Content-Type": "application/json", "Host": "app.example.com", "Origin": "https://app.example.com"}
+    other = {"Content-Type": "application/json", "Host": "app.example.com", "Origin": "https://evil.example.net"}
+    assert request(public_server, "POST", "/api/ask", payload, other)[0] == 403
+    assert request(public_server, "POST", "/api/ask", payload, same)[0] in (200, 422)
+
+
+def test_public_mode_rate_limits_each_visitor_separately_and_the_assistant_more_tightly(public_server):
+    payload = json.dumps({"question": "q", "language": "en", "facts": ["x"]})
+
+    def post(ip):
+        return request(public_server, "POST", "/api/ask", payload, {"Content-Type": "application/json", "Host": "app.example.com", "X-Forwarded-For": ip})[0]
+
+    statuses = [post("203.0.113.5") for _ in range(10)]
+    assert statuses[:8] == [200] * 8 and statuses[8:] == [429, 429]
+    assert post("198.51.100.9") == 200        # a different visitor is not blocked

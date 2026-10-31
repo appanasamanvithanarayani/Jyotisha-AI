@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import argparse
 import json
 import logging
@@ -19,7 +21,9 @@ from jyotisha_ai.knowledge.graha_research import graha_report
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    """Folder holding data/. JYOTISHA_HOME wins (installed images); otherwise the source checkout."""
+    configured = os.environ.get("JYOTISHA_HOME")
+    return Path(configured).resolve() if configured else Path(__file__).resolve().parents[2]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -34,6 +38,7 @@ def _parser() -> argparse.ArgumentParser:
     chart.add_argument("--ayanamsha-id", required=True, help="provenance label for the supplied offset")
     web = subparsers.add_parser("serve", help="run the local-only experimental research app")
     web.add_argument("--port", type=int, default=8765, help="localhost port (default: 8765)")
+    web.add_argument("--public", action="store_true", help="internet-facing mode for a container host (reads PORT, JYOTISHA_ALLOWED_HOSTS); HTTPS is terminated in front")
     web.add_argument("--lan-ip", help="authenticated LAN access on this exact private IPv4 address until stopped")
     web.add_argument("--lan-minutes", type=int, help="optional LAN shutdown after 1..120 minutes; otherwise run until stopped")
     sources = subparsers.add_parser("sources", help="manage the local source catalog")
@@ -76,9 +81,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     root = _project_root()
     try:
         if args.command == "serve":
-            from jyotisha_ai.webapp import serve
+            from jyotisha_ai.webapp import serve, serve_public
 
-            serve(args.port, lan_ip=args.lan_ip, lan_minutes=args.lan_minutes)
+            if args.public:
+                serve_public(None)
+            else:
+                serve(args.port, lan_ip=args.lan_ip, lan_minutes=args.lan_minutes)
             return 0
         if args.command == "chart":
             report = calculate_chart(

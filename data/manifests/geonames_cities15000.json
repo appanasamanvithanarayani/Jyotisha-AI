@@ -1,0 +1,17 @@
+{
+  "approved": true,
+  "approval_scope": "local_place_lookup_only",
+  "filename": "cities15000.zip",
+  "publisher": "GeoNames",
+  "source_url": "https://download.geonames.org/export/dump/cities15000.zip",
+  "rights_evidence_url": "https://download.geonames.org/export/dump/readme.txt",
+  "license": "CC BY 4.0",
+  "retrieved_at": "2026-10-28T18:00:44Z",
+  "retrieved_at_basis": "Local file CreationTimeUtc; origin recorded in Windows Zone.Identifier HostUrl",
+  "byte_size": 3364260,
+  "sha256": "4791f2ff95b6788322ca8c5ff990189d43674532c96c502156d8ef1956cc112c",
+  "zip_integrity": "testzip returned no errors",
+  "member": "cities15000.txt",
+  "member_rows": 34191,
+  "notes": "Approval is for offline geographic lookup only. It does not authorize training data or establish the historical accuracy of every place entry."
+}
