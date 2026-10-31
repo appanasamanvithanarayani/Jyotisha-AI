@@ -47,7 +47,7 @@ test('question panel reports calculated facts and never an invented placement', 
   assert.match(ui.answerChartQuestion(chart, 'Which planets are in house 10?'), /Sun, Mercury, Venus/);
   assert.match(ui.answerChartQuestion(chart, 'What is the Tithi?'), /Shukla Tritiya \(3\)/);
   assert.match(ui.answerChartQuestion(chart, 'Where is Rahu?'), /not calculated/);
-  assert.match(ui.answerChartQuestion(chart, 'Will I get married?'), /predictions are unavailable/);
+  assert.match(ui.answerChartQuestion(chart, 'Will I get married?'), /You can ask about your Lagna, planets, houses/);
   assert.match(ui.answerChartQuestion(null, 'Where is Moon?'), /Calculate a chart first/);
 });
 

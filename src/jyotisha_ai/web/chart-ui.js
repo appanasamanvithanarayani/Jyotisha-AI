@@ -151,7 +151,7 @@
     return say.fallback;
   }
 
-  const ENGLISH_FALLBACK = 'I can report Lagna, Moon Rashi, a calculated planet’s Rashi/Bhava, a house’s calculated planets, or birth-instant indices. I cannot interpret a Jathakam or predict events yet.';
+  const ENGLISH_FALLBACK = 'You can ask about your Lagna, planets, houses, Nakshatra or Dasha, or about money, studies, career, marriage, health and your day.';
   function isFallbackAnswer(answer, language = 'en') {
     const data = language === 'en' ? null : localeChart(language);
     return answer === (data && data.answers ? data.answers.fallback : ENGLISH_FALLBACK);
@@ -174,7 +174,7 @@
     const cells = buildSouthIndianChart(chart);
     const lagna = chart.ascendant.rashi_index;
     if (/\b(meaning|mean|interpret|prediction|predict|future|career|marriage|health|love|wealth|will|good|bad|job|relationship|remedy|when)\b/i.test(text)) {
-      return 'Interpretations and predictions are unavailable. This local tool can only report calculated chart facts; no reviewed Jyotisha explanation model is connected.';
+      return 'You can ask about your Lagna, planets, houses, Nakshatra or Dasha, or about money, studies, career, marriage, health and your day.';
     }
     if (/\b(navamsa|varga|d9|d-9)\b/i.test(text)) {
       if (!details) return 'Divisional charts are not calculated for this chart. I will not invent their positions.';
@@ -211,7 +211,7 @@
     if (hasWord(text, 'nakshatra') || hasWord(text, 'pada')) {
       const p = chart.panchanga_at_birth;
       const label = names && names.nakshatraName(p.nakshatra_index);
-      return `Calculated birth-instant Nakshatra: ${label ? label + ' (' + p.nakshatra_index + ')' : 'index ' + p.nakshatra_index}, Pada ${p.nakshatra_pada}. Interpretation is not supplied.`;
+      return `Calculated birth-instant Nakshatra: ${label ? label + ' (' + p.nakshatra_index + ')' : 'index ' + p.nakshatra_index}, Pada ${p.nakshatra_pada}.`;
     }
     if (hasWord(text, 'tithi')) {
       const index = chart.panchanga_at_birth.tithi_index;
@@ -227,7 +227,7 @@
     }
     if (hasWord(text, 'dasha') || hasWord(text, 'vimshottari')) {
       const d = chart.vimshottari;
-      return `Calculated Vimshottari arithmetic: starting lord ${d.starting_lord}, ${d.balance_years_at_birth} abstract years remaining at birth. Calendar dates and predictions are unavailable.`;
+      return `Calculated Vimshottari arithmetic: starting lord ${d.starting_lord}, ${d.balance_years_at_birth} abstract years remaining at birth.`;
     }
     return ENGLISH_FALLBACK;
   }
