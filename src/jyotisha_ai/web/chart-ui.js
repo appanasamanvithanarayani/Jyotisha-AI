@@ -1102,7 +1102,26 @@
     }));
   }
 
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, signName, bodyName });
+  // A descriptive overlap count, NOT Ashtakoota/Guna Milan or a relationship prediction.
+  // Equal weights avoid inventing a traditional Jyotisha scoring rule.
+  function chartOverlap(first, second) {
+    const features = [
+      ['moonRashi', chart => chart.positions && chart.positions.Moon && chart.positions.Moon.rashi_index, 12],
+      ['birthNakshatra', chart => chart.panchanga_at_birth && chart.panchanga_at_birth.nakshatra_index, 27],
+      ['lagnaRashi', chart => chart.ascendant && chart.ascendant.rashi_index, 12],
+      ['venusRashi', chart => chart.positions && chart.positions.Venus && chart.positions.Venus.rashi_index, 12],
+    ];
+    if (!first || !second) throw new Error('Two calculated birth charts are required');
+    const rows = features.map(([key, read, max]) => {
+      const a = read(first), b = read(second);
+      if (!Number.isInteger(a) || a < 1 || a > max || !Number.isInteger(b) || b < 1 || b > max)
+        throw new Error(`Missing or invalid calculated ${key}`);
+      return { key, first: a, second: b, shared: a === b };
+    });
+    const shared = rows.filter(row => row.shared).length;
+    return { shared, total: rows.length, percentage: Math.round(shared / rows.length * 100), rows, method: 'exact-placement-overlap-v1' };
+  }
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

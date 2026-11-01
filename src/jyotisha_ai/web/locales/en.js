@@ -115,6 +115,7 @@
       "viewDay": "Day",
       "viewWeek": "Week",
       "viewMonth": "Month",
+      "privacyLink": "Privacy and terms",
       "forgetProfile": "Forget my saved birth details",
       "aiChatTitle": "Chat with AI about your life",
       "aiChatSub": "Tap a question and get an answer from your own chart.",

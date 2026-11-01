@@ -53,7 +53,25 @@
     <div id="dp-tables"></div>
     <p id="dp-note" class="note"></p>
   </section>
-  <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><details><summary><span data-i18n="servicesSummary">Horoscopes, love &amp; festivals</span> <span class="coming-soon" data-i18n="comingSoon">In development</span></summary><ul><li data-i18n="services1">Daily, weekly, monthly, and yearly readings need reviewed Jyotisha knowledge.</li><li data-i18n="services2">Love readings and compatibility scores are not calculated.</li><li data-i18n="services3">Festival dates need a validated, location-specific calendar.</li></ul></details></section>
+  <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><details><summary><span data-i18n="servicesSummary">Horoscopes, love &amp; festivals</span> <span class="coming-soon" data-i18n="comingSoon">In development</span></summary><ul><li data-i18n="services1">Daily, weekly, monthly, and yearly readings need reviewed Jyotisha knowledge.</li><li data-i18n="services3">Festival dates need a validated, location-specific calendar.</li></ul></details></section>
+  <section id="relationship" class="card" aria-labelledby="relationship-title">
+    <span class="eyebrow" id="relationship-eyebrow">Relationships</span>
+    <h2 id="relationship-title">Love &amp; chart comparison</h2>
+    <p id="relationship-intro" class="section-intro"></p>
+    <button id="relationship-reading" type="button"></button>
+    <div id="relationship-reading-result" aria-live="polite"></div>
+    <h3 id="relationship-compare-title" class="sub-h"></h3>
+    <form id="relationship-form">
+      <label><span data-i18n="dob">Date of birth</span><input id="partner-dob" name="partner-dob" type="date" min="1970-01-01" max="2100-12-31" required></label>
+      <label><span data-i18n="pob">Place of birth</span><input id="partner-pob" name="partner-pob" type="text" list="place-suggestions" maxlength="200" autocomplete="off" required></label>
+      <label><span data-i18n="tob">Local time of birth</span><input id="partner-tob" name="partner-tob" type="time" step="60" required></label>
+      <button id="relationship-submit" type="submit"></button>
+    </form>
+    <p id="relationship-status" role="status" aria-live="polite"></p>
+    <div id="relationship-result" aria-live="polite"></div>
+    <p id="relationship-note" class="muted-note"></p>
+  </section>
+  <p id="legal" class="legal"><a href="/privacy" data-i18n="privacyLink">Privacy and terms</a></p>
   <section id="kundli" class="card" aria-labelledby="kundli-title">
     <span class="eyebrow" data-i18n="eyebrowBirth">Birth chart</span><h2 id="kundli-title" data-i18n="chartTitle">Create your Kundli</h2>
     <p class="section-intro" data-i18n="chartIntro">Enter date, place, and local time of birth.</p>
@@ -114,7 +132,7 @@
     <form id="chat-form" class="chat-controls"><label><span data-i18n="question">Question</span><input id="chat-question" type="text" maxlength="300" autocomplete="off" required></label><button id="chat-send" type="submit" data-i18n="send">Ask</button></form>
   </section>
   </main>
-  <nav class="bottom-nav" aria-label="App navigation"><a href="#home" class="active"><span aria-hidden="true">🏠</span><span data-i18n="home">Home</span></a><a href="#kundli"><span aria-hidden="true">🪐</span><span data-i18n="kundli">Kundli</span></a><a href="#chat"><span aria-hidden="true">💬</span><span data-i18n="ask">Ask</span></a><a href="#rashi"><span aria-hidden="true">🔮</span><span data-i18n="rashiphal">Rashiphal</span></a></nav>
+  <nav class="bottom-nav" aria-label="App navigation"><a href="#home" class="active"><span aria-hidden="true">🏠</span><span data-i18n="home">Home</span></a><a href="#kundli"><span aria-hidden="true">🪐</span><span data-i18n="kundli">Kundli</span></a><a href="#relationship"><span aria-hidden="true">♡</span><span id="relationship-nav">Love</span></a><a href="#chat"><span aria-hidden="true">💬</span><span data-i18n="ask">Ask</span></a><a href="#rashi"><span aria-hidden="true">🔮</span><span data-i18n="rashiphal">Rashiphal</span></a></nav>
   <script src="/locales.js"></script>
   <script src="/chart-ui.js"></script>
   <script src="/calendar-ui.js"></script>

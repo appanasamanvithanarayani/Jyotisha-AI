@@ -88,7 +88,8 @@ def test_panchang_names_script_and_place_datalist_are_served(local_server):
     status, _, page = request(local_server, "GET", "/")
     assert status == 200
     assert b'id="place-suggestions"' in page
-    assert page.count(b'type="text" list="place-suggestions"') == 3
+    assert page.count(b'type="text" list="place-suggestions"') == 4
+    assert b'id="relationship-form"' in page
     assert b'src="/panchang-names.js"' in page
     assert b'src="/app.js"' in page and b'href="/app.css"' in page
     status, headers, script = request(local_server, "GET", "/app.js")

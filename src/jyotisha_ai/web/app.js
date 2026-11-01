@@ -9,7 +9,7 @@
   const state = {
     lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
     view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
-    chart: null, details: null, resolved: null, kundli: { style: 'south', division: 'd1' },
+    chart: null, details: null, resolved: null, partnerChart: null, showLoveReading: false, kundli: { style: 'south', division: 'd1' },
   };
   const t = key => calendarUI.tr(state.lang, key);
   const bodyName = name => chartUI.bodyName(name, state.lang);
@@ -45,13 +45,14 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'kundli', 'chat', 'rashi']) {
+  for (const name of ['home', 'kundli', 'relationship', 'chat', 'rashi']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
   }
-  pages.home.append($('day-panchang'), $('services'));
+  pages.home.append($('day-panchang'), $('services'), $('legal'));
   pages.kundli.append($('kundli'), $('chart'));
+  pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));
   pages.rashi.appendChild($('rashi'));
   function showPage(name) {
@@ -70,6 +71,87 @@
     if (Object.hasOwn(pages, target)) { event.preventDefault(); showPage(target); }
   }));
   showPage('home');
+
+  // Comparison labels are author-written UI text, not source-verified Jyotisha rules.
+  const RELATIONSHIP_COPY = {
+    en: {
+      nav: 'Love', eyebrow: 'Relationships', title: 'Love & chart comparison',
+      intro: 'View an experimental relationship-focused reading from your chart, then compare four calculated placements with another chart.',
+      reading: 'Show my love reading', compare: 'Compare two charts', submit: 'Compare charts',
+      needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
+      calculating: 'Calculating the second chart…', failed: 'The second chart could not be calculated. Check the birth details and select a city from the list.',
+      shared: 'Same placement', different: 'Different placement', score: 'Placement overlap', result: '{n} of 4 placements match',
+      moon: 'Moon sign', nakshatra: 'Birth Nakshatra', lagna: 'Lagna sign', venus: 'Venus sign',
+      note: 'Experimental chart-overlap count only: one point each for identical Moon sign, birth Nakshatra, Lagna sign and Venus sign. This is NOT a traditional compatibility/Guna Milan score, a love prediction, or advice about whether to marry. The reading is unreviewed. Enter another person’s details only with their consent. This form submits them to the chart server; the feature does not save them on this device. If ads are enabled, third-party scripts may also run on this page.',
+      error: 'Calculated chart data is incomplete; no comparison was made.',
+    },
+    te: {
+      nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతకాల పోలిక',
+      intro: 'మీ జాతకం ఆధారంగా ప్రయోగాత్మక సంబంధాల వివరణ చూడండి. తరువాత రెండు జాతకాలలో నాలుగు గణించిన స్థానాలను పోల్చండి.',
+      reading: 'నా ప్రేమ వివరణ చూపు', compare: 'రెండు జాతకాలను పోల్చండి', submit: 'జాతకాలను పోల్చండి',
+      needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
+      calculating: 'రెండవ జాతకాన్ని గణిస్తున్నాం…', failed: 'రెండవ జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
+      shared: 'ఒకే స్థానం', different: 'వేర్వేరు స్థానాలు', score: 'జాతకాల స్థానాల పోలిక', result: '4లో {n} స్థానాలు ఒకేలా ఉన్నాయి',
+      moon: 'చంద్ర రాశి', nakshatra: 'జన్మ నక్షత్రం', lagna: 'లగ్న రాశి', venus: 'శుక్ర రాశి',
+      note: 'ఇది ప్రయోగాత్మక జాతక స్థానాల పోలిక మాత్రమే: చంద్ర రాశి, జన్మ నక్షత్రం, లగ్న రాశి, శుక్ర రాశి ఒక్కొక్కటి ఒక పాయింట్. ఇది సంప్రదాయ గుణ మేళనం స్కోరు కాదు; ప్రేమ ఫలితం లేదా వివాహ నిర్ణయానికి సలహా కాదు. వివరణ నిపుణుల సమీక్ష పొందలేదు. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి. ఈ ఫారం వివరాలను జాతక సర్వర్‌కు పంపుతుంది; ఈ ఫీచర్ వాటిని మీ పరికరంలో సేవ్ చేయదు. ప్రకటనలు ప్రారంభిస్తే, ఈ పేజీలో మూడవ పక్షపు స్క్రిప్ట్‌లు కూడా పనిచేయవచ్చు.',
+      error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పోలిక చేయలేదు.',
+    },
+  };
+  const loveText = () => RELATIONSHIP_COPY[state.lang] || RELATIONSHIP_COPY.en;
+  function renderRelationship() {
+    const copy = loveText();
+    for (const [id, key] of [['relationship-nav', 'nav'], ['relationship-eyebrow', 'eyebrow'], ['relationship-title', 'title'],
+      ['relationship-intro', 'intro'], ['relationship-reading', 'reading'], ['relationship-compare-title', 'compare'],
+      ['relationship-submit', 'submit'], ['relationship-note', 'note']]) $(id).textContent = copy[key];
+    $('relationship-reading').disabled = !state.chart;
+    if (!state.chart) $('relationship-status').textContent = copy.needChart;
+    const reading = $('relationship-reading-result'); reading.replaceChildren();
+    if (state.chart && state.showLoveReading) {
+      try {
+        const lines = chartUI.readLife(state.chart, state.details, 'marriage', state.lang, null);
+        for (const line of lines) reading.appendChild(el('p', null, line));
+      } catch (_error) { reading.appendChild(el('p', null, copy.error)); }
+    }
+    const result = $('relationship-result'); result.replaceChildren();
+    if (!state.chart || !state.partnerChart) return;
+    try {
+      const match = chartUI.chartOverlap(state.chart, state.partnerChart);
+      const score = el('div', 'relationship-score');
+      score.append(el('span', null, copy.score), el('strong', null, `${match.percentage}%`));
+      const bar = el('progress'); bar.max = 100; bar.value = match.percentage;
+      bar.setAttribute('aria-label', copy.score); score.appendChild(bar);
+      score.appendChild(el('small', null, copy.result.replace('{n}', match.shared)));
+      result.appendChild(score);
+      const list = el('ul', 'relationship-list');
+      const labels = { moonRashi: copy.moon, birthNakshatra: copy.nakshatra, lagnaRashi: copy.lagna, venusRashi: copy.venus };
+      for (const item of match.rows) {
+        const value = index => item.key === 'birthNakshatra' ? names.nakshatraName(index, state.lang) : signName(index);
+        list.appendChild(el('li', null, `${labels[item.key]}: ${value(item.first)} / ${value(item.second)} — ${item.shared ? copy.shared : copy.different}`));
+      }
+      result.appendChild(list);
+    } catch (_error) { result.appendChild(el('p', null, copy.error)); }
+  }
+  $('relationship-reading').addEventListener('click', () => { state.showLoveReading = true; renderRelationship(); });
+  $('relationship-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const copy = loveText();
+    if (!state.chart) { $('relationship-status').textContent = copy.needChart; return; }
+    const input = { dob: $('partner-dob').value, pob: $('partner-pob').value.trim(), tob: $('partner-tob').value };
+    const ownChart = state.chart;
+    state.partnerChart = null; $('relationship-result').replaceChildren();
+    $('relationship-status').textContent = copy.calculating;
+    $('relationship-submit').disabled = true;
+    try {
+      const { ok, body } = await post('/api/birth-chart', input);
+      if (state.chart !== ownChart) return;
+      if (!ok || !body || !body.chart) throw new Error('Second chart unavailable');
+      chartUI.chartOverlap(state.chart, body.chart);
+      state.partnerChart = body.chart;
+      $('relationship-status').textContent = '';
+      renderRelationship();
+    } catch (_error) { if (state.chart === ownChart) $('relationship-status').textContent = copy.failed; }
+    finally { $('relationship-submit').disabled = false; }
+  });
 
   /* ------------------------------------------------------------- language */
   const choice = $('language-choice');
@@ -90,6 +172,7 @@
     $('chat-question').placeholder = t('questionPlaceholder');
     $('dp-note').textContent = t('dpNote');
     renderHome();
+    renderRelationship();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
   }
@@ -863,6 +946,7 @@
   function startIntake() { intake.step = 'dob'; intake.dob = ''; intake.pob = ''; intake.tob = ''; intake.pending = null; resetChat(t('chatAskDob')); }
   function applyChart(body, inputs) {
     state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
+    state.partnerChart = null; state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
     try {
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
@@ -1000,6 +1084,9 @@
   $('forget-profile').addEventListener('click', () => {
     forgetProfile();
     state.chart = null; state.details = null; state.resolved = null;
+    state.partnerChart = null; state.showLoveReading = false;
+    for (const id of ['partner-dob', 'partner-pob', 'partner-tob']) $(id).value = '';
+    $('relationship-status').textContent = ''; renderRelationship();
     $('chart').hidden = true;
     setChatEnabled(true); startIntake();
   });

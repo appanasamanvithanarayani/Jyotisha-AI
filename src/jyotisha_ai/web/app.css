@@ -214,9 +214,19 @@ details.fold>div,details.fold>table{margin-bottom:12px}
 .more-section summary{cursor:pointer;font-weight:750;font-size:.9rem;display:flex;justify-content:space-between;gap:10px}
 .coming-soon{color:var(--rose);font-size:.7rem;font-weight:800;text-transform:uppercase}
 .more-section ul{margin:10px 0 0;padding-inline-start:20px;color:var(--muted);font-size:.84rem}
-.bottom-nav{position:fixed;z-index:40;bottom:12px;left:50%;transform:translateX(-50%);width:min(532px,calc(100% - 24px));display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px;
+.relationship-list{padding-inline-start:20px;line-height:1.7;color:var(--ink)}
+#relationship-reading-result{margin:12px 0}
+#relationship-reading-result p{font-size:.88rem;line-height:1.55}
+#relationship-result{margin:16px 0}
+.relationship-score{display:flex;flex-direction:column;gap:5px;padding:16px;border:1px solid var(--line);border-radius:18px;background:#fff8eb}
+.relationship-score strong{font-size:2.4rem;line-height:1.1;color:var(--night)}
+.relationship-score progress{width:100%;height:12px;accent-color:var(--saffron)}
+.relationship-score small{color:var(--muted)}
+#relationship-note{line-height:1.5}
+.bottom-nav{position:fixed;z-index:40;bottom:12px;left:50%;transform:translateX(-50%);width:min(532px,calc(100% - 24px));display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;
   border-radius:24px;background:rgba(21,13,46,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 16px 40px rgba(21,13,46,.5);border:1px solid rgba(242,193,78,.3)}
-.bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:18px;color:#cdbfeb;text-decoration:none;font-size:.7rem;font-weight:750;transition:all .2s}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:8px 2px;border-radius:18px;color:#cdbfeb;text-decoration:none;font-size:clamp(.6rem,2.5vw,.7rem);font-weight:750;transition:all .2s}
+.bottom-nav a span:not([aria-hidden="true"]){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bottom-nav a span[aria-hidden="true"]{font-size:1.3rem;line-height:1}
 .bottom-nav a.active{color:var(--night);background:linear-gradient(135deg,var(--gold),#ffd98a);box-shadow:0 6px 16px rgba(242,193,78,.45)}
 
@@ -303,7 +313,6 @@ body.page-chat .chat-controls{flex:0 0 auto}
 .rashi-card.mine{background:linear-gradient(180deg,#fff,#fff3d6);outline:2px solid var(--gold)}
 .rashi-card h3{font-size:1.02rem;margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rashi-card p{margin:4px 0;font-size:.9rem}
-.bottom-nav{grid-template-columns:repeat(4,1fr)}
 
 /* ---------- Home: chat with AI ---------- */
 .ai-card{background:linear-gradient(135deg,#2a1768,#6a2a8a);color:#fff;border:0;margin-bottom:16px}
@@ -338,3 +347,5 @@ body.page-chat .chat-controls{flex:0 0 auto}
 .rashi-moves h4{margin:0 0 6px;font-size:.9rem}
 
 .rashi-planets.remedies li{border-inline-start:3px solid var(--gold2);background:#fff8e6}
+
+.legal{text-align:center;font-size:.85rem;margin:18px 0 8px}.legal a{color:var(--muted)}

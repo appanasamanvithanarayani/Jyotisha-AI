@@ -140,9 +140,24 @@ holiday". The rules were checked against published 2025 and 2026 dates for
 Bengaluru (including Holi, Raksha Bandhan, Janmashtami, Diwali and the Adhika
 Jyeshtha year 2026), but they are simple conventional rules, not expert-reviewed:
 a printed Panchang can differ by a day, regional practice varies, and Islamic and
-state-specific holidays are not included. Horoscope periods and love readings
-are grouped in the "More to explore" section until there are reviewed rules and
-validated calculations; no scores or predictions are fabricated.
+state-specific holidays are not included. The Love tab provides an unreviewed,
+relationship-focused reading from the existing chart-reading code and a
+**descriptive chart-overlap count** for two calculated birth charts. Enter your
+own DOB/POB/TOB in Kundli first, then the other person's details in Love with
+their consent. The comparison counts exact agreement of Moon sign, birth
+Nakshatra, Lagna sign, and Venus sign (one point each). The displayed percentage
+is 0–100% in 25-point steps, with the 0–4 breakdown underneath. This
+project-defined overlap is **not** Ashtakoota/Guna Milan, a
+validated Jyotisha compatibility score, or a prediction of relationship
+success. The other person's details are sent to this chart server for the
+calculation but are not stored in browser localStorage by this feature. If
+optional ads are enabled, their third-party script may run on the same page;
+do not assume the form is private from that script. Both charts remain
+experimental, and the relationship reading requires expert review. The new
+Love screen is translated into English and Telugu; other interface languages
+currently fall back to English on this screen, while the underlying reading
+uses the translations available in `chart-ui.js`. Do not use the displayed
+overlap to decide whether to marry or end a relationship.
 
 **Optional online Ask provider.** Without a key, Ask uses limited offline keyword
 answers; this is not general multilingual understanding. To use

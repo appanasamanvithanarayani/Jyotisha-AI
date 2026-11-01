@@ -23,6 +23,27 @@ const chart = {
   vimshottari: { starting_lord: 'Saturn', balance_years_at_birth: 13.6 }
 };
 
+test('experimental chart overlap is symmetric, transparent, and rejects missing calculated positions', () => {
+  const another = {
+    ...chart,
+    ascendant: { ...chart.ascendant, rashi_index: 2 },
+    positions: { ...chart.positions, Moon: { ...chart.positions.Moon, rashi_index: 9 } },
+  };
+  const forward = ui.chartOverlap(chart, another);
+  const reverse = ui.chartOverlap(another, chart);
+  assert.equal(forward.method, 'exact-placement-overlap-v1');
+  assert.equal(forward.shared, 2);
+  assert.equal(forward.total, 4);
+  assert.equal(forward.percentage, 50);
+  assert.equal(reverse.shared, forward.shared);
+  assert.deepEqual(forward.rows.map(row => row.key), ['moonRashi', 'birthNakshatra', 'lagnaRashi', 'venusRashi']);
+  assert.equal(ui.chartOverlap(chart, chart).percentage, 100);
+  const none = { ...another, panchanga_at_birth: { ...another.panchanga_at_birth, nakshatra_index: 1 }, positions: { ...another.positions, Venus: { ...another.positions.Venus, rashi_index: 3 } } };
+  assert.equal(ui.chartOverlap(chart, none).percentage, 0);
+  assert.throws(() => ui.chartOverlap(chart, { ...another, positions: { ...another.positions, Venus: null } }), /Missing or invalid/);
+  assert.throws(() => ui.chartOverlap(null, chart), /Two calculated/);
+});
+
 test('South Indian D1 layout contains twelve fixed, unique signs', () => {
   const cells = ui.buildSouthIndianChart(chart);
   assert.equal(cells.length, 12);

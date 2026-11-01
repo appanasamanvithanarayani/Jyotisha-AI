@@ -12,6 +12,15 @@ const chart = require(path.join(root, 'chart-ui.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
+test('all five bottom tabs stay in one grid row', () => {
+  const css = fs.readFileSync(path.join(root, 'app.css'), 'utf8');
+  const navRules = [...css.matchAll(/(?:^|\n)\.bottom-nav\s*\{([^}]+)\}/g)];
+  assert.equal(navRules.length, 1);
+  assert.match(navRules[0][1], /grid-template-columns:repeat\(5,1fr\)/);
+  const html = fs.readFileSync(path.join(root, 'birth.html'), 'utf8');
+  assert.equal((html.match(/<a href="#(?:home|kundli|relationship|chat|rashi)"/g) || []).length, 5);
+});
+
 class Element {
   constructor(tag = 'div') {
     this.tag = tag; this.hidden = false; this.disabled = false; this.value = ''; this.textContent = ''; this.className = '';
@@ -324,4 +333,26 @@ test('the forget button removes the saved birth details and the chart', async ()
   assert.equal(storage.getItem('jyotisha.profile.v1'), null);
   assert.equal(app.element('chart').hidden, true);
   assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
+});
+
+test('relationship page compares a second synthetic chart without saving partner birth details', async () => {
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth });
+  await settle();
+  assert.match(app.element('relationship-title').textContent, /ప్రేమ/);
+  app.element('relationship-reading').listeners.click();
+  assert.ok(app.element('relationship-reading-result').children.length > 0);
+  app.element('partner-dob').value = '1998-10-23';
+  app.element('partner-pob').value = 'Bengaluru, IN';
+  app.element('partner-tob').value = '12:35';
+  await app.element('relationship-form').listeners.submit({ preventDefault() {} });
+  assert.deepEqual(birthRequests(app).at(-1).body, { dob: '1998-10-23', pob: 'Bengaluru, IN', tob: '12:35' });
+  const score = app.element('relationship-result').children[0];
+  assert.equal(score.children[1].textContent, '100%');
+  assert.equal(score.children[2].value, 100);
+  assert.match(score.children[3].textContent, /4లో 4/);
+  assert.equal(storage.getItem('jyotisha.partner.v1'), null);
+  app.element('forget-profile').listeners.click();
+  assert.equal(app.element('relationship-result').children.length, 0);
 });
