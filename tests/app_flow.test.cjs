@@ -548,3 +548,53 @@ test('outside the app Export / Share uses the browser share sheet, and never bre
   await settle();
   none.element('export-rashi').listeners.click(); await settle();           // no share support: falls back to a file download without throwing
 });
+
+
+test('with no share sheet available, Export / Share copies the text and says so, instead of silently doing nothing', async () => {
+  const copied = [];
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, navigator: { clipboard: { writeText: async text => { copied.push(text); } } } });
+  await settle();
+  app.element('export-rashi').listeners.click(); await settle();
+  assert.equal(copied.length, 1); assert.match(copied[0], /Aries/); assert.match(copied[0], /— Jyotisha AI/);
+  const toast = app.context.document.body.children.at(-1);
+  assert.equal(toast.textContent, calendar.tr('en', 'exportCopied'));
+
+  // a native share that fails (for example an older app without the plugin) also falls back to copying
+  const failing = [];
+  const second = boot({ storage, capacitor: { Plugins: { Share: { share: async () => { throw new Error('not implemented'); } } } },
+    navigator: { clipboard: { writeText: async text => { failing.push(text); } } } });
+  await settle();
+  second.element('export-rashi').listeners.click(); await settle();
+  assert.equal(failing.length, 1);
+});
+
+
+test('the PDF button shows only the text to print and opens the print dialog (native plugin in the app, window.print in a browser)', async () => {
+  const printed = [];
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { isNativePlatform: () => true, Plugins: { PdfPrint: { print: async options => { printed.push(options); } } } } });
+  await settle();
+  app.element('pdf-rashi').listeners.click();
+  await new Promise(resolve => setTimeout(resolve, 600));
+  assert.equal(printed.length, 1); assert.match(printed[0].title, /Rashiphal/);
+  const root = app.context.document.body.children.at(-1);
+  assert.equal(root.id, 'print-root');
+  const sheet = root.children[0];
+  assert.match(sheet.children[1].textContent, /Aries/);                       // the page to print holds the Rashiphalalu text
+  assert.match(sheet.children[2].textContent, /Jyotisha AI/);
+
+  const shared = [];
+  const older = boot({ storage, capacitor: { isNativePlatform: () => true, Plugins: { Share: { share: async o => { shared.push(o); } } } } });
+  await settle();
+  older.element('pdf-rashi').listeners.click(); await settle();             // an app without the PDF plugin shares the text instead
+  assert.equal(shared.length, 1);
+
+  let browserPrints = 0;
+  const web = boot({ storage });
+  web.context.window.print = () => { browserPrints += 1; };
+  await settle();
+  web.element('pdf-rashi').listeners.click();
+  await new Promise(resolve => setTimeout(resolve, 500));
+  assert.equal(browserPrints, 1);
+});

@@ -827,3 +827,26 @@ def test_chat_allowance_switch_sets_free_and_bonus_question_counts(local_server,
     assert result["chat_free_questions"] == 7 and result["chat_bonus_questions"] == 5          # out-of-range falls back to the default
     monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
     assert config()["rewarded_kundli"] is True
+
+
+def test_download_page_serves_the_android_app_only_when_it_has_been_published(tmp_path):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    server = LocalServer(port=0, root=tmp_path)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = request(server, "GET", "/download")
+        assert status == 200 and b"not available yet" in body and b"{{SIZE}}" not in body
+        assert request(server, "GET", "/download/jyotisha.apk")[0] == 404
+        (downloads / "jyotisha.apk").write_bytes(b"PK\x03\x04" + b"x" * 2_500_000)
+        (downloads / "VERSION").write_text("1.0.4", encoding="utf-8")
+        status, _, body = request(server, "GET", "/download")
+        assert status == 200 and b"2.5 MB" in body and b"Version 1.0.4" in body and b'href="/download/jyotisha.apk"' in body
+        status, headers, data = request(server, "GET", "/download/jyotisha.apk")
+        assert status == 200 and headers["Content-Type"] == "application/vnd.android.package-archive"
+        assert "attachment" in headers["Content-Disposition"] and data[:4] == b"PK\x03\x04" and len(data) == 2_500_004
+    finally:
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()

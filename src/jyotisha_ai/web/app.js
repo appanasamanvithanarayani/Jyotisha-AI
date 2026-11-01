@@ -1179,13 +1179,34 @@
     walk(root);
     return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
+  function showToast(message) {
+    try {
+      const toast = el('div', 'toast', message);
+      toast.setAttribute('role', 'status');
+      document.body.appendChild(toast);
+      setTimeout(() => { try { toast.remove(); } catch (_error) { /* already gone */ } }, 3800);
+    } catch (_error) { /* the message is a courtesy only */ }
+  }
+  async function copyToClipboard(text) {
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch (_error) { /* try the older way */ }
+    try {
+      const area = document.createElement('textarea');
+      area.value = text; area.setAttribute('readonly', ''); area.style.position = 'fixed'; area.style.opacity = '0';
+      document.body.appendChild(area); area.select();
+      const done = document.execCommand && document.execCommand('copy');
+      area.remove();
+      return done === true;
+    } catch (_error) { return false; }
+  }
   async function shareText(title, text) {
     const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\n— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`;
     const native = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
     try {
       if (native && native.share) { await native.share({ title, text: body, dialogTitle: title }); return; }
       if (navigator.share) { await navigator.share({ title, text: body }); return; }
-    } catch (error) { if (error && error.name === 'AbortError') return; /* otherwise fall back to a file */ }
+    } catch (error) { if (error && error.name === 'AbortError') return; /* otherwise copy it instead */ }
+    // No share sheet (an older app version, or a desktop browser): copy the text so it can still be pasted anywhere.
+    if (await copyToClipboard(body)) { showToast(t('exportCopied')); return; }
     try {
       const url = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }));
       const link = document.createElement('a');
@@ -1211,6 +1232,41 @@
     }
     return parts.filter(part => part !== undefined && part !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
+  // PDF: shows only the text to print and opens the print dialog, whose "Save as PDF" makes the file.
+  // Android app: a small native plugin (PdfPrint) opens that dialog; browsers use window.print().
+  function printPdf(title, text) {
+    const root = document.createElement('div'); root.id = 'print-root';
+    const sheet = el('div', 'pdf-sheet');
+    sheet.append(el('h1', null, title), el('div', 'pdf-body', text), el('p', 'pdf-foot', `— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`));
+    root.appendChild(sheet);
+    document.body.appendChild(root); document.body.classList.add('printing');
+    let finished = false;
+    const finish = () => {
+      if (finished) return; finished = true; clearTimeout(expiry);
+      document.body.classList.remove('printing');
+      try { root.remove(); } catch (_error) { /* already gone */ }
+      try { document.removeEventListener('visibilitychange', onVisible); } catch (_error) { /* not attached */ }
+    };
+    // The print dialog hides the page while it is open; clean up when the user comes back (or after a few minutes).
+    let wasHidden = false;
+    function onVisible() { if (document.visibilityState === 'hidden') wasHidden = true; else if (wasHidden) finish(); }
+    try { document.addEventListener('visibilitychange', onVisible); } catch (_error) { /* optional */ }
+    const expiry = setTimeout(finish, 180000);
+    if (expiry && expiry.unref) expiry.unref();   // never keeps a test or server process alive
+    const nativePrint = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PdfPrint;
+    const inApp = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
+    if (nativePrint && nativePrint.print) {
+      setTimeout(() => { Promise.resolve(nativePrint.print({ title })).catch(() => { finish(); void shareText(title, text); }); }, 400);
+    } else if (inApp) {
+      finish(); void shareText(title, text);               // an older app without the PDF plugin: share the text instead
+    } else if (window.print) {
+      try { window.addEventListener('afterprint', finish, { once: true }); } catch (_error) { /* optional */ }
+      setTimeout(() => { try { window.print(); } catch (_error) { finish(); } }, 250);
+    } else finish();
+  }
+  $('pdf-chat').addEventListener('click', () => printPdf(t('chartQuestion'), chatText()));
+  $('pdf-kundli').addEventListener('click', () => { if (state.chart) printPdf(t('chartTitle'), kundliText()); });
+  $('pdf-rashi').addEventListener('click', () => printPdf(`${t('rashiphal')} · ${$('rashi-moon').textContent}`, domToText($('rashi-list'))));
   $('export-chat').addEventListener('click', () => { void shareText(`${t('chartQuestion')}`, chatText()); });
   $('export-kundli').addEventListener('click', () => { if (state.chart) void shareText(`${t('chartTitle')}`, kundliText()); });
   $('export-rashi').addEventListener('click', () => { void shareText(`${t('rashiphal')} · ${$('rashi-moon').textContent}`, domToText($('rashi-list'))); });

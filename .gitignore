@@ -67,3 +67,6 @@ wandb/
 # The place list the deployed app needs is CC BY 4.0 and small; keep it, but never the research source books.
 !data/raw/cities15000.zip
 !data/manifests/geonames_cities15000.json
+# The installable Android app served at /download (a signed build, about 10 MB)
+!downloads/jyotisha.apk
+!downloads/VERSION

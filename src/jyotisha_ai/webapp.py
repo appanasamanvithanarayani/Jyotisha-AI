@@ -636,6 +636,22 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(404, {"error": "not found"})
             else:
                 self._json(200, links)
+        elif path == "/download":
+            apk = self.server.project_root / "downloads" / "jyotisha.apk"
+            page = files("jyotisha_ai.web").joinpath("download.html").read_text(encoding="utf-8")
+            if apk.is_file():
+                size = f"{apk.stat().st_size / 1_000_000:.1f} MB"
+                version = (apk.with_name("VERSION").read_text(encoding="utf-8").strip()[:20] if apk.with_name("VERSION").is_file() else "latest")
+            else:
+                size, version = "not available yet", "-"
+            self._send(200, page.replace("{{SIZE}}", html.escape(size)).replace("{{VERSION}}", html.escape(version)).encode("utf-8"), "text/html; charset=utf-8")
+        elif path == "/download/jyotisha.apk":
+            apk = self.server.project_root / "downloads" / "jyotisha.apk"
+            if not apk.is_file():
+                self._json(404, {"error": "not found"})
+            else:
+                self._send(200, apk.read_bytes(), "application/vnd.android.package-archive",
+                           {"Content-Disposition": 'attachment; filename="jyotisha.apk"', "Cache-Control": "no-cache"})
         elif path == "/privacy":
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
             page = page.replace("{{ADS_ITEM}}", _privacy_ads_item()).replace("{{DEVELOPER}}", html.escape(os.environ.get("JYOTISHA_DEVELOPER", "Samanvitha")))

@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY pyproject.toml README.md ./
 COPY src ./src
+COPY downloads ./downloads
 COPY data/manifests ./data/manifests
 COPY data/knowledge ./data/knowledge
 # Only the GeoNames place list (CC BY 4.0) ships; the research source books under data/raw never do.

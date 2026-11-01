@@ -360,5 +360,13 @@ body.page-chat #chat{height:calc(100dvh - 60px - 118px - var(--ad-height,0px))}
 /* Export / Share */
 .export-row{margin:8px 0 4px;text-align:end}
 #chat{position:relative}
-.export-chat{position:absolute;top:14px;inset-inline-end:14px;width:auto;margin:0;padding:6px 12px;font-size:.78rem;min-height:0}
+.export-chat{position:absolute;top:14px;inset-inline-end:14px;display:flex;gap:6px}
+.export-chat .chip-btn{width:auto;margin:0;padding:6px 11px;font-size:.78rem;min-height:0}
 body.page-chat #chat h2{padding-top:16px}
+
+.toast{position:fixed;z-index:60;left:50%;bottom:calc(112px + var(--ad-height,0px));transform:translateX(-50%);max-width:min(440px,calc(100% - 32px));padding:11px 16px;border-radius:14px;background:#2a1768;color:#fff;font-size:.9rem;text-align:center;box-shadow:0 10px 28px rgba(21,13,46,.4);animation:rise .25s ease both}
+
+/* PDF page (printed through the print dialog) */
+.pdf-sheet h1{font-size:20pt;margin:0 0 12pt;color:#2a1768}
+.pdf-body{white-space:pre-wrap;font:11.5pt/1.55 system-ui,'Noto Sans','Nirmala UI',sans-serif;color:#000}
+.pdf-foot{margin-top:18pt;font-size:9pt;color:#555}

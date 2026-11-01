@@ -116,6 +116,7 @@
       "viewWeek": "Week",
       "viewMonth": "Month",
       "exportLabel": "Export / Share",
+      "exportCopied": "Copied. Paste it into WhatsApp, Notes or e-mail.",
       "watchAdPrompt": "Watch a short ad to generate your Kundli for free?",
       "chatLimitPrompt": "You have used your {free} free AI questions today. Watch a short ad for {bonus} more?",
       "aiLabel": "AI-generated",

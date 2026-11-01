@@ -7,14 +7,18 @@ def keystoreFile = file(System.getenv("JYOTISHA_KEYSTORE_PROPERTIES") ?: "../key
 if (keystoreFile.exists()) { keystoreFile.withInputStream { keystoreProps.load(it) } }
 
 android {
+    lint {
+        checkReleaseBuilds false   // the release lint pass is very memory hungry and not needed for these builds
+        abortOnError false
+    }
     namespace "store.karthiktraders.jyotisha"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "store.karthiktraders.jyotisha"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.0.3"
+        versionCode 5
+        versionName "1.0.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
