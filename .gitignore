@@ -70,3 +70,6 @@ wandb/
 # The installable Android app served at /download (a signed build, about 10 MB)
 !downloads/jyotisha.apk
 !downloads/VERSION
+
+# Admin panel data (settings, keys, audit log)
+admin-data/

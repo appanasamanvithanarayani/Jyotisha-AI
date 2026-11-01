@@ -9,6 +9,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from jyotisha_ai import settings_store
+
 API_URL = "https://api.anthropic.com/v1/messages"
 MODEL = os.environ.get("JYOTISHA_ASSISTANT_MODEL", "claude-haiku-5-5")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -41,8 +43,8 @@ SYSTEM = (
 
 
 def _setting(name: str) -> str:
-    """Read a server setting from the environment or git-ignored local .env."""
-    value = os.environ.get(name, "").strip()
+    """Read a setting: saved in the admin panel, else the environment, else the git-ignored local .env."""
+    value = settings_store.value(name)
     if value:
         return value
     for folder in (Path.cwd(), Path(__file__).resolve().parents[2]):
@@ -122,7 +124,7 @@ def ask_status(payload: object) -> dict:
             headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")},
         )
     else:
-        body = {"model": MODEL, "max_tokens": 700, "system": system, "messages": [{"role": t["role"], "content": t["text"]} for t in turns]}
+        body = {"model": _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL, "max_tokens": 700, "system": system, "messages": [{"role": t["role"], "content": t["text"]} for t in turns]}
         request = urllib.request.Request(
             API_URL, data=json.dumps(body).encode("utf-8"), method="POST",
             headers={"content-type": "application/json", "x-api-key": _api_key(), "anthropic-version": "2023-06-01"},

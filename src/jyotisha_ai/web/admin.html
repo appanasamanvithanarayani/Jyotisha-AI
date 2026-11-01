@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Jyotisha AI · Admin</title>
+<style>
+  :root{--bg:#150d2e;--card:#221645;--line:#3a2c66;--ink:#f3ecff;--mute:#a99bd0;--gold:#f2c14e;--ok:#4cc38a;--bad:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+  header h1{font-size:1.05rem;margin:0;color:var(--gold)}
+  main{max-width:900px;margin:0 auto;padding:16px 16px 80px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+  nav button,.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer}
+  nav button.on,.btn.primary{background:var(--gold);color:#150d2e;border-color:var(--gold);font-weight:700}
+  .btn.danger{border-color:var(--bad);color:var(--bad)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;font-size:1.05rem}
+  .hint{color:var(--mute);font-size:.86rem;margin:2px 0 0}
+  .field{padding:12px 0;border-top:1px solid var(--line)}.field:first-of-type{border-top:0}
+  .field label{display:block;font-weight:600;margin-bottom:4px}
+  input,select,textarea{width:100%;background:#150d2e;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>input,.row>select{flex:1;min-width:160px;width:auto}
+  .badge{font-size:.72rem;border-radius:99px;padding:1px 8px;border:1px solid var(--line);color:var(--mute)}
+  .badge.panel{color:var(--gold);border-color:var(--gold)}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+  .scroll{overflow-x:auto}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}.tile b{display:block;font-size:1.5rem;color:var(--gold)}
+  .on-text{color:var(--ok)}.off-text{color:var(--mute)}
+  #login{max-width:360px;margin:12vh auto;padding:0 16px}
+  #msg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;color:#150d2e;padding:10px 18px;border-radius:99px;font-weight:600;max-width:90vw}
+  #msg.bad{background:var(--bad);color:#fff}[hidden]{display:none!important}
+  .log td{text-align:left;vertical-align:top}
+</style>
+</head>
+<body>
+<section id="login" hidden>
+  <h1 style="color:var(--gold)">Jyotisha AI · Admin</h1>
+  <div class="panel">
+    <label for="pw" style="font-weight:600">Admin password</label>
+    <input id="pw" type="password" autocomplete="current-password" style="margin:8px 0 12px">
+    <button id="signin" class="btn primary" type="button">Sign in</button>
+    <p class="hint" id="login-note"></p>
+  </div>
+</section>
+<div id="app" hidden>
+  <header><h1>Jyotisha AI · Admin</h1><button id="signout" class="btn" type="button">Sign out</button></header>
+  <main><nav id="tabs"></nav><div id="view"></div></main>
+</div>
+<div id="msg" hidden></div>
+<script src="/admin.js"></script>
+</body>
+</html>

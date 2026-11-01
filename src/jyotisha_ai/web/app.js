@@ -1184,6 +1184,21 @@
     walk(root);
     return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
+  // A message from the admin panel (announcement or maintenance), shown under the header.
+  function showNotice(notice) {
+    try {
+      const old = document.getElementById('site-notice');
+      if (old && old.remove) old.remove();
+      const header = document.querySelector('.masthead');
+      if (!notice || typeof notice.text !== 'string' || !notice.text || !header) return;
+      const bar = el('div', `site-notice ${notice.kind === 'maintenance' ? 'maintenance' : ''}`, notice.text);
+      bar.id = 'site-notice'; bar.setAttribute('role', 'status');
+      if (typeof notice.link === 'string' && /^https:\/\//.test(notice.link)) {
+        const link = el('a', null, ' →'); link.href = notice.link; link.target = '_blank'; link.rel = 'noopener noreferrer'; bar.appendChild(link);
+      }
+      header.insertAdjacentElement('afterend', bar);
+    } catch (_error) { /* a notice is optional */ }
+  }
   function showToast(message) {
     try {
       const toast = el('div', 'toast', message);
@@ -1297,6 +1312,7 @@
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
+    showNotice(readiness.notice);
     if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
     // Ads are off unless the server was configured with an AdSense publisher id.
     // AdSense is a website program: it is not loaded inside the installed app / Play Store wrapper (use AdMob for native apps).

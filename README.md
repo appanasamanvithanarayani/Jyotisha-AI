@@ -222,6 +222,9 @@ copy `deploy/digitalocean/env.example` to `.env`, fill it in, and run
 (Caddy fetches the HTTPS certificate for `DOMAIN`; a free `<ip>.sslip.io` name works
 if you have no domain).
 
+**Admin panel.** Set `ADMIN_PASSWORD` (12+ characters) in `.env` and open `https://<domain>/admin` to change ads, limits, API keys and
+notices without editing `.env` or redeploying. See [ADMIN_PANEL.md](ADMIN_PANEL.md).
+
 **Ads (off by default).** Set `JYOTISHA_ADSENSE_CLIENT=ca-pub-...` to turn on Google AdSense:
 the page then loads Google's ad script, the Content-Security-Policy allows Google's ad domains,
 `/ads.txt` is served, and `/privacy` describes advertising. Without it none of this is active.

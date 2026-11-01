@@ -376,3 +376,6 @@ body.page-chat #chat h2{padding-top:16px}
 /* PDF page (printed through the print dialog) */
 .pdf-sheet h1{font-size:20pt;margin:0 0 12pt;color:#2a1768}
 .pdf-foot{margin-top:18pt;font-size:9pt;color:#555}
+
+.site-notice{margin:0;padding:8px 14px;background:#f2c14e;color:#150d2e;font-size:.88rem;font-weight:600;text-align:center}
+.site-notice.maintenance{background:#ff9d4d}.site-notice a{color:#150d2e;font-weight:800}

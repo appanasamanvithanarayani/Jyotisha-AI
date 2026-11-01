@@ -8,3 +8,4 @@ evaluations
 tests
 data/raw/*
 !data/raw/cities15000.zip
+admin-data

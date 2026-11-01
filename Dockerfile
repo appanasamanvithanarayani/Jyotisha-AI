@@ -13,7 +13,7 @@ COPY data/knowledge ./data/knowledge
 COPY data/raw/cities15000.zip ./data/raw/cities15000.zip
 RUN pip install .
 
-RUN useradd --system --uid 10001 appuser
+RUN useradd --system --uid 10001 appuser && mkdir /data && chown appuser /data
 USER appuser
 
 # PORT is provided by the platform (Cloud Run, Render, Railway, Fly). Set JYOTISHA_ALLOWED_HOSTS to your domain.

@@ -25,6 +25,10 @@ services:
       JYOTISHA_CHAT_BONUS_QUESTIONS: ${CHAT_BONUS_QUESTIONS:-5}
       JYOTISHA_INTERSTITIAL: ${INTERSTITIAL:-0}
       JYOTISHA_ADMOB_INTERSTITIAL_ID: ${ADMOB_INTERSTITIAL_ID:-}
+      JYOTISHA_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      JYOTISHA_DATA_DIR: /data
+    volumes:
+      - admin_data:/data
     expose:
       - "8080"
   caddy:
@@ -42,3 +46,4 @@ services:
       - app
 volumes:
   caddy_data:
+  admin_data:

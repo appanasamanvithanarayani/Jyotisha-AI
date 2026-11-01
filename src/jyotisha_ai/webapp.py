@@ -23,7 +23,7 @@ import secrets
 from threading import Timer
 from urllib.parse import urlsplit
 
-from jyotisha_ai import assistant
+from jyotisha_ai import admin, assistant, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -115,7 +115,7 @@ ADS_CONNECT = "https://pagead2.googlesyndication.com https://*.googlesyndication
 
 def _adsense_client() -> str:
     """Google AdSense publisher id (ca-pub-...) from JYOTISHA_ADSENSE_CLIENT, or '' while ads are off (the default)."""
-    value = os.environ.get("JYOTISHA_ADSENSE_CLIENT", "").strip()
+    value = store.value("JYOTISHA_ADSENSE_CLIENT")
     return value if re.fullmatch(r"ca-pub-\d{10,20}", value) else ""
 
 
@@ -130,19 +130,19 @@ def _app_ads() -> dict | None:
     JYOTISHA_APP_ADS=1 switches it on and 0/unset off, with no app update needed. JYOTISHA_ADMOB_BANNER_ID is your own
     banner unit (ca-app-pub-<16 digits>/<10 digits>); without it Google's test banner is used and the ads are test ads.
     """
-    if os.environ.get("JYOTISHA_APP_ADS", "").strip() != "1":
+    if store.value("JYOTISHA_APP_ADS") != "1":
         return None
 
     def unit_id(name: str, test_unit: str) -> str:
-        value = os.environ.get(name, "").strip()
+        value = store.value(name)
         return value if re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", value) else test_unit
 
     banner = unit_id("JYOTISHA_ADMOB_BANNER_ID", TEST_BANNER_ID)
     own = banner != TEST_BANNER_ID
-    config = {"enabled": True, "banner_id": banner, "testing": (not own) or os.environ.get("JYOTISHA_ADMOB_TESTING", "").strip() == "1"}
+    config = {"enabled": True, "banner_id": banner, "testing": (not own) or store.value("JYOTISHA_ADMOB_TESTING") == "1"}
     # A rewarded ad before a Kundli is generated, and an occasional ad between screens; both off unless switched on.
-    rewarded_kundli = os.environ.get("JYOTISHA_REWARDED_KUNDLI", "").strip() == "1"
-    rewarded_chat = os.environ.get("JYOTISHA_REWARDED_CHAT", "").strip() == "1"
+    rewarded_kundli = store.value("JYOTISHA_REWARDED_KUNDLI") == "1"
+    rewarded_chat = store.value("JYOTISHA_REWARDED_CHAT") == "1"
     if rewarded_kundli or rewarded_chat:
         config["rewarded_id"] = unit_id("JYOTISHA_ADMOB_REWARDED_ID", TEST_REWARDED_ID)
     if rewarded_kundli:
@@ -151,16 +151,28 @@ def _app_ads() -> dict | None:
     if rewarded_chat:
         # Free AI questions per day, then a rewarded ad buys a few more; the rule-based answers stay free.
         def count(name: str, default: int) -> int:
-            raw = os.environ.get(name, "").strip()
+            raw = store.value(name)
             return int(raw) if raw.isdigit() and 1 <= int(raw) <= 100 else default
 
         config["chat_free_questions"] = count("JYOTISHA_CHAT_FREE_QUESTIONS", 10)
         config["chat_bonus_questions"] = count("JYOTISHA_CHAT_BONUS_QUESTIONS", 5)
-    if os.environ.get("JYOTISHA_INTERSTITIAL", "").strip() == "1":
+    if store.value("JYOTISHA_INTERSTITIAL") == "1":
         config["interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
         config["interstitial_every"] = 4          # at most one ad per this many screen switches
         config["interstitial_gap_seconds"] = 180   # and never twice within this many seconds
     return config
+
+
+def _notice() -> dict | None:
+    """A message to show on top of every screen: maintenance first, else the announcement while it is current."""
+    if store.value("JYOTISHA_MAINTENANCE") == "1":
+        return {"kind": "maintenance", "text": store.value("JYOTISHA_MAINTENANCE_MESSAGE", "We are doing some maintenance."), "link": None}
+    text = store.value("JYOTISHA_ANNOUNCEMENT")
+    until = store.value("JYOTISHA_ANNOUNCEMENT_UNTIL")
+    if not text or (until and until < date.today().isoformat()):
+        return None
+    link = store.value("JYOTISHA_ANNOUNCEMENT_LINK")
+    return {"kind": "announcement", "text": text, "link": link if link.startswith("https://") else None}
 
 
 def _content_security_policy() -> str:
@@ -565,9 +577,14 @@ class LocalHandler(BaseHTTPRequestHandler):
         allowed = limiter.allow(f"api:{who}", PUBLIC_API_PER_MINUTE, 60.0)
         if allowed and path == "/api/ask":
             today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
-            allowed = (limiter.allow(f"ask-min:{who}", PUBLIC_ASK_PER_MINUTE, 60.0) and limiter.allow(f"ask-day:{who}", PUBLIC_ASK_PER_DAY, 86400.0)
-                       and limiter.allow(f"ask-all:{today}", self.server.ask_daily_limit, 86400.0))
+            # These three can be changed in the admin panel without restarting.
+            per_minute = store.number("JYOTISHA_ASK_PER_VISITOR_MINUTE", PUBLIC_ASK_PER_MINUTE)
+            per_day = store.number("JYOTISHA_ASK_PER_VISITOR_DAY", PUBLIC_ASK_PER_DAY)
+            site_day = store.number("JYOTISHA_ASK_DAILY_LIMIT", self.server.ask_daily_limit)
+            allowed = (limiter.allow(f"ask-min:{who}", per_minute, 60.0) and limiter.allow(f"ask-day:{who}", per_day, 86400.0)
+                       and limiter.allow(f"ask-all:{today}", site_day, 86400.0))
         if not allowed:
+            store.stats.record("rate_limited")
             self._json(429, {"error": "too many requests, please try again later"}, {"Retry-After": "60"})
         return not allowed
 
@@ -610,6 +627,76 @@ class LocalHandler(BaseHTTPRequestHandler):
     def _json(self, status: int, data: object, extra_headers: dict[str, str] | None = None) -> None:
         self._send(status, json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8"), "application/json; charset=utf-8", extra_headers)
 
+    # ------------------------------------------------------------------ admin panel (needs JYOTISHA_ADMIN_PASSWORD)
+    def _secure(self) -> bool:
+        return self.headers.get("X-Forwarded-Proto") == "https"
+
+    def _admin_signed_in(self) -> bool:
+        return admin.session_valid(admin.cookie_from(self.headers.get("Cookie", "")))
+
+    def _admin_state(self) -> dict:
+        current = assistant.provider()
+        return {
+            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14),
+            "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
+                       "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
+            "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
+        }
+
+    def _admin_get(self, path: str) -> None:
+        if not admin.enabled():
+            self._json(404, {"error": "not found"})
+            return
+        no_index = {"X-Robots-Tag": "noindex, nofollow, noarchive"}
+        if path == "/admin":
+            self._send(200, files("jyotisha_ai.web").joinpath("admin.html").read_bytes(), "text/html; charset=utf-8", no_index)
+        elif path == "/admin.js":
+            self._send(200, files("jyotisha_ai.web").joinpath("admin.js").read_bytes(), "application/javascript; charset=utf-8", no_index)
+        elif not self._admin_signed_in():
+            self._json(401, {"error": "sign in required"}, no_index)
+        else:
+            self._json(200, self._admin_state(), no_index)
+
+    def _admin_post(self, path: str, payload: object) -> None:
+        if not admin.enabled():
+            self._json(404, {"error": "not found"})
+            return
+        if self.headers.get("X-Admin") != "1":
+            self._json(403, {"error": "missing admin header"})
+            return
+        if not isinstance(payload, dict):
+            raise ValueError("JSON object required")
+        who, limiter = self._client(), self.server.limiter
+        if path == "/api/admin/login":
+            if not limiter.allow(f"admin-login:{who}", admin.MAX_FAILURES * 3, admin.FAILURE_WINDOW):
+                self._json(429, {"error": "too many sign-in attempts, wait a few minutes"}, {"Retry-After": "600"})
+            elif admin.password_matches(str(payload.get("password", ""))):
+                self._json(200, {"ok": True}, {"Set-Cookie": admin.set_cookie(admin.make_session(), self._secure())})
+            else:
+                clock_time.sleep(0.4)   # slows down guessing
+                self._json(401, {"error": "wrong password"})
+            return
+        if not self._admin_signed_in():
+            self._json(401, {"error": "sign in required"})
+            return
+        if path == "/api/admin/logout":
+            self._json(200, {"ok": True}, {"Set-Cookie": admin.clear_cookie(self._secure())})
+        elif path == "/api/admin/save":
+            changes = payload.get("changes")
+            if not isinstance(changes, dict):
+                raise ValueError("changes required")
+            entries = store.update(changes, "admin")
+            self._json(200, {"saved": len(entries), **self._admin_state()})
+        elif path == "/api/admin/test-ai":
+            if not limiter.allow(f"admin-ai:{who}", 6, 60.0):
+                self._json(429, {"error": "slow down"})
+                return
+            sample = {"question": "Reply with the single word OK.", "language": "en", "facts": ["Test: connection check"], "history": []}
+            result = assistant.ask_status(sample)
+            self._json(200, {"provider": assistant.provider(), "ok": "answer" in result, "status": result.get("status", "ok")})
+        else:
+            self._json(404, {"error": "not found"})
+
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlsplit(self.path).path
         if path == "/healthz":
@@ -622,7 +709,11 @@ class LocalHandler(BaseHTTPRequestHandler):
             return
         if self._limited(path):
             return
+        if path in ("/admin", "/admin.js", "/api/admin/state"):
+            self._admin_get(path)
+            return
         if path == "/":
+            store.stats.record("page_views", self._client())
             body = files("jyotisha_ai.web").joinpath("birth.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")
         elif path in ("/manifest.webmanifest", "/sw.js"):
@@ -650,12 +741,13 @@ class LocalHandler(BaseHTTPRequestHandler):
             if not apk.is_file():
                 self._json(404, {"error": "not found"})
             else:
+                store.stats.record("apk_downloads", self._client())
                 self._send(200, apk.read_bytes(), "application/vnd.android.package-archive",
                            {"Content-Disposition": 'attachment; filename="jyotisha.apk"', "Cache-Control": "no-cache"})
         elif path == "/privacy":
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
-            page = page.replace("{{ADS_ITEM}}", _privacy_ads_item()).replace("{{DEVELOPER}}", html.escape(os.environ.get("JYOTISHA_DEVELOPER", "Samanvitha")))
-            self._send(200, page.replace("{{CONTACT}}", html.escape(os.environ.get("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
+            page = page.replace("{{ADS_ITEM}}", _privacy_ads_item()).replace("{{DEVELOPER}}", html.escape(store.value("JYOTISHA_DEVELOPER", "Samanvitha")))
+            self._send(200, page.replace("{{CONTACT}}", html.escape(store.value("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/ads.txt":
             client = _adsense_client()
             if not client:
@@ -688,7 +780,8 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness["assistant_available"] = assistant.available()
             readiness["adsense_client"] = _adsense_client() or None
             readiness["app_ads"] = _app_ads()
-            contact = os.environ.get("JYOTISHA_CONTACT", "").strip()
+            readiness["notice"] = _notice()
+            contact = store.value("JYOTISHA_CONTACT")
             readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)
         elif path == "/api/deployment-readiness":
@@ -703,7 +796,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -724,6 +817,11 @@ class LocalHandler(BaseHTTPRequestHandler):
             return
         try:
             payload = json.loads(self.rfile.read(length))
+            if path.startswith("/api/admin/"):
+                self._admin_post(path, payload)
+                return
+            store.stats.record({"/api/birth-chart": "birth_chart", "/api/day-panchang": "day_panchang", "/api/month-calendar": "month_calendar",
+                                "/api/places": "places", "/api/ask": "ai_questions"}.get(path, "other"), self._client())
             if path == "/api/birth-chart":
                 result = birth_input_status(payload, self.server.project_root)
             elif path == "/api/panchang-noon":

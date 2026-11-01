@@ -22,7 +22,7 @@ jyotisha-ai = "jyotisha_ai.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"jyotisha_ai.web" = ["index.html", "birth.html", "chart-ui.js", "calendar-ui.js", "panchang-names.js", "app.js", "app.css", "privacy.html", "download.html", "manifest.webmanifest", "sw.js", "icons/*.png", "locales/*.js"]
+"jyotisha_ai.web" = ["index.html", "birth.html", "chart-ui.js", "calendar-ui.js", "panchang-names.js", "app.js", "app.css", "privacy.html", "download.html", "admin.html", "admin.js", "manifest.webmanifest", "sw.js", "icons/*.png", "locales/*.js"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -ra"
