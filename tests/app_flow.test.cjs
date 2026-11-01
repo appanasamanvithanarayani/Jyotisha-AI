@@ -52,7 +52,7 @@ function boot(setup = {}) {
   const fetch = async (url, options) => {
     requests.push({ url, body: options && options.body ? JSON.parse(options.body) : null });
     const reply = body => ({ ok: true, json: async () => body });
-    if (url === '/api/birth-readiness') return reply({ can_calculate: true });
+    if (url === '/api/birth-readiness') return reply({ can_calculate: true, app_ads: setup.appAds || null });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -61,10 +61,11 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, scrollTo() {}, localStorage: setup.storage },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
-  return { element, requests };
+  context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
+  return { element, requests, context };
 }
 const settle = () => new Promise(resolve => setTimeout(resolve, 30));
 
@@ -355,4 +356,38 @@ test('relationship page compares a second synthetic chart without saving partner
   assert.equal(storage.getItem('jyotisha.partner.v1'), null);
   app.element('forget-profile').listeners.click();
   assert.equal(app.element('relationship-result').children.length, 0);
+});
+
+
+function fakeAdMob() {
+  const calls = [];
+  return { calls, plugin: {
+    initialize: async options => calls.push(['initialize', options]),
+    requestConsentInfo: async () => ({ isConsentFormAvailable: true, status: 'REQUIRED' }),
+    showConsentForm: async () => calls.push(['showConsentForm']),
+    addListener: (name, handler) => { calls.push(['listener', name]); calls.handler = handler; },
+    showBanner: async options => calls.push(['showBanner', options]),
+  } };
+}
+
+test('the native app shows an AdMob banner only when the server switches ads on, and the page makes room for it', async () => {
+  const on = fakeAdMob();
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: on.plugin } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();
+  const names = on.calls.map(call => call[0]);
+  assert.deepEqual(names.filter(name => name !== 'listener'), ['initialize', 'showConsentForm', 'showBanner']);
+  const banner = on.calls.find(call => call[0] === 'showBanner')[1];
+  assert.equal(banner.position, 'BOTTOM_CENTER'); assert.equal(banner.isTesting, true); assert.equal(banner.adId, 'ca-app-pub-3940256099942544/6300978111');
+  on.calls.handler({ width: 360, height: 50 });
+  assert.equal(app.context.cssVars['--ad-height'], '50px');
+
+  const off = fakeAdMob();
+  boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: off.plugin } }, appAds: null });
+  await settle();
+  assert.deepEqual(off.calls, []);                                       // switched off on the server: nothing is shown or even initialised
+
+  const web = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();                                                        // an ordinary browser has no AdMob plugin and simply shows no banner
+  assert.equal(web.context.cssVars, undefined);
 });

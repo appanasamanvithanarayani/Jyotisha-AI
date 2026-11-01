@@ -771,3 +771,22 @@ def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_
     monkeypatch.setenv("JYOTISHA_DEVELOPER", "Test <b>Studio</b>")
     _, _, body = request(local_server, "GET", "/privacy")
     assert b"Test &lt;b&gt;Studio&lt;/b&gt;" in body
+
+
+def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(local_server, monkeypatch):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT"):
+        monkeypatch.delenv(name, raising=False)
+    readiness = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert readiness() is None
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "0")
+    assert readiness() is None
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    assert readiness() == {"enabled": True, "banner_id": "ca-app-pub-3940256099942544/6300978111", "testing": True}   # no unit yet: Google's test banner
+    status, headers, body = request(local_server, "GET", "/privacy")
+    assert b"Google AdMob" in body and b"do not run advertising" not in body and "googlesyndication" not in headers["Content-Security-Policy"]
+    monkeypatch.setenv("JYOTISHA_ADMOB_BANNER_ID", "ca-app-pub-1234567890123456/1234567890")
+    assert readiness() == {"enabled": True, "banner_id": "ca-app-pub-1234567890123456/1234567890", "testing": False}
+    monkeypatch.setenv("JYOTISHA_ADMOB_TESTING", "1")
+    assert readiness()["testing"] is True
+    monkeypatch.setenv("JYOTISHA_ADMOB_BANNER_ID", "not-a-unit")                    # a malformed unit never reaches the app
+    assert readiness()["banner_id"] == "ca-app-pub-3940256099942544/6300978111"

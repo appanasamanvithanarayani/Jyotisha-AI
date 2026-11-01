@@ -931,6 +931,24 @@
     // Only calculated labels leave the browser; unreviewed life-area readings do not.
     return facts;
   }
+  // Native Android app only: a Google AdMob banner is drawn by the app below the page. The server switches it on and off.
+  function setAdHeight(pixels) {
+    const height = Number.isFinite(pixels) && pixels > 0 ? Math.min(Math.round(pixels), 200) : 0;
+    document.documentElement.style.setProperty('--ad-height', `${height}px`);
+  }
+  async function startAppAds(config) {
+    const admob = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+    if (!admob || !/^ca-app-pub-\d{16}\/\d{10}$/.test(config.banner_id || '')) return;
+    try {
+      await admob.initialize({ initializeForTesting: config.testing === true });
+      try {
+        const consent = await admob.requestConsentInfo();
+        if (consent && consent.isConsentFormAvailable && consent.status === 'REQUIRED') await admob.showConsentForm();
+      } catch (_error) { /* consent is only required in some regions */ }
+      admob.addListener('bannerAdSizeChanged', size => setAdHeight(size && size.height));
+      await admob.showBanner({ adId: config.banner_id, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: config.testing === true });
+    } catch (_error) { setAdHeight(0); }
+  }
   // Replies written by the AI are labelled, and can be reported by email (nothing is sent without the user).
   function addAiBar(entry, question, answer) {
     const bar = el('div', 'ai-bar');
@@ -1075,6 +1093,7 @@
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
+    if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
     // Ads are off unless the server was configured with an AdSense publisher id.
     // AdSense is a website program: it is not loaded inside the installed app / Play Store wrapper (use AdMob for native apps).
     const installedApp = (() => {

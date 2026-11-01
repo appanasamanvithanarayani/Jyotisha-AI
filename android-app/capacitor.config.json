@@ -1,0 +1,13 @@
+{
+  "appId": "store.karthiktraders.jyotisha",
+  "appName": "Jyotisha AI",
+  "webDir": "www",
+  "server": {
+    "url": "https://jyotisha.karthiktraders.store",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -119,6 +119,23 @@ def _adsense_client() -> str:
     return value if re.fullmatch(r"ca-pub-\d{10,20}", value) else ""
 
 
+TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"   # Google's public test banner unit
+
+
+def _app_ads() -> dict | None:
+    """Settings for the banner shown by the native Android app (AdMob), or None while it is switched off (the default).
+
+    JYOTISHA_APP_ADS=1 switches it on and 0/unset off, with no app update needed. JYOTISHA_ADMOB_BANNER_ID is your own
+    banner unit (ca-app-pub-<16 digits>/<10 digits>); without it Google's test banner is used and the ads are test ads.
+    """
+    if os.environ.get("JYOTISHA_APP_ADS", "").strip() != "1":
+        return None
+    unit = os.environ.get("JYOTISHA_ADMOB_BANNER_ID", "").strip()
+    if re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", unit) and unit != TEST_BANNER_ID:
+        return {"enabled": True, "banner_id": unit, "testing": os.environ.get("JYOTISHA_ADMOB_TESTING", "").strip() == "1"}
+    return {"enabled": True, "banner_id": TEST_BANNER_ID, "testing": True}
+
+
 def _content_security_policy() -> str:
     if not _adsense_client():
         return BASE_CSP
@@ -128,6 +145,11 @@ def _content_security_policy() -> str:
 
 
 def _privacy_ads_item() -> str:
+    if not _adsense_client() and _app_ads():
+        return ("<li><b>Advertising.</b> The Android app shows ads from Google AdMob. Google and its partners may use an advertising identifier or similar technologies "
+                "to serve and measure ads and, where you agree, to personalise them. You can reset or opt out of ad personalisation in your Android settings "
+                "(Settings → Google → Ads), and manage consent in the app when asked. We do not run our own analytics and do not sell data. Our hosting provider may keep "
+                "standard technical request records (such as IP address and time) for a short period for security.</li>")
     if not _adsense_client():
         return "<li>We do not run advertising or analytics and do not sell data. Our hosting provider may keep standard technical request records (such as IP address and time) for a short period for security.</li>"
     return ("<li><b>Advertising.</b> This site shows ads from Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, "
@@ -622,6 +644,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness = birth_chart_readiness(self.server.project_root)
             readiness["assistant_available"] = assistant.available()
             readiness["adsense_client"] = _adsense_client() or None
+            readiness["app_ads"] = _app_ads()
             contact = os.environ.get("JYOTISHA_CONTACT", "").strip()
             readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)

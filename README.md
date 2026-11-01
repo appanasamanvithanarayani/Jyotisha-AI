@@ -229,6 +229,12 @@ Use a domain you own (AdSense does not accept shared hostnames such as sslip.io)
 Google's consent message in AdSense (Privacy & messaging), and keep ads out of the installed
 Android wrapper unless Google's policies for your setup allow it.
 
+**Ads in the Android app (AdMob).** The Play Store app is a native shell in `android-app/` (Capacitor) that opens the
+website and shows an AdMob banner drawn by the app itself; see `android-app/README.md` for the build steps. The server
+switches the banner on or off with no app update: `APP_ADS=1` / `0` (plus `ADMOB_BANNER_ID`, and `ADMOB_TESTING=1` to keep
+test ads) in the server's `.env`. Without your own banner id only Google's test ads are shown. AdSense (website ads) is
+separate, off by default, and never loaded inside the installed app.
+
 **Settings are remembered** on the device (`localStorage`: language, city, and
 whether the city follows your location). Onboarding (welcome, language, city)
 runs only on a fresh install and the app defaults to English; afterwards it opens

@@ -223,7 +223,7 @@ details.fold>div,details.fold>table{margin-bottom:12px}
 .relationship-score progress{width:100%;height:12px;accent-color:var(--saffron)}
 .relationship-score small{color:var(--muted)}
 #relationship-note{line-height:1.5}
-.bottom-nav{position:fixed;z-index:40;bottom:12px;left:50%;transform:translateX(-50%);width:min(532px,calc(100% - 24px));display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;
+.bottom-nav{position:fixed;z-index:40;bottom:calc(12px + var(--ad-height,0px));left:50%;transform:translateX(-50%);width:min(532px,calc(100% - 24px));display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;
   border-radius:24px;background:rgba(21,13,46,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 16px 40px rgba(21,13,46,.5);border:1px solid rgba(242,193,78,.3)}
 .bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:8px 2px;border-radius:18px;color:#cdbfeb;text-decoration:none;font-size:clamp(.6rem,2.5vw,.7rem);font-weight:750;transition:all .2s}
 .bottom-nav a span:not([aria-hidden="true"]){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -351,3 +351,8 @@ body.page-chat .chat-controls{flex:0 0 auto}
 .legal{text-align:center;font-size:.85rem;margin:18px 0 8px}.legal a{color:var(--muted)}
 
 .ai-bar{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:.72rem}.ai-tag{padding:2px 8px;border-radius:99px;background:var(--cream2);color:var(--muted);font-weight:700}.ai-report{color:var(--muted)}
+
+/* Room for the native ad banner (set by the Android app; 0 everywhere else) */
+:root{--ad-height:0px}
+body{padding-bottom:calc(120px + var(--ad-height,0px))}
+body.page-chat #chat{height:calc(100dvh - 60px - 118px - var(--ad-height,0px))}

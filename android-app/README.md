@@ -1,0 +1,31 @@
+# Jyotisha AI: Android app with AdMob
+
+This is a native Android shell (Capacitor) that opens https://jyotisha.karthiktraders.store full screen and shows a
+Google AdMob banner at the bottom. **The server decides whether the banner shows**, so you can switch ads off or on
+without releasing a new app version: set `APP_ADS=1` (on) or `0` (off) in the server's `.env` and restart it.
+
+## One-time setup on your Windows PC
+1. Install **Android Studio** (it brings the Android SDK and a recent JDK). Open it once so it finishes its downloads.
+2. Node.js is already installed. In this folder: `npm install`
+
+## Build the project
+```
+npm run add-android          # creates the android/ folder (once)
+npm run sync                 # copies settings and adds the AdMob app id + location permission
+npm run open                 # opens Android Studio
+```
+In Android Studio let Gradle sync finish. Plug in your phone (USB debugging on) and press **Run** to test with test ads.
+
+## Real ads
+1. Create an AdMob account at admob.google.com, add an **Android app**, then create a **Banner** ad unit.
+2. Put the app id in when syncing (PowerShell): `$env:ADMOB_APP_ID="ca-app-pub-...~..."; npm run sync`
+3. On the server `.env`: `APP_ADS=1` and `ADMOB_BANNER_ID=ca-app-pub-.../...`, then restart.
+Until you do this the app shows Google's **test** ads, which is also what you want while testing.
+Never click your own live ads.
+
+## Release to Google Play
+1. **Build → Generate Signed App Bundle (AAB)**. Create a keystore and keep it somewhere safe and backed up (also never commit it).
+2. Upload the `.aab` in Play Console (turn on Play App Signing). The package name `store.karthiktraders.jyotisha` can
+   never be changed after you publish, so edit `appId` in `capacitor.config.json` now if you want another one.
+3. In Play Console's Data safety form, declare that the app shows ads (Google AdMob) and uses the advertising ID.
+4. Once the app is live, link it to your AdMob app so ads can fill.
