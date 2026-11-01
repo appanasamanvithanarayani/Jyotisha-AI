@@ -52,7 +52,8 @@ function boot(setup = {}) {
   const fetch = async (url, options) => {
     requests.push({ url, body: options && options.body ? JSON.parse(options.body) : null });
     const reply = body => ({ ok: true, json: async () => body });
-    if (url === '/api/birth-readiness') return reply({ can_calculate: true, app_ads: setup.appAds || null });
+    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null });
+    if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -404,7 +405,7 @@ function fakeRewardedAdMob() {
     showInterstitial: async () => { calls.push(['showInterstitial']); },
   } };
 }
-const rewardedConfig = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true, rewarded_id: 'ca-app-pub-3940256099942544/5224354917', rewarded_free_minutes: 10 };
+const rewardedConfig = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true, rewarded_id: 'ca-app-pub-3940256099942544/5224354917', rewarded_kundli: true, rewarded_free_minutes: 10 };
 async function typeInChat(app, text) {
   app.element('chat-question').value = text;
   app.element('chat-form').listeners.submit({ preventDefault() {} });
@@ -462,4 +463,43 @@ test('without the rewarded switch (or outside the app) nothing is asked and the 
   await settle();
   await typeInChat(web, '15-08-1995'); await typeInChat(web, 'Hyderabad, IN'); await typeInChat(web, '6:30 am');
   assert.equal(birthRequests(web).length, 1);
+});
+
+
+test('after the free AI questions of the day, a rewarded ad buys more; declining falls back to the free rule-based answer', async () => {
+  const ad = fakeRewardedAdMob();
+  const prompts = [];
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  let accept = true;
+  const config = { enabled: true, banner_id: rewardedConfig.banner_id, testing: true, rewarded_id: rewardedConfig.rewarded_id, chat_free_questions: 2, chat_bonus_questions: 3 };
+  const app = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: config, assistant: true, birth: syntheticBirth, confirm: message => { prompts.push(message); return accept; } });
+  await settle();
+  const aiRequests = () => app.requests.filter(r => r.url === '/api/ask').length;
+  await typeInChat(app, 'will my business grow'); await typeInChat(app, 'and my health');
+  assert.equal(aiRequests(), 2); assert.equal(prompts.length, 0);                       // two free AI questions: no ad
+  accept = false;
+  await typeInChat(app, 'what about money');
+  assert.equal(prompts.length, 1); assert.match(prompts[0], /2 free AI questions .* 3 more/);
+  assert.equal(aiRequests(), 2);                                                         // declined: no AI call (the rule-based reading answers instead)
+  assert.ok(app.element('chat-log').children.length >= 4);
+  accept = true;
+  await typeInChat(app, 'what about money');
+  ad.handlers.onRewardedVideoAdReward({}); ad.handlers.onRewardedVideoAdDismissed();
+  await settle();
+  assert.equal(aiRequests(), 3);                                                         // the ad was watched: this question reaches the AI
+  await typeInChat(app, 'one more'); await typeInChat(app, 'and another');
+  assert.equal(aiRequests(), 5); assert.equal(prompts.length, 2);                       // 3 bonus questions: 1 used by the one above, 2 more with no new ad
+  const saved = JSON.parse(storage.getItem('jyotisha.chatquota.v1'));
+  assert.deepEqual([saved.used, saved.bonus], [5, 3]);
+});
+
+test('the AI chat has no daily limit in a browser or when the chat switch is off', async () => {
+  const ad = fakeRewardedAdMob();
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const off = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: { enabled: true, banner_id: rewardedConfig.banner_id, testing: true }, assistant: true, birth: syntheticBirth, confirm: () => { throw new Error('must not ask'); } });
+  await settle();
+  for (let n = 0; n < 12; n += 1) await typeInChat(off, `question ${n}`);
+  assert.equal(off.requests.filter(r => r.url === '/api/ask').length, 12);
 });

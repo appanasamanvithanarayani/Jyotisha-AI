@@ -944,15 +944,21 @@
   // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
   // the free window after a recent ad, or the ad could not be shown (an ad problem never blocks the user).
   function rewardedGate() {
+    const { config } = appAds;
+    if (!config || config.rewarded_kundli !== true || Date.now() < appAds.freeUntil) return Promise.resolve(true);
+    return watchRewardedAd(t('watchAdPrompt'), true);
+  }
+  // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
+  function watchRewardedAd(promptText, startsFreeWindow) {
     const { config, admob } = appAds;
-    if (!config || !admob || !adUnitOk(config.rewarded_id) || Date.now() < appAds.freeUntil) return Promise.resolve(true);
-    if (!window.confirm || !window.confirm(t('watchAdPrompt'))) return Promise.resolve(false);
+    if (!config || !admob || !adUnitOk(config.rewarded_id)) return Promise.resolve(true);
+    if (!window.confirm || !window.confirm(promptText)) return Promise.resolve(false);
     return new Promise(resolve => {
       let earned = false, settled = false;
       const handles = [];
       const finish = result => { if (settled) return; settled = true; handles.forEach(h => { try { h.remove(); } catch (_error) { /* gone */ } }); resolve(result); };
       const listen = (name, handler) => { try { const h = admob.addListener(name, handler); if (h && h.then) h.then(x => handles.push(x)); else if (h) handles.push(h); } catch (_error) { /* optional */ } };
-      listen('onRewardedVideoAdReward', () => { earned = true; appAds.freeUntil = Date.now() + (config.rewarded_free_minutes || 10) * 60000; });
+      listen('onRewardedVideoAdReward', () => { earned = true; if (startsFreeWindow) appAds.freeUntil = Date.now() + (config.rewarded_free_minutes || 10) * 60000; });
       listen('onRewardedVideoAdDismissed', () => finish(earned));
       listen('onRewardedVideoAdFailedToLoad', () => finish(true));
       listen('onRewardedVideoAdFailedToShow', () => finish(true));
@@ -961,6 +967,27 @@
         .then(() => { if (earned) finish(true); })
         .catch(() => finish(true));
     });
+  }
+  // AI chat allowance: a few free AI questions a day, then a rewarded ad buys more. Rule-based answers are always free.
+  const QUOTA_KEY = 'jyotisha.chatquota.v1';
+  function readQuota() {
+    const today = localIso(new Date());
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(QUOTA_KEY));
+      if (saved && saved.date === today && Number.isInteger(saved.used) && Number.isInteger(saved.bonus)) return saved;
+    } catch (_error) { /* start a fresh day */ }
+    return { date: today, used: 0, bonus: 0 };
+  }
+  function writeQuota(quota) { try { window.localStorage.setItem(QUOTA_KEY, JSON.stringify(quota)); } catch (_error) { /* not persisted */ } }
+  async function aiQuestionAllowed() {
+    const { config, admob } = appAds;
+    if (!config || !admob || !config.chat_free_questions || !adUnitOk(config.rewarded_id)) return true;   // browsers and unlimited setups
+    const quota = readQuota();
+    if (quota.used < config.chat_free_questions + quota.bonus) { quota.used += 1; writeQuota(quota); return true; }
+    const prompt = t('chatLimitPrompt').replace('{free}', config.chat_free_questions).replace('{bonus}', config.chat_bonus_questions);
+    if (!(await watchRewardedAd(prompt, false))) return false;
+    quota.bonus += config.chat_bonus_questions; quota.used += 1; writeQuota(quota);
+    return true;
   }
   // An occasional ad between screens: never in the first minute, at most one per few switches and per few minutes.
   function maybeInterstitial() {
@@ -1070,7 +1097,10 @@
   }
   function route(query) {
     if (state.assistant && !chartUI.isJathakamRequest(query) && !/^(What is my Lagna\?|Where is the Moon\?|Which planets are in house 1\?)$/.test(query)) {
-      void askAssistant(query).then(done => { if (!done) askOffline(query); });
+      void (async () => {
+        if (!(await aiQuestionAllowed())) { askOffline(query); return; }   // out of free AI questions: the rule-based answer is still free
+        if (!(await askAssistant(query))) askOffline(query);
+      })();
       return;
     }
     askOffline(query);

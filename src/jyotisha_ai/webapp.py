@@ -141,9 +141,21 @@ def _app_ads() -> dict | None:
     own = banner != TEST_BANNER_ID
     config = {"enabled": True, "banner_id": banner, "testing": (not own) or os.environ.get("JYOTISHA_ADMOB_TESTING", "").strip() == "1"}
     # A rewarded ad before a Kundli is generated, and an occasional ad between screens; both off unless switched on.
-    if os.environ.get("JYOTISHA_REWARDED_KUNDLI", "").strip() == "1":
+    rewarded_kundli = os.environ.get("JYOTISHA_REWARDED_KUNDLI", "").strip() == "1"
+    rewarded_chat = os.environ.get("JYOTISHA_REWARDED_CHAT", "").strip() == "1"
+    if rewarded_kundli or rewarded_chat:
         config["rewarded_id"] = unit_id("JYOTISHA_ADMOB_REWARDED_ID", TEST_REWARDED_ID)
+    if rewarded_kundli:
+        config["rewarded_kundli"] = True
         config["rewarded_free_minutes"] = 10
+    if rewarded_chat:
+        # Free AI questions per day, then a rewarded ad buys a few more; the rule-based answers stay free.
+        def count(name: str, default: int) -> int:
+            raw = os.environ.get(name, "").strip()
+            return int(raw) if raw.isdigit() and 1 <= int(raw) <= 100 else default
+
+        config["chat_free_questions"] = count("JYOTISHA_CHAT_FREE_QUESTIONS", 10)
+        config["chat_bonus_questions"] = count("JYOTISHA_CHAT_BONUS_QUESTIONS", 5)
     if os.environ.get("JYOTISHA_INTERSTITIAL", "").strip() == "1":
         config["interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
         config["interstitial_every"] = 4          # at most one ad per this many screen switches

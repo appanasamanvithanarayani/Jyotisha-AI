@@ -810,3 +810,20 @@ def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_m
     assert result["interstitial_every"] == 4 and result["interstitial_gap_seconds"] == 180
     monkeypatch.setenv("JYOTISHA_ADMOB_REWARDED_ID", "bad")
     assert config()["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"       # a malformed unit falls back to the test unit
+
+
+def test_chat_allowance_switch_sets_free_and_bonus_question_counts(local_server, monkeypatch):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_CHAT_FREE_QUESTIONS", "JYOTISHA_CHAT_BONUS_QUESTIONS", "JYOTISHA_ADMOB_REWARDED_ID"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert "chat_free_questions" not in config() and "rewarded_id" not in config()
+    monkeypatch.setenv("JYOTISHA_REWARDED_CHAT", "1")
+    result = config()
+    assert result["chat_free_questions"] == 10 and result["chat_bonus_questions"] == 5 and result["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"
+    assert "rewarded_kundli" not in result                                    # the Kundli ad is its own switch
+    monkeypatch.setenv("JYOTISHA_CHAT_FREE_QUESTIONS", "7"); monkeypatch.setenv("JYOTISHA_CHAT_BONUS_QUESTIONS", "300")
+    result = config()
+    assert result["chat_free_questions"] == 7 and result["chat_bonus_questions"] == 5          # out-of-range falls back to the default
+    monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
+    assert config()["rewarded_kundli"] is True
