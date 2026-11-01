@@ -115,6 +115,8 @@
       "viewDay": "दिनम्",
       "viewWeek": "सप्ताहः",
       "viewMonth": "मासः",
+      "aiLabel": "AI निर्मितम्",
+      "reportAnswer": "एतत् उत्तरं निवेदयतु",
       "privacyLink": "गोपनीयता नियमाश्च",
       "forgetProfile": "मम संगृहीतजन्मविवरणानि अपनयतु",
       "aiChatTitle": "स्वजीवनविषये AI सह संवदतु",

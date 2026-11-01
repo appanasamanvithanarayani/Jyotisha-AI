@@ -589,7 +589,7 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(200, links)
         elif path == "/privacy":
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
-            page = page.replace("{{ADS_ITEM}}", _privacy_ads_item())
+            page = page.replace("{{ADS_ITEM}}", _privacy_ads_item()).replace("{{DEVELOPER}}", html.escape(os.environ.get("JYOTISHA_DEVELOPER", "Samanvitha")))
             self._send(200, page.replace("{{CONTACT}}", html.escape(os.environ.get("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/ads.txt":
             client = _adsense_client()
@@ -622,6 +622,8 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness = birth_chart_readiness(self.server.project_root)
             readiness["assistant_available"] = assistant.available()
             readiness["adsense_client"] = _adsense_client() or None
+            contact = os.environ.get("JYOTISHA_CONTACT", "").strip()
+            readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)
         elif path == "/api/deployment-readiness":
             self._json(503, deployment_readiness())

@@ -115,6 +115,8 @@
       "viewDay": "दिन",
       "viewWeek": "सप्ताह",
       "viewMonth": "महीना",
+      "aiLabel": "AI द्वारा बनाया गया",
+      "reportAnswer": "इस उत्तर की रिपोर्ट करें",
       "privacyLink": "गोपनीयता और शर्तें",
       "forgetProfile": "मेरे सहेजे हुए जन्म विवरण हटाएँ",
       "aiChatTitle": "अपनी ज़िंदगी के बारे में AI से चैट करें",

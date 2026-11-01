@@ -7,7 +7,7 @@
   const chartUI = window.JyotishaChart;
 
   const state = {
-    lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
+    lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
     view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
     chart: null, details: null, resolved: null, partnerChart: null, showLoveReading: false, kundli: { style: 'south', division: 'd1' },
   };
@@ -931,12 +931,24 @@
     // Only calculated labels leave the browser; unreviewed life-area readings do not.
     return facts;
   }
+  // Replies written by the AI are labelled, and can be reported by email (nothing is sent without the user).
+  function addAiBar(entry, question, answer) {
+    const bar = el('div', 'ai-bar');
+    bar.appendChild(el('span', 'ai-tag', t('aiLabel')));
+    if (state.contactEmail) {
+      const link = el('a', 'ai-report', t('reportAnswer'));
+      const body = `Question:\n${question.slice(0, 300)}\n\nAnswer:\n${answer.slice(0, 1500)}\n\nWhat is wrong with it:\n`;
+      link.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent('Report an AI answer')}&body=${encodeURIComponent(body)}`;
+      bar.appendChild(link);
+    }
+    entry.appendChild(bar);
+  }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
   async function askAssistant(query) {
     const pending = el('div', 'chat-message assistant', '…'); chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
     try {
       const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts: chartFacts(), history: history.slice(-10) });
-      if (ok && body && body.answer) { pending.textContent = body.answer; history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); return true; }
+      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); return true; }
     } catch (_error) { /* fall back to the offline answer */ }
     chatLog.removeChild(pending); return false;
   }
@@ -1062,6 +1074,7 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
+    state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     // Ads are off unless the server was configured with an AdSense publisher id.
     if (/^ca-pub-\d{10,20}$/.test(readiness.adsense_client || '')) {
       try {

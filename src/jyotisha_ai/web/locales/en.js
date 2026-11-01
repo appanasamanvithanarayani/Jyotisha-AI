@@ -115,6 +115,8 @@
       "viewDay": "Day",
       "viewWeek": "Week",
       "viewMonth": "Month",
+      "aiLabel": "AI-generated",
+      "reportAnswer": "Report this answer",
       "privacyLink": "Privacy and terms",
       "forgetProfile": "Forget my saved birth details",
       "aiChatTitle": "Chat with AI about your life",

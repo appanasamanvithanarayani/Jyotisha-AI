@@ -115,6 +115,8 @@
       "viewDay": "ದಿನ",
       "viewWeek": "ವಾರ",
       "viewMonth": "ತಿಂಗಳು",
+      "aiLabel": "AI ರಚಿಸಿದ್ದು",
+      "reportAnswer": "ಈ ಉತ್ತರವನ್ನು ವರದಿ ಮಾಡಿ",
       "privacyLink": "ಗೌಪ್ಯತೆ ಮತ್ತು ನಿಯಮಗಳು",
       "forgetProfile": "ಉಳಿಸಿದ ನನ್ನ ಜನ್ಮ ವಿವರಗಳನ್ನು ಅಳಿಸಿ",
       "aiChatTitle": "ನಿಮ್ಮ ಜೀವನದ ಬಗ್ಗೆ AI ಜೊತೆ ಚಾಟ್ ಮಾಡಿ",

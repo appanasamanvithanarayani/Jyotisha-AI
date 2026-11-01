@@ -758,3 +758,16 @@ def test_ads_are_off_by_default_and_switch_on_only_with_a_valid_adsense_id(local
     csp = headers["Content-Security-Policy"]
     assert "https://pagead2.googlesyndication.com" in csp and "frame-src" in csp and "default-src 'none'" in csp
     assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["adsense_client"] == "ca-pub-1234567890123456"
+
+
+def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_exposes_a_valid_contact(local_server, monkeypatch):
+    monkeypatch.delenv("JYOTISHA_DEVELOPER", raising=False)
+    monkeypatch.setenv("JYOTISHA_CONTACT", "help@example.com")
+    _, _, body = request(local_server, "GET", "/privacy")
+    assert b"developed and operated by Samanvitha" in body and b"Report this answer" in body and b"AI-generated" in body and b"{{DEVELOPER}}" not in body
+    assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["contact_email"] == "help@example.com"
+    monkeypatch.setenv("JYOTISHA_CONTACT", "not an email <script>")
+    assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["contact_email"] is None
+    monkeypatch.setenv("JYOTISHA_DEVELOPER", "Test <b>Studio</b>")
+    _, _, body = request(local_server, "GET", "/privacy")
+    assert b"Test &lt;b&gt;Studio&lt;/b&gt;" in body
