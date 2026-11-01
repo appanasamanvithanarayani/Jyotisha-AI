@@ -115,6 +115,7 @@
       "viewDay": "दिन",
       "viewWeek": "सप्ताह",
       "viewMonth": "मास",
+      "watchAdPrompt": "अपन कुंडली निःशुल्क बनाबय लेल एकटा छोट विज्ञापन देखब?",
       "aiLabel": "AI द्वारा बनाओल",
       "reportAnswer": "एहि उत्तरक रिपोर्ट करू",
       "privacyLink": "गोपनीयता आ शर्त",

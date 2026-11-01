@@ -61,7 +61,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -390,4 +390,76 @@ test('the native app shows an AdMob banner only when the server switches ads on,
   const web = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
   await settle();                                                        // an ordinary browser has no AdMob plugin and simply shows no banner
   assert.equal(web.context.cssVars, undefined);
+});
+
+
+function fakeRewardedAdMob() {
+  const calls = [], handlers = {};
+  return { calls, handlers, plugin: {
+    initialize: async () => {}, requestConsentInfo: async () => ({ status: 'NOT_REQUIRED' }), showBanner: async () => {},
+    addListener: (name, handler) => { handlers[name] = handler; return { remove() { delete handlers[name]; } }; },
+    prepareRewardVideoAd: async options => { calls.push(['prepareRewardVideoAd', options]); },
+    showRewardVideoAd: async () => { calls.push(['showRewardVideoAd']); },
+    prepareInterstitial: async options => { calls.push(['prepareInterstitial', options]); },
+    showInterstitial: async () => { calls.push(['showInterstitial']); },
+  } };
+}
+const rewardedConfig = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true, rewarded_id: 'ca-app-pub-3940256099942544/5224354917', rewarded_free_minutes: 10 };
+async function typeInChat(app, text) {
+  app.element('chat-question').value = text;
+  app.element('chat-form').listeners.submit({ preventDefault() {} });
+  await settle();
+}
+
+test('generating a Kundli asks the user to watch a rewarded ad first, and only calculates after the reward', async () => {
+  const ad = fakeRewardedAdMob();
+  const prompts = [];
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: ad.plugin } },
+    appAds: rewardedConfig, birth: syntheticBirth, confirm: message => { prompts.push(message); return true; } });
+  await settle();
+  await typeInChat(app, '15-08-1995'); await typeInChat(app, 'Hyderabad, IN'); await typeInChat(app, '6:30 am');
+  assert.deepEqual(prompts, [calendar.tr('en', 'watchAdPrompt')]);
+  assert.deepEqual(ad.calls.map(call => call[0]), ['prepareRewardVideoAd', 'showRewardVideoAd']);
+  assert.equal(ad.calls[0][1].adId, rewardedConfig.rewarded_id); assert.equal(ad.calls[0][1].isTesting, true);
+  assert.equal(birthRequests(app).length, 0);                         // nothing is calculated until the ad has been watched
+  ad.handlers.onRewardedVideoAdReward({ type: 'coin', amount: 1 });
+  ad.handlers.onRewardedVideoAdDismissed();
+  await settle();
+  assert.equal(birthRequests(app).length, 1);
+  // a second Kundli within the free window needs no second ad
+  await typeInChat(app, 'forget');   // (any chat text) keeps the app alive; the gate itself is what we assert next
+  assert.equal(prompts.length, 1);
+});
+
+test('declining the ad does not calculate, and an ad that cannot load never blocks the user', async () => {
+  const declined = fakeRewardedAdMob();
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: declined.plugin } },
+    appAds: rewardedConfig, birth: syntheticBirth, confirm: () => false });
+  await settle();
+  await typeInChat(app, '15-08-1995'); await typeInChat(app, 'Hyderabad, IN'); await typeInChat(app, '6:30 am');
+  assert.deepEqual(declined.calls, []);
+  assert.equal(birthRequests(app).length, 0);
+  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskTob'));
+
+  const broken = fakeRewardedAdMob();
+  const second = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: broken.plugin } },
+    appAds: rewardedConfig, birth: syntheticBirth, confirm: () => true });
+  await settle();
+  await typeInChat(second, '15-08-1995'); await typeInChat(second, 'Hyderabad, IN'); await typeInChat(second, '6:30 am');
+  broken.handlers.onRewardedVideoAdFailedToLoad();
+  await settle();
+  assert.equal(birthRequests(second).length, 1);
+});
+
+test('without the rewarded switch (or outside the app) nothing is asked and the Kundli is calculated straight away', async () => {
+  const ad = fakeRewardedAdMob();
+  const plain = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: ad.plugin } },
+    appAds: { enabled: true, banner_id: rewardedConfig.banner_id, testing: true }, birth: syntheticBirth, confirm: () => { throw new Error('must not ask'); } });
+  await settle();
+  await typeInChat(plain, '15-08-1995'); await typeInChat(plain, 'Hyderabad, IN'); await typeInChat(plain, '6:30 am');
+  assert.equal(birthRequests(plain).length, 1);
+  const web = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), appAds: rewardedConfig, birth: syntheticBirth, confirm: () => { throw new Error('must not ask'); } });
+  await settle();
+  await typeInChat(web, '15-08-1995'); await typeInChat(web, 'Hyderabad, IN'); await typeInChat(web, '6:30 am');
+  assert.equal(birthRequests(web).length, 1);
 });

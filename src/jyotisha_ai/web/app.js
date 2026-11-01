@@ -42,6 +42,8 @@
   const localIso = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const shiftIso = (iso, days) => { const date = new Date(`${iso}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
 
+  // Native-app ad state (stays empty in a browser); declared early because switching screens can ask it for an interstitial.
+  const appAds = { config: null, admob: null, freeUntil: 0, switches: 0, lastInterstitial: 0, started: Date.now() };
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
@@ -65,6 +67,7 @@
     });
     if (document.body && document.body.classList) document.body.classList.toggle('page-chat', chosen === 'chat');
     window.scrollTo(0, 0);
+    maybeInterstitial();
   }
   document.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', event => {
     const target = link.getAttribute('href').slice(1);
@@ -856,6 +859,7 @@
   $('birth-form').addEventListener('submit', async event => {
     event.preventDefault();
     const data = new FormData($('birth-form'));
+    if (!(await rewardedGate())) return;
     $('chart').hidden = true; state.chart = null; state.details = null;
     setChatEnabled(false);
     resetChat(t('processing'));
@@ -936,9 +940,43 @@
     const height = Number.isFinite(pixels) && pixels > 0 ? Math.min(Math.round(pixels), 200) : 0;
     document.documentElement.style.setProperty('--ad-height', `${height}px`);
   }
+  const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
+  // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
+  // the free window after a recent ad, or the ad could not be shown (an ad problem never blocks the user).
+  function rewardedGate() {
+    const { config, admob } = appAds;
+    if (!config || !admob || !adUnitOk(config.rewarded_id) || Date.now() < appAds.freeUntil) return Promise.resolve(true);
+    if (!window.confirm || !window.confirm(t('watchAdPrompt'))) return Promise.resolve(false);
+    return new Promise(resolve => {
+      let earned = false, settled = false;
+      const handles = [];
+      const finish = result => { if (settled) return; settled = true; handles.forEach(h => { try { h.remove(); } catch (_error) { /* gone */ } }); resolve(result); };
+      const listen = (name, handler) => { try { const h = admob.addListener(name, handler); if (h && h.then) h.then(x => handles.push(x)); else if (h) handles.push(h); } catch (_error) { /* optional */ } };
+      listen('onRewardedVideoAdReward', () => { earned = true; appAds.freeUntil = Date.now() + (config.rewarded_free_minutes || 10) * 60000; });
+      listen('onRewardedVideoAdDismissed', () => finish(earned));
+      listen('onRewardedVideoAdFailedToLoad', () => finish(true));
+      listen('onRewardedVideoAdFailedToShow', () => finish(true));
+      Promise.resolve(admob.prepareRewardVideoAd({ adId: config.rewarded_id, isTesting: config.testing === true }))
+        .then(() => admob.showRewardVideoAd())
+        .then(() => { if (earned) finish(true); })
+        .catch(() => finish(true));
+    });
+  }
+  // An occasional ad between screens: never in the first minute, at most one per few switches and per few minutes.
+  function maybeInterstitial() {
+    const { config, admob } = appAds;
+    if (!config || !admob || !adUnitOk(config.interstitial_id)) return;
+    appAds.switches += 1;
+    const now = Date.now();
+    if (now - appAds.started < 60000 || appAds.switches % (config.interstitial_every || 4) !== 0 || now - appAds.lastInterstitial < (config.interstitial_gap_seconds || 180) * 1000) return;
+    appAds.lastInterstitial = now;
+    Promise.resolve(admob.prepareInterstitial({ adId: config.interstitial_id, isTesting: config.testing === true }))
+      .then(() => admob.showInterstitial()).catch(() => { /* no ad available: carry on */ });
+  }
   async function startAppAds(config) {
     const admob = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
-    if (!admob || !/^ca-app-pub-\d{16}\/\d{10}$/.test(config.banner_id || '')) return;
+    if (!admob || !adUnitOk(config.banner_id)) return;
+    appAds.config = config; appAds.admob = admob;
     try {
       await admob.initialize({ initializeForTesting: config.testing === true });
       try {
@@ -983,6 +1021,7 @@
     renderChart(); $('chart').hidden = false;
   }
   async function finishIntake() {
+    if (!(await rewardedGate())) { intake.step = 'tob'; intake.tob = ''; addMessage('assistant', t('chatAskTob')); return; }
     addMessage('assistant', t('processing'));
     try {
       const { ok, body } = await post('/api/birth-chart', { dob: intake.dob, pob: intake.pob, tob: intake.tob });

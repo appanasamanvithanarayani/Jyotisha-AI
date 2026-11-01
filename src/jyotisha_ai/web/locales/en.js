@@ -115,6 +115,7 @@
       "viewDay": "Day",
       "viewWeek": "Week",
       "viewMonth": "Month",
+      "watchAdPrompt": "Watch a short ad to generate your Kundli for free?",
       "aiLabel": "AI-generated",
       "reportAnswer": "Report this answer",
       "privacyLink": "Privacy and terms",

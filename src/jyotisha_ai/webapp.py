@@ -120,6 +120,8 @@ def _adsense_client() -> str:
 
 
 TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"   # Google's public test banner unit
+TEST_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"
+TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
 
 
 def _app_ads() -> dict | None:
@@ -130,10 +132,23 @@ def _app_ads() -> dict | None:
     """
     if os.environ.get("JYOTISHA_APP_ADS", "").strip() != "1":
         return None
-    unit = os.environ.get("JYOTISHA_ADMOB_BANNER_ID", "").strip()
-    if re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", unit) and unit != TEST_BANNER_ID:
-        return {"enabled": True, "banner_id": unit, "testing": os.environ.get("JYOTISHA_ADMOB_TESTING", "").strip() == "1"}
-    return {"enabled": True, "banner_id": TEST_BANNER_ID, "testing": True}
+
+    def unit_id(name: str, test_unit: str) -> str:
+        value = os.environ.get(name, "").strip()
+        return value if re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", value) else test_unit
+
+    banner = unit_id("JYOTISHA_ADMOB_BANNER_ID", TEST_BANNER_ID)
+    own = banner != TEST_BANNER_ID
+    config = {"enabled": True, "banner_id": banner, "testing": (not own) or os.environ.get("JYOTISHA_ADMOB_TESTING", "").strip() == "1"}
+    # A rewarded ad before a Kundli is generated, and an occasional ad between screens; both off unless switched on.
+    if os.environ.get("JYOTISHA_REWARDED_KUNDLI", "").strip() == "1":
+        config["rewarded_id"] = unit_id("JYOTISHA_ADMOB_REWARDED_ID", TEST_REWARDED_ID)
+        config["rewarded_free_minutes"] = 10
+    if os.environ.get("JYOTISHA_INTERSTITIAL", "").strip() == "1":
+        config["interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
+        config["interstitial_every"] = 4          # at most one ad per this many screen switches
+        config["interstitial_gap_seconds"] = 180   # and never twice within this many seconds
+    return config
 
 
 def _content_security_policy() -> str:

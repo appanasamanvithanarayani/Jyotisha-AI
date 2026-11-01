@@ -790,3 +790,23 @@ def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(l
     assert readiness()["testing"] is True
     monkeypatch.setenv("JYOTISHA_ADMOB_BANNER_ID", "not-a-unit")                    # a malformed unit never reaches the app
     assert readiness()["banner_id"] == "ca-app-pub-3940256099942544/6300978111"
+
+
+def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_master_switch(local_server, monkeypatch):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_ADMOB_REWARDED_ID", "JYOTISHA_INTERSTITIAL", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING"):
+        monkeypatch.delenv(name, raising=False)
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
+    assert config() is None                                              # the master switch is still off
+    monkeypatch.delenv("JYOTISHA_REWARDED_KUNDLI")
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    assert "rewarded_id" not in config() and "interstitial_id" not in config()   # banner only by default
+    monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
+    monkeypatch.setenv("JYOTISHA_ADMOB_REWARDED_ID", "ca-app-pub-1234567890123456/1234567890")
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL", "1")
+    result = config()
+    assert result["rewarded_id"] == "ca-app-pub-1234567890123456/1234567890" and result["rewarded_free_minutes"] == 10
+    assert result["interstitial_id"] == "ca-app-pub-3940256099942544/1033173712"      # no own unit yet: Google's test interstitial
+    assert result["interstitial_every"] == 4 and result["interstitial_gap_seconds"] == 180
+    monkeypatch.setenv("JYOTISHA_ADMOB_REWARDED_ID", "bad")
+    assert config()["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"       # a malformed unit falls back to the test unit

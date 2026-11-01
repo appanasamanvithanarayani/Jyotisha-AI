@@ -115,6 +115,7 @@
       "viewDay": "دن",
       "viewWeek": "ہفتہ",
       "viewMonth": "مہینہ",
+      "watchAdPrompt": "اپنا زائچہ مفت بنانے کے لیے ایک مختصر اشتہار دیکھیں؟",
       "aiLabel": "AI کا بنایا ہوا",
       "reportAnswer": "اس جواب کی رپورٹ کریں",
       "privacyLink": "رازداری اور شرائط",
