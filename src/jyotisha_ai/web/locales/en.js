@@ -115,6 +115,7 @@
       "viewDay": "Day",
       "viewWeek": "Week",
       "viewMonth": "Month",
+      "exportLabel": "Export / Share",
       "watchAdPrompt": "Watch a short ad to generate your Kundli for free?",
       "chatLimitPrompt": "You have used your {free} free AI questions today. Watch a short ad for {bonus} more?",
       "aiLabel": "AI-generated",

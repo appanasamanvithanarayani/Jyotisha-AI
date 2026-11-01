@@ -1154,6 +1154,67 @@
   }));
   document.querySelectorAll('.prompt').forEach(button => button.addEventListener('click', () => ask(button.textContent, button.dataset.question, true)));
 
+  /* ------------------------------------------------------------ export / share */
+  // Plain text that can be sent through the phone's share sheet (WhatsApp, e-mail, notes) or saved as a .txt file.
+  const INLINE_TAGS = new Set(['span', 'b', 'strong', 'i', 'em', 'small', 'a', 'sup', 'sub']);
+  const tagOf = node => String((node && (node.tagName || node.tag)) || '').toLowerCase();
+  const squash = text => String(text || '').replace(/\s+/g, ' ').trim();
+  function plainText(node) {
+    const own = node && node.textContent;
+    if (own) return squash(own);
+    return squash(Array.from((node && node.children) || []).map(plainText).join(' '));
+  }
+  function domToText(root) {
+    const out = [];
+    const walk = node => {
+      const tag = tagOf(node);
+      if (!tag || node.hidden || ['button', 'script', 'style', 'svg', 'select', 'input'].includes(tag)) return;
+      const kids = Array.from(node.children || []);
+      if (tag === 'tr') { const line = kids.map(plainText).filter(Boolean).join(' | '); if (line) out.push(line); return; }
+      if (tag === 'li') { const line = plainText(node); if (line) out.push('• ' + line); return; }
+      if (/^h[1-6]$/.test(tag) || tag === 'summary') { const line = kids.length ? squash(kids.map(plainText).join(' ')) : plainText(node); if (line) out.push('', line); return; }
+      if (!kids.length || tag === 'p' || kids.every(kid => INLINE_TAGS.has(tagOf(kid)))) { const line = plainText(node); if (line) out.push(line); return; }
+      kids.forEach(walk);
+    };
+    walk(root);
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  async function shareText(title, text) {
+    const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\n— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`;
+    const native = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+    try {
+      if (native && native.share) { await native.share({ title, text: body, dialogTitle: title }); return; }
+      if (navigator.share) { await navigator.share({ title, text: body }); return; }
+    } catch (error) { if (error && error.name === 'AbortError') return; /* otherwise fall back to a file */ }
+    try {
+      const url = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url; link.download = `${title.replace(/[^\w]+/g, '-').slice(0, 40) || 'jyotisha'}.txt`;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (_error) { /* nothing more to try */ }
+  }
+  function chatText() {
+    return Array.from(chatLog.children || []).map(message => {
+      const who = String(message.className || '').includes('user') ? 'Q' : 'A';
+      const body = domToText(message) || plainText(message);
+      return body ? `${who}: ${body}` : '';
+    }).filter(Boolean).join('\n\n');
+  }
+  function kundliText() {
+    const parts = [$('chart-summary').textContent, domToText($('chart-stats')), $('chart-janma').textContent];
+    const tables = [['detailsTitle', 'details-body'], ['birthPanchangTitle', 'birth-panchang'], ['mahadashaTitle', 'mahadasha-body'], ['antardasha', 'antardasha-body']];
+    for (const [key, id] of tables) {
+      const body = $(id), table = body && body.parentNode;
+      const text = table ? domToText(table) : '';
+      if (text) parts.push('', key === 'antardasha' ? $('antardasha-title').textContent : t(key), text);
+    }
+    return parts.filter(part => part !== undefined && part !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  $('export-chat').addEventListener('click', () => { void shareText(`${t('chartQuestion')}`, chatText()); });
+  $('export-kundli').addEventListener('click', () => { if (state.chart) void shareText(`${t('chartTitle')}`, kundliText()); });
+  $('export-rashi').addEventListener('click', () => { void shareText(`${t('rashiphal')} · ${$('rashi-moon').textContent}`, domToText($('rashi-list'))); });
+
   /* ----------------------------------------------------------------- start */
   // Installable app: the service worker keeps the shell available and shows a friendly page offline.
   try { if (navigator.serviceWorker) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (_error) { /* not supported */ }

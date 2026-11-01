@@ -503,3 +503,48 @@ test('the AI chat has no daily limit in a browser or when the chat switch is off
   for (let n = 0; n < 12; n += 1) await typeInChat(off, `question ${n}`);
   assert.equal(off.requests.filter(r => r.url === '/api/ask').length, 12);
 });
+
+function fakeShare() {
+  const calls = [];
+  return { calls, plugin: { share: async options => { calls.push(options); } } };
+}
+
+test('Export / Share sends the Rashiphalalu, the Kundli and the AI chat as plain text through the native share sheet', async () => {
+  const share = fakeShare();
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, capacitor: { Plugins: { Share: share.plugin } }, birth: syntheticBirth });
+  await settle();
+
+  app.element('export-rashi').listeners.click(); await settle();
+  assert.equal(share.calls.length, 1);
+  assert.match(share.calls[0].title, /Rashiphal/);
+  assert.match(share.calls[0].text, /Aries/); assert.match(share.calls[0].text, /Moon is the .* from this sign/);
+  assert.match(share.calls[0].text, /— Jyotisha AI/);                         // a short sign-off, so a forwarded message says where it came from
+
+  app.element('export-kundli').listeners.click(); await settle();
+  assert.equal(share.calls.length, 2);
+  assert.match(share.calls[1].text, /Leo/);                                    // the Lagna of the synthetic chart
+
+  await typeInChat(app, 'how is my money');
+  app.element('export-chat').listeners.click(); await settle();
+  assert.equal(share.calls.length, 3);
+  assert.match(share.calls[2].text, /Q: how is my money/); assert.match(share.calls[2].text, /A: /);
+});
+
+test('outside the app Export / Share uses the browser share sheet, and never breaks when sharing is cancelled or missing', async () => {
+  const shared = [];
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, navigator: { share: async options => { shared.push(options); } } });
+  await settle();
+  app.element('export-rashi').listeners.click(); await settle();
+  assert.equal(shared.length, 1); assert.match(shared[0].text, /Aries/);
+
+  const cancelled = boot({ storage, navigator: { share: async () => { const error = new Error('cancel'); error.name = 'AbortError'; throw error; } } });
+  await settle();
+  cancelled.element('export-rashi').listeners.click(); await settle();      // a cancelled share is not an error
+
+  const none = boot({ storage });
+  await settle();
+  none.element('export-rashi').listeners.click(); await settle();           // no share support: falls back to a file download without throwing
+});

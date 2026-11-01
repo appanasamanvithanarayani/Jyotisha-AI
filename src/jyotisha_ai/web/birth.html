@@ -92,6 +92,7 @@
     <p id="chart-summary" class="section-intro"></p>
     <div id="chart-stats" class="k-stats"></div>
     <p id="chart-janma" class="section-intro"></p>
+    <p class="export-row"><button id="export-kundli" type="button" class="chip-btn" data-i18n="exportLabel">Export / Share</button></p>
     <div class="k-toggles">
       <div id="style-toggle" class="seg" role="group"><button type="button" data-style="south" data-i18n="southIndian">South Indian</button><button type="button" data-style="north" data-i18n="chartStyleNorth">North Indian</button></div>
       <div id="division-toggle" class="seg" role="group"><button type="button" data-division="d1" data-i18n="divD1">Rashi (D1)</button><button type="button" data-division="d9" data-i18n="divD9">Navamsa (D9)</button></div>
@@ -122,10 +123,11 @@
     <div id="rashi-mode" class="seg" role="group"><button type="button" data-rmode="day" class="on" data-i18n="viewDay">Day</button><button type="button" data-rmode="week" data-i18n="viewWeek">Week</button><button type="button" data-rmode="month" data-i18n="viewMonth">Month</button></div>
     <div class="day-bar"><button id="rashi-prev" type="button" data-i18n="previousDay">Previous day</button><button id="rashi-today" type="button" data-i18n="today">Today</button><button id="rashi-next" type="button" data-i18n="nextDay">Next day</button></div>
     <p id="rashi-moon" class="muted-note"></p>
+    <p class="export-row"><button id="export-rashi" type="button" class="chip-btn" data-i18n="exportLabel">Export / Share</button></p>
     <div id="rashi-list" class="rashi-list"></div>
   </section>
   <section id="chat" class="card" aria-labelledby="chat-title">
-    <span class="eyebrow" data-i18n="eyebrowGuide">Chart guide</span><h2 id="chat-title" data-i18n="chartQuestion">Ask about your chart</h2>
+    <span class="eyebrow" data-i18n="eyebrowGuide">Chart guide</span><h2 id="chat-title" data-i18n="chartQuestion">Ask about your chart</h2><button id="export-chat" type="button" class="chip-btn export-chat" data-i18n="exportLabel">Export / Share</button>
     <p class="section-intro" data-i18n="chartLanguage">Answers use your calculated chart and general traditional rules. They are guidance for reflection, not predictions.</p>
     <div id="chat-log" class="chat-log" role="log" aria-live="polite"></div>
     <div class="prompts"><button type="button" class="prompt prompt-main" data-question="Give me my Jathakam" data-i18n="myJathakam">My Jathakam</button><button type="button" class="prompt" data-question="What is my Lagna?" data-i18n="myLagna">My Lagna</button><button type="button" class="prompt" data-question="Where is the Moon?" data-i18n="moonPosition">Moon position</button><button type="button" class="prompt" data-question="Which planets are in house 1?" data-i18n="firstHouse">1st house</button></div>

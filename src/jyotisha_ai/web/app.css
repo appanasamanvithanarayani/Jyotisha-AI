@@ -356,3 +356,9 @@ body.page-chat .chat-controls{flex:0 0 auto}
 :root{--ad-height:0px}
 body{padding-bottom:calc(120px + var(--ad-height,0px))}
 body.page-chat #chat{height:calc(100dvh - 60px - 118px - var(--ad-height,0px))}
+
+/* Export / Share */
+.export-row{margin:8px 0 4px;text-align:end}
+#chat{position:relative}
+.export-chat{position:absolute;top:14px;inset-inline-end:14px;width:auto;margin:0;padding:6px 12px;font-size:.78rem;min-height:0}
+body.page-chat #chat h2{padding-top:16px}
