@@ -1076,7 +1076,11 @@
     state.assistant = readiness.assistant_available === true;
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     // Ads are off unless the server was configured with an AdSense publisher id.
-    if (/^ca-pub-\d{10,20}$/.test(readiness.adsense_client || '')) {
+    // AdSense is a website program: it is not loaded inside the installed app / Play Store wrapper (use AdMob for native apps).
+    const installedApp = (() => {
+      try { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || /^android-app:/.test(document.referrer || ''); } catch (_error) { return false; }
+    })();
+    if (!installedApp && /^ca-pub-\d{10,20}$/.test(readiness.adsense_client || '')) {
       try {
         const ad = document.createElement('script');
         ad.async = true; ad.crossOrigin = 'anonymous';
