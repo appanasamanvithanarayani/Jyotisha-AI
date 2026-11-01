@@ -2,12 +2,15 @@
   "appId": "store.karthiktraders.jyotisha",
   "appName": "Jyotisha AI",
   "webDir": "www",
+  "backgroundColor": "#150d2e",
   "server": {
     "url": "https://jyotisha.karthiktraders.store",
     "cleartext": false,
     "androidScheme": "https"
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "backgroundColor": "#150d2e",
+    "adjustMarginsForEdgeToEdge": "force"
   }
 }
