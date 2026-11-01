@@ -294,7 +294,14 @@ body.onboarding-active{background:radial-gradient(700px 500px at 50% 0,#6a2a8a 0
   body.printing #print-root{display:block;color:#000}
   body.printing{background:#fff;padding:0;max-width:none}
   .jathakam{break-inside:auto}.jathakam .jk-sec,.jathakam table{break-inside:avoid}
+  /* print what the app shows, in colour, without breaking a card or a row across pages */
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rashi-card,.chat-message,.k-table tr,.week-strip,.rashi-areas{break-inside:avoid}
+  .print-chat{height:auto!important;max-height:none!important;overflow:visible!important;background:#fff}
+  .pdf-sheet .rashi-list,.pdf-sheet.rashi-list{display:grid;gap:8px}
+  .pdf-sheet .card{box-shadow:none}
 }
+@page{size:A4;margin:12mm}
 
 /* ---------- Ask page: the chat fills the space between the header and the bottom bar ---------- */
 body.page-chat{padding-bottom:0}
@@ -368,5 +375,4 @@ body.page-chat #chat h2{padding-top:16px}
 
 /* PDF page (printed through the print dialog) */
 .pdf-sheet h1{font-size:20pt;margin:0 0 12pt;color:#2a1768}
-.pdf-body{white-space:pre-wrap;font:11.5pt/1.55 system-ui,'Noto Sans','Nirmala UI',sans-serif;color:#000}
 .pdf-foot{margin-top:18pt;font-size:9pt;color:#555}

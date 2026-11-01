@@ -35,6 +35,14 @@ class Element {
   getAttribute(name) { return this.attributes[name] || ''; }
   removeAttribute(name) { delete this.attributes[name]; }
   insertAdjacentElement() {}
+  cloneNode(deep) {
+    const copy = new Element(this.tag);
+    Object.assign(copy, { hidden: this.hidden, value: this.value, textContent: this.textContent, className: this.className, id: this.id });
+    copy.attributes = { ...this.attributes }; copy.dataset = { ...this.dataset };
+    if (deep) copy.children = this.children.map(child => (child && child.cloneNode ? child.cloneNode(true) : child));
+    return copy;
+  }
+  remove() {}
   querySelectorAll() { return []; }
   scrollIntoView() {}
   focus() {}
@@ -524,7 +532,7 @@ test('Export / Share sends the Rashiphalalu, the Kundli and the AI chat as plain
 
   app.element('export-kundli').listeners.click(); await settle();
   assert.equal(share.calls.length, 2);
-  assert.match(share.calls[1].text, /Leo/);                                    // the Lagna of the synthetic chart
+  assert.match(share.calls[1].text, /Ascendant Leo/);                              // label and value stay apart (not "LagnaLeo")
 
   await typeInChat(app, 'how is my money');
   app.element('export-chat').listeners.click(); await settle();
@@ -581,7 +589,9 @@ test('the PDF button shows only the text to print and opens the print dialog (na
   const root = app.context.document.body.children.at(-1);
   assert.equal(root.id, 'print-root');
   const sheet = root.children[0];
-  assert.match(sheet.children[1].textContent, /Aries/);                       // the page to print holds the Rashiphalalu text
+  assert.match(sheet.children[0].textContent, /Rashiphal/);                   // heading
+  const printedPage = JSON.stringify(sheet.children[1], (key, value) => (key === 'listeners' ? undefined : value));
+  assert.match(printedPage, /Aries/);                                              // the page to print is a copy of the real Rashiphalalu cards
   assert.match(sheet.children[2].textContent, /Jyotisha AI/);
 
   const shared = [];

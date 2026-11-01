@@ -1160,9 +1160,14 @@
   const tagOf = node => String((node && (node.tagName || node.tag)) || '').toLowerCase();
   const squash = text => String(text || '').replace(/\s+/g, ' ').trim();
   function plainText(node) {
-    const own = node && node.textContent;
+    if (!node) return '';
+    const kids = Array.from(node.children || []);
+    // Only elements inside (a tile, a table cell): keep a space between them. With loose text inside, textContent is right.
+    const loneElements = kids.length > 0 && !(node.childNodes && node.childNodes.length !== kids.length);
+    if (loneElements) return squash(kids.map(plainText).join(' '));
+    const own = node.textContent;
     if (own) return squash(own);
-    return squash(Array.from((node && node.children) || []).map(plainText).join(' '));
+    return squash(kids.map(plainText).join(' '));
   }
   function domToText(root) {
     const out = [];
@@ -1234,10 +1239,20 @@
   }
   // PDF: shows only the text to print and opens the print dialog, whose "Save as PDF" makes the file.
   // Android app: a small native plugin (PdfPrint) opens that dialog; browsers use window.print().
-  function printPdf(title, text) {
+  // A copy of what is on screen, ready to print: no buttons or ids, every card open.
+  function cloneForPrint(node) {
+    const copy = node.cloneNode(true);
+    if (!copy.querySelectorAll) return copy;
+    copy.querySelectorAll('button, .export-row, .export-chat').forEach(item => { try { item.remove(); } catch (_error) { /* gone */ } });
+    copy.querySelectorAll('details').forEach(item => item.setAttribute('open', ''));
+    copy.querySelectorAll('[id]').forEach(item => item.removeAttribute('id'));
+    copy.removeAttribute('id'); copy.removeAttribute('hidden');
+    return copy;
+  }
+  function printPdf(title, makeNode, fallbackText) {
     const root = document.createElement('div'); root.id = 'print-root';
     const sheet = el('div', 'pdf-sheet');
-    sheet.append(el('h1', null, title), el('div', 'pdf-body', text), el('p', 'pdf-foot', `— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`));
+    sheet.append(el('h1', null, title), makeNode(), el('p', 'pdf-foot', `— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`));
     root.appendChild(sheet);
     document.body.appendChild(root); document.body.classList.add('printing');
     let finished = false;
@@ -1256,19 +1271,22 @@
     const nativePrint = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PdfPrint;
     const inApp = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
     if (nativePrint && nativePrint.print) {
-      setTimeout(() => { Promise.resolve(nativePrint.print({ title })).catch(() => { finish(); void shareText(title, text); }); }, 400);
+      setTimeout(() => { Promise.resolve(nativePrint.print({ title })).catch(() => { finish(); void shareText(title, fallbackText()); }); }, 400);
     } else if (inApp) {
-      finish(); void shareText(title, text);               // an older app without the PDF plugin: share the text instead
+      finish(); void shareText(title, fallbackText());     // an older app without the PDF plugin: share the text instead
     } else if (window.print) {
       try { window.addEventListener('afterprint', finish, { once: true }); } catch (_error) { /* optional */ }
       setTimeout(() => { try { window.print(); } catch (_error) { finish(); } }, 250);
     } else finish();
   }
-  $('pdf-chat').addEventListener('click', () => printPdf(t('chartQuestion'), chatText()));
-  $('pdf-kundli').addEventListener('click', () => { if (state.chart) printPdf(t('chartTitle'), kundliText()); });
-  $('pdf-rashi').addEventListener('click', () => printPdf(`${t('rashiphal')} · ${$('rashi-moon').textContent}`, domToText($('rashi-list'))));
+  $('pdf-chat').addEventListener('click', () => printPdf(t('chartQuestion'), () => { const log = cloneForPrint(chatLog); log.className = 'chat-log print-chat'; return log; }, chatText));
+  $('pdf-kundli').addEventListener('click', () => { if (state.chart) printPdf(t('eyebrowBirth'), () => cloneForPrint(buildJathakam()), kundliText); });
+  $('pdf-rashi').addEventListener('click', () => {
+    const heading = `${t('rashiphal')} · ${$('rashi-moon').textContent}`;
+    printPdf(heading, () => cloneForPrint($('rashi-list')), () => domToText($('rashi-list')));
+  });
   $('export-chat').addEventListener('click', () => { void shareText(`${t('chartQuestion')}`, chatText()); });
-  $('export-kundli').addEventListener('click', () => { if (state.chart) void shareText(`${t('chartTitle')}`, kundliText()); });
+  $('export-kundli').addEventListener('click', () => { if (state.chart) void shareText(`${t('eyebrowBirth')}`, kundliText()); });
   $('export-rashi').addEventListener('click', () => { void shareText(`${t('rashiphal')} · ${$('rashi-moon').textContent}`, domToText($('rashi-list'))); });
 
   /* ----------------------------------------------------------------- start */
