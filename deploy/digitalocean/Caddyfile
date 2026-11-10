@@ -1,4 +1,4 @@
-{$DOMAIN} {
+{$DOMAIN}, karthiktraders.store, www.karthiktraders.store {
 	encode gzip
 	reverse_proxy app:8080
 }
