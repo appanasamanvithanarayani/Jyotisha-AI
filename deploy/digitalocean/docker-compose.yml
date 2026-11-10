@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8080"
-      JYOTISHA_ALLOWED_HOSTS: ${DOMAIN}
+      JYOTISHA_ALLOWED_HOSTS: ${DOMAIN},karthiktraders.store
       JYOTISHA_TRUST_PROXY: "1"
       JYOTISHA_CONTACT: ${CONTACT_EMAIL}
       JYOTISHA_ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-gemini}
