@@ -1,7 +1,22 @@
 name: Build Android app
 
+# Runs by itself whenever the Android app code changes on main (or by hand from the Actions tab), then publishes the
+# signed APK as a GitHub Release. The server's /download page always serves the latest release, so nothing is
+# committed to downloads/ any more.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-build.yml"
+
+permissions:
+  contents: write   # to create the release
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -44,11 +59,48 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      - name: Bump the version
+        id: version
+        run: |
+          # Next version from build.gradle itself: versionCode +1 and the last number of versionName +1 (1.0.8 -> 1.0.9).
+          GRADLE=android-app/android/app/build.gradle
+          CODE=$(grep -oP '^\s*versionCode\s+\K\d+' "$GRADLE")
+          NAME=$(grep -oP '^\s*versionName\s+"\K[^"]+' "$GRADLE")
+          NEW_CODE=$((CODE + 1))
+          NEW_NAME="${NAME%.*}.$(( ${NAME##*.} + 1 ))"
+          sed -i -E "s/^(\s*versionCode\s+)[0-9]+/\1$NEW_CODE/; s/^(\s*versionName\s+)\"[^\"]+\"/\1\"$NEW_NAME\"/" "$GRADLE"
+          printf '%s\n' "$NEW_NAME" > downloads/VERSION
+          echo "Version $NAME ($CODE) -> $NEW_NAME ($NEW_CODE)"
+          echo "code=$NEW_CODE" >> "$GITHUB_OUTPUT"
+          echo "name=$NEW_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Build signed AAB and APK
         working-directory: android-app/android
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease assembleRelease --no-daemon
+
+      - name: Save the new version number in the repo
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          # Pushes made with the workflow's own token do not start this workflow again, so this cannot loop.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android-app/android/app/build.gradle downloads/VERSION
+          git commit -m "Android app version $VERSION [skip ci]"
+          git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Publish the APK as the latest GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          APK=$(ls android-app/android/app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" jyotisha.apk
+          gh release create "v$VERSION" jyotisha.apk \
+            --title "$VERSION" --notes "Android app $VERSION, built from ${GITHUB_SHA::7}." --latest
 
       - uses: actions/upload-artifact@v4
         with:

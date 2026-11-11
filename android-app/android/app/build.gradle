@@ -17,6 +17,7 @@ android {
         applicationId "store.karthiktraders.jyotisha"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // Bumped automatically by .github/workflows/android-build.yml on every release build; no need to edit by hand.
         versionCode 8
         versionName "1.0.8"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
