@@ -931,7 +931,11 @@
       `Birth Nakshatra: ${names.nakshatraName(birth.nakshatra_index, 'en')} pada ${birth.nakshatra_pada}`, `Birth Tithi: ${names.tithiName(birth.tithi_index, 'en')}`];
     const planets = d ? d.planets : chart.positions;
     for (const [name, p] of Object.entries(planets)) facts.push(`${name}: ${sign(p.rashi_index)}, house ${p.whole_sign_bhava}${p.dignity ? ', ' + p.dignity : ''}${p.retrograde ? ', retrograde' : ''}`);
-    if (d && d.dasha && d.dasha.current_mahadasha) facts.push(`Current Vimshottari period: ${d.dasha.current_mahadasha}`);
+    if (d && d.dasha && d.dasha.current_mahadasha) {
+      const sub = (d.dasha.antardasha || []).find(a => a.current);
+      facts.push(`Current Vimshottari period: ${d.dasha.current_mahadasha} Mahadasha${sub ? `, ${sub.lord} Antardasha until ${sub.end}` : ''}`);
+    }
+    facts.push(`Today's date: ${new Date().toISOString().slice(0, 10)}`);
     // Only calculated labels leave the browser; unreviewed life-area readings do not.
     return facts;
   }
@@ -1014,16 +1018,14 @@
       await admob.showBanner({ adId: config.banner_id, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: config.testing === true });
     } catch (_error) { setAdHeight(0); }
   }
-  // Replies written by the AI are labelled, and can be reported by email (nothing is sent without the user).
+  // Replies written by the AI can be reported by email (nothing is sent without the user).
   function addAiBar(entry, question, answer) {
+    if (!state.contactEmail) return;
     const bar = el('div', 'ai-bar');
-    bar.appendChild(el('span', 'ai-tag', t('aiLabel')));
-    if (state.contactEmail) {
-      const link = el('a', 'ai-report', t('reportAnswer'));
-      const body = `Question:\n${question.slice(0, 300)}\n\nAnswer:\n${answer.slice(0, 1500)}\n\nWhat is wrong with it:\n`;
-      link.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent('Report an AI answer')}&body=${encodeURIComponent(body)}`;
-      bar.appendChild(link);
-    }
+    const link = el('a', 'ai-report', t('reportAnswer'));
+    const body = `Question:\n${question.slice(0, 300)}\n\nAnswer:\n${answer.slice(0, 1500)}\n\nWhat is wrong with it:\n`;
+    link.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent('Report an AI answer')}&body=${encodeURIComponent(body)}`;
+    bar.appendChild(link);
     entry.appendChild(bar);
   }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
