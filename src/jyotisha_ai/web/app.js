@@ -5,11 +5,12 @@
   const calendarUI = window.JyotishaCalendar;
   const names = window.JyotishaPanchangNames;
   const chartUI = window.JyotishaChart;
+  const matchUI = window.matchUI;
 
   const state = {
     lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
     view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
-    chart: null, details: null, resolved: null, partnerChart: null, showLoveReading: false, kundli: { style: 'south', division: 'd1' },
+    chart: null, details: null, resolved: null, partnerChart: null, partnerDetails: null, showLoveReading: false, loveMode: null, myRole: 'groom', kundliView: 'chart', kundli: { style: 'south', division: 'd1' },
   };
   const t = key => calendarUI.tr(state.lang, key);
   const bodyName = name => chartUI.bodyName(name, state.lang);
@@ -75,40 +76,120 @@
   }));
   showPage('home');
 
-  // Comparison labels are author-written UI text, not source-verified Jyotisha rules.
+  // Labels are author-written UI text; the rules behind them are conventional and not expert-reviewed.
   const RELATIONSHIP_COPY = {
     en: {
-      nav: 'Love', eyebrow: 'Relationships', title: 'Love & chart comparison',
-      intro: 'View an experimental relationship-focused reading from your chart, then compare four calculated placements with another chart.',
-      reading: 'Show my love reading', compare: 'Compare two charts', submit: 'Compare charts',
+      nav: 'Love', eyebrow: 'Relationships', title: 'Love & Kundli matching', intro: 'Choose what you want to see.',
+      optMatch: 'Kundli matching', optMatchSub: 'Guna Milan score out of 36', optReading: 'My love reading', optReadingSub: 'What your chart says about love and marriage',
+      compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
-      calculating: 'Calculating the second chart…', failed: 'The second chart could not be calculated. Check the birth details and select a city from the list.',
-      shared: 'Same placement', different: 'Different placement', score: 'Placement overlap', result: '{n} of 4 placements match',
-      moon: 'Moon sign', nakshatra: 'Birth Nakshatra', lagna: 'Lagna sign', venus: 'Venus sign',
-      note: 'Experimental chart-overlap count only: one point each for identical Moon sign, birth Nakshatra, Lagna sign and Venus sign. This is NOT a traditional compatibility/Guna Milan score, a love prediction, or advice about whether to marry. The reading is unreviewed. Enter another person’s details only with their consent. This form submits them to the chart server; the feature does not save them on this device. If ads are enabled, third-party scripts may also run on this page.',
-      error: 'Calculated chart data is incomplete; no comparison was made.',
+      calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
+      score: 'Guna Milan', excellent: 'Excellent match', good: 'Good match', average: 'Average match — acceptable in most traditions', low: 'Low match — usually not recommended',
+      nadiDosha: 'Nadi dosha: both have the same Nadi.', bhakootDosha: 'Bhakoot dosha: the two Moon signs sit in a difficult position from each other.',
+      details: 'See all 8 kootas',
+      kootas: { varna: 'Varna (nature)', vashya: 'Vashya (attraction)', tara: 'Tara (destiny)', yoni: 'Yoni (intimacy)', maitri: 'Graha Maitri (friendship)', gana: 'Gana (temperament)', bhakoot: 'Bhakoot (family & wealth)', nadi: 'Nadi (health & children)' },
+      manglik: 'Manglik (Kuja dosha)', you: 'You', partner: 'Partner', yes: 'Yes', no: 'No',
+      manglikBoth: 'Both are Manglik — traditionally this cancels out.', manglikOne: 'Only one is Manglik — many families consult an astrologer about this.',
+      note: 'Conventional Ashtakoota rules, not expert-reviewed. Use it as a guide, not as a decision about marriage. Enter another person’s details only with their consent; they are not saved on this device.',
+      error: 'Calculated chart data is incomplete; no matching was made.',
     },
     te: {
-      nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతకాల పోలిక',
-      intro: 'మీ జాతకం ఆధారంగా ప్రయోగాత్మక సంబంధాల వివరణ చూడండి. తరువాత రెండు జాతకాలలో నాలుగు గణించిన స్థానాలను పోల్చండి.',
-      reading: 'నా ప్రేమ వివరణ చూపు', compare: 'రెండు జాతకాలను పోల్చండి', submit: 'జాతకాలను పోల్చండి',
+      nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
+      optMatch: 'జాతక పొంతన', optMatchSub: 'గుణ మేళనం — 36కి స్కోరు', optReading: 'నా ప్రేమ ఫలితం', optReadingSub: 'ప్రేమ, వివాహం గురించి మీ జాతకం ఏమంటుంది',
+      compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
-      calculating: 'రెండవ జాతకాన్ని గణిస్తున్నాం…', failed: 'రెండవ జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
-      shared: 'ఒకే స్థానం', different: 'వేర్వేరు స్థానాలు', score: 'జాతకాల స్థానాల పోలిక', result: '4లో {n} స్థానాలు ఒకేలా ఉన్నాయి',
-      moon: 'చంద్ర రాశి', nakshatra: 'జన్మ నక్షత్రం', lagna: 'లగ్న రాశి', venus: 'శుక్ర రాశి',
-      note: 'ఇది ప్రయోగాత్మక జాతక స్థానాల పోలిక మాత్రమే: చంద్ర రాశి, జన్మ నక్షత్రం, లగ్న రాశి, శుక్ర రాశి ఒక్కొక్కటి ఒక పాయింట్. ఇది సంప్రదాయ గుణ మేళనం స్కోరు కాదు; ప్రేమ ఫలితం లేదా వివాహ నిర్ణయానికి సలహా కాదు. వివరణ నిపుణుల సమీక్ష పొందలేదు. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి. ఈ ఫారం వివరాలను జాతక సర్వర్‌కు పంపుతుంది; ఈ ఫీచర్ వాటిని మీ పరికరంలో సేవ్ చేయదు. ప్రకటనలు ప్రారంభిస్తే, ఈ పేజీలో మూడవ పక్షపు స్క్రిప్ట్‌లు కూడా పనిచేయవచ్చు.',
-      error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పోలిక చేయలేదు.',
+      calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
+      score: 'గుణ మేళనం', excellent: 'అత్యుత్తమ పొంతన', good: 'మంచి పొంతన', average: 'సాధారణ పొంతన — చాలా సంప్రదాయాలలో ఆమోదయోగ్యం', low: 'తక్కువ పొంతన — సాధారణంగా సిఫార్సు చేయరు',
+      nadiDosha: 'నాడీ దోషం: ఇద్దరిదీ ఒకే నాడి.', bhakootDosha: 'భకూట దోషం: ఇద్దరి చంద్ర రాశులు ఒకదానికొకటి ఇబ్బందికర స్థానంలో ఉన్నాయి.',
+      details: 'అన్ని 8 కూటాలు చూడండి',
+      kootas: { varna: 'వర్ణ (స్వభావం)', vashya: 'వశ్య (ఆకర్షణ)', tara: 'తార (అదృష్టం)', yoni: 'యోని (అనుబంధం)', maitri: 'గ్రహ మైత్రి (స్నేహం)', gana: 'గణ (ప్రవృత్తి)', bhakoot: 'భకూట (కుటుంబం, సంపద)', nadi: 'నాడి (ఆరోగ్యం, సంతానం)' },
+      manglik: 'కుజ దోషం', you: 'మీరు', partner: 'భాగస్వామి', yes: 'ఉంది', no: 'లేదు',
+      manglikBoth: 'ఇద్దరికీ కుజ దోషం ఉంది — సంప్రదాయంగా ఇది పరిహారమవుతుంది.', manglikOne: 'ఒకరికి మాత్రమే కుజ దోషం ఉంది — చాలా కుటుంబాలు దీని గురించి జ్యోతిష్కుడిని సంప్రదిస్తాయి.',
+      note: 'ఇవి సంప్రదాయ అష్టకూట నియమాలు, నిపుణుల సమీక్ష పొందలేదు. వివాహ నిర్ణయంగా కాకుండా మార్గదర్శిగా మాత్రమే వాడండి. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి; అవి ఈ పరికరంలో సేవ్ కావు.',
+      error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పొంతన చూడలేదు.',
+    },
+    hi: {
+      nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
+      optMatch: 'कुंडली मिलान', optMatchSub: 'गुण मिलान — 36 में से अंक', optReading: 'मेरा प्रेम फल', optReadingSub: 'प्रेम और विवाह पर आपकी कुंडली क्या कहती है',
+      compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
+      needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
+      calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
+      score: 'गुण मिलान', excellent: 'उत्तम मिलान', good: 'अच्छा मिलान', average: 'सामान्य मिलान — अधिकांश परंपराओं में स्वीकार्य', low: 'कम मिलान — आमतौर पर अनुशंसित नहीं',
+      nadiDosha: 'नाड़ी दोष: दोनों की नाड़ी एक ही है।', bhakootDosha: 'भकूट दोष: दोनों की चंद्र राशियाँ एक-दूसरे से कठिन स्थिति में हैं।',
+      details: 'सभी 8 कूट देखें',
+      kootas: { varna: 'वर्ण (स्वभाव)', vashya: 'वश्य (आकर्षण)', tara: 'तारा (भाग्य)', yoni: 'योनि (घनिष्ठता)', maitri: 'ग्रह मैत्री (मित्रता)', gana: 'गण (प्रकृति)', bhakoot: 'भकूट (परिवार और धन)', nadi: 'नाड़ी (स्वास्थ्य और संतान)' },
+      manglik: 'मांगलिक (कुज दोष)', you: 'आप', partner: 'साथी', yes: 'हाँ', no: 'नहीं',
+      manglikBoth: 'दोनों मांगलिक हैं — परंपरा में यह दोष कट जाता है।', manglikOne: 'केवल एक मांगलिक है — कई परिवार इसके लिए ज्योतिषी से परामर्श करते हैं।',
+      note: 'ये पारंपरिक अष्टकूट नियम हैं, विशेषज्ञ समीक्षा नहीं हुई। इसे विवाह का निर्णय नहीं, केवल मार्गदर्शन मानें। किसी और का विवरण उनकी सहमति से ही दर्ज करें; यह इस डिवाइस पर सहेजा नहीं जाता।',
+      error: 'गणना की गई कुंडली अधूरी है; मिलान नहीं किया गया।',
+    },
+  };
+  // Kundli views, doshas and the Home tool cards.
+  const TOOLS_COPY = {
+    en: {
+      views: { chart: 'Chart', planets: 'Planets', dasha: 'Dasha', doshas: 'Doshas', panchang: 'Panchang' },
+      kujaTitle: 'Kuja dosha (Manglik)', kujaYes: 'Present', kujaNo: 'Not present', kujaWhy: 'Mars is in house {lagna} from the Lagna and house {moon} from the Moon.',
+      kujaReduced: 'Mars is in its own or exalted sign, which traditionally reduces the effect.',
+      sadeTitle: 'Sade Sati', phase1: 'Running now — phase 1 of 3 (beginning)', phase2: 'Running now — phase 2 of 3 (peak)', phase3: 'Running now — phase 3 of 3 (ending)',
+      sadeNo: 'Not running now.', period: '{start} to {end}', sadeNext: 'Next Sade Sati: {start} to {end}', now: 'now',
+      ashtama: 'Ashtama Shani (Saturn 8th from your Moon) is running until {end}.', ardhashtama: 'Ardhashtama Shani (Saturn 4th from your Moon) is running until {end}.',
+      doshaNote: 'Conventional rules, not expert-reviewed. Dates are approximate.', doshaUnavailable: 'Dosha details are not available for this chart.',
+      tools: { match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
+    },
+    te: {
+      views: { chart: 'చక్రం', planets: 'గ్రహాలు', dasha: 'దశ', doshas: 'దోషాలు', panchang: 'పంచాంగం' },
+      kujaTitle: 'కుజ దోషం', kujaYes: 'ఉంది', kujaNo: 'లేదు', kujaWhy: 'కుజుడు లగ్నం నుండి {lagna}వ ఇంట్లో, చంద్రుని నుండి {moon}వ ఇంట్లో ఉన్నాడు.',
+      kujaReduced: 'కుజుడు స్వక్షేత్రం లేదా ఉచ్చలో ఉన్నందున దోష ప్రభావం తగ్గుతుందని సంప్రదాయం.',
+      sadeTitle: 'ఏలినాటి శని', phase1: 'ఇప్పుడు నడుస్తోంది — మొదటి దశ (ప్రారంభం)', phase2: 'ఇప్పుడు నడుస్తోంది — రెండవ దశ (తీవ్ర దశ)', phase3: 'ఇప్పుడు నడుస్తోంది — మూడవ దశ (ముగింపు)',
+      sadeNo: 'ఇప్పుడు నడవడం లేదు.', period: '{start} నుండి {end} వరకు', sadeNext: 'తదుపరి ఏలినాటి శని: {start} నుండి {end} వరకు', now: 'ఇప్పుడు',
+      ashtama: 'అష్టమ శని (చంద్రుని నుండి 8వ ఇంట్లో శని) {end} వరకు నడుస్తోంది.', ardhashtama: 'అర్ధాష్టమ శని (చంద్రుని నుండి 4వ ఇంట్లో శని) {end} వరకు నడుస్తోంది.',
+      doshaNote: 'సంప్రదాయ నియమాలు, నిపుణుల సమీక్ష పొందలేదు. తేదీలు సుమారుగా.', doshaUnavailable: 'ఈ జాతకానికి దోష వివరాలు అందుబాటులో లేవు.',
+      tools: { match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
+    },
+    hi: {
+      views: { chart: 'चक्र', planets: 'ग्रह', dasha: 'दशा', doshas: 'दोष', panchang: 'पंचांग' },
+      kujaTitle: 'मांगलिक (कुज दोष)', kujaYes: 'है', kujaNo: 'नहीं है', kujaWhy: 'मंगल लग्न से {lagna}वें भाव में और चंद्र से {moon}वें भाव में है।',
+      kujaReduced: 'मंगल स्वराशि या उच्च का है; परंपरा के अनुसार इससे दोष का प्रभाव घटता है।',
+      sadeTitle: 'साढ़ेसाती', phase1: 'अभी चल रही है — पहला चरण (आरंभ)', phase2: 'अभी चल रही है — दूसरा चरण (चरम)', phase3: 'अभी चल रही है — तीसरा चरण (अंत)',
+      sadeNo: 'अभी नहीं चल रही।', period: '{start} से {end} तक', sadeNext: 'अगली साढ़ेसाती: {start} से {end} तक', now: 'अभी',
+      ashtama: 'अष्टम शनि (चंद्र से 8वें भाव में शनि) {end} तक चल रहा है।', ardhashtama: 'ढैया (चंद्र से चौथे भाव में शनि) {end} तक चल रही है।',
+      doshaNote: 'पारंपरिक नियम, विशेषज्ञ समीक्षा नहीं। तिथियाँ अनुमानित हैं।', doshaUnavailable: 'इस कुंडली के लिए दोष विवरण उपलब्ध नहीं है।',
+      tools: { match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
     },
   };
   const loveText = () => RELATIONSHIP_COPY[state.lang] || RELATIONSHIP_COPY.en;
+  const toolText = () => TOOLS_COPY[state.lang] || TOOLS_COPY.en;
+  const fill = (text, values) => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
+  // "2028-02" -> "February 2028" in the chosen language; null (beyond the scanned years) -> "—".
+  const monthText = value => (typeof value === 'string' && /^\d{4}-\d{2}$/.test(value)
+    ? calendarUI.monthTitle(Number(value.slice(0, 4)), Number(value.slice(5, 7)), state.lang) : '—');
+
+  function optionCard(icon, title, sub, onClick, active) {
+    const card = el('button', `option-card${active ? ' on' : ''}`);
+    card.type = 'button';
+    card.append(el('span', 'option-icon', icon), el('b', null, title), el('small', null, sub));
+    card.setAttribute('aria-pressed', active ? 'true' : 'false');
+    card.addEventListener('click', onClick);
+    return card;
+  }
   function renderRelationship() {
     const copy = loveText();
     for (const [id, key] of [['relationship-nav', 'nav'], ['relationship-eyebrow', 'eyebrow'], ['relationship-title', 'title'],
-      ['relationship-intro', 'intro'], ['relationship-reading', 'reading'], ['relationship-compare-title', 'compare'],
-      ['relationship-submit', 'submit'], ['relationship-note', 'note']]) $(id).textContent = copy[key];
+      ['relationship-intro', 'intro'], ['relationship-reading', 'optReading'], ['relationship-compare-title', 'compare'],
+      ['relationship-submit', 'submit'], ['relationship-note', 'note'], ['partner-role-label', 'iAm']]) $(id).textContent = copy[key];
+    const mode = state.loveMode;
+    $('love-options').replaceChildren(
+      optionCard('💞', copy.optMatch, copy.optMatchSub, () => { state.loveMode = 'match'; renderRelationship(); }, mode === 'match'),
+      optionCard('💗', copy.optReading, copy.optReadingSub, () => { state.loveMode = 'reading'; state.showLoveReading = true; renderRelationship(); }, mode === 'reading'));
+    $('love-match').hidden = mode !== 'match';
+    $('love-reading').hidden = mode !== 'reading';
+    if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => {
+      button.textContent = copy[button.dataset.role]; button.classList.toggle('on', button.dataset.role === state.myRole);
+    });
     $('relationship-reading').disabled = !state.chart;
-    if (!state.chart) $('relationship-status').textContent = copy.needChart;
+    if (!state.chart && mode) $('relationship-status').textContent = copy.needChart;
     const reading = $('relationship-reading-result'); reading.replaceChildren();
+    if (mode === 'reading' && !state.chart) reading.appendChild(el('p', 'muted-note', copy.needChart));
     if (state.chart && state.showLoveReading) {
       try {
         const lines = chartUI.readLife(state.chart, state.details, 'marriage', state.lang, null);
@@ -118,43 +199,118 @@
     const result = $('relationship-result'); result.replaceChildren();
     if (!state.chart || !state.partnerChart) return;
     try {
-      const match = chartUI.chartOverlap(state.chart, state.partnerChart);
-      const score = el('div', 'relationship-score');
-      score.append(el('span', null, copy.score), el('strong', null, `${match.percentage}%`));
-      const bar = el('progress'); bar.max = 100; bar.value = match.percentage;
+      const mine = state.chart.positions.Moon.sidereal_longitude, theirs = state.partnerChart.positions.Moon.sidereal_longitude;
+      const match = state.myRole === 'bride' ? matchUI.gunaMilan(theirs, mine) : matchUI.gunaMilan(mine, theirs);
+      const score = el('div', `relationship-score match-${match.verdict}`);
+      score.append(el('span', null, copy.score), el('strong', null, `${match.total} / ${match.max}`));
+      const bar = el('progress'); bar.max = match.max; bar.value = match.total;
       bar.setAttribute('aria-label', copy.score); score.appendChild(bar);
-      score.appendChild(el('small', null, copy.result.replace('{n}', match.shared)));
+      score.appendChild(el('small', null, copy[match.verdict]));
       result.appendChild(score);
-      const list = el('ul', 'relationship-list');
-      const labels = { moonRashi: copy.moon, birthNakshatra: copy.nakshatra, lagnaRashi: copy.lagna, venusRashi: copy.venus };
-      for (const item of match.rows) {
-        const value = index => item.key === 'birthNakshatra' ? names.nakshatraName(index, state.lang) : signName(index);
-        list.appendChild(el('li', null, `${labels[item.key]}: ${value(item.first)} / ${value(item.second)} — ${item.shared ? copy.shared : copy.different}`));
+      for (const [flag, key] of [[match.nadiDosha, 'nadiDosha'], [match.bhakootDosha, 'bhakootDosha']]) if (flag) result.appendChild(el('p', 'dosha-flag', copy[key]));
+      const kuja = details => details && details.doshas && details.doshas.kuja ? details.doshas.kuja.present : null;
+      const me = kuja(state.details), them = kuja(state.partnerDetails);
+      if (me !== null && them !== null) {
+        const box = el('div', 'manglik-row');
+        box.append(el('b', null, copy.manglik), el('span', null, `${copy.you}: ${me ? copy.yes : copy.no} · ${copy.partner}: ${them ? copy.yes : copy.no}`));
+        if (me && them) box.appendChild(el('small', null, copy.manglikBoth)); else if (me || them) box.appendChild(el('small', null, copy.manglikOne));
+        result.appendChild(box);
       }
-      result.appendChild(list);
+      const fold = el('details', 'fold');
+      fold.appendChild(el('summary', null, copy.details));
+      const list = el('ul', 'koota-list');
+      for (const koota of match.kootas) {
+        const item = el('li', koota.points === 0 ? 'zero' : '');
+        item.append(el('span', null, copy.kootas[koota.key]), el('b', null, `${koota.points} / ${koota.max}`));
+        list.appendChild(item);
+      }
+      fold.appendChild(list); result.appendChild(fold);
     } catch (_error) { result.appendChild(el('p', null, copy.error)); }
   }
   $('relationship-reading').addEventListener('click', () => { state.showLoveReading = true; renderRelationship(); });
+  if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+    state.myRole = button.dataset.role; renderRelationship();
+  }));
   $('relationship-form').addEventListener('submit', async event => {
     event.preventDefault();
     const copy = loveText();
     if (!state.chart) { $('relationship-status').textContent = copy.needChart; return; }
     const input = { dob: $('partner-dob').value, pob: $('partner-pob').value.trim(), tob: $('partner-tob').value };
     const ownChart = state.chart;
-    state.partnerChart = null; $('relationship-result').replaceChildren();
+    state.partnerChart = null; state.partnerDetails = null; $('relationship-result').replaceChildren();
     $('relationship-status').textContent = copy.calculating;
     $('relationship-submit').disabled = true;
     try {
       const { ok, body } = await post('/api/birth-chart', input);
       if (state.chart !== ownChart) return;
-      if (!ok || !body || !body.chart) throw new Error('Second chart unavailable');
-      chartUI.chartOverlap(state.chart, body.chart);
-      state.partnerChart = body.chart;
+      if (!ok || !body || !body.chart || !body.chart.positions || !body.chart.positions.Moon) throw new Error('Second chart unavailable');
+      state.partnerChart = body.chart; state.partnerDetails = body.details || null;
       $('relationship-status').textContent = '';
       renderRelationship();
     } catch (_error) { if (state.chart === ownChart) $('relationship-status').textContent = copy.failed; }
     finally { $('relationship-submit').disabled = false; }
   });
+
+  /* ---- Kundli: one view at a time (chart, planets, dasha, doshas, birth Panchang) ---- */
+  const KUNDLI_VIEWS = ['chart', 'planets', 'dasha', 'doshas', 'panchang'];
+  function showKundliView(name) {
+    state.kundliView = KUNDLI_VIEWS.includes(name) ? name : 'chart';
+    const copy = toolText();
+    $('kundli-views').replaceChildren(...KUNDLI_VIEWS.map(view => {
+      const button = el('button', view === state.kundliView ? 'on' : '', copy.views[view]);
+      button.type = 'button'; button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', view === state.kundliView ? 'true' : 'false');
+      button.addEventListener('click', () => showKundliView(view));
+      return button;
+    }));
+    const chartCard = $('chart');
+    const panes = chartCard.querySelectorAll ? chartCard.querySelectorAll('.kview') : [];
+    panes.forEach(pane => { pane.hidden = pane.dataset.kview !== state.kundliView; });
+  }
+  function renderDoshas() {
+    const copy = toolText(), host = $('dosha-body'); host.replaceChildren();
+    const doshas = state.details && state.details.doshas;
+    if (!doshas) { host.appendChild(el('p', 'muted-note', copy.doshaUnavailable)); return; }
+    const card = (title, status, good, lines) => {
+      const box = el('div', `dosha-card ${good ? 'ok' : 'warn'}`);
+      const head = el('div', 'dosha-head'); head.append(el('b', null, title), el('span', 'dosha-status', status));
+      box.appendChild(head);
+      for (const line of lines) if (line) box.appendChild(el('p', null, line));
+      return box;
+    };
+    const kuja = doshas.kuja;
+    if (kuja) host.appendChild(card(copy.kujaTitle, kuja.present ? copy.kujaYes : copy.kujaNo, !kuja.present,
+      [fill(copy.kujaWhy, { lagna: kuja.house_from_lagna, moon: kuja.house_from_moon }), kuja.reduced ? copy.kujaReduced : '']));
+    const saturn = doshas.saturn;
+    if (saturn && saturn.sade_sati) {
+      const sade = saturn.sade_sati;
+      const span = item => item ? fill(copy.period, { start: monthText(item.start), end: monthText(item.end) }) : '';
+      const lines = sade.active ? [span(sade.current)] : [sade.next ? fill(copy.sadeNext, { start: monthText(sade.next.start), end: monthText(sade.next.end) }) : ''];
+      for (const [key, item] of [['ashtama', saturn.ashtama_shani], ['ardhashtama', saturn.ardhashtama_shani]]) {
+        if (item && item.active) lines.push(fill(copy[key], { end: monthText(item.current && item.current.end) }));
+      }
+      host.appendChild(card(copy.sadeTitle, sade.active ? copy[`phase${sade.phase}`] || copy.phase2 : copy.sadeNo, !sade.active, lines));
+    }
+    host.appendChild(el('p', 'muted-note', copy.doshaNote));
+  }
+  // Home: a few clear choices instead of a long page.
+  function renderTools() {
+    const copy = toolText().tools;
+    const open = (page, view) => () => {
+      if (page === 'relationship') { state.loveMode = 'match'; renderRelationship(); }
+      showPage(page);
+      if (view) {
+        showKundliView(view);
+        // With a chart already made, jump straight to the chosen view instead of the birth form.
+        if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
+      }
+    };
+    $('tool-grid').replaceChildren(
+      optionCard('💞', copy.match[0], copy.match[1], open('relationship')),
+      optionCard('🪐', copy.doshas[0], copy.doshas[1], open('kundli', 'doshas')),
+      optionCard('⏳', copy.dasha[0], copy.dasha[1], open('kundli', 'dasha')),
+      optionCard('🔮', copy.rashi[0], copy.rashi[1], open('rashi')),
+      optionCard('💬', copy.chat[0], copy.chat[1], open('chat')));
+  }
 
   /* ------------------------------------------------------------- language */
   const choice = $('language-choice');
@@ -175,6 +331,8 @@
     $('chat-question').placeholder = t('questionPlaceholder');
     $('dp-note').textContent = t('dpNote');
     renderHome();
+    renderTools();
+    showKundliView(state.kundliView);
     renderRelationship();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
@@ -715,7 +873,12 @@
     const chip = el('div', 'd1-planet');
     chip.setAttribute('style', `--pc:${PLANET_COLORS[name] || '#2a1d3f'}`);
     chip.appendChild(document.createTextNode(`${bodyName(name)}${state.kundli.division === 'd1' ? retroMark(name) : ''} `));
-    if (degrees) chip.appendChild(el('small', null, degreeText));
+    if (degrees) {
+      // Full degree on roomy charts, whole degree on small ones (CSS picks one), so a sign box stays one line per planet.
+      const small = el('small');
+      small.append(el('span', 'deg-full', degreeText), el('span', 'deg-short', `${Math.floor(parseFloat(degreeText))}°`));
+      chip.appendChild(small);
+    }
     return chip;
   }
   function renderSouth(view) {
@@ -728,6 +891,7 @@
       box.appendChild(el('div', 'd1-house', `${t('colBhava')} ${cell.house}`));
       if (cell.isLagna) box.appendChild(el('span', 'badge-lg', t('lagna')));
       if (cell.rashi === view.moonSign) box.appendChild(el('span', 'badge-mn', '☾'));
+      if (cell.planets.length >= 3) box.classList.add('crowded');
       for (const planet of cell.planets) box.appendChild(planetChip(planet.name, view.degrees, `${planet.degreesInSign.toFixed(2)}°`));
       grid.appendChild(box);
     }
@@ -781,6 +945,8 @@
   function renderChart() {
     const chart = state.chart, details = state.details;
     if (!chart) return;
+    renderDoshas();
+    showKundliView(state.kundliView);
     const birth = chart.panchanga_at_birth, moon = chart.positions.Moon;
     const localDate = state.resolved ? state.resolved.local_datetime.slice(0, 10) : chart.input.birth_datetime.slice(0, 10);
     const placeName = state.resolved ? `${state.resolved.place.name}, ${state.resolved.place.country_code} · ` : '';
@@ -931,6 +1097,14 @@
       `Birth Nakshatra: ${names.nakshatraName(birth.nakshatra_index, 'en')} pada ${birth.nakshatra_pada}`, `Birth Tithi: ${names.tithiName(birth.tithi_index, 'en')}`];
     const planets = d ? d.planets : chart.positions;
     for (const [name, p] of Object.entries(planets)) facts.push(`${name}: ${sign(p.rashi_index)}, house ${p.whole_sign_bhava}${p.dignity ? ', ' + p.dignity : ''}${p.retrograde ? ', retrograde' : ''}`);
+    const doshas = d && d.doshas;
+    if (doshas && doshas.kuja) facts.push(`Kuja dosha (Manglik): ${doshas.kuja.present ? 'yes' : 'no'} (Mars house ${doshas.kuja.house_from_lagna} from Lagna, ${doshas.kuja.house_from_moon} from Moon${doshas.kuja.reduced ? '; reduced, Mars in own/exalted sign' : ''})`);
+    if (doshas && doshas.saturn && doshas.saturn.sade_sati) {
+      const sade = doshas.saturn.sade_sati, span = item => item ? `${item.start || 'earlier'} to ${item.end || 'later'}` : 'unknown';
+      facts.push(sade.active ? `Sade Sati: running now, phase ${sade.phase} of 3, ${span(sade.current)}` : `Sade Sati: not running now; next ${span(sade.next)}`);
+      if (doshas.saturn.ashtama_shani.active) facts.push(`Ashtama Shani: running now until ${doshas.saturn.ashtama_shani.current.end || 'later'}`);
+      if (doshas.saturn.ardhashtama_shani.active) facts.push(`Ardhashtama Shani: running now until ${doshas.saturn.ardhashtama_shani.current.end || 'later'}`);
+    }
     if (d && d.dasha && d.dasha.current_mahadasha) {
       const sub = (d.dasha.antardasha || []).find(a => a.current);
       facts.push(`Current Vimshottari period: ${d.dasha.current_mahadasha} Mahadasha${sub ? `, ${sub.lord} Antardasha until ${sub.end}` : ''}`);
@@ -1043,7 +1217,7 @@
   function startIntake() { intake.step = 'dob'; intake.dob = ''; intake.pob = ''; intake.tob = ''; intake.pending = null; resetChat(t('chatAskDob')); }
   function applyChart(body, inputs) {
     state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
-    state.partnerChart = null; state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
+    state.partnerChart = null; state.partnerDetails = null; state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
     try {
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
@@ -1342,7 +1516,7 @@
   $('forget-profile').addEventListener('click', () => {
     forgetProfile();
     state.chart = null; state.details = null; state.resolved = null;
-    state.partnerChart = null; state.showLoveReading = false;
+    state.partnerChart = null; state.partnerDetails = null; state.showLoveReading = false;
     for (const id of ['partner-dob', 'partner-pob', 'partner-tob']) $(id).value = '';
     $('relationship-status').textContent = ''; renderRelationship();
     $('chart').hidden = true;

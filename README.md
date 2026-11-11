@@ -45,7 +45,7 @@ When changing the local app code, restart the Python server process before
 reloading the page. Templates are read from disk on each request, but API and
 JavaScript-file routes are defined when the process starts. An old process can
 therefore serve new HTML while returning 404 for a new script. Check that
-`/locales.js`, `/chart-ui.js`, `/calendar-ui.js`, `/panchang-names.js`, `/app.js` and `/app.css` all return HTTP 200
+`/locales.js`, `/chart-ui.js`, `/match-ui.js`, `/calendar-ui.js`, `/panchang-names.js`, `/app.js` and `/app.css` all return HTTP 200
 on the **same port** as the page.
 The true-Lahiri method and two complete synthetic reference-chart comparisons
 are documented in
