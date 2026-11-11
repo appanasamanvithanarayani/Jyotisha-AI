@@ -17,6 +17,7 @@ from datetime import date, datetime, timedelta, timezone
 import astronomy
 
 from jyotisha_ai.chart import DASHA_ORDER, DASHA_YEARS, NAKSHATRA_WIDTH
+from jyotisha_ai.doshas import chart_doshas
 from jyotisha_ai.sky_spans import SpanFinder
 
 NODE_MODEL = "mean_node_meeus"
@@ -168,6 +169,11 @@ def kundli_details(chart: dict, moment: datetime, as_of: date | None = None) -> 
     planets["Ketu"] = {**_row(rahu_sidereal + 180.0, lagna_rashi), "dignity": None, "retrograde": True}
 
     lagna = _row(chart["ascendant"]["sidereal_longitude"], lagna_rashi)
+    today = as_of or datetime.now(timezone.utc).astimezone(moment.tzinfo).date()
+    try:
+        doshas = chart_doshas(planets, today)
+    except (ValueError, KeyError, ArithmeticError):
+        doshas = None
     navamsa_lagna = lagna["navamsa_rashi_index"]
     return {
         "node_model": NODE_MODEL,
@@ -178,6 +184,7 @@ def kundli_details(chart: dict, moment: datetime, as_of: date | None = None) -> 
             "positions": {name: row["navamsa_rashi_index"] for name, row in planets.items()},
         },
         "birth_panchang": _birth_spans(moment, ayanamsha, moment),
-        "dasha": _dasha(chart, moment, as_of or datetime.now(timezone.utc).astimezone(moment.tzinfo).date()),
+        "dasha": _dasha(chart, moment, today),
+        "doshas": doshas,
         "conventions": "mean lunar node; Navamsa by element start; traditional dignity table; Vimshottari at 365.25-day years",
     }

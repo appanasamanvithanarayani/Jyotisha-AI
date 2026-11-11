@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..', 'src', 'jyotisha_ai', 'web');
 const calendar = require(path.join(root, 'calendar-ui.js'));
 const names = require(path.join(root, 'panchang-names.js'));
 const chart = require(path.join(root, 'chart-ui.js'));
+const match = require(path.join(root, 'match-ui.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
@@ -70,7 +71,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -345,28 +346,61 @@ test('the forget button removes the saved birth details and the chart', async ()
   assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
 });
 
-test('relationship page compares a second synthetic chart without saving partner birth details', async () => {
+test('Love page offers two choices, then shows Guna Milan out of 36 without saving partner birth details', async () => {
   const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
   const app = boot({ storage, birth: syntheticBirth });
   await settle();
   assert.match(app.element('relationship-title').textContent, /ప్రేమ/);
-  app.element('relationship-reading').listeners.click();
+  // Nothing is shown until the user picks one of the two options.
+  const options = app.element('love-options').children;
+  assert.equal(options.length, 2);
+  assert.equal(app.element('love-match').hidden, true);
+  assert.equal(app.element('love-reading').hidden, true);
+  app.element('love-options').children[1].listeners.click();
+  assert.equal(app.element('love-reading').hidden, false);
   assert.ok(app.element('relationship-reading-result').children.length > 0);
+  app.element('love-options').children[0].listeners.click();
+  assert.equal(app.element('love-match').hidden, false);
+  assert.equal(app.element('love-reading').hidden, true);
   app.element('partner-dob').value = '1998-10-23';
   app.element('partner-pob').value = 'Bengaluru, IN';
   app.element('partner-tob').value = '12:35';
   await app.element('relationship-form').listeners.submit({ preventDefault() {} });
   assert.deepEqual(birthRequests(app).at(-1).body, { dob: '1998-10-23', pob: 'Bengaluru, IN', tob: '12:35' });
+  // The synthetic partner chart has the same Moon: all kootas but Nadi match, 28 of 36.
   const score = app.element('relationship-result').children[0];
-  assert.equal(score.children[1].textContent, '100%');
-  assert.equal(score.children[2].value, 100);
-  assert.match(score.children[3].textContent, /4లో 4/);
+  assert.equal(score.children[1].textContent, '28 / 36');
+  assert.equal(score.children[2].value, 28);
+  assert.match(score.children[3].textContent, /మంచి పొంతన/);
+  assert.ok(app.element('relationship-result').children.some(item => /నాడీ దోషం/.test(item.textContent)));
+  const kootas = app.element('relationship-result').children.at(-1).children[1].children;
+  assert.equal(kootas.length, 8);
   assert.equal(storage.getItem('jyotisha.partner.v1'), null);
   app.element('forget-profile').listeners.click();
   assert.equal(app.element('relationship-result').children.length, 0);
 });
 
+test('Home offers tool cards and the Kundli shows one view at a time, including doshas', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const doshas = { kuja: { present: true, from_lagna: true, from_moon: false, house_from_lagna: 7, house_from_moon: 3, reduced: false },
+    saturn: { sade_sati: { active: true, phase: 2, current: { start: '2025-04', end: '2032-05' }, next: null },
+      ashtama_shani: { active: false, current: null, next: null }, ardhashtama_shani: { active: false, current: null, next: null } } };
+  const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
+  const app = boot({ storage, birth });
+  await settle();
+  assert.equal(app.element('tool-grid').children.length, 5);
+  assert.equal(app.element('kundli-views').children.length, 5);
+  app.element('tool-grid').children[1].listeners.click();     // Doshas card opens the Kundli on the Doshas view
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('kundli').hidden, false);
+  const cards = app.element('dosha-body').children;
+  assert.match(cards[0].children[0].children[1].textContent, /Present/);
+  assert.match(cards[0].children[1].textContent, /house 7 from the Lagna/);
+  assert.match(cards[1].children[0].children[1].textContent, /phase 2 of 3/);
+  assert.match(cards[1].children[1].textContent, /2025.*2032/);
+});
 
 function fakeAdMob() {
   const calls = [];
