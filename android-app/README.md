@@ -32,7 +32,7 @@ Never click your own live ads.
 
 ## Automatic APK updates
 You no longer build the APK by hand or commit it to `downloads/`. When anything under `android-app/` changes on
-`main`, the **Build Android app** GitHub Action builds a signed APK (version `1.1.<run number>`, always higher than
-the last) and publishes it as the latest **GitHub Release**. The server's `/download` page redirects to that release
+`main`, the **Build Android app** GitHub Action raises the version in `build.gradle` and `downloads/VERSION`
+(1.0.8 → 1.0.9 → …), commits that back to `main`, builds a signed APK and publishes it as the latest **GitHub Release**. The server's `/download` page redirects to that release
 (`JYOTISHA_APK_RELEASE_REPO`), so visitors always get the newest APK. To rebuild without code changes, open
 **Actions → Build Android app → Run workflow**. Website changes never need a new APK: the app loads the live site.
