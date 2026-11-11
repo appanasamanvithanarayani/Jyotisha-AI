@@ -850,3 +850,23 @@ def test_download_page_serves_the_android_app_only_when_it_has_been_published(tm
         server.shutdown()
         thread.join(timeout=3)
         server.server_close()
+
+
+def test_download_serves_the_latest_github_release_when_configured(tmp_path, monkeypatch):
+    monkeypatch.setenv("JYOTISHA_APK_RELEASE_REPO", "owner/repo")
+    monkeypatch.setattr(webapp, "_latest_apk_release", lambda repo: {"version": "1.1.9", "size": 8_100_000})
+    server = LocalServer(port=0, root=tmp_path)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = request(server, "GET", "/download")
+        assert status == 200 and b"Version 1.1.9" in body and b"8.1 MB" in body
+        status, headers, _ = request(server, "GET", "/download/jyotisha.apk")
+        assert status == 302 and headers["Location"] == "https://github.com/owner/repo/releases/latest/download/jyotisha.apk"
+        monkeypatch.setattr(webapp, "_latest_apk_release", lambda repo: None)    # GitHub unreachable: the page still works
+        status, _, body = request(server, "GET", "/download")
+        assert status == 200 and b"Version latest" in body
+    finally:
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()

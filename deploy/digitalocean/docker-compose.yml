@@ -27,6 +27,8 @@ services:
       JYOTISHA_ADMOB_INTERSTITIAL_ID: ${ADMOB_INTERSTITIAL_ID:-}
       JYOTISHA_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       JYOTISHA_DATA_DIR: /data
+      # The download page always serves the APK from the latest GitHub Release (built by .github/workflows/android-build.yml).
+      JYOTISHA_APK_RELEASE_REPO: ${APK_RELEASE_REPO:-appanasamanvithanarayani/Jyotisha-AI}
     volumes:
       - admin_data:/data
     expose:

@@ -1,7 +1,22 @@
 name: Build Android app
 
+# Runs by itself whenever the Android app code changes on main (or by hand from the Actions tab), then publishes the
+# signed APK as a GitHub Release. The server's /download page always serves the latest release, so nothing is
+# committed to downloads/ any more.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-build.yml"
+
+permissions:
+  contents: write   # to create the release
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -44,11 +59,30 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      - name: Work out the version
+        id: version
+        run: |
+          # Every build gets a higher versionCode than the last, so phones accept it as an update of the installed app.
+          CODE=$((100 + GITHUB_RUN_NUMBER))
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "name=1.1.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
       - name: Build signed AAB and APK
         working-directory: android-app/android
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease assembleRelease --no-daemon
+          ./gradlew bundleRelease assembleRelease --no-daemon \
+            -PappVersionCode=${{ steps.version.outputs.code }} -PappVersionName=${{ steps.version.outputs.name }}
+
+      - name: Publish the APK as the latest GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          APK=$(ls android-app/android/app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" jyotisha.apk
+          gh release create "v$VERSION" jyotisha.apk \
+            --title "$VERSION" --notes "Android app $VERSION, built from ${GITHUB_SHA::7}." --latest
 
       - uses: actions/upload-artifact@v4
         with:

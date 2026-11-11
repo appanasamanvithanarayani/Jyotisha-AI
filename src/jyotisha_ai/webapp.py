@@ -22,6 +22,8 @@ from pathlib import Path
 import secrets
 from threading import Timer
 from urllib.parse import urlsplit
+import urllib.error
+import urllib.request
 
 from jyotisha_ai import admin, assistant, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
@@ -208,6 +210,35 @@ def _asset_links() -> list | None:
     if not package or not prints or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+", package) or not all(re.fullmatch(r"([0-9A-F]{2}:){31}[0-9A-F]{2}", item) for item in prints):
         return None
     return [{"relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "android_app", "package_name": package, "sha256_cert_fingerprints": prints}}]
+
+
+_RELEASE_CACHE: dict = {"at": -1e9, "info": None}
+
+
+def _apk_release_repo() -> str:
+    """owner/repo whose GitHub Releases hold the APK (JYOTISHA_APK_RELEASE_REPO), or '' to serve downloads/jyotisha.apk."""
+    value = os.environ.get("JYOTISHA_APK_RELEASE_REPO", "").strip()
+    return value if re.fullmatch(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}", value) else ""
+
+
+def _latest_apk_release(repo: str) -> dict | None:
+    """Version and size of jyotisha.apk in the repo's latest GitHub Release; cached for 15 minutes, None if unknown."""
+    now = clock_time.monotonic()
+    if now - _RELEASE_CACHE["at"] < 900:
+        return _RELEASE_CACHE["info"]
+    info = None
+    try:
+        request = urllib.request.Request(f"https://api.github.com/repos/{repo}/releases/latest",
+                                         headers={"Accept": "application/vnd.github+json", "User-Agent": "jyotisha-ai-server"})
+        with urllib.request.urlopen(request, timeout=5) as response:
+            release = json.loads(response.read())
+        asset = next((a for a in release.get("assets", []) if a.get("name") == "jyotisha.apk"), None)
+        if asset:
+            info = {"version": str(release.get("name") or release.get("tag_name") or "latest")[:20], "size": int(asset.get("size", 0))}
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, TypeError, AttributeError):
+        info = None
+    _RELEASE_CACHE.update(at=now, info=info)
+    return info
 
 
 def _project_root() -> Path:
@@ -730,7 +761,11 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/download":
             apk = self.server.project_root / "downloads" / "jyotisha.apk"
             page = files("jyotisha_ai.web").joinpath("download.html").read_text(encoding="utf-8")
-            if apk.is_file():
+            release = _latest_apk_release(_apk_release_repo()) if _apk_release_repo() else None
+            if _apk_release_repo():
+                size = f"{release['size'] / 1_000_000:.1f} MB" if release and release["size"] else "latest"
+                version = release["version"] if release else "latest"
+            elif apk.is_file():
                 size = f"{apk.stat().st_size / 1_000_000:.1f} MB"
                 version = (apk.with_name("VERSION").read_text(encoding="utf-8").strip()[:20] if apk.with_name("VERSION").is_file() else "latest")
             else:
@@ -738,7 +773,12 @@ class LocalHandler(BaseHTTPRequestHandler):
             self._send(200, page.replace("{{SIZE}}", html.escape(size)).replace("{{VERSION}}", html.escape(version)).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/download/jyotisha.apk":
             apk = self.server.project_root / "downloads" / "jyotisha.apk"
-            if not apk.is_file():
+            if _apk_release_repo():
+                # Always the newest build: GitHub serves the file of the latest release.
+                store.stats.record("apk_downloads", self._client())
+                self._send(302, b"", "text/plain; charset=utf-8",
+                           {"Location": f"https://github.com/{_apk_release_repo()}/releases/latest/download/jyotisha.apk"})
+            elif not apk.is_file():
                 self._json(404, {"error": "not found"})
             else:
                 store.stats.record("apk_downloads", self._client())
