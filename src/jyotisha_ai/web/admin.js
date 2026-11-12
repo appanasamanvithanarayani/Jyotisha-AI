@@ -118,7 +118,31 @@
     const page = el('select');
     const pageNames = { home: 'Home', calendar: 'Festivals', kundli: 'Kundli', relationship: 'Love (Kundli matching)', chat: 'Ask AI', rashi: 'Rashiphal' };
     (push.pages || []).forEach(name => page.appendChild(new Option(pageNames[name] || name, name)));
-    panel.append(field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page));
+    // Ready-made ideas: pick one to fill the form, then edit if you like.
+    const IDEAS = [
+      ['te', 'chat', '🤔 మీరు అనుకున్న పనులు జరుగుతాయా?', 'తెలుసుకోవాలని ఉందా? మీ జాతకం ఏం చెబుతుందో Jyotisha AIని అడగండి.'],
+      ['te', 'chat', '💭 ఏదైనా పని మొదలుపెట్టాలని ఆలోచిస్తున్నారా?', 'మొదలుపెట్టే ముందు Jyotisha AIని అడిగి కన్ఫర్మ్ చేసుకోండి. ✨'],
+      ['te', 'chat', '😔 మూడ్ బాలేదా?', 'మీ జాతకానికి సరిపోయే చిన్న పరిహారం Jyotisha AIలో చూడండి. 🙏'],
+      ['te', 'kundli', '⏳ ఇప్పుడు మీకు ఏ దశ నడుస్తోంది?', 'మీ దశ మీ జీవితంలో ఏం తెస్తుందో చూడాలనుకుంటున్నారా? 👉'],
+      ['te', 'relationship', '💞 పెళ్లి సంబంధం చూస్తున్నారా?', '2 నిమిషాల్లో గుణ మేళనం (36కి) చూడండి.'],
+      ['te', 'calendar', '🪔 ఈ నెల పండుగలు', 'అన్ని పండుగలు, సెలవుల తేదీలు ఒకే చోట — మీ నగరానికి.'],
+      ['en', 'chat', '🤔 Will your plans work out?', 'Curious? Ask Jyotisha AI what your chart says.'],
+      ['en', 'chat', '💭 Thinking of starting something new?', 'Ask Jyotisha AI and confirm before you begin. ✨'],
+      ['en', 'kundli', '🪐 Is Sade Sati running for you?', 'Check your Kuja dosha and Sade Sati in one tap.'],
+      ['hi', 'chat', '🤔 क्या आपके सोचे हुए काम होंगे?', 'जानना चाहते हैं? Jyotisha AI से पूछें आपकी कुंडली क्या कहती है।'],
+      ['hi', 'chat', '😔 मूड ठीक नहीं है?', 'अपनी कुंडली के अनुसार एक छोटा उपाय Jyotisha AI में देखें। 🙏'],
+    ];
+    const ideas = el('select');
+    ideas.appendChild(new Option('— Pick a message idea (optional) —', ''));
+    IDEAS.forEach(([lang, , text], index) => ideas.appendChild(new Option(`${lang.toUpperCase()} · ${text}`, String(index))));
+    ideas.addEventListener('change', () => {
+      const idea = IDEAS[Number(ideas.value)];
+      if (!idea) return;
+      [audience.value, page.value, title.value, body.value] = [idea[0], idea[1], idea[2], idea[3]];
+      count.textContent = `${body.value.length} / 240`;
+    });
+    panel.append(field('Message ideas', ideas, 'Fills the form with a tested message and sends it only to that language; edit before sending if you like.'),
+      field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page));
     const send = el('button', 'btn primary', 'Send now'); send.type = 'button'; send.style.marginTop = '12px';
     send.addEventListener('click', async () => {
       if (!title.value.trim() || !body.value.trim()) { toast('Write a title and a message', true); return; }

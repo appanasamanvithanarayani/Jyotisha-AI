@@ -147,6 +147,10 @@
         saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
       notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
         time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
+        muhurta: 'Good and bad muhurta alerts',
+        goodTitle: '✅ Auspicious muhurta has started', goodBody: 'Abhijit muhurta — do your important work now (until {end}).',
+        badTitle: '⚠️ Careful: Rahu Kalam now', badBody: 'Avoid starting important work until {end}.',
+        evening: 'Evening question for you', eveningTime: 'Evening time',
         rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
@@ -172,6 +176,10 @@
         saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
       notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
         time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
+        muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
+        goodTitle: '✅ శుభ ముహూర్తం మొదలైంది', goodBody: 'అభిజిత్ ముహూర్తం — మీ ముఖ్యమైన పనులు ఇప్పుడు చేసుకోండి ({end} వరకు).',
+        badTitle: '⚠️ జాగ్రత్త! ఇప్పుడు రాహు కాలం', badBody: 'ముఖ్యమైన పనులు {end} తర్వాత మొదలుపెట్టండి.',
+        evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
         rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
@@ -197,6 +205,10 @@
         saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
       notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
         time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
+        muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
+        goodTitle: '✅ शुभ मुहूर्त शुरू हो गया', goodBody: 'अभिजित मुहूर्त — अपने ज़रूरी काम अभी करें ({end} तक)।',
+        badTitle: '⚠️ सावधान! अभी राहु काल है', badBody: 'ज़रूरी काम {end} के बाद शुरू करें।',
+        evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
         rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
@@ -558,8 +570,9 @@
   function loadNotify() {
     try {
       const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
-      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00' }; }
+      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
+        evening: saved.evening !== false, muhurta: saved.muhurta !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' }; }
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
@@ -578,11 +591,14 @@
       const list = [];
       for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
-        if (at <= now) continue;
         const iso = localIso(at);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, 21, 30, 0);
+        if (endOfDay <= now) continue;
         let day = null;
         try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
         if (!day) continue;
+        list.push(...muhurtaAlerts(day, iso, offset, now, copy));
+        if (at <= now) continue;
         const atText = `${iso}T${notify.time}`;
         const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
         const festival = festivals.find(event => event.date === iso);
@@ -593,11 +609,12 @@
         const personal = dayForYou(day, atText);
         if (personal) lines.push(`✨ ${personal}`);
         const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');   // no direction marks: some phones draw them as boxes
-        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true } });
+        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
       }
       // After the scheduled week, one reminder to open the app (which schedules the next week).
       const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
+      list.push(...eveningNotifications(now));
       await plugin.schedule({ notifications: list });
     } catch (_error) { /* notifications are optional */ } finally { notifyBusy = false; }
   }
@@ -635,11 +652,122 @@
     const time = el('input'); time.type = 'time'; time.value = notify.time; time.setAttribute('aria-label', copy.time);
     time.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(time.value)) { notify.time = time.value; saveNotify(); renderLookPanel(); void scheduleNotifications(); } });
     const timeRow = el('label', 'notify-time'); timeRow.append(el('span', null, copy.time), time);
+    const evening = el('label', 'notify-time');
+    const eveningBox = el('input'); eveningBox.type = 'checkbox'; eveningBox.checked = notify.evening; eveningBox.style.width = 'auto';
+    eveningBox.addEventListener('change', () => { notify.evening = eveningBox.checked; saveNotify(); void scheduleNotifications(); });
+    const eveningTime = el('input'); eveningTime.type = 'time'; eveningTime.value = notify.eveningTime; eveningTime.setAttribute('aria-label', copy.eveningTime);
+    eveningTime.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(eveningTime.value)) { notify.eveningTime = eveningTime.value; saveNotify(); void scheduleNotifications(); } });
+    const eveningLabel = el('span'); eveningLabel.append(eveningBox, document.createTextNode(` ${copy.evening}`));
+    evening.append(eveningLabel, eveningTime);
     wrap.append(el('span', 'label', `🔔 ${copy.title}`), row, timeRow);
+    const muhurta = el('label', 'notify-time');
+    const muhurtaBox = el('input'); muhurtaBox.type = 'checkbox'; muhurtaBox.checked = notify.muhurta; muhurtaBox.style.width = 'auto';
+    muhurtaBox.addEventListener('change', () => { notify.muhurta = muhurtaBox.checked; saveNotify(); void scheduleNotifications(); });
+    const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
+    muhurta.appendChild(muhurtaLabel);
+    if (notify.on) wrap.append(evening, muhurta);
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;
   }
-  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', () => showPage('home')); } catch (_error) { /* optional */ }
+  /* ---- Evening "curiosity" notifications: one personal question a day; tapping it opens Jyotisha AI and asks it ---- */
+  // need: 'chart' (has a Kundli), 'nochart', 'dasha' (current dasha known), 'sade' (Sade Sati running); none = anyone.
+  const NUDGES = {
+    te: [
+      { need: 'dasha', t: '⏳ ఇప్పుడు మీకు {dasha} దశ నడుస్తోంది', b: 'ఈ దశ మీ జీవితంలో ఏం తెస్తుందో చూడాలనుకుంటున్నారా? 👉', ask: 'ఇప్పుడు నడుస్తున్న {dasha} దశ నాకు ఎలా ఉంటుంది?' },
+      { t: '🤔 మీరు అనుకున్న పనులు జరుగుతాయా?', b: 'తెలుసుకోవాలని ఉందా? మీ జాతకం ఏం చెబుతుందో Jyotisha AIని అడగండి.', ask: 'నేను అనుకున్న పనులు జరుగుతాయా?' },
+      { t: '💭 ఏదైనా పని మొదలుపెట్టాలని ఆలోచిస్తున్నారా?', b: 'మొదలుపెట్టే ముందు Jyotisha AIని అడిగి కన్ఫర్మ్ చేసుకోండి. ✨', page: 'chat' },
+      { t: '😔 మూడ్ బాలేదా?', b: 'మీ జాతకానికి సరిపోయే చిన్న పరిహారం చూడండి. 🙏', ask: 'నా మూడ్ బాలేదు. నాకు సరిపోయే చిన్న పరిహారం చెప్పండి.' },
+      { t: '💰 డబ్బు విషయంలో ఈ నెల ఎలా ఉంటుంది?', b: 'ఖర్చులు, ఆదాయం — మీ గ్రహాలు ఏమంటున్నాయో చూడండి.', ask: 'ఈ నెల నా డబ్బు పరిస్థితి ఎలా ఉంటుంది?' },
+      { t: '💼 ఉద్యోగంలో మార్పు వస్తుందా?', b: 'కెరీర్ గురించి మీ మనసులో ఉన్న ప్రశ్న Jyotisha AIని అడగండి.', ask: 'ఈ సంవత్సరం నా ఉద్యోగం, కెరీర్ ఎలా ఉంటుంది?' },
+      { t: '💞 పెళ్లి ఎప్పుడు?', b: 'మీ జాతకంలో వివాహ యోగం గురించి తెలుసుకోండి.', ask: 'నా పెళ్లి, వైవాహిక జీవితం గురించి నా జాతకం ఏం చెబుతుంది?' },
+      { t: '🔮 రేపు మీకు ఎలా ఉంటుంది?', b: 'మీ రాశికి రేపటి ఫలం ఒక్క ట్యాప్‌లో.', page: 'rashi' },
+      { need: 'sade', t: '🪐 ఏలినాటి శని నడుస్తోంది', b: 'ఈ సమయంలో ఏం చేయాలి, ఏం చేయకూడదు — తెలుసుకోండి.', ask: 'నాకు ఏలినాటి శని నడుస్తోంది. ఈ సమయంలో ఏం చేయాలి?' },
+      { t: '🙏 ఈ రోజు ఏ దేవుడిని పూజిస్తే మంచిది?', b: 'మీ జాతకానికి తగిన దైవం, మంత్రం తెలుసుకోండి.', ask: 'నా జాతకం ప్రకారం నేను ఏ దేవుడిని పూజిస్తే మంచిది?' },
+      { t: '🏠 ఆరోగ్యం, కుటుంబం ఎలా ఉంటాయి?', b: 'మీ ఇంటి గురించి మీ గ్రహాలు ఏం చెబుతున్నాయో చూడండి.', ask: 'నా ఆరోగ్యం, కుటుంబ జీవితం ఎలా ఉంటుంది?' },
+      { need: 'nochart', t: '🪐 మీ జాతకం తెలుసుకోవాలని ఉందా?', b: 'పుట్టిన తేదీ, సమయం, స్థలం చాలు — 30 సెకన్లలో ఉచిత జాతకం.', page: 'kundli' },
+    ],
+    en: [
+      { need: 'dasha', t: '⏳ You are in your {dasha} period', b: 'Want to see what this period brings to your life? 👉', ask: 'How will my current {dasha} period be for me?' },
+      { t: '🤔 Will your plans work out?', b: 'Curious? Ask Jyotisha AI what your chart says.', ask: 'Will the things I am planning work out?' },
+      { t: '💭 Thinking of starting something new?', b: 'Ask Jyotisha AI and confirm before you begin. ✨', page: 'chat' },
+      { t: '😔 Not feeling great today?', b: 'See a small remedy that suits your chart. 🙏', ask: 'I am not feeling good. Suggest a simple remedy for my chart.' },
+      { t: '💰 How will money be this month?', b: 'Income and expenses — see what your planets say.', ask: 'How will my money situation be this month?' },
+      { t: '💼 Is a job change coming?', b: 'Ask Jyotisha AI the career question on your mind.', ask: 'How will my job and career be this year?' },
+      { t: '💞 When is marriage likely?', b: 'Find out what your chart says about marriage.', ask: 'What does my chart say about marriage and married life?' },
+      { t: '🔮 How will tomorrow be for you?', b: 'Tomorrow’s reading for your sign, one tap away.', page: 'rashi' },
+      { need: 'sade', t: '🪐 Sade Sati is running for you', b: 'What to do — and avoid — in this period.', ask: 'Sade Sati is running for me. What should I do in this time?' },
+      { t: '🙏 Which deity suits you best?', b: 'Find the deity and mantra that match your chart.', ask: 'According to my chart, which deity should I worship?' },
+      { t: '🏠 How will health and family be?', b: 'See what your planets say about home.', ask: 'How will my health and family life be?' },
+      { need: 'nochart', t: '🪐 Want to know your Jathakam?', b: 'Just your birth date, time and place — free Kundli in 30 seconds.', page: 'kundli' },
+    ],
+    hi: [
+      { need: 'dasha', t: '⏳ अभी आपकी {dasha} दशा चल रही है', b: 'यह दशा आपके जीवन में क्या लाएगी, देखना चाहेंगे? 👉', ask: 'मेरी अभी चल रही {dasha} दशा मेरे लिए कैसी रहेगी?' },
+      { t: '🤔 क्या आपके सोचे हुए काम होंगे?', b: 'जानना चाहते हैं? Jyotisha AI से पूछें आपकी कुंडली क्या कहती है।', ask: 'क्या मेरे सोचे हुए काम पूरे होंगे?' },
+      { t: '💭 कोई नया काम शुरू करने की सोच रहे हैं?', b: 'शुरू करने से पहले Jyotisha AI से पूछकर पक्का कर लें। ✨', page: 'chat' },
+      { t: '😔 मूड ठीक नहीं है?', b: 'अपनी कुंडली के अनुसार एक छोटा उपाय देखें। 🙏', ask: 'मेरा मूड ठीक नहीं है। मेरी कुंडली के अनुसार कोई सरल उपाय बताइए।' },
+      { t: '💰 इस महीने पैसा कैसा रहेगा?', b: 'आमदनी और खर्च — देखें आपके ग्रह क्या कहते हैं।', ask: 'इस महीने मेरी आर्थिक स्थिति कैसी रहेगी?' },
+      { t: '💼 क्या नौकरी में बदलाव आएगा?', b: 'करियर का अपना सवाल Jyotisha AI से पूछें।', ask: 'इस साल मेरी नौकरी और करियर कैसा रहेगा?' },
+      { t: '💞 शादी कब होगी?', b: 'जानें आपकी कुंडली विवाह के बारे में क्या कहती है।', ask: 'मेरी कुंडली विवाह और वैवाहिक जीवन के बारे में क्या कहती है?' },
+      { t: '🔮 कल आपका दिन कैसा रहेगा?', b: 'आपकी राशि का कल का फल, एक टैप में।', page: 'rashi' },
+      { need: 'sade', t: '🪐 आपकी साढ़ेसाती चल रही है', b: 'इस समय क्या करें और क्या न करें — जानें।', ask: 'मेरी साढ़ेसाती चल रही है। इस समय मुझे क्या करना चाहिए?' },
+      { t: '🙏 आपके लिए कौन-से देवता शुभ हैं?', b: 'अपनी कुंडली के अनुसार देवता और मंत्र जानें।', ask: 'मेरी कुंडली के अनुसार मुझे किस देवता की पूजा करनी चाहिए?' },
+      { t: '🏠 सेहत और परिवार कैसे रहेंगे?', b: 'देखें आपके ग्रह घर-परिवार के बारे में क्या कहते हैं।', ask: 'मेरा स्वास्थ्य और पारिवारिक जीवन कैसा रहेगा?' },
+      { need: 'nochart', t: '🪐 अपनी कुंडली जानना चाहते हैं?', b: 'बस जन्म तिथि, समय और स्थान — 30 सेकंड में मुफ़्त कुंडली।', page: 'kundli' },
+    ],
+  };
+  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, between 6 AM and 9:30 PM.
+  const MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
+  function muhurtaAlerts(day, iso, offset, now, copy) {
+    if (!notify.muhurta || !day.timings) return [];
+    const result = [];
+    const add = (id, span, title, body) => {
+      if (!Array.isArray(span) || typeof span[0] !== 'string') return;
+      const at = new Date(`${span[0]}:00`);
+      const hour = at.getHours() + at.getMinutes() / 60;
+      if (Number.isNaN(at.getTime()) || at <= now || hour < 6 || hour > 21.5) return;
+      const end = clock(span[1], iso).replace(/[\u2066-\u2069]/g, '');
+      result.push({ id: id + offset, title, body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
+    };
+    const wednesday = new Date(`${iso}T12:00:00Z`).getUTCDay() === 3;
+    if (!wednesday) add(MUHURTA_GOOD_ID, day.timings.abhijit, copy.goodTitle, copy.goodBody);
+    add(MUHURTA_BAD_ID, day.timings.rahu_kalam, copy.badTitle, copy.badBody);
+    return result;
+  }
+  const NUDGE_FIRST_ID = 7120;
+  function nudgesFor() {
+    const pool = NUDGES[state.lang] || NUDGES.en, details = state.details;
+    const dashaInfo = details && details.dasha;
+    const sub = dashaInfo && (dashaInfo.antardasha || []).find(item => item.current);
+    const dasha = dashaInfo && dashaInfo.current_mahadasha ? `${bodyName(dashaInfo.current_mahadasha)}${sub ? ' – ' + bodyName(sub.lord) : ''}` : '';
+    const sade = !!(details && details.doshas && details.doshas.saturn && details.doshas.saturn.sade_sati && details.doshas.saturn.sade_sati.active);
+    const ok = item => !item.need || (item.need === 'chart' && state.chart) || (item.need === 'nochart' && !state.chart)
+      || (item.need === 'dasha' && dasha) || (item.need === 'sade' && sade);
+    return pool.filter(ok).map(item => ({ ...item, t: fill(item.t, { dasha }), b: fill(item.b, { dasha }), ask: item.ask ? fill(item.ask, { dasha }) : '' }));
+  }
+  // A different message each evening (rotates through the list by date), so people do not see the same one twice in a row.
+  function eveningNotifications(now) {
+    if (!notify.evening) return [];
+    const list = nudgesFor();
+    if (!list.length) return [];
+    const [hour, minute] = notify.eveningTime.split(':').map(Number), result = [];
+    for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
+      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
+      if (at <= now) continue;
+      const dayNumber = Math.floor(Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()) / 86400000);
+      const item = list[dayNumber % list.length];
+      result.push({ id: NUDGE_FIRST_ID + offset, title: item.t, body: item.b, largeBody: item.b, schedule: { at, allowWhileIdle: true },
+        extra: { page: item.ask ? 'chat' : (item.page || 'home'), ask: item.ask || '' } });
+    }
+    return result;
+  }
+  // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
+  function openFromNotification(extra) {
+    const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
+    showPage(page);
+    const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
+    if (page === 'chat' && question) ask(question, question, true);
+  }
+  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.extra)); } catch (_error) { /* optional */ }
 
   /* ---- Messages sent from the admin panel (Firebase): subscribe to "all" and to this phone's language ---- */
   const PUSH_KEY = 'jyotisha.push.v1';

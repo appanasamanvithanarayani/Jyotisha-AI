@@ -458,10 +458,11 @@ test('daily notifications: the Android app asks once, then schedules a week of m
     getPending: async () => ({ notifications: [{ id: 7101 }] }),
     cancel: async ({ notifications }) => { calls.cancelled.push(...notifications.map(item => item.id)); },
     schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
-    addListener: () => {},
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') LocalNotifications.tap = fn; },
   };
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  app.context.__tap = event => LocalNotifications.tap(event);
   await settle();
   const card = app.element('notify-card');
   assert.equal(card.hidden, false);                                   // invite shown once in the app
@@ -471,10 +472,19 @@ test('daily notifications: the Android app asks once, then schedules a week of m
   assert.equal(calls.requested, 1);
   assert.ok(calls.cancelled.includes(7101));                          // old ones replaced
   const scheduled = calls.schedule.at(-1);
-  assert.ok(scheduled.length >= 7 && scheduled.length <= 8);          // the coming mornings plus a reminder to open the app
-  assert.ok(scheduled.slice(0, -1).every(item => /Rahu Kalam/.test(item.body) && item.schedule.allowWhileIdle));
-  assert.match(scheduled.at(-1).title, /week ahead/);
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00' });
+  const morning = scheduled.filter(item => item.id >= 7100 && item.id < 7107), evening = scheduled.filter(item => item.id >= 7120 && item.id < 7127);
+  assert.ok(morning.length >= 6 && morning.length <= 7);              // the coming mornings
+  assert.ok(morning.every(item => /Rahu Kalam/.test(item.body) && item.schedule.allowWhileIdle));
+  assert.match(scheduled.find(item => item.id === 7107).title, /week ahead/);   // then a reminder to open the app
+  assert.ok(evening.length >= 6 && new Set(evening.map(item => item.title)).size === evening.length);   // a different question each evening
+  assert.ok(evening.every(item => item.schedule.at.getHours() === 19 && item.schedule.at.getMinutes() === 30));
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' });
+  // Tapping an evening question opens Jyotisha AI and asks it.
+  const question = evening.find(item => item.extra.ask);
+  app.context.__tap({ notification: { extra: question.extra } });
+  await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
+  assert.ok(app.element('chat-log').children.some(item => item.textContent === question.extra.ask));
   assert.equal(app.element('notify-card').hidden, true);              // not asked again
 });
 
