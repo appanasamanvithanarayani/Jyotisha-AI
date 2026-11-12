@@ -38,7 +38,10 @@
     </div>
     <div id="home-chat" class="card ai-card">
       <div class="ai-head"><span class="ai-orb" aria-hidden="true">✨</span><div><h2 data-i18n="aiChatTitle">Chat with AI about your life</h2><p class="section-intro" data-i18n="aiChatSub">Tap a question and get an answer from your own chart.</p></div></div>
-      <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button><button type="button" class="ai-chip" data-i18n="aiQ4">Is this a good time to change my job?</button><button type="button" class="ai-chip" data-i18n="aiQ5">How is my health?</button><button type="button" class="ai-chip" data-i18n="aiQ6">How will today go for me?</button></div>
+      <p id="home-today" class="ai-today" hidden></p>
+      <form id="home-ask" class="home-ask"><input id="home-question" type="text" maxlength="300" autocomplete="off" enterkeyhint="send"><button id="home-ask-send" type="submit" class="home-ask-send"></button></form>
+      <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button></div>
+      <button id="home-kundli-cta" type="button" class="ai-cta" hidden></button>
     </div>
     <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
     <h2 id="detail-title" class="home-h"></h2>

@@ -134,6 +134,12 @@
       sadeNo: 'Not running now.', period: '{start} to {end}', sadeNext: 'Next Sade Sati: {start} to {end}', now: 'now',
       ashtama: 'Ashtama Shani (Saturn 8th from your Moon) is running until {end}.', ardhashtama: 'Ardhashtama Shani (Saturn 4th from your Moon) is running until {end}.',
       doshaNote: 'Conventional rules, not expert-reviewed. Dates are approximate.', doshaUnavailable: 'Dosha details are not available for this chart.',
+      todayLabel: 'Today for you', todayGood: 'Chandrabalam and Tarabalam are both favourable for you today — a good day for important work.',
+      todayCare: 'The Moon is 8th from your Moon sign today (Ashtama Chandra) — go slow and avoid big decisions.',
+      todayMixed: 'A mixed day for you — fine for routine work; take important steps with care.', todayQuiet: 'A quiet day for you — better for routine work than new beginnings.',
+      askPlaceholder: 'Ask anything: career, marriage, money…', askButton: 'Ask', kundliCta: 'Get your free Kundli in 30 seconds →', needKundli: 'Create your Kundli to see',
+      liveDasha: '{maha} – {antar} period now', liveDashaMaha: '{maha} period now', liveRashi: '{sign}: today’s reading', liveSade: 'Sade Sati: phase {p} of 3 running',
+      liveDosha: 'Kuja dosha: {k} · Sade Sati: {s}', yes: 'Yes', no: 'No',
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -146,6 +152,12 @@
       sadeNo: 'ఇప్పుడు నడవడం లేదు.', period: '{start} నుండి {end} వరకు', sadeNext: 'తదుపరి ఏలినాటి శని: {start} నుండి {end} వరకు', now: 'ఇప్పుడు',
       ashtama: 'అష్టమ శని (చంద్రుని నుండి 8వ ఇంట్లో శని) {end} వరకు నడుస్తోంది.', ardhashtama: 'అర్ధాష్టమ శని (చంద్రుని నుండి 4వ ఇంట్లో శని) {end} వరకు నడుస్తోంది.',
       doshaNote: 'సంప్రదాయ నియమాలు, నిపుణుల సమీక్ష పొందలేదు. తేదీలు సుమారుగా.', doshaUnavailable: 'ఈ జాతకానికి దోష వివరాలు అందుబాటులో లేవు.',
+      todayLabel: 'ఈ రోజు మీకు', todayGood: 'ఈ రోజు మీకు చంద్రబలం, తారాబలం రెండూ అనుకూలం — ముఖ్యమైన పనులకు మంచి రోజు.',
+      todayCare: 'ఈ రోజు చంద్రుడు మీ రాశి నుండి 8వ స్థానంలో ఉన్నాడు (అష్టమ చంద్రుడు) — నెమ్మదిగా వెళ్ళండి, పెద్ద నిర్ణయాలు వాయిదా వేయండి.',
+      todayMixed: 'ఈ రోజు మీకు మిశ్రమ ఫలితం — రోజువారీ పనులకు సరే; ముఖ్యమైన అడుగులు జాగ్రత్తగా వేయండి.', todayQuiet: 'ఈ రోజు మీకు నెమ్మదైన రోజు — కొత్త ప్రారంభాల కంటే రోజువారీ పనులకు మంచిది.',
+      askPlaceholder: 'ఏదైనా అడగండి: ఉద్యోగం, పెళ్లి, డబ్బు…', askButton: 'అడగండి', kundliCta: 'మీ ఉచిత జాతకం 30 సెకన్లలో →', needKundli: 'చూడటానికి మీ జాతకం రూపొందించండి',
+      liveDasha: 'ఇప్పుడు {maha} – {antar} దశ', liveDashaMaha: 'ఇప్పుడు {maha} దశ', liveRashi: '{sign}: ఈ రోజు ఫలం', liveSade: 'ఏలినాటి శని: {p}వ దశ నడుస్తోంది',
+      liveDosha: 'కుజ దోషం: {k} · ఏలినాటి శని: {s}', yes: 'ఉంది', no: 'లేదు',
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -158,6 +170,12 @@
       sadeNo: 'अभी नहीं चल रही।', period: '{start} से {end} तक', sadeNext: 'अगली साढ़ेसाती: {start} से {end} तक', now: 'अभी',
       ashtama: 'अष्टम शनि (चंद्र से 8वें भाव में शनि) {end} तक चल रहा है।', ardhashtama: 'ढैया (चंद्र से चौथे भाव में शनि) {end} तक चल रही है।',
       doshaNote: 'पारंपरिक नियम, विशेषज्ञ समीक्षा नहीं। तिथियाँ अनुमानित हैं।', doshaUnavailable: 'इस कुंडली के लिए दोष विवरण उपलब्ध नहीं है।',
+      todayLabel: 'आज आपके लिए', todayGood: 'आज आपके लिए चंद्रबल और ताराबल दोनों अनुकूल हैं — महत्वपूर्ण कामों के लिए अच्छा दिन।',
+      todayCare: 'आज चंद्रमा आपकी राशि से 8वें भाव में है (अष्टम चंद्र) — धीरे चलें, बड़े निर्णय टालें।',
+      todayMixed: 'आज आपके लिए मिला-जुला दिन — रोज़ के कामों के लिए ठीक; महत्वपूर्ण कदम सोच-समझकर उठाएँ।', todayQuiet: 'आज आपके लिए शांत दिन — नई शुरुआत से ज़्यादा रोज़ के कामों के लिए अच्छा।',
+      askPlaceholder: 'कुछ भी पूछें: नौकरी, शादी, पैसा…', askButton: 'पूछें', kundliCta: '30 सेकंड में अपनी मुफ़्त कुंडली →', needKundli: 'देखने के लिए अपनी कुंडली बनाएँ',
+      liveDasha: 'अभी {maha} – {antar} दशा', liveDashaMaha: 'अभी {maha} दशा', liveRashi: '{sign}: आज का फल', liveSade: 'साढ़ेसाती: {p} चरण चल रहा है',
+      liveDosha: 'मांगलिक: {k} · साढ़ेसाती: {s}', yes: 'हाँ', no: 'नहीं',
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -298,9 +316,33 @@
     }
     host.appendChild(el('p', 'muted-note', copy.doshaNote));
   }
-  // Home: a few clear choices instead of a long page.
+  // Home: a few clear choices; each card shows something about the user (their dasha, doshas, sign, the next festival).
+  function nextFestivalText() {
+    const copy = toolText(), events = state.festivals && state.festivals.events;
+    if (!events || !events.length || !state.todayIso) return null;
+    const event = events[0];
+    const day = iso => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+    const days = Math.round((day(event.date) - day(state.todayIso)) / 86400000);
+    return `${eventName(event)} · ${days === 0 ? copy.festToday : days === 1 ? copy.festTomorrow : fill(copy.festIn, { n: days })}`;
+  }
+  function liveSubtitles() {
+    const copy = toolText(), details = state.details, live = {};
+    if (state.chart) live.rashi = fill(copy.liveRashi, { sign: signName(state.chart.positions.Moon.rashi_index) });
+    const dasha = details && details.dasha;
+    if (dasha && dasha.current_mahadasha) {
+      const sub = (dasha.antardasha || []).find(item => item.current);
+      live.dasha = sub ? fill(copy.liveDasha, { maha: bodyName(dasha.current_mahadasha), antar: bodyName(sub.lord) }) : fill(copy.liveDashaMaha, { maha: bodyName(dasha.current_mahadasha) });
+    }
+    const doshas = details && details.doshas;
+    if (doshas && doshas.saturn && doshas.saturn.sade_sati && doshas.saturn.sade_sati.active) live.doshas = fill(copy.liveSade, { p: doshas.saturn.sade_sati.phase });
+    else if (doshas && doshas.kuja) live.doshas = fill(copy.liveDosha, { k: doshas.kuja.present ? copy.yes : copy.no, s: copy.no });
+    live.festivals = nextFestivalText();
+    return live;
+  }
   function renderTools() {
-    const copy = toolText().tools;
+    const text = toolText(), copy = text.tools, live = liveSubtitles();
+    $('detail-title').textContent = text.detailTitle;
+    $('festivals-title').textContent = text.festTitle;
     const open = (page, view) => () => {
       if (page === 'relationship') { state.loveMode = 'match'; renderRelationship(); }
       showPage(page);
@@ -310,17 +352,48 @@
         if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
       }
     };
-    $('detail-title').textContent = toolText().detailTitle;
-    $('festivals-title').textContent = toolText().festTitle;
     const toFestivals = () => { try { $('festivals').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } };
+    const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
     $('tool-grid').replaceChildren(
-      optionCard('🎉', copy.festivals[0], copy.festivals[1], toFestivals),
       optionCard('💞', copy.match[0], copy.match[1], open('relationship')),
-      optionCard('🪐', copy.doshas[0], copy.doshas[1], open('kundli', 'doshas')),
-      optionCard('⏳', copy.dasha[0], copy.dasha[1], open('kundli', 'dasha')),
-      optionCard('🔮', copy.rashi[0], copy.rashi[1], open('rashi')),
-      optionCard('💬', copy.chat[0], copy.chat[1], open('chat')));
+      optionCard('🪐', copy.doshas[0], needs('doshas'), open('kundli', 'doshas')),
+      optionCard('🔮', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi')),
+      optionCard('⏳', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
+      optionCard('🎉', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals));
+    renderHomeAi();
   }
+  // Home AI card: a personal line for today, a type box, and a nudge to make a Kundli first.
+  function todayForYou() {
+    const day = state.day, chart = state.chart;
+    if (!day || !chart || day.date !== state.todayIso || !Array.isArray(day.nakshatra) || !Array.isArray(day.moon_rashi)) return null;
+    const now = localIso(new Date()) + 'T' + new Date().toTimeString().slice(0, 5);
+    const current = list => list.find(item => item.starts_at <= now && now < item.ends_at) || list[0];
+    const tara = current(day.nakshatra), moon = current(day.moon_rashi);
+    if (!tara || !moon) return null;
+    const mySign = chart.positions.Moon.rashi_index, myStar = chart.panchanga_at_birth.nakshatra_index;
+    const copy = toolText();
+    if (moon.ashtama_chandra_rashi === mySign) return copy.todayCare;
+    const chandra = (moon.good_chandrabalam_rashis || []).includes(mySign), taraGood = (tara.good_tara_nakshatras || []).includes(myStar);
+    return chandra && taraGood ? copy.todayGood : chandra || taraGood ? copy.todayMixed : copy.todayQuiet;
+  }
+  function renderHomeAi() {
+    const copy = toolText();
+    $('home-question').placeholder = copy.askPlaceholder;
+    $('home-ask-send').textContent = copy.askButton;
+    const cta = $('home-kundli-cta'); cta.textContent = copy.kundliCta; cta.hidden = !!state.chart;
+    const line = todayForYou(), box = $('home-today');
+    box.replaceChildren();
+    if (line) { box.append(el('b', null, `✨ ${copy.todayLabel}: `), document.createTextNode(line)); box.hidden = false; } else box.hidden = true;
+  }
+  $('home-ask').addEventListener('submit', event => {
+    event.preventDefault();
+    const question = $('home-question').value.trim();
+    if (!question) return;
+    $('home-question').value = '';
+    showPage('chat');
+    ask(question, question, true);
+  });
+  $('home-kundli-cta').addEventListener('click', () => { showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } });
 
   // Home: the next festivals from today, read from this month's and the next two months' calendars.
   const FEST_MONTHS = 3, FEST_SHOWN = 6;
@@ -349,6 +422,7 @@
     const copy = toolText(), list = $('festival-list'), more = $('festival-more');
     list.replaceChildren(); more.hidden = true;
     const data = state.festivals;
+    renderTools();
     if (!data || !data.events) { list.appendChild(el('p', 'muted-note', copy.festLoading)); return; }
     if (!data.events.length) { list.appendChild(el('p', 'muted-note', copy.festNone)); return; }
     const today = Date.UTC(Number(state.todayIso.slice(0, 4)), Number(state.todayIso.slice(5, 7)) - 1, Number(state.todayIso.slice(8, 10)));
@@ -742,6 +816,7 @@
   $('rashi-today').addEventListener('click', () => selectDate(state.todayIso || localIso(new Date())));
   function renderDay() {
     renderRashi();
+    renderHomeAi();
     const day = state.day;
     if (!day) { clearDay(); return; }
     const date = day.date;
@@ -1006,6 +1081,7 @@
   function renderChart() {
     const chart = state.chart, details = state.details;
     if (!chart) return;
+    renderTools();
     renderDoshas();
     showKundliView(state.kundliView);
     const birth = chart.panchanga_at_birth, moon = chart.positions.Moon;
@@ -1581,6 +1657,7 @@
     for (const id of ['partner-dob', 'partner-pob', 'partner-tob']) $(id).value = '';
     $('relationship-status').textContent = ''; renderRelationship();
     $('chart').hidden = true;
+    renderTools();
     setChatEnabled(true); startIntake();
   });
   $('availability').textContent = t('availabilityChecking');

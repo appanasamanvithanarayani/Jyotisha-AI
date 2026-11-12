@@ -497,3 +497,14 @@ main,.app-page,.card{min-width:0}
   .d1-planet{font-size:clamp(.42rem,2.45cqw,.62rem);column-gap:.6cqw}
   .d1-cell.crowded .d1-planet{font-size:clamp(.4rem,2.3cqw,.6rem);line-height:1.1}
 }
+
+/* ---------- Home AI card: today's line, type box, Kundli nudge ---------- */
+.ai-today{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.1);border:1px solid rgba(242,193,78,.4);color:#fff;font-size:.88rem;line-height:1.45}
+.ai-today b{color:var(--gold)}
+.home-ask{display:flex;gap:8px;margin:12px 0 4px}
+.home-ask input{flex:1;min-width:0;min-height:46px;padding:10px 14px;border-radius:14px;border:1px solid rgba(242,193,78,.55);background:#fff;color:var(--ink);font-size:.95rem}
+.home-ask button[type="submit"].home-ask-send{width:auto;margin:0;min-height:46px;padding:10px 18px;flex:none}
+.ai-cta{display:block;width:100%;margin-top:12px;min-height:46px;padding:10px 14px;border-radius:14px;border:0;font-weight:800;
+  background:linear-gradient(135deg,var(--gold),#ffd98a);color:var(--night);box-shadow:0 8px 20px rgba(242,193,78,.35)}
+/* Five cards on a two-column phone grid: the last one (Festivals) takes the whole row. */
+@media (max-width:520px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tool-grid .option-card:last-child:nth-child(odd){grid-column:1/-1;min-height:0}}
