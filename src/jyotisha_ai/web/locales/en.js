@@ -31,6 +31,7 @@
       "placePlaceholder": "Start typing a city",
       "changeLanguageAria": "Change language",
       "home": "Home",
+      "navCalendar": "Calendar",
       "kundli": "Kundli",
       "ask": "Ask",
       "eyebrowBirth": "Birth chart",

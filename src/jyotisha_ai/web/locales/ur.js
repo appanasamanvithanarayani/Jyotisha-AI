@@ -31,6 +31,7 @@
       "placePlaceholder": "شہر کا نام ٹائپ کریں",
       "changeLanguageAria": "زبان تبدیل کریں",
       "home": "ہوم",
+      "navCalendar": "کیلنڈر",
       "kundli": "زائچہ",
       "ask": "پوچھیں",
       "eyebrowBirth": "پیدائشی زائچہ",

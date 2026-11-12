@@ -31,6 +31,7 @@
       "placePlaceholder": "सहरको नाम टाइप गर्नुहोस्",
       "changeLanguageAria": "भाषा परिवर्तन गर्नुहोस्",
       "home": "गृहपृष्ठ",
+      "navCalendar": "पात्रो",
       "kundli": "कुण्डली",
       "ask": "सोध्नुहोस्",
       "eyebrowBirth": "जन्मकुण्डली",

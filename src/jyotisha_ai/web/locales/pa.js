@@ -31,6 +31,7 @@
       "placePlaceholder": "ਸ਼ਹਿਰ ਦਾ ਨਾਮ ਟਾਈਪ ਕਰੋ",
       "changeLanguageAria": "ਭਾਸ਼ਾ ਬਦਲੋ",
       "home": "ਮੁੱਖ ਪੰਨਾ",
+      "navCalendar": "ਕੈਲੰਡਰ",
       "kundli": "ਕੁੰਡਲੀ",
       "ask": "ਪੁੱਛੋ",
       "eyebrowBirth": "ਜਨਮ ਕੁੰਡਲੀ",

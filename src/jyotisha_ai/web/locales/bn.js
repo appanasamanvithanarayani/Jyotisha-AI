@@ -31,6 +31,7 @@
       "placePlaceholder": "শহরের নাম টাইপ করুন",
       "changeLanguageAria": "ভাষা বদলান",
       "home": "হোম",
+      "navCalendar": "ক্যালেন্ডার",
       "kundli": "কুণ্ডলী",
       "ask": "জিজ্ঞাসা",
       "eyebrowBirth": "জন্মকুণ্ডলী",

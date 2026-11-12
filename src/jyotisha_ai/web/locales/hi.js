@@ -31,6 +31,7 @@
       "placePlaceholder": "शहर का नाम टाइप करें",
       "changeLanguageAria": "भाषा बदलें",
       "home": "होम",
+      "navCalendar": "कैलेंडर",
       "kundli": "कुंडली",
       "ask": "पूछें",
       "eyebrowBirth": "जन्म कुंडली",

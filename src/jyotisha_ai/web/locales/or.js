@@ -31,6 +31,7 @@
       "placePlaceholder": "ସହରର ନାମ ଟାଇପ୍ କରନ୍ତୁ",
       "changeLanguageAria": "ଭାଷା ବଦଳାନ୍ତୁ",
       "home": "ମୂଳପୃଷ୍ଠା",
+      "navCalendar": "କ୍ୟାଲେଣ୍ଡର",
       "kundli": "କୁଣ୍ଡଳୀ",
       "ask": "ପଚାରନ୍ତୁ",
       "eyebrowBirth": "ଜନ୍ମ କୁଣ୍ଡଳୀ",

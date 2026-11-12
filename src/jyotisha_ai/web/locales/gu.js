@@ -31,6 +31,7 @@
       "placePlaceholder": "શહેરનું નામ ટાઇપ કરો",
       "changeLanguageAria": "ભાષા બદલો",
       "home": "હોમ",
+      "navCalendar": "કેલેન્ડર",
       "kundli": "કુંડળી",
       "ask": "પૂછો",
       "eyebrowBirth": "જન્મ કુંડળી",

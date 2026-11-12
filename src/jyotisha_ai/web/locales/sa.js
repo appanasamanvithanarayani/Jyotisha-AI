@@ -31,6 +31,7 @@
       "placePlaceholder": "नगरनाम लिखतु",
       "changeLanguageAria": "भाषां परिवर्तयतु",
       "home": "मुखपृष्ठम्",
+      "navCalendar": "पञ्चाङ्गम्",
       "kundli": "कुण्डली",
       "ask": "पृच्छतु",
       "eyebrowBirth": "जन्मकुण्डली",

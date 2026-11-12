@@ -31,6 +31,7 @@
       "placePlaceholder": "നഗരത്തിന്റെ പേര് ടൈപ്പ് ചെയ്യുക",
       "changeLanguageAria": "ഭാഷ മാറ്റുക",
       "home": "ഹോം",
+      "navCalendar": "കലണ്ടർ",
       "kundli": "ജാതകം",
       "ask": "ചോദിക്കുക",
       "eyebrowBirth": "ജനന ജാതകം",
