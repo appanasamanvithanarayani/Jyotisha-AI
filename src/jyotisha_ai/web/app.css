@@ -709,3 +709,19 @@ main,.app-page,.card{min-width:0}
 :root[data-mode="dark"] .dp-sec.good .dp-label{background:#21332f;color:#7fdcc6}
 :root[data-mode="dark"] .dp-sec.bad .dp-label{background:#352423;color:#f29a90}
 :root[data-mode="dark"] .dp-sec.calm .dp-label{background:#2b2840;color:#b9aef0}
+
+/* ---------- Daily notifications: Home invite and settings ---------- */
+.notify-card{display:flex;flex-direction:column;gap:10px;margin:0 0 16px;padding:14px 16px;border-radius:20px;border:1px solid #f3dcb0;
+  background:linear-gradient(160deg,#fffbea,#fff2cf);box-shadow:0 6px 18px rgba(200,150,40,.12)}
+.notify-text{display:flex;flex-direction:column;gap:3px}
+.notify-text b{font-size:1rem;color:var(--heading)}.notify-text span{font-size:.86rem;color:var(--muted)}
+.notify-actions,.notify-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notify-on,.notify-later{min-height:40px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:.88rem}
+.notify-on{border:0;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:var(--accent-text)}
+.notify-later{border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.notify-settings{margin-top:4px}
+.notify-row{justify-content:space-between}
+.notify-status{font-size:.86rem;font-weight:700}
+.notify-time{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:.84rem;color:var(--muted)}
+.notify-time input{width:auto;min-height:40px;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+:root[data-mode="dark"] .notify-card{background:linear-gradient(160deg,#2f2a1d,#2b261b);border-color:#4a4028;box-shadow:none}

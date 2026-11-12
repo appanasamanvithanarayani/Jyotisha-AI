@@ -450,6 +450,40 @@ test('appearance: light by default; dark mode and an accent colour can be chosen
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
 });
 
+test('daily notifications: the Android app asks once, then schedules a week of morning notifications', async () => {
+  const calls = { schedule: [], requested: 0, cancelled: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'prompt' }),
+    requestPermissions: async () => { calls.requested += 1; return { display: 'granted' }; },
+    getPending: async () => ({ notifications: [{ id: 7101 }] }),
+    cancel: async ({ notifications }) => { calls.cancelled.push(...notifications.map(item => item.id)); },
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
+    addListener: () => {},
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  await settle();
+  const card = app.element('notify-card');
+  assert.equal(card.hidden, false);                                   // invite shown once in the app
+  assert.match(card.children[0].children[0].textContent, /Daily notifications/);
+  await card.children[1].children[0].listeners.click();               // Turn on
+  await settle(); await settle();
+  assert.equal(calls.requested, 1);
+  assert.ok(calls.cancelled.includes(7101));                          // old ones replaced
+  const scheduled = calls.schedule.at(-1);
+  assert.ok(scheduled.length >= 7 && scheduled.length <= 8);          // the coming mornings plus a reminder to open the app
+  assert.ok(scheduled.slice(0, -1).every(item => /Rahu Kalam/.test(item.body) && item.schedule.allowWhileIdle));
+  assert.match(scheduled.at(-1).title, /week ahead/);
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00' });
+  assert.equal(app.element('notify-card').hidden, true);              // not asked again
+});
+
+test('daily notifications are not offered in a browser (no Android plugin)', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  assert.equal(app.element('notify-card').hidden, true);
+});
+
 function fakeAdMob() {
   const calls = [];
   return { calls, plugin: {
