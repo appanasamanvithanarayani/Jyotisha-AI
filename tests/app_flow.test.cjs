@@ -390,9 +390,13 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
   const app = boot({ storage, birth });
   await settle();
-  assert.equal(app.element('tool-grid').children.length, 5);
+  assert.equal(app.element('tool-grid').children.length, 6);
   assert.equal(app.element('kundli-views').children.length, 5);
-  app.element('tool-grid').children[1].listeners.click();     // Doshas card opens the Kundli on the Doshas view
+  // Upcoming festivals read this month and the next two, and the list shows a row or a "none" line.
+  assert.ok(app.requests.filter(r => r.url === '/api/month-calendar').length >= 3);
+  assert.ok(app.element('festival-list').children.length > 0);
+  assert.equal(app.element('festivals-title').textContent, 'Upcoming festivals');
+  app.element('tool-grid').children[2].listeners.click();     // Doshas card opens the Kundli on the Doshas view
   const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
   assert.equal(page('kundli').hidden, false);
   const cards = app.element('dosha-body').children;

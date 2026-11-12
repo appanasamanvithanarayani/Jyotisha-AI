@@ -40,6 +40,18 @@
       <div class="ai-head"><span class="ai-orb" aria-hidden="true">✨</span><div><h2 data-i18n="aiChatTitle">Chat with AI about your life</h2><p class="section-intro" data-i18n="aiChatSub">Tap a question and get an answer from your own chart.</p></div></div>
       <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button><button type="button" class="ai-chip" data-i18n="aiQ4">Is this a good time to change my job?</button><button type="button" class="ai-chip" data-i18n="aiQ5">How is my health?</button><button type="button" class="ai-chip" data-i18n="aiQ6">How will today go for me?</button></div>
     </div>
+    <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
+    <h2 id="detail-title" class="home-h"></h2>
+    <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
+    <label class="date-pick"><span data-i18n="calendarDate">Calendar date</span><input id="dp-date" type="date" min="1970-01-01" max="2100-12-31"></label>
+    <p id="dp-status" role="status" aria-live="polite"></p>
+    <div id="dp-tables"></div>
+    <p id="dp-note" class="note"></p>
+    <section id="festivals" class="card fest-card" aria-labelledby="festivals-title">
+      <h2 id="festivals-title" class="home-h"></h2>
+      <div id="festival-list" class="fest-list" aria-live="polite"></div>
+      <button id="festival-more" type="button" class="chip-btn fest-more" hidden></button>
+    </section>
     <div class="card cal-card">
       <div class="month-controls"><button id="month-prev" type="button" data-i18n-aria="previous" aria-label="Previous month">‹</button><strong id="month-title"></strong><button id="month-next" type="button" data-i18n-aria="next" aria-label="Next month">›</button></div>
       <div id="month-calendar" class="month-calendar" role="group" data-i18n-aria="daysAria" aria-label="Calendar days"></div>
@@ -47,13 +59,7 @@
       <p class="hint" data-i18n="calendarTap">Tap a day to see its full Panchang.</p>
       <div id="month-events" class="cal-events"></div>
     </div>
-    <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
-    <label class="date-pick"><span data-i18n="calendarDate">Calendar date</span><input id="dp-date" type="date" min="1970-01-01" max="2100-12-31"></label>
-    <p id="dp-status" role="status" aria-live="polite"></p>
-    <div id="dp-tables"></div>
-    <p id="dp-note" class="note"></p>
   </section>
-  <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
   <section id="relationship" class="card" aria-labelledby="relationship-title">
     <span class="eyebrow" id="relationship-eyebrow">Relationships</span>
     <h2 id="relationship-title">Love &amp; chart comparison</h2>
