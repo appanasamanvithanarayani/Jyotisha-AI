@@ -391,7 +391,21 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const app = boot({ storage, birth });
   await settle();
   assert.equal(app.element('tool-grid').children.length, 5);
+  // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
+  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Sade Sati: phase 2 of 3 running');
+  assert.equal(app.element('home-kundli-cta').hidden, true);
+  // Typing a question on Home opens the chat and asks it.
+  app.element('home-question').value = 'Will I get a job this year?';
+  app.element('home-ask').listeners.submit({ preventDefault() {} });
+  await settle();
+  const pageOf = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(pageOf('chat').hidden, false);
+  assert.ok(app.element('chat-log').children.some(item => item.textContent === 'Will I get a job this year?'));
   assert.equal(app.element('kundli-views').children.length, 5);
+  // Upcoming festivals read this month and the next two, and the list shows a row or a "none" line.
+  assert.ok(app.requests.filter(r => r.url === '/api/month-calendar').length >= 3);
+  assert.ok(app.element('festival-list').children.length > 0);
+  assert.equal(app.element('festivals-title').textContent, 'Upcoming festivals');
   app.element('tool-grid').children[1].listeners.click();     // Doshas card opens the Kundli on the Doshas view
   const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
   assert.equal(page('kundli').hidden, false);
@@ -400,6 +414,15 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   assert.match(cards[0].children[1].textContent, /house 7 from the Lagna/);
   assert.match(cards[1].children[0].children[1].textContent, /phase 2 of 3/);
   assert.match(cards[1].children[1].textContent, /2025.*2032/);
+});
+
+test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
+  const app = boot();
+  await enter(app, 'en');
+  assert.equal(app.element('home-kundli-cta').hidden, false);
+  assert.match(app.element('home-kundli-cta').textContent, /free Kundli/);
+  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
+  assert.equal(app.element('home-today').hidden, true);
 });
 
 function fakeAdMob() {
