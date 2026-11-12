@@ -866,6 +866,22 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(404, {"error": "not found"})
             else:
                 self._send(200, f"google.com, pub-{client[len('ca-pub-'):]}, DIRECT, f08c47fec0942fa0\n".encode("utf-8"), "text/plain; charset=utf-8")
+        elif path == "/app-ads.txt":
+            # AdMob checks this file on the developer website listed on Google Play. The publisher id comes from the
+            # app's own ad unit ids (ca-app-pub-<publisher>/<unit>) and the AdSense id, so there is nothing extra to set.
+            publishers = []
+            for name in ("JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_REWARDED_ID", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_PUBLISHER"):
+                match = re.fullmatch(r"(?:ca-app-)?pub-(\d{16})(?:/\d{10})?", store.value(name).replace("ca-app-pub-", "pub-"))
+                if match and match.group(1) not in publishers:
+                    publishers.append(match.group(1))
+            client = _adsense_client()
+            if client and client[len("ca-pub-"):] not in publishers:
+                publishers.append(client[len("ca-pub-"):])
+            if not publishers:
+                self._json(404, {"error": "not found"})
+            else:
+                lines = "".join(f"google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\n" for publisher in publishers)
+                self._send(200, lines.encode("utf-8"), "text/plain; charset=utf-8")
         elif path == "/research":
             body = files("jyotisha_ai.web").joinpath("index.html").read_bytes()
             self._send(200, body, "text/html; charset=utf-8")

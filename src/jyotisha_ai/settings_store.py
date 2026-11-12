@@ -41,6 +41,7 @@ class Setting:
 SETTINGS: tuple[Setting, ...] = (
     # ---- Ads in the Android app (Google AdMob)
     Setting("JYOTISHA_APP_ADS", "Android app ads", "Show ads in the Android app", "Master switch. Off hides every ad and every ad popup.", "bool", "0"),
+    Setting("JYOTISHA_ADMOB_PUBLISHER", "Android app ads", "AdMob publisher ID (for app-ads.txt)", "Only needed before you add your own ad unit IDs; app-ads.txt uses the ID inside your ad units.", "pattern", "", pattern=r"pub-\d{16}", example="pub-1234567890123456"),
     Setting("JYOTISHA_ADMOB_TESTING", "Android app ads", "Always show test ads", "Keep on until the app is live on Google Play and your AdMob account is approved.", "bool", "0"),
     Setting("JYOTISHA_ADMOB_BANNER_ID", "Android app ads", "Banner ad unit ID", "From AdMob. Leave empty to use Google's test banner.", "pattern", "", pattern=UNIT_ID, example="ca-app-pub-1234567890123456/1234567890"),
     Setting("JYOTISHA_REWARDED_KUNDLI", "Android app ads", "Watch an ad to generate a Kundli", "Asks the user to watch a short ad before a new Kundli is made.", "bool", "0"),

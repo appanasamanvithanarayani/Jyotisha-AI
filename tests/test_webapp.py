@@ -911,3 +911,20 @@ def test_download_serves_the_release_apk_from_this_domain_and_keeps_one_copy(tmp
         server.shutdown()
         thread.join(timeout=3)
         server.server_close()
+
+
+def test_app_ads_txt_lists_the_admob_publisher_from_the_ad_units(tmp_path, monkeypatch):
+    server = LocalServer(port=0, root=tmp_path)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        assert request(server, "GET", "/app-ads.txt")[0] == 404                     # nothing configured yet
+        monkeypatch.setenv("JYOTISHA_ADMOB_PUBLISHER", "pub-5500721504193090")
+        status, headers, body = request(server, "GET", "/app-ads.txt")
+        assert status == 200 and body == b"google.com, pub-5500721504193090, DIRECT, f08c47fec0942fa0\n"
+        monkeypatch.setenv("JYOTISHA_ADMOB_BANNER_ID", "ca-app-pub-5500721504193090/1234567890")   # same publisher: one line
+        assert request(server, "GET", "/app-ads.txt")[2].count(b"google.com") == 1
+    finally:
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()
