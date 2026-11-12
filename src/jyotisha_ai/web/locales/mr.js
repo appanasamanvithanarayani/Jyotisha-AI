@@ -31,6 +31,7 @@
       "placePlaceholder": "शहराचे नाव टाइप करा",
       "changeLanguageAria": "भाषा बदला",
       "home": "मुख्यपृष्ठ",
+      "navCalendar": "दिनदर्शिका",
       "kundli": "कुंडली",
       "ask": "विचारा",
       "eyebrowBirth": "जन्म कुंडली",

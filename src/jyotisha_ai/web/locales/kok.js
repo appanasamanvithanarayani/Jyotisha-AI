@@ -31,6 +31,7 @@
       "placePlaceholder": "शाराचें नांव टायप करात",
       "changeLanguageAria": "भास बदलात",
       "home": "मुखपृष्ठ",
+      "navCalendar": "दिनदर्शिका",
       "kundli": "कुंडली",
       "ask": "विचारात",
       "eyebrowBirth": "जनम कुंडली",

@@ -31,6 +31,7 @@
       "placePlaceholder": "నగరం పేరు టైప్ చేయండి",
       "changeLanguageAria": "భాష మార్చండి",
       "home": "హోమ్",
+      "navCalendar": "క్యాలెండర్",
       "kundli": "జాతకం",
       "ask": "అడగండి",
       "eyebrowBirth": "జన్మ జాతకం",

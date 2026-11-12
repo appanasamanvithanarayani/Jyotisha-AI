@@ -13,13 +13,13 @@ const match = require(path.join(root, 'match-ui.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
-test('all five bottom tabs stay in one grid row', () => {
+test('all six bottom tabs stay in one grid row', () => {
   const css = fs.readFileSync(path.join(root, 'app.css'), 'utf8');
   const navRules = [...css.matchAll(/(?:^|\n)\.bottom-nav\s*\{([^}]+)\}/g)];
   assert.equal(navRules.length, 1);
-  assert.match(navRules[0][1], /grid-template-columns:repeat\(5,1fr\)/);
+  assert.match(navRules[0][1], /grid-template-columns:repeat\(6,1fr\)/);
   const html = fs.readFileSync(path.join(root, 'birth.html'), 'utf8');
-  assert.equal((html.match(/<a href="#(?:home|kundli|relationship|chat|rashi)"/g) || []).length, 5);
+  assert.equal((html.match(/<a href="#(?:home|calendar|kundli|relationship|chat|rashi)"/g) || []).length, 6);
 });
 
 class Element {
@@ -393,7 +393,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   assert.equal(app.element('tool-grid').children.length, 5);
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
   assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Sade Sati: phase 2 of 3 running');
-  assert.equal(app.element('home-kundli-cta').hidden, true);
+  assert.equal(app.element('my-jathakam').children.length, 3);          // heading, Lagna/Rashi/Nakshatra/Dasha, View full Kundli
   // Typing a question on Home opens the chat and asks it.
   app.element('home-question').value = 'Will I get a job this year?';
   app.element('home-ask').listeners.submit({ preventDefault() {} });
@@ -419,10 +419,35 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
   const app = boot();
   await enter(app, 'en');
-  assert.equal(app.element('home-kundli-cta').hidden, false);
-  assert.match(app.element('home-kundli-cta').textContent, /free Kundli/);
+  const jathakam = app.element('my-jathakam').children;
+  assert.equal(jathakam.length, 2);                                       // invitation and the Create my Kundli button
+  assert.match(jathakam[0].children[1].children[0].textContent, /Want to know your Jathakam/);
+  assert.match(jathakam[1].textContent, /Create my Kundli/);
+  // Festivals and the month calendar live in the Calendar tab.
+  const calendarPage = app.element('top').children.find(item => item.id === 'page-calendar');
+  assert.ok(calendarPage && calendarPage.children.length === 2);
   assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
   assert.equal(app.element('home-today').hidden, true);
+});
+
+test('appearance: light by default; dark mode and an accent colour can be chosen and are remembered', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage });
+  await settle();
+  const root = app.context.document.documentElement;
+  assert.equal(root.getAttribute('data-mode'), 'light');
+  assert.equal(root.getAttribute('data-accent'), 'saffron');
+  app.element('theme-panel').hidden = true;           // as in the page markup
+  app.element('theme-btn').listeners.click();
+  const panel = app.element('theme-panel');
+  assert.equal(panel.hidden, false);
+  const [title, , modes, , swatches] = panel.children;
+  assert.match(title.textContent, /Appearance/);
+  modes.children[1].listeners.click();                 // Dark
+  assert.equal(root.getAttribute('data-mode'), 'dark');
+  app.element('theme-panel').children[4].children[2].listeners.click();   // Rose
+  assert.equal(root.getAttribute('data-accent'), 'rose');
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
 });
 
 function fakeAdMob() {

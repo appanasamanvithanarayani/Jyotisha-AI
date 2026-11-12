@@ -48,12 +48,13 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'kundli', 'relationship', 'chat', 'rashi']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
   }
   pages.home.append($('day-panchang'), $('legal'));
+  pages.calendar.append($('festivals'), $('month-card'));
   pages.kundli.append($('kundli'), $('chart'));
   pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));
@@ -140,6 +141,10 @@
       askPlaceholder: 'Ask anything: career, marriage, money…', askButton: 'Ask', kundliCta: 'Get your free Kundli in 30 seconds →', needKundli: 'Create your Kundli to see',
       liveDasha: '{maha} – {antar} period now', liveDashaMaha: '{maha} period now', liveRashi: '{sign}: today’s reading', liveSade: 'Sade Sati: phase {p} of 3 running',
       liveDosha: 'Kuja dosha: {k} · Sade Sati: {s}', yes: 'Yes', no: 'No',
+      jkAsk: 'Want to know your Jathakam?', jkSub: 'Your free Kundli — Lagna, Rashi, Nakshatra, planets, dasha and doshas — in 30 seconds.',
+      jkCreate: 'Create my Kundli →', jkMine: 'My Jathakam', jkView: 'View full Kundli →', jkDasha: 'Dasha now',
+      look: { title: 'Appearance', mode: 'Mode', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
+        saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -158,6 +163,10 @@
       askPlaceholder: 'ఏదైనా అడగండి: ఉద్యోగం, పెళ్లి, డబ్బు…', askButton: 'అడగండి', kundliCta: 'మీ ఉచిత జాతకం 30 సెకన్లలో →', needKundli: 'చూడటానికి మీ జాతకం రూపొందించండి',
       liveDasha: 'ఇప్పుడు {maha} – {antar} దశ', liveDashaMaha: 'ఇప్పుడు {maha} దశ', liveRashi: '{sign}: ఈ రోజు ఫలం', liveSade: 'ఏలినాటి శని: {p}వ దశ నడుస్తోంది',
       liveDosha: 'కుజ దోషం: {k} · ఏలినాటి శని: {s}', yes: 'ఉంది', no: 'లేదు',
+      jkAsk: 'మీ జాతకం తెలుసుకోవాలని ఉందా?', jkSub: 'మీ ఉచిత జాతకం — లగ్నం, రాశి, నక్షత్రం, గ్రహాలు, దశ, దోషాలు — 30 సెకన్లలో.',
+      jkCreate: 'నా జాతకం చూపించు →', jkMine: 'నా జాతకం', jkView: 'పూర్తి జాతకం చూడండి →', jkDasha: 'ప్రస్తుత దశ',
+      look: { title: 'రూపం', mode: 'మోడ్', light: 'లైట్', dark: 'డార్క్', auto: 'ఆటో', colour: 'రంగు', done: 'సరే',
+        saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -176,6 +185,10 @@
       askPlaceholder: 'कुछ भी पूछें: नौकरी, शादी, पैसा…', askButton: 'पूछें', kundliCta: '30 सेकंड में अपनी मुफ़्त कुंडली →', needKundli: 'देखने के लिए अपनी कुंडली बनाएँ',
       liveDasha: 'अभी {maha} – {antar} दशा', liveDashaMaha: 'अभी {maha} दशा', liveRashi: '{sign}: आज का फल', liveSade: 'साढ़ेसाती: {p} चरण चल रहा है',
       liveDosha: 'मांगलिक: {k} · साढ़ेसाती: {s}', yes: 'हाँ', no: 'नहीं',
+      jkAsk: 'अपनी कुंडली जानना चाहते हैं?', jkSub: 'आपकी मुफ़्त कुंडली — लग्न, राशि, नक्षत्र, ग्रह, दशा और दोष — 30 सेकंड में।',
+      jkCreate: 'मेरी कुंडली बनाएँ →', jkMine: 'मेरी कुंडली', jkView: 'पूरी कुंडली देखें →', jkDasha: 'वर्तमान दशा',
+      look: { title: 'रूप', mode: 'मोड', light: 'लाइट', dark: 'डार्क', auto: 'ऑटो', colour: 'रंग', done: 'ठीक है',
+        saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -352,7 +365,7 @@
         if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
       }
     };
-    const toFestivals = () => { try { $('festivals').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } };
+    const toFestivals = () => showPage('calendar');
     const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
     $('tool-grid').replaceChildren(
       optionCard('💞', copy.match[0], copy.match[1], open('relationship')),
@@ -360,7 +373,37 @@
       optionCard('🔮', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi')),
       optionCard('⏳', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
       optionCard('🎉', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals));
+    renderJathakamCard();
     renderHomeAi();
+  }
+  // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
+  function renderJathakamCard() {
+    const copy = toolText(), box = $('my-jathakam'), chart = state.chart;
+    box.replaceChildren();
+    const button = el('button', 'jk-cta', chart ? copy.jkView : copy.jkCreate); button.type = 'button';
+    button.addEventListener('click', () => {
+      showPage('kundli');
+      if (chart) { showKundliView('chart'); try { $('chart').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } }
+      else { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } }
+    });
+    const head = el('div', 'jk-head');
+    head.append(el('span', 'jk-icon', '🪐'), el('div'));
+    head.children[1].append(el('h2', null, chart ? copy.jkMine : copy.jkAsk));
+    if (!chart) head.children[1].append(el('p', null, copy.jkSub));
+    box.appendChild(head);
+    if (chart) {
+      const stats = el('div', 'jk-stats');
+      const stat = (label, value) => { const item = el('div', 'jk-stat'); item.append(el('small', null, label), el('b', null, value)); return item; };
+      stats.append(stat(t('lagna'), signName(chart.ascendant.rashi_index)), stat(t('janmaRashi'), signName(chart.positions.Moon.rashi_index)),
+        stat(t('nakshatra'), names.nakshatraName(chart.panchanga_at_birth.nakshatra_index, state.lang)));
+      const dasha = state.details && state.details.dasha;
+      if (dasha && dasha.current_mahadasha) {
+        const sub = (dasha.antardasha || []).find(item => item.current);
+        stats.append(stat(copy.jkDasha, `${bodyName(dasha.current_mahadasha)}${sub ? ' – ' + bodyName(sub.lord) : ''}`));
+      }
+      box.appendChild(stats);
+    }
+    box.appendChild(button);
   }
   // Home AI card: a personal line for today, a type box, and a nudge to make a Kundli first.
   function todayForYou() {
@@ -380,7 +423,6 @@
     const copy = toolText();
     $('home-question').placeholder = copy.askPlaceholder;
     $('home-ask-send').textContent = copy.askButton;
-    const cta = $('home-kundli-cta'); cta.textContent = copy.kundliCta; cta.hidden = !!state.chart;
     const line = todayForYou(), box = $('home-today');
     box.replaceChildren();
     if (line) { box.append(el('b', null, `✨ ${copy.todayLabel}: `), document.createTextNode(line)); box.hidden = false; } else box.hidden = true;
@@ -393,7 +435,6 @@
     showPage('chat');
     ask(question, question, true);
   });
-  $('home-kundli-cta').addEventListener('click', () => { showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } });
 
   // Home: the next festivals from today, read from this month's and the next two months' calendars.
   const FEST_MONTHS = 3, FEST_SHOWN = 6;
@@ -437,7 +478,7 @@
       text.append(el('b', null, eventName(event)), el('small', null, `${calendarUI.weekdayName(state.lang, new Date(`${event.date}T12:00:00Z`).getUTCDay())} · ${when}`));
       row.append(date, text);
       if (event.holiday) row.appendChild(el('em', 'tag debilitated', t('holidayTag')));
-      row.addEventListener('click', () => { selectDate(event.date); try { $('detail-title').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } });
+      row.addEventListener('click', () => openDay(event.date));
       list.appendChild(row);
     }
     if (data.events.length > FEST_SHOWN) {
@@ -445,6 +486,53 @@
     }
   }
   $('festival-more').addEventListener('click', () => { state.festivalsAll = !state.festivalsAll; renderFestivals(); });
+
+  /* ---- Appearance: light / dark / auto mode and an accent colour, remembered on this device ---- */
+  const LOOK_KEY = 'jyotisha.appearance.v1';
+  const ACCENTS = { saffron: ['#f6b04a', '#f08a3a'], teal: ['#4cc7ae', '#1f9d8a'], rose: ['#ef93aa', '#d95478'], blue: ['#86aef2', '#4a7fd8'] };
+  function loadLook() {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(LOOK_KEY)) || {};
+      return { mode: ['light', 'dark', 'auto'].includes(saved.mode) ? saved.mode : 'light', accent: Object.hasOwn(ACCENTS, saved.accent) ? saved.accent : 'saffron' };
+    } catch (_error) { return { mode: 'light', accent: 'saffron' }; }
+  }
+  const look = loadLook();
+  const systemDark = () => { try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (_error) { return false; } };
+  function applyLook() {
+    const dark = look.mode === 'dark' || (look.mode === 'auto' && systemDark());
+    const root = document.documentElement;
+    if (root.setAttribute) { root.setAttribute('data-mode', dark ? 'dark' : 'light'); root.setAttribute('data-accent', look.accent); }
+    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', dark ? '#1c1f25' : '#fff7e8'); } catch (_error) { /* optional */ }
+    try { window.localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (_error) { /* not remembered */ }
+  }
+  function renderLookPanel() {
+    const copy = toolText().look, panel = $('theme-panel');
+    $('theme-btn').setAttribute('aria-label', copy.button);
+    panel.replaceChildren();
+    const title = el('h3', null, `🎨 ${copy.title}`); title.id = 'theme-title';
+    const modes = el('div', 'seg'); modes.setAttribute('role', 'group');
+    for (const mode of ['light', 'dark', 'auto']) {
+      const button = el('button', mode === look.mode ? 'on' : '', `${{ light: '☀️', dark: '🌙', auto: '📱' }[mode]} ${copy[mode]}`); button.type = 'button';
+      button.setAttribute('aria-pressed', mode === look.mode ? 'true' : 'false');
+      button.addEventListener('click', () => { look.mode = mode; applyLook(); renderLookPanel(); });
+      modes.appendChild(button);
+    }
+    const swatches = el('div', 'swatches');
+    for (const [name, [a, b]] of Object.entries(ACCENTS)) {
+      const button = el('button', `swatch${name === look.accent ? ' on' : ''}`); button.type = 'button';
+      button.setAttribute('aria-pressed', name === look.accent ? 'true' : 'false');
+      const dot = el('i'); dot.setAttribute('style', `--sa:${a};--sb:${b}`);
+      button.append(dot, el('span', null, copy[name]));
+      button.addEventListener('click', () => { look.accent = name; applyLook(); renderLookPanel(); });
+      swatches.appendChild(button);
+    }
+    const done = el('button', 'theme-done', copy.done); done.type = 'button';
+    done.addEventListener('click', () => { panel.hidden = true; });
+    panel.append(title, el('span', 'label', copy.mode), modes, el('span', 'label', copy.colour), swatches, done);
+  }
+  $('theme-btn').addEventListener('click', () => { const panel = $('theme-panel'); renderLookPanel(); panel.hidden = !panel.hidden; });
+  try { if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (look.mode === 'auto') applyLook(); }); } catch (_error) { /* older browsers */ }
+  applyLook();
 
   /* ------------------------------------------------------------- language */
   const choice = $('language-choice');
@@ -466,6 +554,7 @@
     $('dp-note').textContent = t('dpNote');
     renderHome();
     renderTools();
+    renderLookPanel();
     showKundliView(state.kundliView);
     renderRelationship();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
@@ -926,7 +1015,7 @@
         button.title = `${tithi} · ${nakshatra}${festivalText ? ' · ' + festivalText : ''}`;
       } else button.setAttribute('aria-label', iso);
       if (dayEvents.length) button.appendChild(el('i', 'fest', '✦'));
-      button.addEventListener('click', () => { selectDate(iso); const target = $('dp-tables'); if (target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      button.addEventListener('click', () => openDay(iso));
       grid.appendChild(button);
     }
     const legend = $('cal-legend'); legend.replaceChildren();
@@ -945,7 +1034,7 @@
       const row = el('button', `event-row${event.holiday ? ' holiday' : ''}`); row.type = 'button';
       row.append(el('b', 't', calendarUI.formatDate(state.lang, event.date, 'dayMonth')), el('span', null, eventName(event)));
       if (event.holiday) row.appendChild(el('em', 'tag debilitated', t('holidayTag')));
-      row.addEventListener('click', () => selectDate(event.date));
+      row.addEventListener('click', () => openDay(event.date));
       box.appendChild(row);
     }
     box.appendChild(el('p', 'muted-note', t('festivalsNote')));
@@ -966,6 +1055,12 @@
       if (state.month && state.month.today_local_date) state.todayIso = state.month.today_local_date;
     } catch (_error) { if (request === state.monthRequest) state.month = null; }
     renderCalendar(); renderDayEvents(); if (state.rashiMode === 'month') renderRashi();
+  }
+  // From the Calendar tab: show that day's full Panchang on Home.
+  function openDay(iso) {
+    selectDate(iso);
+    showPage('home');
+    try { $('detail-title').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ }
   }
   function selectDate(iso) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;

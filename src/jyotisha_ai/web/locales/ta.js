@@ -31,6 +31,7 @@
       "placePlaceholder": "நகரத்தின் பெயரை தட்டச்சு செய்யவும்",
       "changeLanguageAria": "மொழியை மாற்று",
       "home": "முகப்பு",
+      "navCalendar": "நாட்காட்டி",
       "kundli": "ஜாதகம்",
       "ask": "கேளுங்கள்",
       "eyebrowBirth": "பிறப்பு ஜாதகம்",

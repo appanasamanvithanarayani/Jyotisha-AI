@@ -31,6 +31,7 @@
       "placePlaceholder": "ನಗರದ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ",
       "changeLanguageAria": "ಭಾಷೆ ಬದಲಿಸಿ",
       "home": "ಮುಖಪುಟ",
+      "navCalendar": "ಕ್ಯಾಲೆಂಡರ್",
       "kundli": "ಜಾತಕ",
       "ask": "ಕೇಳಿ",
       "eyebrowBirth": "ಜನ್ಮ ಜಾತಕ",

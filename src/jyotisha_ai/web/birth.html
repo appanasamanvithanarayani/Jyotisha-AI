@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#150d2e">
+  <meta name="theme-color" content="#fff7e8">
   <title>Jyotisha AI</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
@@ -12,6 +12,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Jyotisha">
   <link rel="stylesheet" href="/app.css">
+  <script>
+    // Apply the saved appearance before the page is drawn (no flash). Default: light mode, saffron accent.
+    (function () {
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem('jyotisha.appearance.v1')) || {}; } catch (e) { saved = {}; }
+      var mode = saved.mode === 'dark' || saved.mode === 'auto' ? saved.mode : 'light';
+      var dark = mode === 'dark' || (mode === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-mode', dark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-accent', ['teal', 'rose', 'blue'].indexOf(saved.accent) >= 0 ? saved.accent : 'saffron');
+    })();
+  </script>
 </head>
 <body class="onboarding-active">
   <div class="sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -21,7 +32,8 @@
     <div id="step-location" class="onboarding-step" hidden><h1 data-i18n="locationTitle">Set your calendar city</h1><p data-i18n="locationIntro">Allow location to suggest a nearby city, or enter one yourself.</p><button id="allow-location" type="button" data-i18n="allowLocation">Allow location</button><p id="location-status" class="location-status" role="status" aria-live="polite"></p><label for="welcome-city" data-i18n="city">Your city for the calendar</label><input id="welcome-city" name="city" type="text" list="place-suggestions" maxlength="200" autocomplete="off" data-i18n-placeholder="placePlaceholder" placeholder="Start typing a city" required><button type="submit" data-i18n="continue">Continue</button></div>
   </form></section>
   <datalist id="place-suggestions"></datalist>
-  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span>Jyotisha<span class="brand-accent">AI</span></span></a><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></header>
+  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span>Jyotisha<span class="brand-accent">AI</span></span></a><span class="top-actions"><button id="theme-btn" type="button" class="theme-btn" aria-haspopup="dialog" aria-controls="theme-panel">🎨</button><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></span></header>
+  <div id="theme-panel" class="theme-panel" role="dialog" aria-modal="false" aria-labelledby="theme-title" hidden></div>
   <main id="top">
   <section id="day-panchang" aria-labelledby="dp-title">
     <div class="hero-card">
@@ -41,8 +53,8 @@
       <p id="home-today" class="ai-today" hidden></p>
       <form id="home-ask" class="home-ask"><input id="home-question" type="text" maxlength="300" autocomplete="off" enterkeyhint="send"><button id="home-ask-send" type="submit" class="home-ask-send"></button></form>
       <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button></div>
-      <button id="home-kundli-cta" type="button" class="ai-cta" hidden></button>
     </div>
+    <section id="my-jathakam" class="card jk-home" aria-live="polite"></section>
     <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
     <h2 id="detail-title" class="home-h"></h2>
     <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
@@ -55,7 +67,7 @@
       <div id="festival-list" class="fest-list" aria-live="polite"></div>
       <button id="festival-more" type="button" class="chip-btn fest-more" hidden></button>
     </section>
-    <div class="card cal-card">
+    <div id="month-card" class="card cal-card">
       <div class="month-controls"><button id="month-prev" type="button" data-i18n-aria="previous" aria-label="Previous month">‹</button><strong id="month-title"></strong><button id="month-next" type="button" data-i18n-aria="next" aria-label="Next month">›</button></div>
       <div id="month-calendar" class="month-calendar" role="group" data-i18n-aria="daysAria" aria-label="Calendar days"></div>
       <p id="cal-legend" class="legend"></p>
@@ -159,7 +171,7 @@
     <form id="chat-form" class="chat-controls"><label><span data-i18n="question">Question</span><input id="chat-question" type="text" maxlength="300" autocomplete="off" required></label><button id="chat-send" type="submit" data-i18n="send">Ask</button></form>
   </section>
   </main>
-  <nav class="bottom-nav" aria-label="App navigation"><a href="#home" class="active"><span aria-hidden="true">🏠</span><span data-i18n="home">Home</span></a><a href="#kundli"><span aria-hidden="true">🪐</span><span data-i18n="kundli">Kundli</span></a><a href="#relationship"><span aria-hidden="true">♡</span><span id="relationship-nav">Love</span></a><a href="#chat"><span aria-hidden="true">💬</span><span data-i18n="ask">Ask</span></a><a href="#rashi"><span aria-hidden="true">🔮</span><span data-i18n="rashiphal">Rashiphal</span></a></nav>
+  <nav class="bottom-nav" aria-label="App navigation"><a href="#home" class="active"><span aria-hidden="true">🏠</span><span data-i18n="home">Home</span></a><a href="#calendar"><span aria-hidden="true">📅</span><span data-i18n="navCalendar">Calendar</span></a><a href="#kundli"><span aria-hidden="true">🪐</span><span data-i18n="kundli">Kundli</span></a><a href="#relationship"><span aria-hidden="true">♡</span><span id="relationship-nav">Love</span></a><a href="#chat"><span aria-hidden="true">💬</span><span data-i18n="ask">Ask</span></a><a href="#rashi"><span aria-hidden="true">🔮</span><span data-i18n="rashiphal">Rashiphal</span></a></nav>
   <script src="/locales.js"></script>
   <script src="/chart-ui.js"></script>
   <script src="/match-ui.js"></script>

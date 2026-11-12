@@ -31,6 +31,7 @@
       "placePlaceholder": "शहरक नाम टाइप करू",
       "changeLanguageAria": "भाषा बदलू",
       "home": "मुख्य पृष्ठ",
+      "navCalendar": "पंचांग",
       "kundli": "कुंडली",
       "ask": "पुछू",
       "eyebrowBirth": "जन्म कुंडली",

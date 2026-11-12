@@ -31,6 +31,7 @@
       "placePlaceholder": "নগৰৰ নাম টাইপ কৰক",
       "changeLanguageAria": "ভাষা সলনি কৰক",
       "home": "ঘৰ",
+      "navCalendar": "কেলেণ্ডাৰ",
       "kundli": "কুণ্ডলী",
       "ask": "সোধক",
       "eyebrowBirth": "জন্মকুণ্ডলী",
