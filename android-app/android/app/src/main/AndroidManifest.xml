@@ -34,6 +34,9 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
             <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713" />
+        <!-- Messages sent from the admin panel (Firebase) use the app's notification icon and colour. -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_jyotisha" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_accent" />
     </application>
 
     <!-- Permissions -->

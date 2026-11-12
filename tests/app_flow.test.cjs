@@ -425,7 +425,7 @@ test('without a Kundli, Home nudges the user to make one and the personal cards 
   assert.match(jathakam[1].textContent, /Create my Kundli/);
   // Festivals and the month calendar live in the Calendar tab.
   const calendarPage = app.element('top').children.find(item => item.id === 'page-calendar');
-  assert.ok(calendarPage && calendarPage.children.length === 2);
+  assert.ok(calendarPage && calendarPage.children.length === 3);   // title, festivals, month calendar
   assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
   assert.equal(app.element('home-today').hidden, true);
 });
@@ -448,6 +448,62 @@ test('appearance: light by default; dark mode and an accent colour can be chosen
   app.element('theme-panel').children[4].children[2].listeners.click();   // Rose
   assert.equal(root.getAttribute('data-accent'), 'rose');
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
+});
+
+test('daily notifications: the Android app asks once, then schedules a week of morning notifications', async () => {
+  const calls = { schedule: [], requested: 0, cancelled: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'prompt' }),
+    requestPermissions: async () => { calls.requested += 1; return { display: 'granted' }; },
+    getPending: async () => ({ notifications: [{ id: 7101 }] }),
+    cancel: async ({ notifications }) => { calls.cancelled.push(...notifications.map(item => item.id)); },
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
+    addListener: () => {},
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  await settle();
+  const card = app.element('notify-card');
+  assert.equal(card.hidden, false);                                   // invite shown once in the app
+  assert.match(card.children[0].children[0].textContent, /Daily notifications/);
+  await card.children[1].children[0].listeners.click();               // Turn on
+  await settle(); await settle();
+  assert.equal(calls.requested, 1);
+  assert.ok(calls.cancelled.includes(7101));                          // old ones replaced
+  const scheduled = calls.schedule.at(-1);
+  assert.ok(scheduled.length >= 7 && scheduled.length <= 8);          // the coming mornings plus a reminder to open the app
+  assert.ok(scheduled.slice(0, -1).every(item => /Rahu Kalam/.test(item.body) && item.schedule.allowWhileIdle));
+  assert.match(scheduled.at(-1).title, /week ahead/);
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00' });
+  assert.equal(app.element('notify-card').hidden, true);              // not asked again
+});
+
+test('daily notifications are not offered in a browser (no Android plugin)', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  assert.equal(app.element('notify-card').hidden, true);
+});
+
+test('admin-panel messages: the app subscribes to "all" and its language, and a tap opens the chosen screen', async () => {
+  const topics = [], listeners = {};
+  const FirebaseMessaging = {
+    subscribeToTopic: async ({ topic }) => { topics.push(['+', topic]); },
+    unsubscribeFromTopic: async ({ topic }) => { topics.push(['-', topic]); },
+    addListener: (name, fn) => { listeners[name] = fn; },
+  };
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { FirebaseMessaging }, getPlatform: () => 'android' } });
+  await settle();
+  assert.deepEqual(topics, [['+', 'all'], ['+', 'lang-te']]);
+  assert.equal(storage.getItem('jyotisha.push.v1'), 'lang-te');
+  listeners.notificationActionPerformed({ notification: { data: { page: 'calendar' } } });
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('calendar').hidden, false);
+  // Changing the language moves the phone to the new language's topic.
+  app.element('language-switch').value = 'hi';
+  app.element('language-switch').listeners.change({ target: app.element('language-switch') });
+  await settle();
+  assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
 });
 
 function fakeAdMob() {

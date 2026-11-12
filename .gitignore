@@ -73,3 +73,7 @@ wandb/
 
 # Admin panel data (settings, keys, audit log)
 admin-data/
+
+# Firebase: the server key stays on the server, the app config comes from a GitHub secret
+firebase-key.json
+android-app/android/app/google-services.json

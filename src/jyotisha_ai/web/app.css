@@ -643,3 +643,85 @@ main,.app-page,.card{min-width:0}
 :root[data-mode="dark"] .prompt{background:#2b2f37;color:var(--ink);border-color:#5a4a30}
 :root[data-mode="dark"] .prompt-main{background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:var(--accent-text)}
 :root[data-mode="dark"] .chat-message.user{color:#fff}
+
+/* ================= Design pass: light but lively ================= */
+.page-title{font-size:1.35rem;margin:6px 2px 4px;color:var(--heading)}
+/* Section headings with a small accent bar. */
+.home-h,.more-section h2{display:flex;align-items:center;gap:8px;color:var(--heading)}
+.home-h::before,.more-section h2::before{content:"";width:5px;height:1.05em;border-radius:3px;background:linear-gradient(180deg,var(--accent-a),var(--accent-b))}
+/* Date card: soft sunrise with a faint mandala. */
+.hero-card{background:radial-gradient(260px 200px at 100% 0,rgba(255,196,140,.55),transparent 70%),radial-gradient(300px 220px at 0 100%,rgba(255,182,206,.45),transparent 70%),
+  linear-gradient(160deg,#fff8ee 0%,#ffeede 55%,#ffe6ec 100%)}
+.hero-card::before{content:"✺";position:absolute;inset-inline-end:-26px;bottom:-60px;font-size:13rem;line-height:1;color:rgba(232,140,60,.09);pointer-events:none;z-index:0}
+.hero-card .hero-date{font-size:1.45rem}
+.hero-card .sun-tile,.hero-card .key-chip{box-shadow:0 3px 10px rgba(201,120,40,.08)}
+/* AI card: mint to sky, with sparkles. */
+.ai-card{position:relative;overflow:hidden;background:radial-gradient(240px 180px at 100% 0,rgba(160,215,255,.55),transparent 70%),linear-gradient(160deg,#effbf6 0%,#e4f6f1 50%,#e5f0ff 100%)}
+.ai-card::before{content:"✨";position:absolute;inset-inline-end:10px;bottom:6px;font-size:3.2rem;opacity:.16;pointer-events:none}
+.ai-card>*{position:relative;z-index:1}
+.ai-orb{background:linear-gradient(135deg,#9fe6d3,#9cc9ff);box-shadow:0 0 0 4px rgba(255,255,255,.7),0 6px 16px rgba(31,157,138,.25)}
+.ai-chip{box-shadow:0 2px 8px rgba(31,157,138,.08)}
+/* Jathakam card: lavender to rose, with a zodiac ring. */
+.jk-home{position:relative;overflow:hidden}
+.jk-home{background:radial-gradient(240px 180px at 100% 0,rgba(214,190,255,.6),transparent 70%),linear-gradient(160deg,#f7f2ff 0%,#fbecf6 55%,#ffeef1 100%);border-color:#ead8f0}
+.jk-home::before{content:"";position:absolute;inset-inline-end:-50px;top:-50px;width:170px;height:170px;border-radius:50%;
+  border:14px double rgba(150,100,200,.10);pointer-events:none}
+.jk-home>*{position:relative;z-index:1}
+.jk-icon{background:linear-gradient(135deg,#fff,#f3e8ff);box-shadow:0 0 0 1px #e6d3f3,0 6px 14px rgba(150,100,200,.18)}
+.jk-head h2{color:#5b2a6e}
+.jk-stat{box-shadow:0 2px 8px rgba(150,100,200,.08);border-color:#ecdcf3}
+.jk-stat small{color:#9b4fb8}
+.jk-cta{background:linear-gradient(135deg,#b98cf0,#e07aa8);color:#fff;box-shadow:0 8px 18px rgba(185,140,240,.35)}
+/* More to explore: each card its own soft colour with a round icon badge. */
+#tool-grid .option-card{border:0;position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(120,80,40,.08)}
+#tool-grid .option-card .option-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.85);font-size:1.3rem;margin-bottom:6px;box-shadow:0 3px 10px rgba(0,0,0,.06)}
+#tool-grid .option-card b{color:var(--heading)}
+#tool-grid .option-card:nth-child(1){background:linear-gradient(160deg,#fff1f5,#ffe3ec)}
+#tool-grid .option-card:nth-child(2){background:linear-gradient(160deg,#f5f0ff,#ebe2ff)}
+#tool-grid .option-card:nth-child(3){background:linear-gradient(160deg,#eef6ff,#e0edff)}
+#tool-grid .option-card:nth-child(4){background:linear-gradient(160deg,#fff8e8,#ffefcc)}
+#tool-grid .option-card:nth-child(5){background:linear-gradient(160deg,#fff3ea,#ffe4d2)}
+#tool-grid .option-card:nth-child(5){flex-direction:row;align-items:center;gap:12px}
+#tool-grid .option-card:nth-child(5) .option-icon{margin:0}
+/* Festival list: soft card with a festive top edge. */
+.fest-card{border-top:4px solid #ffb27a}
+.fest-row{box-shadow:0 2px 8px rgba(120,80,40,.05)}
+/* Dark mode keeps the same shapes with low-glare tints. */
+:root[data-mode="dark"] .hero-card::before{color:rgba(240,180,106,.06)}
+:root[data-mode="dark"] .ai-card::before{opacity:.12}
+:root[data-mode="dark"] .jk-home::before{border-color:rgba(200,160,240,.08)}
+:root[data-mode="dark"] .jk-cta{background:linear-gradient(135deg,#8f6cc4,#b45d86)}
+:root[data-mode="dark"] #tool-grid .option-card{box-shadow:none}
+:root[data-mode="dark"] #tool-grid .option-card:nth-child(1){background:#2e2228}
+:root[data-mode="dark"] #tool-grid .option-card:nth-child(2){background:#29243a}
+:root[data-mode="dark"] #tool-grid .option-card:nth-child(3){background:#222a38}
+:root[data-mode="dark"] #tool-grid .option-card:nth-child(4){background:#302a1d}
+:root[data-mode="dark"] #tool-grid .option-card:nth-child(5){background:#30251d}
+:root[data-mode="dark"] #tool-grid .option-card .option-icon{background:rgba(255,255,255,.08)}
+:root[data-mode="dark"] .fest-card{border-top-color:#7a5232}
+/* Dark mode: Panchang detail tables (headers keep their colour bands, softened). */
+:root[data-mode="dark"] .dp-sec h3{color:#2a1a08;background:linear-gradient(90deg,#c9a24e,#b98e3c)}
+:root[data-mode="dark"] .dp-sec.good h3{color:#e6fff8;background:linear-gradient(90deg,#1c6e62,#1f8a78)}
+:root[data-mode="dark"] .dp-sec.bad h3{color:#ffe9e6;background:linear-gradient(90deg,#8a2e28,#a63a33)}
+:root[data-mode="dark"] .dp-sec.calm h3{color:#efeaff;background:linear-gradient(90deg,#3e3478,#5a4aa8)}
+:root[data-mode="dark"] .dp-row{border-top-color:var(--line)}
+:root[data-mode="dark"] .dp-label{background:#2b2f37;color:#f0b46a}
+:root[data-mode="dark"] .dp-sec.good .dp-label{background:#21332f;color:#7fdcc6}
+:root[data-mode="dark"] .dp-sec.bad .dp-label{background:#352423;color:#f29a90}
+:root[data-mode="dark"] .dp-sec.calm .dp-label{background:#2b2840;color:#b9aef0}
+
+/* ---------- Daily notifications: Home invite and settings ---------- */
+.notify-card{display:flex;flex-direction:column;gap:10px;margin:0 0 16px;padding:14px 16px;border-radius:20px;border:1px solid #f3dcb0;
+  background:linear-gradient(160deg,#fffbea,#fff2cf);box-shadow:0 6px 18px rgba(200,150,40,.12)}
+.notify-text{display:flex;flex-direction:column;gap:3px}
+.notify-text b{font-size:1rem;color:var(--heading)}.notify-text span{font-size:.86rem;color:var(--muted)}
+.notify-actions,.notify-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notify-on,.notify-later{min-height:40px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:.88rem}
+.notify-on{border:0;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:var(--accent-text)}
+.notify-later{border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.notify-settings{margin-top:4px}
+.notify-row{justify-content:space-between}
+.notify-status{font-size:.86rem;font-weight:700}
+.notify-time{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:.84rem;color:var(--muted)}
+.notify-time input{width:auto;min-height:40px;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+:root[data-mode="dark"] .notify-card{background:linear-gradient(160deg,#2f2a1d,#2b261b);border-color:#4a4028;box-shadow:none}

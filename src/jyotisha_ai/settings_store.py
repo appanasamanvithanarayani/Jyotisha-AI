@@ -221,6 +221,19 @@ def update(changes: dict, actor: str = "") -> list[dict]:
     return entries
 
 
+def log_event(key: str, action: str, old: str, new: str, actor: str = "") -> None:
+    """Add a line to the change history for something that is not a setting (for example a notification sent)."""
+    with _lock:
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        log = data_dir() / "audit.jsonl"
+        try:
+            with log.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps({"time": now, "who": actor[:40], "key": key, "action": action, "old": old[:80], "new": new[:120]}, ensure_ascii=False) + "\n")
+            _trim_audit(log)
+        except OSError:
+            pass
+
+
 def _trim_audit(path: Path, keep: int = 1000) -> None:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()

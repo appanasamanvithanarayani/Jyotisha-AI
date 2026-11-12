@@ -54,7 +54,7 @@
     pageHost.appendChild(page); pages[name] = page;
   }
   pages.home.append($('day-panchang'), $('legal'));
-  pages.calendar.append($('festivals'), $('month-card'));
+  pages.calendar.append($('festcal-title'), $('festivals'), $('month-card'));
   pages.kundli.append($('kundli'), $('chart'));
   pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));
@@ -145,6 +145,9 @@
       jkCreate: 'Create my Kundli →', jkMine: 'My Jathakam', jkView: 'View full Kundli →', jkDasha: 'Dasha now',
       look: { title: 'Appearance', mode: 'Mode', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
         saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
+      notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
+        time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
+        rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -167,6 +170,9 @@
       jkCreate: 'నా జాతకం చూపించు →', jkMine: 'నా జాతకం', jkView: 'పూర్తి జాతకం చూడండి →', jkDasha: 'ప్రస్తుత దశ',
       look: { title: 'రూపం', mode: 'మోడ్', light: 'లైట్', dark: 'డార్క్', auto: 'ఆటో', colour: 'రంగు', done: 'సరే',
         saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
+      notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
+        time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
+        rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -189,6 +195,9 @@
       jkCreate: 'मेरी कुंडली बनाएँ →', jkMine: 'मेरी कुंडली', jkView: 'पूरी कुंडली देखें →', jkDasha: 'वर्तमान दशा',
       look: { title: 'रूप', mode: 'मोड', light: 'लाइट', dark: 'डार्क', auto: 'ऑटो', colour: 'रंग', done: 'ठीक है',
         saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
+      notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
+        time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
+        rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -375,6 +384,7 @@
       optionCard('🎉', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals));
     renderJathakamCard();
     renderHomeAi();
+    renderNotify();
   }
   // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
   function renderJathakamCard() {
@@ -407,9 +417,14 @@
   }
   // Home AI card: a personal line for today, a type box, and a nudge to make a Kundli first.
   function todayForYou() {
-    const day = state.day, chart = state.chart;
-    if (!day || !chart || day.date !== state.todayIso || !Array.isArray(day.nakshatra) || !Array.isArray(day.moon_rashi)) return null;
-    const now = localIso(new Date()) + 'T' + new Date().toTimeString().slice(0, 5);
+    const day = state.day;
+    if (!day || day.date !== state.todayIso) return null;
+    return dayForYou(day, localIso(new Date()) + 'T' + new Date().toTimeString().slice(0, 5));
+  }
+  // The personal line for a day at a given local time ('YYYY-MM-DDTHH:MM'), from Chandrabalam and Tarabalam.
+  function dayForYou(day, now) {
+    const chart = state.chart;
+    if (!day || !chart || !Array.isArray(day.nakshatra) || !Array.isArray(day.moon_rashi)) return null;
     const current = list => list.find(item => item.starts_at <= now && now < item.ends_at) || list[0];
     const tara = current(day.nakshatra), moon = current(day.moon_rashi);
     if (!tara || !moon) return null;
@@ -458,6 +473,7 @@
     if (!state.festivals || state.festivals.key !== key) return;
     state.festivals.events = events.filter(event => typeof event.date === 'string' && event.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     renderFestivals();
+    void scheduleNotifications();
   }
   function renderFestivals() {
     const copy = toolText(), list = $('festival-list'), more = $('festival-more');
@@ -528,11 +544,135 @@
     }
     const done = el('button', 'theme-done', copy.done); done.type = 'button';
     done.addEventListener('click', () => { panel.hidden = true; });
-    panel.append(title, el('span', 'label', copy.mode), modes, el('span', 'label', copy.colour), swatches, done);
+    panel.append(title, el('span', 'label', copy.mode), modes, el('span', 'label', copy.colour), swatches);
+    const notifyBox = notifySettings(); if (notifyBox) panel.appendChild(notifyBox);
+    panel.appendChild(done);
   }
   $('theme-btn').addEventListener('click', () => { const panel = $('theme-panel'); renderLookPanel(); panel.hidden = !panel.hidden; });
   try { if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (look.mode === 'auto') applyLook(); }); } catch (_error) { /* older browsers */ }
   applyLook();
+
+  /* ---- Daily notifications (Android app only): scheduled on the phone, no server or account needed ---- */
+  const NOTIFY_KEY = 'jyotisha.notify.v1', NOTIFY_FIRST_ID = 7100, NOTIFY_DAYS = 7;
+  const notifier = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.LocalNotifications ? cap.Plugins.LocalNotifications : null; };
+  function loadNotify() {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
+      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00' }; }
+  }
+  const notify = loadNotify();
+  const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
+  let notifyBusy = false, notifyNote = '';
+  async function scheduleNotifications() {
+    const plugin = notifier();
+    if (!plugin || notifyBusy || !state.city) return;
+    notifyBusy = true;
+    try {
+      const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
+      const ours = (pending.notifications || []).filter(item => item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50).map(item => ({ id: item.id }));
+      if (ours.length) await plugin.cancel({ notifications: ours });
+      if (!notify.on) return;
+      const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
+      const festivals = (state.festivals && state.festivals.events) || [];
+      const list = [];
+      for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
+        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
+        if (at <= now) continue;
+        const iso = localIso(at);
+        let day = null;
+        try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
+        if (!day) continue;
+        const atText = `${iso}T${notify.time}`;
+        const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
+        const festival = festivals.find(event => event.date === iso);
+        const weekday = calendarUI.weekdayName(state.lang, new Date(`${iso}T12:00:00Z`).getUTCDay());
+        const title = festival ? fill(copy.fest, { name: eventName(festival) }) : `🌅 ${weekday} · ${names.tithiName(pick(day.tithi).index, state.lang)}`;
+        const rahu = day.timings && day.timings.rahu_kalam;
+        const lines = [`${names.nakshatraName(pick(day.nakshatra).index, state.lang)}${rahu ? ` · ${copy.rahu} ${clock(rahu[0], iso)}–${clock(rahu[1], iso)}` : ''}`];
+        const personal = dayForYou(day, atText);
+        if (personal) lines.push(`✨ ${personal}`);
+        const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');   // no direction marks: some phones draw them as boxes
+        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true } });
+      }
+      // After the scheduled week, one reminder to open the app (which schedules the next week).
+      const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
+      list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
+      await plugin.schedule({ notifications: list });
+    } catch (_error) { /* notifications are optional */ } finally { notifyBusy = false; }
+  }
+  async function turnNotifications(on) {
+    const plugin = notifier(), copy = toolText().notify;
+    notify.asked = true; notifyNote = '';
+    if (on && plugin) {
+      let status = await plugin.checkPermissions().catch(() => ({ display: 'denied' }));
+      if (status.display !== 'granted') status = await plugin.requestPermissions().catch(() => ({ display: 'denied' }));
+      if (status.display !== 'granted') { notify.on = false; notifyNote = copy.denied; saveNotify(); renderNotify(); renderLookPanel(); return; }
+    }
+    notify.on = !!on; saveNotify(); renderNotify(); renderLookPanel();
+    await scheduleNotifications();
+  }
+  // Home: ask once (only in the Android app with the plugin), like other apps do.
+  function renderNotify() {
+    const box = $('notify-card'), copy = toolText().notify;
+    box.replaceChildren();
+    box.hidden = !notifier() || notify.asked;
+    if (box.hidden) return;
+    const text = el('div', 'notify-text'); text.append(el('b', null, `🔔 ${copy.title}`), el('span', null, copy.invite));
+    const yes = el('button', 'notify-on', copy.on); yes.type = 'button'; yes.addEventListener('click', () => { void turnNotifications(true); });
+    const no = el('button', 'notify-later', copy.later); no.type = 'button'; no.addEventListener('click', () => { notify.asked = true; saveNotify(); renderNotify(); });
+    const actions = el('div', 'notify-actions'); actions.append(yes, no);
+    box.append(text, actions);
+  }
+  function notifySettings() {
+    if (!notifier()) return null;
+    const copy = toolText().notify, wrap = el('div', 'notify-settings');
+    const row = el('div', 'notify-row');
+    const status = el('span', 'notify-status', notify.on ? fill(copy.enabled, { time: notify.time }) : copy.disabled);
+    const toggle = el('button', notify.on ? 'notify-later' : 'notify-on', notify.on ? copy.off : copy.on); toggle.type = 'button';
+    toggle.addEventListener('click', () => { void turnNotifications(!notify.on); });
+    row.append(status, toggle);
+    const time = el('input'); time.type = 'time'; time.value = notify.time; time.setAttribute('aria-label', copy.time);
+    time.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(time.value)) { notify.time = time.value; saveNotify(); renderLookPanel(); void scheduleNotifications(); } });
+    const timeRow = el('label', 'notify-time'); timeRow.append(el('span', null, copy.time), time);
+    wrap.append(el('span', 'label', `🔔 ${copy.title}`), row, timeRow);
+    if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
+    return wrap;
+  }
+  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', () => showPage('home')); } catch (_error) { /* optional */ }
+
+  /* ---- Messages sent from the admin panel (Firebase): subscribe to "all" and to this phone's language ---- */
+  const PUSH_KEY = 'jyotisha.push.v1';
+  const messenger = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.FirebaseMessaging ? cap.Plugins.FirebaseMessaging : null; };
+  async function syncPushTopics() {
+    const plugin = messenger();
+    if (!plugin) return;
+    let saved = null;
+    try { saved = window.localStorage.getItem(PUSH_KEY); } catch (_error) { /* storage unavailable */ }
+    const wanted = `lang-${state.lang}`;
+    if (saved === wanted) return;
+    try {
+      await plugin.subscribeToTopic({ topic: 'all' });
+      if (saved && saved !== wanted) await plugin.unsubscribeFromTopic({ topic: saved }).catch(() => {});
+      await plugin.subscribeToTopic({ topic: wanted });
+      try { window.localStorage.setItem(PUSH_KEY, wanted); } catch (_error) { /* subscribe again next time */ }
+    } catch (_error) { /* no network or no Firebase config: try again next start */ }
+  }
+  try {
+    const plugin = messenger();
+    if (plugin) {
+      // Tapping a message opens the screen chosen in the admin panel.
+      plugin.addListener('notificationActionPerformed', event => {
+        const page = event && event.notification && event.notification.data && event.notification.data.page;
+        showPage(Object.hasOwn(pages, page) ? page : 'home');
+      });
+      // While the app is open Android does not show the message itself, so show it as a local notification.
+      plugin.addListener('notificationReceived', event => {
+        const message = event && event.notification, local = notifier();
+        if (message && local) void local.schedule({ notifications: [{ id: 7900 + Math.floor(Math.random() * 90), title: message.title || '', body: message.body || '' }] }).catch(() => {});
+      });
+    }
+  } catch (_error) { /* optional */ }
 
   /* ------------------------------------------------------------- language */
   const choice = $('language-choice');
@@ -559,6 +699,8 @@
     renderRelationship();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
+    void scheduleNotifications();   // notification text follows the language
+    void syncPushTopics();
   }
   switcher.addEventListener('change', event => applyLanguage(event.target.value));
   choice.addEventListener('change', event => applyLanguage(event.target.value));
@@ -1454,6 +1596,7 @@
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
     renderChart(); $('chart').hidden = false;
+    void scheduleNotifications();
   }
   async function finishIntake() {
     if (!(await rewardedGate())) { intake.step = 'tob'; intake.tob = ''; addMessage('assistant', t('chatAskTob')); return; }

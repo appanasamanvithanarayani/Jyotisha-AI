@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, settings_store as store
+from jyotisha_ai import admin, assistant, push, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -672,6 +672,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
             "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
+            "push": {**push.status(), "languages": list(assistant.LANGUAGES.items()), "pages": list(push.PAGES)},
         }
 
     def _admin_get(self, path: str) -> None:
@@ -725,6 +726,20 @@ class LocalHandler(BaseHTTPRequestHandler):
             sample = {"question": "Reply with the single word OK.", "language": "en", "facts": ["Test: connection check"], "history": []}
             result = assistant.ask_status(sample)
             self._json(200, {"provider": assistant.provider(), "ok": "answer" in result, "status": result.get("status", "ok")})
+        elif path == "/api/admin/push":
+            # A notification to every installed app (or one language), through Firebase.
+            if not limiter.allow(f"admin-push:{who}", 10, 3600.0):
+                self._json(429, {"error": "at most 10 messages an hour"})
+                return
+            try:
+                message = push.validate(payload.get("title"), payload.get("body"), payload.get("audience"), payload.get("page", "home"),
+                                        tuple(assistant.LANGUAGES))
+                message_id = push.send(message)
+            except push.PushError as exc:
+                self._json(400, {"error": str(exc)})
+                return
+            store.log_event("PUSH", "send", message["topic"], message["title"], "admin")
+            self._json(200, {"ok": True, "id": message_id, **self._admin_state()})
         else:
             self._json(404, {"error": "not found"})
 

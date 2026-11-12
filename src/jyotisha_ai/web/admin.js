@@ -34,7 +34,7 @@
   function groups() {
     const names = [];
     state.settings.forEach(item => { if (!names.includes(item.group)) names.push(item.group); });
-    return ['Dashboard', ...names, 'Change log'];
+    return ['Dashboard', 'Notifications', ...names, 'Change log'];
   }
 
   function render() {
@@ -47,6 +47,7 @@
     const view = $('view'); view.textContent = '';
     if (tab === 'Dashboard') dashboard(view);
     else if (tab === 'Change log') changeLog(view);
+    else if (tab === 'Notifications') notifications(view);
     else settingsGroup(view, tab);
   }
 
@@ -95,6 +96,46 @@
     wrap.appendChild(table); usage.appendChild(wrap); view.appendChild(usage);
     const foot = el('p', 'hint', `Settings are stored in ${state.server.data_dir}. You are signed out automatically after ${state.server.session_minutes} minutes.`);
     view.appendChild(foot);
+  }
+
+  // Send a notification to every installed Android app (or one language) through Firebase.
+  function notifications(view) {
+    const push = state.push || {};
+    const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Send a notification'));
+    if (!push.ready) {
+      panel.appendChild(el('p', 'off-text', 'Not set up: the Firebase server key (firebase-key.json) was not found on the server. See the deploy notes.'));
+      view.appendChild(panel); return;
+    }
+    panel.appendChild(el('p', 'hint', `Firebase project: ${push.project}. Reaches every installed app (version 1.0.11 or newer) within seconds. At most 10 messages an hour.`));
+    const field = (label, input, hint) => { const box = el('label'); box.style.display = 'block'; box.style.margin = '10px 0';
+      box.append(el('b', null, label), input); if (hint) box.appendChild(el('span', 'hint', hint)); return box; };
+    const title = el('input'); title.maxLength = 65; title.placeholder = 'e.g. 🪔 Happy Diwali!';
+    const body = el('textarea'); body.maxLength = 240; body.rows = 3; body.placeholder = 'e.g. See today\'s Lakshmi Puja muhurat in the app.';
+    const count = el('span', 'hint', '0 / 240'); body.addEventListener('input', () => { count.textContent = `${body.value.length} / 240`; });
+    const audience = el('select');
+    audience.appendChild(new Option('Everyone', 'all'));
+    (push.languages || []).forEach(([code, name]) => audience.appendChild(new Option(`Only ${name} users`, code)));
+    const page = el('select');
+    const pageNames = { home: 'Home', calendar: 'Festivals', kundli: 'Kundli', relationship: 'Love (Kundli matching)', chat: 'Ask AI', rashi: 'Rashiphal' };
+    (push.pages || []).forEach(name => page.appendChild(new Option(pageNames[name] || name, name)));
+    panel.append(field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page));
+    const send = el('button', 'btn primary', 'Send now'); send.type = 'button'; send.style.marginTop = '12px';
+    send.addEventListener('click', async () => {
+      if (!title.value.trim() || !body.value.trim()) { toast('Write a title and a message', true); return; }
+      const who = audience.options[audience.selectedIndex].text;
+      if (!window.confirm(`Send "${title.value.trim()}" to ${who.toLowerCase()}? This cannot be undone.`)) return;
+      send.disabled = true;
+      try {
+        state = Object.assign(state, await api('/api/admin/push', { title: title.value, body: body.value, audience: audience.value, page: page.value }));
+        toast('Sent'); title.value = ''; body.value = ''; count.textContent = '0 / 240';
+      } catch (error) { toast(error.message, true); }
+      send.disabled = false;
+    });
+    panel.appendChild(send); view.appendChild(panel);
+    const tips = el('div', 'panel'); tips.appendChild(el('h2', null, 'Tips'));
+    ['Keep it short and useful: a festival, a muhurat, a new feature.', 'One or two messages a week is plenty; too many makes people turn notifications off.',
+      'Write in the language of the audience you choose.', 'Each message is recorded in the Change log.'].forEach(text => tips.appendChild(el('p', 'hint', `• ${text}`)));
+    view.appendChild(tips);
   }
 
   function settingsGroup(view, group) {

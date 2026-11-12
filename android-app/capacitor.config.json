@@ -12,5 +12,11 @@
     "allowMixedContent": false,
     "backgroundColor": "#150d2e",
     "adjustMarginsForEdgeToEdge": "force"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_jyotisha",
+      "iconColor": "#E8822B"
+    }
   }
 }
