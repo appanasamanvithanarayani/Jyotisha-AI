@@ -54,7 +54,7 @@
     pageHost.appendChild(page); pages[name] = page;
   }
   pages.home.append($('day-panchang'), $('legal'));
-  pages.calendar.append($('festivals'), $('month-card'));
+  pages.calendar.append($('festcal-title'), $('festivals'), $('month-card'));
   pages.kundli.append($('kundli'), $('chart'));
   pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));

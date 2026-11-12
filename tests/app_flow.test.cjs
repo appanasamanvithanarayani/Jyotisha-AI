@@ -425,7 +425,7 @@ test('without a Kundli, Home nudges the user to make one and the personal cards 
   assert.match(jathakam[1].textContent, /Create my Kundli/);
   // Festivals and the month calendar live in the Calendar tab.
   const calendarPage = app.element('top').children.find(item => item.id === 'page-calendar');
-  assert.ok(calendarPage && calendarPage.children.length === 2);
+  assert.ok(calendarPage && calendarPage.children.length === 3);   // title, festivals, month calendar
   assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
   assert.equal(app.element('home-today').hidden, true);
 });
