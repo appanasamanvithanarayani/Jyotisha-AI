@@ -43,3 +43,11 @@ today's Tithi, Nakshatra and Rahu Kalam, the user's personal line when they have
 festival days. The website asks once on Home (Android app only) and the time can be changed in the 🎨 panel. Each time
 the app opens it schedules the next 7 mornings plus a reminder to open the app; Android asks for notification permission
 once. The small icon is `res/drawable/ic_stat_jyotisha.xml` (set in `capacitor.config.json`).
+
+## Messages from the admin panel (Firebase)
+Admin panel → **Notifications** sends a message to every installed app (or only one language) within seconds.
+- The app (via `@capacitor-firebase/messaging`) subscribes to the topics `all` and `lang-<code>`; no device list is kept.
+- The build adds `google-services.json` from the GitHub secret `GOOGLE_SERVICES_JSON` (never committed).
+- The server sends with the Firebase service-account key at `firebase-key.json` in the repo folder on the server,
+  mounted read-only into the container (see `deploy/digitalocean/docker-compose.yml`); it is git- and docker-ignored.
+  Make it readable by the container user: `sudo chown 10001:10001 firebase-key.json && chmod 600 firebase-key.json`.

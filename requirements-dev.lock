@@ -1,10 +1,15 @@
 # Regenerate deliberately when development dependencies change.
 # The project itself is installed in editable mode by the final line.
 astronomy-engine==2.1.19
+cachetools==5.5.2
 colorama==0.4.6
+google-auth==2.40.3
 iniconfig==2.0.0
 packaging==24.2
 pluggy==1.5.0
-pytest==8.3.5
+pyasn1-modules==0.4.2
+pyasn1==0.6.5
 pypdf==5.9.0
+pytest==8.3.5
+rsa==4.9.1
 -e .

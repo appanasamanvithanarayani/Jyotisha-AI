@@ -484,6 +484,28 @@ test('daily notifications are not offered in a browser (no Android plugin)', asy
   assert.equal(app.element('notify-card').hidden, true);
 });
 
+test('admin-panel messages: the app subscribes to "all" and its language, and a tap opens the chosen screen', async () => {
+  const topics = [], listeners = {};
+  const FirebaseMessaging = {
+    subscribeToTopic: async ({ topic }) => { topics.push(['+', topic]); },
+    unsubscribeFromTopic: async ({ topic }) => { topics.push(['-', topic]); },
+    addListener: (name, fn) => { listeners[name] = fn; },
+  };
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { FirebaseMessaging }, getPlatform: () => 'android' } });
+  await settle();
+  assert.deepEqual(topics, [['+', 'all'], ['+', 'lang-te']]);
+  assert.equal(storage.getItem('jyotisha.push.v1'), 'lang-te');
+  listeners.notificationActionPerformed({ notification: { data: { page: 'calendar' } } });
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('calendar').hidden, false);
+  // Changing the language moves the phone to the new language's topic.
+  app.element('language-switch').value = 'hi';
+  app.element('language-switch').listeners.change({ target: app.element('language-switch') });
+  await settle();
+  assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
+});
+
 function fakeAdMob() {
   const calls = [];
   return { calls, plugin: {

@@ -9,3 +9,4 @@ tests
 data/raw/*
 !data/raw/cities15000.zip
 admin-data
+firebase-key.json

@@ -59,6 +59,18 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      - name: Add Firebase config (for messages sent from the admin panel)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android-app/android/app/google-services.json
+            python3 -c "import json;d=json.load(open('android-app/android/app/google-services.json'));assert any(c['client_info']['android_client_info']['package_name']=='store.karthiktraders.jyotisha' for c in d['client']), 'google-services.json is for another package'"
+            echo "google-services.json added for project $(python3 -c "import json;print(json.load(open('android-app/android/app/google-services.json'))['project_info']['project_id'])")"
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON secret is not set; admin-panel push messages will not work in this build"
+          fi
+
       - name: Bump the version
         id: version
         run: |

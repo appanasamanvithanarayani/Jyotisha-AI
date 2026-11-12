@@ -641,6 +641,39 @@
   }
   try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', () => showPage('home')); } catch (_error) { /* optional */ }
 
+  /* ---- Messages sent from the admin panel (Firebase): subscribe to "all" and to this phone's language ---- */
+  const PUSH_KEY = 'jyotisha.push.v1';
+  const messenger = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.FirebaseMessaging ? cap.Plugins.FirebaseMessaging : null; };
+  async function syncPushTopics() {
+    const plugin = messenger();
+    if (!plugin) return;
+    let saved = null;
+    try { saved = window.localStorage.getItem(PUSH_KEY); } catch (_error) { /* storage unavailable */ }
+    const wanted = `lang-${state.lang}`;
+    if (saved === wanted) return;
+    try {
+      await plugin.subscribeToTopic({ topic: 'all' });
+      if (saved && saved !== wanted) await plugin.unsubscribeFromTopic({ topic: saved }).catch(() => {});
+      await plugin.subscribeToTopic({ topic: wanted });
+      try { window.localStorage.setItem(PUSH_KEY, wanted); } catch (_error) { /* subscribe again next time */ }
+    } catch (_error) { /* no network or no Firebase config: try again next start */ }
+  }
+  try {
+    const plugin = messenger();
+    if (plugin) {
+      // Tapping a message opens the screen chosen in the admin panel.
+      plugin.addListener('notificationActionPerformed', event => {
+        const page = event && event.notification && event.notification.data && event.notification.data.page;
+        showPage(Object.hasOwn(pages, page) ? page : 'home');
+      });
+      // While the app is open Android does not show the message itself, so show it as a local notification.
+      plugin.addListener('notificationReceived', event => {
+        const message = event && event.notification, local = notifier();
+        if (message && local) void local.schedule({ notifications: [{ id: 7900 + Math.floor(Math.random() * 90), title: message.title || '', body: message.body || '' }] }).catch(() => {});
+      });
+    }
+  } catch (_error) { /* optional */ }
+
   /* ------------------------------------------------------------- language */
   const choice = $('language-choice');
   const switcher = $('language-switch');
@@ -666,6 +699,8 @@
     renderRelationship();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
+    void scheduleNotifications();   // notification text follows the language
+    void syncPushTopics();
   }
   switcher.addEventListener('change', event => applyLanguage(event.target.value));
   choice.addEventListener('change', event => applyLanguage(event.target.value));
