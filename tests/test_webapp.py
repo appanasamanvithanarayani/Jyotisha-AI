@@ -870,3 +870,44 @@ def test_download_serves_the_latest_github_release_when_configured(tmp_path, mon
         server.shutdown()
         thread.join(timeout=3)
         server.server_close()
+
+
+def test_download_serves_the_release_apk_from_this_domain_and_keeps_one_copy(tmp_path, monkeypatch):
+    import io
+    monkeypatch.setenv("JYOTISHA_APK_RELEASE_REPO", "owner/repo")
+    apk = b"PK\x03\x04" + b"a" * 1000
+    release = {"version": "1.0.11", "size": len(apk), "url": "https://github.com/owner/repo/releases/download/v1.0.11/jyotisha.apk"}
+    monkeypatch.setattr(webapp, "_latest_apk_release", lambda repo: release)
+    fetched = []
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(request, timeout=0):
+        fetched.append(request.full_url)
+        return Reply(apk)
+
+    monkeypatch.setattr(webapp.urllib.request, "urlopen", urlopen)
+    server = LocalServer(port=0, root=tmp_path)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for _ in range(2):
+            status, headers, data = request(server, "GET", "/download/jyotisha.apk")
+            assert status == 200 and data == apk and "attachment" in headers["Content-Disposition"]
+        assert fetched == [release["url"]]                                   # copied from GitHub once
+        apk = b"PK\x03\x04" + b"b" * 900                                      # a newer release replaces the copy
+        release.update(version="1.0.12", size=len(apk), url="https://github.com/owner/repo/releases/download/v1.0.12/jyotisha.apk")
+        assert request(server, "GET", "/download/jyotisha.apk")[2] == apk
+        assert sorted(p.name for p in (webapp.store.data_dir() / "apk").glob("*.apk")) == ["jyotisha-1.0.12.apk"]
+        release.update(version="1.0.13", url="https://example.com/evil.apk")   # only this repo's GitHub releases are trusted
+        status, headers, _ = request(server, "GET", "/download/jyotisha.apk")
+        assert status == 302 and headers["Location"].startswith("https://github.com/owner/repo/")
+    finally:
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()

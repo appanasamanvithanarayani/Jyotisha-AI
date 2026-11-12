@@ -234,11 +234,63 @@ def _latest_apk_release(repo: str) -> dict | None:
             release = json.loads(response.read())
         asset = next((a for a in release.get("assets", []) if a.get("name") == "jyotisha.apk"), None)
         if asset:
-            info = {"version": str(release.get("name") or release.get("tag_name") or "latest")[:20], "size": int(asset.get("size", 0))}
+            info = {"version": str(release.get("name") or release.get("tag_name") or "latest")[:20], "size": int(asset.get("size", 0)),
+                    "url": str(asset.get("browser_download_url", ""))}
     except (urllib.error.URLError, TimeoutError, OSError, ValueError, TypeError, AttributeError):
         info = None
     _RELEASE_CACHE.update(at=now, info=info)
     return info
+
+
+_APK_LOCK = Lock()
+MAX_APK_BYTES = 80 * 1024 * 1024
+
+
+def _cached_apk(repo: str) -> Path | None:
+    """The latest release's APK, downloaded once from GitHub into the data folder and served from this domain.
+
+    Returns None if it cannot be fetched (the caller then falls back to GitHub's own download link).
+    """
+    release = _latest_apk_release(repo)
+    if not release or not re.fullmatch(r"[0-9A-Za-z._-]{1,20}", release["version"]):
+        return None
+    url = release.get("url", "")
+    if not url.startswith(f"https://github.com/{repo}/releases/download/"):
+        return None
+    folder = store.data_dir() / "apk"
+    target = folder / f"jyotisha-{release['version']}.apk"
+    if target.is_file() and (not release["size"] or target.stat().st_size == release["size"]):
+        return target
+    with _APK_LOCK:
+        if target.is_file() and (not release["size"] or target.stat().st_size == release["size"]):
+            return target
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            partial = folder / f".{target.name}.part"
+            request = urllib.request.Request(url, headers={"User-Agent": "jyotisha-ai-server"})
+            total = 0
+            with urllib.request.urlopen(request, timeout=60) as response, partial.open("wb") as out:
+                while chunk := response.read(256 * 1024):
+                    total += len(chunk)
+                    if total > MAX_APK_BYTES:
+                        raise ValueError("APK too large")
+                    out.write(chunk)
+            if release["size"] and total != release["size"]:
+                raise ValueError("incomplete download")
+            with partial.open("rb") as check:
+                if check.read(4) != b"PK\x03\x04":
+                    raise ValueError("not an APK")
+            partial.replace(target)
+            for old in folder.glob("jyotisha-*.apk"):
+                if old != target:
+                    old.unlink(missing_ok=True)   # keep only the newest version
+            return target
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            try:
+                (folder / f".{target.name}.part").unlink(missing_ok=True)
+            except OSError:
+                pass
+            return None
 
 
 def _project_root() -> Path:
@@ -789,10 +841,15 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/download/jyotisha.apk":
             apk = self.server.project_root / "downloads" / "jyotisha.apk"
             if _apk_release_repo():
-                # Always the newest build: GitHub serves the file of the latest release.
+                # Always the newest build, served from this domain (copied once from the latest GitHub Release).
                 store.stats.record("apk_downloads", self._client())
-                self._send(302, b"", "text/plain; charset=utf-8",
-                           {"Location": f"https://github.com/{_apk_release_repo()}/releases/latest/download/jyotisha.apk"})
+                cached = _cached_apk(_apk_release_repo())
+                if cached is not None:
+                    self._send(200, cached.read_bytes(), "application/vnd.android.package-archive",
+                               {"Content-Disposition": 'attachment; filename="jyotisha.apk"', "Cache-Control": "no-cache"})
+                else:   # GitHub's own link still works if the copy could not be made
+                    self._send(302, b"", "text/plain; charset=utf-8",
+                               {"Location": f"https://github.com/{_apk_release_repo()}/releases/latest/download/jyotisha.apk"})
             elif not apk.is_file():
                 self._json(404, {"error": "not found"})
             else:
