@@ -66,7 +66,7 @@ function boot(setup = {}) {
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/month-calendar') return reply(month);
-    if (url === '/api/day-panchang') return reply({ day: { ...day, date: JSON.parse(options.body).date } });
+    if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
     if (url === '/api/nearby-place') return reply({ status: 'candidate', candidate: { value: setup.nearby || 'Mysuru, IN' } });
     return reply({ suggestions: [] });
@@ -586,6 +586,57 @@ test('AI-written copy: evenings use the day\'s fresh lines (with the user\'s das
   assert.ok(evening.every(item => !/[{}]/.test(item.title + item.body + item.extra.ask)));
   const muhurta = runs.at(-1).filter(item => item.id >= 7130);
   assert.ok(muhurta.every(item => /^(⏰ AI golden hour|🚦 AI red signal)/.test(item.title)));
+});
+
+test('tapping a notification that opens the app asks its question once the Kundli is loaded, and shows the AI reply', async () => {
+  let tap = null;
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {}, schedule: async () => {},
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') tap = fn; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  // Android delivers the tap right away, before the saved Kundli has been restored.
+  tap({ notification: { extra: { page: 'chat', ask: 'Will my plans work out?' } } });
+  await settle(); await settle(); await settle();
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('chat').hidden, false);
+  const texts = app.element('chat-log').children.map(item => item.textContent);
+  assert.ok(texts.includes('Will my plans work out?'), texts.join(' | '));
+  assert.equal(texts.at(-1), 'AI answer');                                        // the AI's reply, not the offline answer
+  const asked = app.requests.filter(r => r.url === '/api/ask');
+  assert.equal(asked.length, 1);
+  assert.equal(asked[0].body.question, 'Will my plans work out?');
+  assert.ok(!texts.some(text => /date of birth/i.test(text)));                    // it did not start asking for birth details
+});
+
+test('day cards: good times, Panchang, muhurtas and bad times, with a WhatsApp share of the day', async () => {
+  const dayExtra = {
+    amrita_kalam: [{ nakshatra_index: 19, starts_at: '2026-10-30T10:06', ends_at: '2026-10-30T11:54' }],
+    durmuhurtam: [['2026-10-30T08:36', '2026-10-30T09:21'], ['2026-10-30T12:23', '2026-10-30T13:08']],
+    lunar_month: 8, adhika_month: false, samvatsara_index: 40,
+    event_muhurtas: { marriage: [], gruhapravesam: [], vehicle: [] },
+  };
+  const app = boot({ dayExtra });
+  let opened = '';
+  app.context.window.open = url => { opened = url; };
+  await enter(app, 'te');
+  const cards = app.element('day-cards').children;
+  assert.equal(cards.length, 4);
+  const titles = cards.map(card => card.children[0].children[0].textContent);
+  assert.deepEqual(titles, ['శుభ సమయాలు', 'పంచాంగం', 'శుభ ముహూర్తాలు', 'అశుభ సమయాలు']);
+  assert.ok(cards[1].children.some(item => item.className === 'lunar' && /పరాభవ/.test(item.textContent) && /కార్తీకం/.test(item.textContent)));
+  assert.ok(cards[2].children.some(item => item.className === 'empty' && /శుభ ముహూర్తాలు లేవు/.test(item.textContent)));
+  const badRows = cards[3].children[1].children.map(row => row.children[0].textContent);
+  assert.ok(badRows.includes('దుర్ముహూర్తం: '));
+  assert.equal(app.element('share-day').hidden, false);
+  app.element('share-day').onclick();
+  assert.match(opened, /^https:\/\/wa\.me\/\?text=/);
+  const text = decodeURIComponent(opened.split('text=')[1]);
+  assert.match(text, /పరాభవ/); assert.match(text, /అమృత కాలం/); assert.match(text, /దుర్ముహూర్తం/); assert.match(text, /Jyotisha AI/);
+  assert.ok(!/[\u2066-\u2069]/.test(text));
 });
 
 function fakeAdMob() {

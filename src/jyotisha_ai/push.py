@@ -80,7 +80,7 @@ def _access_token(key: dict) -> str:
     return value
 
 
-def validate(title: object, body: object, audience: object, page: object, languages: tuple[str, ...]) -> dict:
+def validate(title: object, body: object, audience: object, page: object, languages: tuple[str, ...], ask: object = "") -> dict:
     if not isinstance(title, str) or not 1 <= len(title.strip()) <= MAX_TITLE:
         raise PushError(f"Title must be 1–{MAX_TITLE} characters")
     if not isinstance(body, str) or not 1 <= len(body.strip()) <= MAX_BODY:
@@ -91,7 +91,14 @@ def validate(title: object, body: object, audience: object, page: object, langua
         raise PushError("Unknown audience")
     if page not in PAGES:
         raise PushError("Unknown screen")
-    return {"title": title.strip(), "body": body.strip(), "topic": "all" if audience == "all" else f"lang-{audience}", "page": page}
+    if ask in (None, ""):
+        ask = ""
+    elif not isinstance(ask, str) or len(ask.strip()) > 300 or any(ord(c) < 32 for c in ask):
+        raise PushError("The question must be at most 300 characters")
+    ask = ask.strip()
+    if ask:
+        page = "chat"   # a question is always answered in the AI chat
+    return {"title": title.strip(), "body": body.strip(), "topic": "all" if audience == "all" else f"lang-{audience}", "page": page, "ask": ask}
 
 
 def send(message: dict) -> str:
@@ -104,7 +111,7 @@ def send(message: dict) -> str:
     payload = {"message": {
         "topic": message["topic"],
         "notification": {"title": message["title"], "body": message["body"]},
-        "data": {"page": message["page"]},
+        "data": {"page": message["page"], **({"ask": message["ask"]} if message.get("ask") else {})},
         "android": {"priority": "HIGH", "notification": {"icon": "ic_stat_jyotisha", "color": "#E8822B"}},
     }}
     url = f"https://fcm.googleapis.com/v1/projects/{urllib.parse.quote(key['project_id'])}/messages:send"

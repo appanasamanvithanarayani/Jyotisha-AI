@@ -156,18 +156,18 @@
     (push.pages || []).forEach(name => page.appendChild(new Option(pageNames[name] || name, name)));
     // Ready-made ideas: pick one to fill the form, then edit if you like.
     const IDEAS = [
-      ['te', 'chat', '🤞 అనుకున్నది జరుగుతుందా లేదా?', 'టెన్షన్ ఎందుకు? మీ గ్రహాలను ఒకసారి అడిగేయండి 😉'],
-      ['te', 'chat', '🚀 ఏదో కొత్తగా ప్లాన్ చేస్తున్నారు కదా?', 'స్టార్ట్ చేసే ముందు స్టార్స్ OK అన్నాయో లేదో చెక్ చేసుకోండి ✨'],
-      ['te', 'chat', '😕 మూడ్ ఆఫ్ ఆ?', 'మీ జాతకంలో ఉంది ఒక చిన్న మ్యాజిక్ రెమెడీ 🪄 చూసేయండి'],
+      ['te', 'chat', '🤞 అనుకున్నది జరుగుతుందా లేదా?', 'టెన్షన్ ఎందుకు? మీ గ్రహాలను ఒకసారి అడిగేయండి 😉', 'నేను అనుకున్న పనులు జరుగుతాయా?'],
+      ['te', 'chat', '🚀 ఏదో కొత్తగా ప్లాన్ చేస్తున్నారు కదా?', 'స్టార్ట్ చేసే ముందు స్టార్స్ OK అన్నాయో లేదో చెక్ చేసుకోండి ✨', 'నేను కొత్త పని మొదలుపెట్టడానికి ఇది మంచి సమయమా?'],
+      ['te', 'chat', '😕 మూడ్ ఆఫ్ ఆ?', 'మీ జాతకంలో ఉంది ఒక చిన్న మ్యాజిక్ రెమెడీ 🪄 చూసేయండి', 'నా మూడ్ బాలేదు. నాకు సరిపోయే చిన్న పరిహారం చెప్పండి.'],
       ['te', 'kundli', '👀 మీ దశ ఏదో చెప్పాలనుకుంటోంది…', 'వినాలని ఉందా? ఒక్క ట్యాప్ చాలు 🤫'],
       ['te', 'relationship', '💘 ఆ వ్యక్తితో మీ మ్యాచ్ ఎంత?', 'గుణ మేళనం 36కి ఎంత వస్తుంది? చూడాలని లేదా? 😏'],
       ['te', 'rashi', '🔮 రేపటి స్పాయిలర్ కావాలా?', 'మీ రాశి ఫలం రెడీ — ఎవరికీ చెప్పకండి 🤫'],
       ['te', 'calendar', '🪔 పండుగల సీజన్ వచ్చేసింది!', 'ఈ నెల పండుగలు, సెలవులు అన్నీ ఒకే చోట — మీ నగరానికి 📅'],
-      ['en', 'chat', '🤞 Will it work out or not?', 'Why stress? Just ask your planets 😉'],
-      ['en', 'chat', '💼 Don’t tell your boss, but…', 'Your planets are dropping career hints 🤫'],
+      ['en', 'chat', '🤞 Will it work out or not?', 'Why stress? Just ask your planets 😉', 'Will the things I am planning work out?'],
+      ['en', 'chat', '💼 Don’t tell your boss, but…', 'Your planets are dropping career hints 🤫', 'How will my job and career be this year?'],
       ['en', 'rashi', '🔮 Want a spoiler for tomorrow?', 'Your sign’s reading is ready — keep it secret 🤫'],
-      ['hi', 'chat', '🤞 काम बनेगा या नहीं?', 'टेंशन क्यों? सीधे अपने ग्रहों से पूछ लीजिए 😉'],
-      ['hi', 'chat', '😕 मूड ऑफ़ है?', 'आपकी कुंडली में है एक छोटा-सा जादुई उपाय 🪄'],
+      ['hi', 'chat', '🤞 काम बनेगा या नहीं?', 'टेंशन क्यों? सीधे अपने ग्रहों से पूछ लीजिए 😉', 'क्या मेरे सोचे हुए काम पूरे होंगे?'],
+      ['hi', 'chat', '😕 मूड ऑफ़ है?', 'आपकी कुंडली में है एक छोटा-सा जादुई उपाय 🪄', 'मेरा मूड ठीक नहीं है। मेरी कुंडली के अनुसार कोई सरल उपाय बताइए।'],
     ];
     const ideas = el('select');
     ideas.appendChild(new Option('— Pick a message idea (optional) —', ''));
@@ -175,11 +175,13 @@
     ideas.addEventListener('change', () => {
       const idea = IDEAS[Number(ideas.value)];
       if (!idea) return;
-      [audience.value, page.value, title.value, body.value] = [idea[0], idea[1], idea[2], idea[3]];
+      [audience.value, page.value, title.value, body.value, askField.value] = [idea[0], idea[1], idea[2], idea[3], idea[4] || ''];
       count.textContent = `${body.value.length} / 240`;
     });
+    const askField = el('input'); askField.maxLength = 300; askField.placeholder = 'e.g. Will the things I am planning work out?';
     panel.append(field('Message ideas', ideas, 'Fills the form with a tested message and sends it only to that language; edit before sending if you like.'),
-      field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page));
+      field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page),
+      field('Question Jyotisha AI answers when tapped (optional)', askField, 'If filled, tapping opens the AI chat, asks this in the user’s chart and shows the reply. Write it in the audience’s language.'));
     const send = el('button', 'btn primary', 'Send now'); send.type = 'button'; send.style.marginTop = '12px';
     send.addEventListener('click', async () => {
       if (!title.value.trim() || !body.value.trim()) { toast('Write a title and a message', true); return; }
@@ -187,8 +189,8 @@
       if (!window.confirm(`Send "${title.value.trim()}" to ${who.toLowerCase()}? This cannot be undone.`)) return;
       send.disabled = true;
       try {
-        state = Object.assign(state, await api('/api/admin/push', { title: title.value, body: body.value, audience: audience.value, page: page.value }));
-        toast('Sent'); title.value = ''; body.value = ''; count.textContent = '0 / 240';
+        state = Object.assign(state, await api('/api/admin/push', { title: title.value, body: body.value, audience: audience.value, page: page.value, ask: askField.value }));
+        toast('Sent'); title.value = ''; body.value = ''; askField.value = ''; count.textContent = '0 / 240';
       } catch (error) { toast(error.message, true); }
       send.disabled = false;
     });

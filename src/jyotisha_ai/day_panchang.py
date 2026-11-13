@@ -25,6 +25,7 @@ from jyotisha_ai.ayanamsha import TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone
 from jyotisha_ai.chart_validation import validate_local_chart_runtime
 from jyotisha_ai.sky_spans import QUANTITIES, SpanFinder, _sidereal
+from jyotisha_ai.festivals import lunar_days
 
 # One-based eighth of the daytime, indexed by Python weekday (Monday=0).
 RAHU_PART = (2, 7, 5, 6, 4, 3, 8)
@@ -33,6 +34,22 @@ GULIKA_PART = (6, 5, 4, 3, 2, 1, 7)
 # Ghati (of 60 across the Nakshatra's own duration) at which Varjyam begins; it lasts 4 ghatis.
 VARJYAM_START_GHATI = (50, 24, 30, 40, 14, 21, 30, 20, 32, 30, 20, 18, 21, 20, 14, 14, 10, 14, 20, 24, 20, 10, 10, 18, 16, 24, 30)
 VARJYAM_LENGTH_GHATI = 4
+# Mula traditionally has a second Varjyam, starting at the 56th ghati.
+VARJYAM_EXTRA_GHATI = {19: 56}
+# Ghati at which Amrita kalam begins in each Nakshatra (traditional table); it also lasts 4 ghatis.
+AMRITA_START_GHATI = (42, 48, 54, 52, 38, 35, 54, 44, 56, 54, 44, 42, 45, 44, 38, 38, 34, 38, 44, 48, 44, 34, 34, 42, 40, 48, 54)
+# Durmuhurtam: which of the 15 day muhurtas (and night muhurtas, from sunset), by Python weekday (Monday=0).
+DURMUHURTA_DAY = ((9, 12), (4,), (8,), (6, 12), (4, 9), (1, 2), (14,))
+DURMUHURTA_NIGHT = ((), (7,), (), (), (), (), ())
+# Simple event muhurtas (conventional rules; no Lagna, Venus/Jupiter combustion or personal checks).
+AVOID_TITHIS = frozenset({1, 4, 8, 9, 14, 19, 23, 24, 29, 30})   # Shukla Pratipada, Rikta tithis, Ashtamis, Amavasya
+GOOD_WEEKDAYS = frozenset({0, 2, 3, 4})                           # Monday, Wednesday, Thursday, Friday
+EVENT_RULES = {
+    "marriage": {"nakshatras": {4, 5, 10, 12, 13, 15, 17, 19, 21, 26, 27}, "months": {2, 3, 8, 9, 11, 12}},
+    "gruhapravesam": {"nakshatras": {4, 5, 12, 14, 17, 21, 23, 24, 26, 27}, "months": {2, 3, 8, 9, 11, 12}},
+    "vehicle": {"nakshatras": {1, 4, 5, 7, 8, 13, 14, 15, 17, 22, 23, 24, 27}, "months": set(range(1, 13))},
+}
+MIN_EVENT_MINUTES = 30
 GOOD_MOON_POSITIONS = (1, 3, 6, 7, 10, 11)
 ASHTAMA_MOON_POSITION = 8
 GOOD_TARAS = (2, 4, 6, 8, 9)
@@ -136,16 +153,22 @@ def day_panchang(root: Path, iso_date: str, place_query: str) -> dict:
             result.append(item)
         return result
 
-    # Varjyam: a fixed fraction of each Nakshatra's own duration.
-    varjyam = []
-    for row in rows["nakshatra"]:
-        if row["start"] is None or row["end"] is None:
-            continue
-        duration = row["end"] - row["start"]
-        begins = row["start"] + VARJYAM_START_GHATI[row["index"] - 1] / 60.0 * duration
-        ends = begins + VARJYAM_LENGTH_GHATI / 60.0 * duration
-        if ends > 0 and begins < span:
-            varjyam.append({"nakshatra_index": row["index"], "starts_at": local(begins), "ends_at": local(ends)})
+    # Varjyam and Amrita kalam: fixed fractions (in ghatis of 60) of each Nakshatra's own duration.
+    def ghati_windows(start_ghatis) -> list[dict]:
+        found = []
+        for row in rows["nakshatra"]:
+            if row["start"] is None or row["end"] is None:
+                continue
+            duration = row["end"] - row["start"]
+            for ghati in start_ghatis(row["index"]):
+                begins = row["start"] + ghati / 60.0 * duration
+                ends = begins + VARJYAM_LENGTH_GHATI / 60.0 * duration
+                if ends > 0 and begins < span:
+                    found.append({"nakshatra_index": row["index"], "starts_at": local(begins), "ends_at": local(ends), "_span": (begins, ends)})
+        return found
+
+    varjyam = ghati_windows(lambda n: (VARJYAM_START_GHATI[n - 1], *([VARJYAM_EXTRA_GHATI[n]] if n in VARJYAM_EXTRA_GHATI else [])))
+    amrita = ghati_windows(lambda n: (AMRITA_START_GHATI[n - 1],))
 
     sun_longitude = _sidereal(astronomy.Body.Sun, sunrise, ayanamsha)
     planet_signs = _planet_signs(sunrise, ayanamsha)
@@ -154,6 +177,47 @@ def day_panchang(root: Path, iso_date: str, place_query: str) -> dict:
 
     def window(begin: float, end: float) -> list[str]:
         return [local(begin), local(end)]
+
+    durmuhurtam_spans = [((part - 1) * fifteenth, part * fifteenth) for part in DURMUHURTA_DAY[weekday]]
+    durmuhurtam_spans += [(day_length + (part - 1) * night_fifteenth, day_length + part * night_fifteenth) for part in DURMUHURTA_NIGHT[weekday]]
+    try:
+        lunar = lunar_days(observer, zone, selected, selected).get(selected)
+    except (ValueError, ArithmeticError):
+        lunar = None
+    lunar_month = lunar["lunar_month"] if lunar else None
+    adhika = bool(lunar and lunar["adhika"])
+
+    def event_muhurtas() -> dict:
+        """Daytime windows that pass simple conventional checks for each event, avoiding the inauspicious periods."""
+        if lunar_month is None or adhika:
+            return {name: [] for name in EVENT_RULES}
+        bad = [((RAHU_PART[weekday] - 1) * eighth, RAHU_PART[weekday] * eighth),
+               ((YAMAGANDA_PART[weekday] - 1) * eighth, YAMAGANDA_PART[weekday] * eighth),
+               ((GULIKA_PART[weekday] - 1) * eighth, GULIKA_PART[weekday] * eighth), *durmuhurtam_spans,
+               *(item["_span"] for item in varjyam)]
+
+        def segments(name: str, allowed) -> list[tuple[float, float]]:
+            return [(row["start"] if row["start"] is not None else -1.0, row["end"] if row["end"] is not None else span + 1.0)
+                    for row in rows[name] if allowed(row["index"])]
+
+        result = {}
+        for event, rule in EVENT_RULES.items():
+            if weekday not in GOOD_WEEKDAYS or lunar_month not in rule["months"]:
+                result[event] = []
+                continue
+            windows = []
+            for t_start, t_end in segments("tithi", lambda index: index not in AVOID_TITHIS and
+                                           # Chaturmasa (Ashadha Shukla Ekadashi to Kartika Shukla Ekadashi): no weddings or housewarmings
+                                           not (event != "vehicle" and lunar_month == 8 and index <= 11)):
+                for n_start, n_end in segments("nakshatra", lambda index: index in rule["nakshatras"]):
+                    begin, end = max(0.0, t_start, n_start), min(day_length, t_end, n_end)
+                    pieces = [(begin, end)] if end > begin else []
+                    for b_start, b_end in bad:   # cut out the inauspicious periods
+                        pieces = [part for p_start, p_end in pieces for part in
+                                  ((p_start, min(p_end, b_start)), (max(p_start, b_end), p_end)) if part[1] > part[0]]
+                    windows += [window(a, b) for a, b in pieces if (b - a) * 1440.0 >= MIN_EVENT_MINUTES]
+            result[event] = sorted(windows)
+        return result
 
     timings = {
         "brahma_muhurta": window(-2 * previous_night / 15.0, -previous_night / 15.0),
@@ -193,7 +257,13 @@ def day_panchang(root: Path, iso_date: str, place_query: str) -> dict:
             "good_chandrabalam_rashis": good_chandrabalam_rashis(row["index"]),
             "ashtama_chandra_rashi": ashtama_chandra_rashi(row["index"]),
         }),
-        "varjyam": varjyam,
+        "varjyam": [{key: value for key, value in item.items() if key != "_span"} for item in varjyam],
+        "amrita_kalam": [{key: value for key, value in item.items() if key != "_span"} for item in amrita],
+        "durmuhurtam": [window(a, b) for a, b in durmuhurtam_spans],
+        "lunar_month": lunar_month,
+        "adhika_month": adhika,
+        "samvatsara_index": lunar["samvatsara_index"] if lunar else None,
+        "event_muhurtas": event_muhurtas(),
         "timings": timings,
         "method": f"astronomy-engine 2.1.19; {TRUE_METHOD_ID} at sunrise; approved GeoNames and pinned IANA tzdata",
         "message": ("Experimental sunrise-to-sunrise Panchang with each element's true start and end time. Rise/set use "
@@ -255,6 +325,16 @@ def month_calendar(root: Path, year: int, month: int, place_query: str) -> dict:
                 "planet_rashis": _planet_signs(sunrise, ayanamsha),
             })
         days.append(row)
+    # Lunar month, samvatsara and the sunrise Tithi's end time for each day (one pass for the whole month).
+    try:
+        lunar = lunar_days(observer, zone, date(year, month, 1), date(year, month, monthrange(year, month)[1]))
+    except (ValueError, ArithmeticError):
+        lunar = {}
+    for row in days:
+        info = lunar.get(date.fromisoformat(row["date"]))
+        row.update({"tithi_ends_at": info["tithi_ends_at"], "next_tithi_index": info["next_tithi_index"], "lunar_month": info["lunar_month"],
+                    "adhika_month": info["adhika"], "samvatsara_index": info["samvatsara_index"]} if info else
+                   {"tithi_ends_at": None, "next_tithi_index": None, "lunar_month": None, "adhika_month": False, "samvatsara_index": None})
     cache_key = (place["name"], place["country_code"], year, month)
     if cache_key not in _EVENT_CACHE:
         try:

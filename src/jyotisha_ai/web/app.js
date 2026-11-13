@@ -150,6 +150,11 @@
         muhurta: 'Good and bad muhurta alerts',
         evening: 'Evening question for you', eveningTime: 'Evening time',
         rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
+      lunar: { year: '{s} samvatsara', month: '{m} masa', adhika: 'Adhika {m}' },
+      cards: { good: 'Good times', panchang: 'Panchang', events: 'Auspicious muhurtas', bad: 'Inauspicious times', none: 'No auspicious muhurtas today',
+        again: 'and', amrita: 'Amrita kalam', durmuhurtam: 'Durmuhurtam', marriage: 'Marriage', gruhapravesam: 'Housewarming', vehicle: 'Vehicle purchase',
+        eventNote: 'A simple traditional check (tithi, nakshatra, weekday and month; avoids Rahu Kalam, Durmuhurtam and Varjyam). For a wedding or housewarming, confirm the exact muhurtam with your purohit.',
+        share: 'Share today on WhatsApp', full: 'Full Panchang tables', swipe: 'Swipe for more →' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -177,6 +182,11 @@
         muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
         evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
         rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
+      lunar: { year: 'శ్రీ {s} నామ సంవత్సరం', month: '{m} మాసం', adhika: 'అధిక {m}' },
+      cards: { good: 'శుభ సమయాలు', panchang: 'పంచాంగం', events: 'శుభ ముహూర్తాలు', bad: 'అశుభ సమయాలు', none: 'ఈ రోజు శుభ ముహూర్తాలు లేవు',
+        again: 'మరలా', amrita: 'అమృత కాలం', durmuhurtam: 'దుర్ముహూర్తం', marriage: 'వివాహం', gruhapravesam: 'గృహప్రవేశం', vehicle: 'వాహనం కొనుగోలు',
+        eventNote: 'సాధారణ సంప్రదాయ పరిశీలన (తిథి, నక్షత్రం, వారం, మాసం; రాహు కాలం, దుర్ముహూర్తం, వర్జ్యం మినహా). పెళ్లి, గృహప్రవేశం వంటి వాటికి ఖచ్చితమైన ముహూర్తాన్ని మీ పురోహితుని ద్వారా నిర్ధారించుకోండి.',
+        share: 'ఈ రోజు పంచాంగం WhatsAppలో షేర్ చేయండి', full: 'పూర్తి పంచాంగ పట్టికలు', swipe: 'మరిన్ని చూడటానికి స్వైప్ చేయండి →' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -204,6 +214,11 @@
         muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
         evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
         rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
+      lunar: { year: '{s} संवत्सर', month: '{m} मास', adhika: 'अधिक {m}' },
+      cards: { good: 'शुभ समय', panchang: 'पंचांग', events: 'शुभ मुहूर्त', bad: 'अशुभ समय', none: 'आज कोई शुभ मुहूर्त नहीं',
+        again: 'फिर', amrita: 'अमृत काल', durmuhurtam: 'दुर्मुहूर्त', marriage: 'विवाह', gruhapravesam: 'गृह प्रवेश', vehicle: 'वाहन ख़रीद',
+        eventNote: 'सरल पारंपरिक जाँच (तिथि, नक्षत्र, वार और मास; राहु काल, दुर्मुहूर्त और वर्ज्य को छोड़कर)। विवाह या गृह प्रवेश के लिए सटीक मुहूर्त अपने पुरोहित से पक्का करें।',
+        share: 'आज का पंचांग WhatsApp पर शेयर करें', full: 'पूरी पंचांग तालिकाएँ', swipe: 'और देखने के लिए स्वाइप करें →' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -766,11 +781,24 @@
     return result;
   }
   // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
+  // When a notification opens the app, its question waits until the saved Kundli is restored and the AI is known to be on,
+  // so the chat is not reset under it and the reply comes from Jyotisha AI, not the offline answers.
+  const startup = { profile: false, readiness: false, pending: null };
+  function startupDone(part) {
+    startup[part] = true;
+    if (startup.profile && startup.readiness && startup.pending) {
+      const question = startup.pending; startup.pending = null;
+      showPage('chat'); ask(question, question, true);
+    }
+  }
   function openFromNotification(extra) {
     const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
     showPage(page);
     const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
-    if (page === 'chat' && question) ask(question, question, true);
+    if (!question) return;
+    showPage('chat');
+    if (startup.profile && startup.readiness) ask(question, question, true);
+    else startup.pending = question;
   }
   try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.extra)); } catch (_error) { /* optional */ }
 
@@ -795,10 +823,7 @@
     const plugin = messenger();
     if (plugin) {
       // Tapping a message opens the screen chosen in the admin panel.
-      plugin.addListener('notificationActionPerformed', event => {
-        const page = event && event.notification && event.notification.data && event.notification.data.page;
-        showPage(Object.hasOwn(pages, page) ? page : 'home');
-      });
+      plugin.addListener('notificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.data));
       // While the app is open Android does not show the message itself, so show it as a local notification.
       plugin.addListener('notificationReceived', event => {
         const message = event && event.notification, local = notifier();
@@ -887,11 +912,12 @@
   }
   async function restoreProfile() {
     const profile = loadProfile();
-    if (!profile) return;
     try {
+      if (!profile) return;
       const { ok, body } = await post('/api/birth-chart', profile);
       if (ok && body && body.chart) { applyChart(body, profile); intake.step = null; resetChat(t('chartReady')); }
     } catch (_error) { /* offline or unavailable: the chat simply asks for the details again */ }
+    finally { startupDone('profile'); }
   }
   function startHome() {
     const today = localIso(new Date());
@@ -1032,6 +1058,7 @@
   }
   function clearDay() {
     $('dp-tables').replaceChildren(); $('dp-sun-strip').replaceChildren(); $('dp-key').replaceChildren();
+    $('day-cards').replaceChildren(); $('share-day').hidden = true; $('day-cards-hint').textContent = '';
     for (const id of ['dp-date-title', 'dp-subtitle', 'dp-place']) $(id).textContent = '';
     $('dp-moon').textContent = '🌙';
   }
@@ -1231,11 +1258,88 @@
       section(t('dpBalam'), balamRows, 'calm'),
       section(t('dpAuspicious'), [
         [t('pratahSandhya'), span(timings.pratah_sandhya)], [t('brahma'), span(timings.brahma_muhurta)], [t('abhijit'), span(timings.abhijit)],
-        [t('vijaya'), span(timings.vijaya_muhurta)], [t('sayahnaSandhya'), span(timings.sayahna_sandhya)], [t('nishita'), span(timings.nishita_muhurta)]], 'good'),
+        [t('vijaya'), span(timings.vijaya_muhurta)], [t('sayahnaSandhya'), span(timings.sayahna_sandhya)], [t('nishita'), span(timings.nishita_muhurta)],
+        ...((day.amrita_kalam || []).length ? [[toolText().cards.amrita, day.amrita_kalam.map(item => ({ text: `${clock(item.starts_at, date)} – ${clock(item.ends_at, date)}`, note: nakshatraName(item.nakshatra_index) }))]] : [])], 'good'),
       section(t('dpInauspicious'), [
         [t('rahu'), span(timings.rahu_kalam)], [t('yamaganda'), span(timings.yamaganda)], [t('gulika'), span(timings.gulika_kalam)],
+        ...((day.durmuhurtam || []).length ? [[toolText().cards.durmuhurtam, day.durmuhurtam.map(([start, end]) => ({ text: `${clock(start, date)} – ${clock(end, date)}` }))]] : []),
         [t('varjyam'), day.varjyam.map(item => ({ text: `${clock(item.starts_at, date)} – ${clock(item.ends_at, date)}`, note: nakshatraName(item.nakshatra_index) }))]], 'bad'),
       section(t('dpDay'), [[t('dinamana'), one(duration(day.dinamana_minutes))], [t('ratrimana'), one(duration(day.ratrimana_minutes))], [t('madhyahna'), one(clock(day.madhyahna, date))]]));
+    renderDayCards(day);
+  }
+  // The day at a glance: swipeable cards like a printed calendar's boxes, plus a WhatsApp share of the day.
+  function renderDayCards(day) {
+    const copy = toolText().cards, date = day.date, host = $('day-cards');
+    const range = (start, end) => `${clock(start, date)} – ${clock(end, date)}`;
+    const dateLabel = calendarUI.formatDate(state.lang, date, 'short');
+    const card = (kind, title, rows) => {
+      const box = el('article', `day-card ${kind}`);
+      const head = el('header'); head.append(el('h3', null, title), el('small', null, dateLabel));
+      const list = el('ul');
+      for (const [label, values] of rows) {
+        if (!values || !values.length) continue;
+        const item = el('li'); item.appendChild(el('b', null, `${label}: `));
+        values.forEach((value, i) => { if (i) item.appendChild(el('span', 'again', ` ${copy.again} `)); item.appendChild(el('span', null, value)); });
+        list.appendChild(item);
+      }
+      box.append(head, list);
+      return box;
+    };
+    const timings = day.timings || {};
+    const segments = (items, nameOf) => (items || []).map(item => `${nameOf(item.index)} (${range(item.starts_at, item.ends_at)})`);
+    const good = card('good', copy.good, [
+      [t('abhijit'), timings.abhijit ? [range(...timings.abhijit)] : []],
+      [copy.amrita, (day.amrita_kalam || []).map(item => range(item.starts_at, item.ends_at))],
+      [t('brahma'), timings.brahma_muhurta ? [range(...timings.brahma_muhurta)] : []],
+      [t('vijaya'), timings.vijaya_muhurta ? [range(...timings.vijaya_muhurta)] : []],
+    ]);
+    const lunar = day.samvatsara_index && day.lunar_month ? lunarLine([{ samvatsara_index: day.samvatsara_index, lunar_month: day.lunar_month, adhika_month: day.adhika_month }]) : '';
+    const panchang = card('panchang', copy.panchang, [
+      [t('tithi'), segments(day.tithi, index => names.tithiName(index, state.lang))],
+      [t('nakshatra'), segments(day.nakshatra, index => names.nakshatraName(index, state.lang))],
+      [t('yoga'), segments(day.yoga, index => names.yogaName(index, state.lang))],
+    ]);
+    if (lunar) { const [head, list] = [...panchang.children]; panchang.replaceChildren(head, el('p', 'lunar', lunar), list); }
+    const events = day.event_muhurtas || {};
+    const eventRows = ['marriage', 'gruhapravesam', 'vehicle'].map(name => [copy[name], (events[name] || []).map(([start, end]) => range(start, end))]);
+    const muhurtas = card('events', copy.events, eventRows);
+    if (!eventRows.some(([, values]) => values.length)) muhurtas.appendChild(el('p', 'empty', copy.none));
+    muhurtas.appendChild(el('p', 'muted-note', copy.eventNote));
+    const bad = card('bad', copy.bad, [
+      [t('rahu'), timings.rahu_kalam ? [range(...timings.rahu_kalam)] : []],
+      [t('yamaganda'), timings.yamaganda ? [range(...timings.yamaganda)] : []],
+      [t('gulika'), timings.gulika_kalam ? [range(...timings.gulika_kalam)] : []],
+      [copy.durmuhurtam, (day.durmuhurtam || []).map(([start, end]) => range(start, end))],
+      [t('varjyam'), (day.varjyam || []).map(item => range(item.starts_at, item.ends_at))],
+    ]);
+    host.replaceChildren(good, panchang, muhurtas, bad);
+    $('day-cards-hint').textContent = copy.swipe;
+    $('dp-full-title').textContent = copy.full;
+    const share = $('share-day'); share.hidden = false; share.textContent = `🟢 ${copy.share}`;
+    share.onclick = () => shareDayOnWhatsApp(day);
+  }
+  function shareDayOnWhatsApp(day) {
+    const copy = toolText().cards, date = day.date, timings = day.timings || {};
+    const range = span => (Array.isArray(span) ? `${clock(span[0], date)} – ${clock(span[1], date)}` : '');
+    const first = (items, nameOf) => (items && items[0] ? `${nameOf(items[0].index)} (→ ${clock(items[0].ends_at, date)})` : '');
+    const lunar = day.samvatsara_index && day.lunar_month ? lunarLine([{ samvatsara_index: day.samvatsara_index, lunar_month: day.lunar_month, adhika_month: day.adhika_month }]) : '';
+    const festivals = eventsOn(date).map(eventName).join(', ');
+    const lines = [
+      `🗓️ ${calendarUI.formatDate(state.lang, date, 'full')} · ${day.place}`,
+      lunar,
+      festivals ? `🪔 ${festivals}` : '',
+      `🌅 ${t('sunrise')} ${clock(day.sunrise, date)} · 🌇 ${t('sunset')} ${clock(day.sunset, date)}`,
+      `📿 ${t('tithi')}: ${first(day.tithi, index => names.tithiName(index, state.lang))}`,
+      `⭐ ${t('nakshatra')}: ${first(day.nakshatra, index => names.nakshatraName(index, state.lang))}`,
+      `✅ ${t('abhijit')}: ${range(timings.abhijit)}`,
+      (day.amrita_kalam || []).length ? `✨ ${copy.amrita}: ${day.amrita_kalam.map(item => range([item.starts_at, item.ends_at])).join(', ')}` : '',
+      `⚠️ ${t('rahu')}: ${range(timings.rahu_kalam)}`,
+      `⚠️ ${t('yamaganda')}: ${range(timings.yamaganda)}`,
+      (day.durmuhurtam || []).length ? `⛔ ${copy.durmuhurtam}: ${day.durmuhurtam.map(range).join(', ')}` : '',
+    ].filter(Boolean);
+    lines.push('', `— Jyotisha AI: ${window.location && window.location.origin ? window.location.origin : ''}`);
+    const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');
+    try { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); } catch (_error) { /* no browser */ }
   }
   async function loadDay(iso, followToday = false) {
     const request = ++state.dayRequest, status = $('dp-status');
@@ -1258,12 +1362,34 @@
   const eventName = event => calendarUI.festivalName(state.lang, event.key);
   const IMPORTANT = { 11: 'E', 26: 'E', 15: 'P', 30: 'A' };
   const MARKS = { E: '🙏', P: '🌕', A: '🌑' };
+  // Short time for small spaces: 'సా.6:09' in Telugu, '6:09p' otherwise; '+1' when it falls on the next day.
+  function shortClock(iso, baseDate) {
+    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(iso || '');
+    if (!match) return '';
+    const hour = Number(match[2]), text = `${(hour % 12) || 12}:${match[3]}`, later = match[1] !== baseDate ? '⁺¹' : '';
+    if (state.lang === 'te') return `${hour < 12 ? 'ఉ' : hour < 16 ? 'మ' : hour < 19 ? 'సా' : 'రా'}.${text}${later}`;
+    return `${text}${hour < 12 ? 'a' : 'p'}${later}`;
+  }
+  // 'శ్రీ పరాభవ నామ సంవత్సరం, ఆశ్వయుజం – కార్తీకం మాసం' for the days shown.
+  function lunarLine(days) {
+    const copy = toolText().lunar, years = [], months = [];
+    for (const day of days) {
+      if (day.samvatsara_index && !years.includes(day.samvatsara_index)) years.push(day.samvatsara_index);
+      const key = day.lunar_month ? `${day.adhika_month ? 'A' : ''}${day.lunar_month}` : '';
+      if (key && !months.includes(key)) months.push(key);
+    }
+    if (!years.length || !months.length) return '';
+    const masa = key => { const name = names.masaName(Number(key.replace('A', '')), state.lang); return key.startsWith('A') ? fill(copy.adhika, { m: name }) : name; };
+    const year = years.map(index => names.samvatsaraName(index, state.lang)).join(' → ');
+    return `${fill(copy.year, { s: year })}, ${fill(copy.month, { m: months.map(masa).join(' – ') })}`;
+  }
   function renderCalendar() {
     const { year, month } = state.view;
     const grid = $('month-calendar');
     grid.replaceChildren();
-    if (!year) { $('month-title').textContent = ''; $('cal-legend').replaceChildren(); $('month-events').replaceChildren(); return; }
+    if (!year) { $('month-title').textContent = ''; $('month-sub').textContent = ''; $('cal-legend').replaceChildren(); $('month-events').replaceChildren(); return; }
     $('month-title').textContent = calendarUI.monthTitle(year, month, state.lang);
+    $('month-sub').textContent = '';
     for (const label of calendarUI.weekdayLabels(state.lang)) grid.appendChild(el('span', 'calendar-weekday', label));
     const loaded = state.month && state.month.year === year && state.month.month === month ? state.month.days : null;
     for (const number of calendarUI.monthCells(year, month)) {
@@ -1283,6 +1409,7 @@
         const tithi = names.tithiName(entry.tithi_index, state.lang), nakshatra = names.nakshatraName(entry.nakshatra_index, state.lang);
         const mark = IMPORTANT[entry.tithi_index];
         button.appendChild(el('span', null, names.tithiBaseName(entry.tithi_index, state.lang)));
+        if (entry.tithi_ends_at) button.appendChild(el('em', 'tithi-end', shortClock(entry.tithi_ends_at, iso)));
         button.dataset.pk = entry.tithi_index <= 15 ? 'S' : 'K';
         if (mark) { button.dataset.imp = mark; button.appendChild(el('i', 'mark', MARKS[mark])); }
         const festivalText = dayEvents.map(eventName).join(', ');
@@ -1293,6 +1420,7 @@
       button.addEventListener('click', () => openDay(iso));
       grid.appendChild(button);
     }
+    if (loaded) $('month-sub').textContent = lunarLine(loaded);
     const legend = $('cal-legend'); legend.replaceChildren();
     for (const [color, text] of [['var(--good)', names.tithiName(11, state.lang)], ['var(--gold2)', names.tithiName(15, state.lang)], ['#59477f', names.tithiName(30, state.lang)], ['var(--saffron)', t('festivalTag')], ['var(--bad)', t('holidayTag')]]) {
       const item = el('b', null, text); item.setAttribute('style', `--c:${color}`); legend.appendChild(item);
@@ -1995,6 +2123,7 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
+    startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);
     if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
@@ -2011,7 +2140,7 @@
         document.head.appendChild(ad);
       } catch (_error) { /* ads are optional */ }
     }
-  }).catch(() => { $('availability').textContent = t('inputDisabled'); });
+  }).catch(() => { $('availability').textContent = t('inputDisabled'); startupDone('readiness'); });
   const saved = loadSettings();
   if (saved) {
     state.city = saved.city; state.useLocation = saved.useLocation; state.onboarded = true;

@@ -61,7 +61,12 @@
     <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
     <label class="date-pick"><span data-i18n="calendarDate">Calendar date</span><input id="dp-date" type="date" min="1970-01-01" max="2100-12-31"></label>
     <p id="dp-status" role="status" aria-live="polite"></p>
+    <div id="day-cards" class="day-cards" aria-live="polite"></div>
+    <p id="day-cards-hint" class="day-cards-hint"></p>
+    <button id="share-day" type="button" class="wa-btn" hidden></button>
+    <details id="dp-full" class="fold dp-full"><summary id="dp-full-title"></summary>
     <div id="dp-tables"></div>
+    </details>
     <p id="dp-note" class="note"></p>
     <h2 id="festcal-title" class="page-title" data-i18n="festCalTitle">Festivals &amp; Calendar</h2>
     <section id="festivals" class="card fest-card" aria-labelledby="festivals-title">
@@ -71,6 +76,7 @@
     </section>
     <div id="month-card" class="card cal-card">
       <div class="month-controls"><button id="month-prev" type="button" data-i18n-aria="previous" aria-label="Previous month">‹</button><strong id="month-title"></strong><button id="month-next" type="button" data-i18n-aria="next" aria-label="Next month">›</button></div>
+      <p id="month-sub" class="month-sub"></p>
       <div id="month-calendar" class="month-calendar" role="group" data-i18n-aria="daysAria" aria-label="Calendar days"></div>
       <p id="cal-legend" class="legend"></p>
       <p class="hint" data-i18n="calendarTap">Tap a day to see its full Panchang.</p>

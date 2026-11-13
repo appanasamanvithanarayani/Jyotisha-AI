@@ -250,3 +250,45 @@ def festival_events(observer: astronomy.Observer, zone, first: date, last: date)
         for key in sorted(found[day]):
             events.append({"date": day.isoformat(), "key": key, "holiday": key in GAZETTED})
     return events
+
+
+def samvatsara_index(day: date, lunar_month: int) -> int:
+    """1..60 in the cycle starting with Prabhava (1987-88); the year begins at Ugadi (Chaitra Shukla Pratipada).
+
+    ``lunar_month`` is the amanta month number (1=Chaitra), using the following month's number for an Adhika month.
+    Pausha, Magha and Phalguna early in a calendar year still belong to the previous year's samvatsara.
+    """
+    year = day.year - 1 if (day.month <= 5 and lunar_month >= 10) else day.year
+    return (year - 1987) % 60 + 1
+
+
+def lunar_days(observer: astronomy.Observer, zone, first: date, last: date) -> dict[date, dict]:
+    """For each civil day in [first, last], at local sunrise: the amanta month (and whether it is Adhika), the
+    samvatsara, and the running Tithi with its end time and the Tithi after it."""
+    calendar = _Calendar(observer, zone, first, last)
+    starts = [ut for ut, _ in calendar.new_moons]
+    ends, indices = calendar._tithi
+    result: dict[date, dict] = {}
+    day = first
+    while day <= last:
+        if day in calendar.sun:
+            sunrise = calendar.sun[day][0]
+            month = calendar.lunar_month(sunrise)
+            adhika = month is None
+            if adhika:   # named after the month that follows it
+                position = bisect_right(starts, sunrise.ut)
+                month = calendar.new_moons[position - 1][1] % 12 + 1 if 0 < position <= len(starts) else None
+            slot = min(bisect_right(ends, sunrise.ut - calendar.origin.ut), len(indices) - 1)
+            end_ut = calendar.origin.ut + ends[slot]
+            ends_at = None
+            if end_ut != float("inf"):
+                moment = astronomy.Time(end_ut).Utc().replace(tzinfo=timezone.utc) + timedelta(seconds=30)
+                ends_at = moment.astimezone(zone).replace(second=0, microsecond=0, tzinfo=None).isoformat(timespec="minutes")
+            result[day] = {
+                "lunar_month": month, "adhika": adhika,
+                "samvatsara_index": samvatsara_index(day, month) if month else None,
+                "tithi_index": indices[slot], "tithi_ends_at": ends_at,
+                "next_tithi_index": indices[slot + 1] if slot + 1 < len(indices) else None,
+            }
+        day += timedelta(days=1)
+    return result

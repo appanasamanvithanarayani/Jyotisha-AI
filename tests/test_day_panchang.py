@@ -139,3 +139,44 @@ def test_month_calendar_rows_carry_moon_and_planet_signs_for_the_month_outlook()
     assert set(first["planet_rashis"]) == {"Sun", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"}
     day = day_panchang(Path(__file__).resolve().parents[1], first["date"], "Bengaluru, IN")
     assert day["planet_rashis"] == first["planet_rashis"] and day["moon_rashi"][0]["index"] == first["moon_rashi_index"]
+
+
+@pytest.fixture(scope="module")
+def hyderabad_nov13() -> dict:
+    return day_panchang(ROOT, "2026-11-13", "Hyderabad, IN")
+
+
+def test_new_windows_are_close_to_a_published_telugu_calendar(hyderabad_nov13):
+    """Reference: a Telugu calendar app's Hyderabad page for 2026-11-13 (tolerance checks, not copied data)."""
+    day = hyderabad_nov13
+    durmuhurtam = [(minutes(a), minutes(b)) for a, b in day["durmuhurtam"]]          # Friday: 4th and 9th day muhurtas
+    assert len(durmuhurtam) == 2
+    assert abs(durmuhurtam[0][0] - (8 * 60 + 38)) <= 4 and abs(durmuhurtam[1][0] - (12 * 60 + 22)) <= 4
+    varjyam = day["varjyam"]                                                          # Mula's second Varjyam, then Purva Ashadha's
+    assert [item["nakshatra_index"] for item in varjyam] == [19, 20]
+    assert abs(minutes(varjyam[0]["starts_at"]) - (15 * 60 + 29)) <= 3 and abs(minutes(varjyam[1]["starts_at"]) - (4 * 60 + 8)) <= 3
+    (amrita,) = day["amrita_kalam"]
+    assert amrita["nakshatra_index"] == 19 and abs(minutes(amrita["starts_at"]) - (10 * 60 + 11)) <= 8
+    assert abs(minutes(day["timings"]["abhijit"][0]) - (11 * 60 + 38)) <= 3
+
+
+def test_lunar_month_samvatsara_and_event_muhurtas(hyderabad_nov13):
+    day = hyderabad_nov13
+    assert (day["lunar_month"], day["adhika_month"], day["samvatsara_index"]) == (8, False, 40)   # Kartika, Parabhava
+    assert set(day["event_muhurtas"]) == {"marriage", "gruhapravesam", "vehicle"}
+    assert all(windows == [] for windows in day["event_muhurtas"].values())          # Chaturthi: no muhurtas
+    thursday = day_panchang(ROOT, "2026-11-26", "Hyderabad, IN")
+    windows = thursday["event_muhurtas"]["vehicle"]
+    assert windows and all(minutes(b) - minutes(a) >= 30 for a, b in windows)
+    rahu = [minutes(x) for x in thursday["timings"]["rahu_kalam"]]
+    assert all(minutes(b) <= rahu[0] or minutes(a) >= rahu[1] for a, b in windows)   # never inside Rahu Kalam
+
+
+def test_samvatsara_changes_at_ugadi_and_adhika_month_is_flagged():
+    from jyotisha_ai.festivals import samvatsara_index
+    from datetime import date
+    assert samvatsara_index(date(2026, 3, 18), 12) == 39 and samvatsara_index(date(2026, 3, 20), 1) == 40
+    assert samvatsara_index(date(1987, 4, 1), 1) == 1                                 # Prabhava
+    adhika = day_panchang(ROOT, "2026-05-21", "Hyderabad, IN")
+    assert adhika["adhika_month"] is True and adhika["lunar_month"] == 3              # Adhika Jyeshtha 2026
+    assert all(windows == [] for windows in adhika["event_muhurtas"].values())        # no muhurtas in an Adhika month

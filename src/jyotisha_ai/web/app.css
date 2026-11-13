@@ -725,3 +725,38 @@ main,.app-page,.card{min-width:0}
 .notify-time{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:.84rem;color:var(--muted)}
 .notify-time input{width:auto;min-height:40px;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
 :root[data-mode="dark"] .notify-card{background:linear-gradient(160deg,#2f2a1d,#2b261b);border-color:#4a4028;box-shadow:none}
+
+/* ---------- Calendar: samvatsara/masa line and tithi end time in each day ---------- */
+.month-sub{margin:-6px 0 10px;text-align:center;font-size:.84rem;font-weight:700;color:var(--muted)}
+.month-sub:empty{display:none}
+.calendar-day .tithi-end{display:block;font-style:normal;font-size:.5rem;line-height:1.1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.calendar-day.selected .tithi-end{color:#ffe9ee}
+
+/* ---------- Day cards (swipe sideways) and WhatsApp share ---------- */
+.day-cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px 2px 10px;margin:4px -2px 0;scrollbar-width:none}
+.day-cards::-webkit-scrollbar{display:none}
+.day-cards:empty,.day-cards:empty+.day-cards-hint{display:none}
+.day-card{flex:0 0 86%;max-width:420px;scroll-snap-align:start;border-radius:20px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 18px rgba(120,80,40,.08)}
+.day-card header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px dashed var(--line)}
+.day-card h3{font-size:1.05rem;margin:0}
+.day-card header small{font-size:.74rem;color:var(--muted);white-space:nowrap}
+.day-card ul{list-style:none;margin:0;padding:0}
+.day-card li{padding:6px 0;font-size:.9rem;line-height:1.45}
+.day-card li b{font-weight:800}
+.day-card .again{color:var(--muted);font-size:.8rem}
+.day-card .lunar{margin:0 0 6px;font-size:.84rem;font-weight:700;color:#a15a1c}
+.day-card .empty{margin:10px 0;font-weight:700;text-align:center;color:var(--muted)}
+.day-card.good{border-top:4px solid var(--good)}.day-card.good h3{color:var(--good2)}
+.day-card.panchang{border-top:4px solid var(--gold2)}.day-card.panchang h3{color:#a15a1c}
+.day-card.events{border-top:4px solid #b98cf0}.day-card.events h3{color:#6b3fa0}
+.day-card.bad{border-top:4px solid var(--bad)}.day-card.bad h3{color:var(--bad2)}
+.day-cards-hint{margin:0 0 8px;text-align:end;font-size:.74rem;color:var(--muted)}
+.day-cards-hint:empty{display:none}
+@media (min-width:900px){.day-card{flex-basis:calc(50% - 6px)}.day-cards-hint{display:none}}
+.wa-btn{display:block;width:100%;margin:6px 0 14px;min-height:48px;padding:10px 14px;border-radius:14px;border:0;font-weight:800;font-size:.95rem;
+  background:linear-gradient(135deg,#2bd06a,#1ea952);color:#fff;box-shadow:0 8px 18px rgba(30,169,82,.28)}
+.dp-full{margin-top:6px}
+.dp-full>summary{font-weight:800;padding:10px 0}
+:root[data-mode="dark"] .day-card{background:var(--surface);border-color:var(--line);box-shadow:none}
+:root[data-mode="dark"] .day-card .lunar{color:#f0b46a}
+:root[data-mode="dark"] .day-card.panchang h3{color:#f0b46a}:root[data-mode="dark"] .day-card.events h3{color:#c9a8f5}
