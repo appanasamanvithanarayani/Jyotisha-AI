@@ -157,7 +157,7 @@
         share: 'Share today on WhatsApp', full: 'Full Panchang tables', swipe: 'Swipe for more →' },
       rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: '…more', less: 'Show less',
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
-        details: 'Planet-by-planet details', hint: 'Pick your rashi above to see today’s reading.',
+        details: 'Planet-by-planet details', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see today’s reading.',
         luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis · Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
@@ -195,7 +195,7 @@
         share: 'ఈ రోజు పంచాంగం WhatsAppలో షేర్ చేయండి', full: 'పూర్తి పంచాంగ పట్టికలు', swipe: 'మరిన్ని చూడటానికి స్వైప్ చేయండి →' },
       rashi: { pick: 'మీ రాశిని ఎంచుకోండి', find: 'మీ రాశి తెలుసుకోండి', mineButton: 'నా రాశి చూపించు', mine: 'మీది', title: '{sign} రాశి ఫలితాలు ({date})', more: '…మరింత', less: 'తక్కువ చూపు',
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
-        details: 'గ్రహాల వారీగా వివరాలు', hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
+        details: 'గ్రహాల వారీగా వివరాలు', jump: { transits: 'గ్రహ సంచారం', remedies: 'పరిహారాలు', full: 'పూర్తి జాతకం', ask: 'AIని అడగండి' }, hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
         luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
@@ -233,7 +233,7 @@
         share: 'आज का पंचांग WhatsApp पर शेयर करें', full: 'पूरी पंचांग तालिकाएँ', swipe: 'और देखने के लिए स्वाइप करें →' },
       rashi: { pick: 'अपनी राशि चुनें', find: 'अपनी राशि जानें', mineButton: 'मेरी राशि दिखाएँ', mine: 'आपकी', title: '{sign} राशिफल ({date})', more: '…और पढ़ें', less: 'कम दिखाएँ',
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
-        details: 'ग्रह-वार विवरण', hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
+        details: 'ग्रह-वार विवरण', jump: { transits: 'ग्रह गोचर', remedies: 'उपाय', full: 'पूरी कुंडली', ask: 'AI से पूछें' }, hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
         luckyTitle: 'शुभ संकेत', luckyDay: 'रंग और दिशा: आज सभी राशियों के लिए एक · अंक: आपकी राशि के लिए', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
@@ -1088,12 +1088,14 @@
     return box;
   }
   function remedyBlock(card, lines) {
-    if (!lines || !lines.length) return;
-    card.appendChild(el('h4', null, chartUI.remedyHead(state.lang)));
+    if (!lines || !lines.length) return null;
+    const head = el('h4', null, chartUI.remedyHead(state.lang));
+    card.appendChild(head);
     const list = el('ul', 'rashi-planets remedies');
     for (const line of lines) list.appendChild(el('li', null, line));
     card.appendChild(list);
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
+    return head;
   }
   /* ---- Rashiphal: pick your sign, read today's paragraph, share or ask the AI ---- */
   const RASHI_KEY = 'jyotisha.rashi.v1';
@@ -1146,6 +1148,16 @@
     const box = $('rashi-reading'); box.replaceChildren();
     const title = fill(copy.title, { sign: item.name, date: calendarUI.formatDate(state.lang, day.date, 'long') });
     box.appendChild(el('h3', 'rashi-reading-title', `${RASHI_ICONS[item.rashi - 1]} ${title}`));
+    const askAboutDay = () => { const question = fill(copy.askQ, { sign: item.name }); showPage('chat'); ask(question, question, true); };
+    const openJathakam = () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } };
+    // Quick links at the top, so people know the transits and remedies further down exist.
+    const jumps = el('div', 'rashi-jumps');
+    const jump = (label, action) => { const b = el('button', 'rashi-jump', label); b.type = 'button'; b.addEventListener('click', action); jumps.appendChild(b); };
+    if (detail && detail.rows && detail.rows.length) jump(`🪐 ${copy.jump.transits}`, () => jumpToRashiSection('transits'));
+    if (detail && detail.remedies && detail.remedies.length) jump(`🙏 ${copy.jump.remedies}`, () => jumpToRashiSection('remedies'));
+    jump(`📜 ${copy.jump.full}`, openJathakam);
+    jump(`✨ ${copy.jump.ask}`, askAboutDay);
+    box.appendChild(jumps);
     const body = el('p', 'rashi-text clamp', text);
     box.appendChild(body);
     if (text.length > 260) {
@@ -1178,17 +1190,23 @@
     }
     const actions = el('div', 'rashi-actions');
     const askButton = el('button', 'rashi-ask', `✨ ${copy.ask}`); askButton.type = 'button';
-    askButton.addEventListener('click', () => { const question = fill(copy.askQ, { sign: item.name }); showPage('chat'); ask(question, question, true); });
+    askButton.addEventListener('click', askAboutDay);
     const share = el('button', 'wa-btn', `🟢 ${copy.share}`); share.type = 'button';
     share.addEventListener('click', () => {
       const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\n— Jyotisha AI: ${window.location && window.location.origin ? window.location.origin : ''}`;
       try { window.open(`https://wa.me/?text=${encodeURIComponent(message.replace(/[\u2066-\u2069]/g, ''))}`, '_blank'); } catch (_error) { /* no browser */ }
     });
     const full = el('button', 'link-btn', `${copy.full} ›`); full.type = 'button';
-    full.addEventListener('click', () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } });
+    full.addEventListener('click', openJathakam);
     actions.append(askButton, share, full);
     box.appendChild(actions);
     box.appendChild(el('h4', 'rashi-details-head', copy.details));
+  }
+  function jumpToRashiSection(name) {
+    const spot = state.rashiJump || {};
+    if (!spot.card || !spot[name]) return;
+    spot.card.open = true;                       // the details card is folded; open it, then scroll to the section
+    try { spot[name].scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* older browsers */ }
   }
   function renderRashiDay() {
     const day = state.day;
@@ -1213,11 +1231,13 @@
       card.appendChild(el('p', null, item.kind));
       card.appendChild(el('p', 'muted-note', item.area));
       if (more) {
-        card.appendChild(el('h4', null, chartUI.gocharaHead(state.lang)));
+        const transitsHead = el('h4', null, chartUI.gocharaHead(state.lang));
+        card.appendChild(transitsHead);
         const planets = el('ul', 'rashi-planets');
         for (const row of more.rows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
         card.appendChild(planets);
-        remedyBlock(card, more.remedies);
+        const remediesHead = remedyBlock(card, more.remedies);
+        if (state.rashiPick) state.rashiJump = { card, transits: transitsHead, remedies: remediesHead };
       }
       $('rashi-list').appendChild(card);
     }
@@ -1310,6 +1330,7 @@
   }
   function renderRashi() {
     $('rashi-list').replaceChildren();
+    state.rashiJump = null;
     $('rashi-reading').replaceChildren();
     renderRashiPicker();
     $('rashi-title').textContent = t('rashiphal');
