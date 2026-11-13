@@ -120,17 +120,18 @@
     (push.pages || []).forEach(name => page.appendChild(new Option(pageNames[name] || name, name)));
     // Ready-made ideas: pick one to fill the form, then edit if you like.
     const IDEAS = [
-      ['te', 'chat', '🤔 మీరు అనుకున్న పనులు జరుగుతాయా?', 'తెలుసుకోవాలని ఉందా? మీ జాతకం ఏం చెబుతుందో Jyotisha AIని అడగండి.'],
-      ['te', 'chat', '💭 ఏదైనా పని మొదలుపెట్టాలని ఆలోచిస్తున్నారా?', 'మొదలుపెట్టే ముందు Jyotisha AIని అడిగి కన్ఫర్మ్ చేసుకోండి. ✨'],
-      ['te', 'chat', '😔 మూడ్ బాలేదా?', 'మీ జాతకానికి సరిపోయే చిన్న పరిహారం Jyotisha AIలో చూడండి. 🙏'],
-      ['te', 'kundli', '⏳ ఇప్పుడు మీకు ఏ దశ నడుస్తోంది?', 'మీ దశ మీ జీవితంలో ఏం తెస్తుందో చూడాలనుకుంటున్నారా? 👉'],
-      ['te', 'relationship', '💞 పెళ్లి సంబంధం చూస్తున్నారా?', '2 నిమిషాల్లో గుణ మేళనం (36కి) చూడండి.'],
-      ['te', 'calendar', '🪔 ఈ నెల పండుగలు', 'అన్ని పండుగలు, సెలవుల తేదీలు ఒకే చోట — మీ నగరానికి.'],
-      ['en', 'chat', '🤔 Will your plans work out?', 'Curious? Ask Jyotisha AI what your chart says.'],
-      ['en', 'chat', '💭 Thinking of starting something new?', 'Ask Jyotisha AI and confirm before you begin. ✨'],
-      ['en', 'kundli', '🪐 Is Sade Sati running for you?', 'Check your Kuja dosha and Sade Sati in one tap.'],
-      ['hi', 'chat', '🤔 क्या आपके सोचे हुए काम होंगे?', 'जानना चाहते हैं? Jyotisha AI से पूछें आपकी कुंडली क्या कहती है।'],
-      ['hi', 'chat', '😔 मूड ठीक नहीं है?', 'अपनी कुंडली के अनुसार एक छोटा उपाय Jyotisha AI में देखें। 🙏'],
+      ['te', 'chat', '🤞 అనుకున్నది జరుగుతుందా లేదా?', 'టెన్షన్ ఎందుకు? మీ గ్రహాలను ఒకసారి అడిగేయండి 😉'],
+      ['te', 'chat', '🚀 ఏదో కొత్తగా ప్లాన్ చేస్తున్నారు కదా?', 'స్టార్ట్ చేసే ముందు స్టార్స్ OK అన్నాయో లేదో చెక్ చేసుకోండి ✨'],
+      ['te', 'chat', '😕 మూడ్ ఆఫ్ ఆ?', 'మీ జాతకంలో ఉంది ఒక చిన్న మ్యాజిక్ రెమెడీ 🪄 చూసేయండి'],
+      ['te', 'kundli', '👀 మీ దశ ఏదో చెప్పాలనుకుంటోంది…', 'వినాలని ఉందా? ఒక్క ట్యాప్ చాలు 🤫'],
+      ['te', 'relationship', '💘 ఆ వ్యక్తితో మీ మ్యాచ్ ఎంత?', 'గుణ మేళనం 36కి ఎంత వస్తుంది? చూడాలని లేదా? 😏'],
+      ['te', 'rashi', '🔮 రేపటి స్పాయిలర్ కావాలా?', 'మీ రాశి ఫలం రెడీ — ఎవరికీ చెప్పకండి 🤫'],
+      ['te', 'calendar', '🪔 పండుగల సీజన్ వచ్చేసింది!', 'ఈ నెల పండుగలు, సెలవులు అన్నీ ఒకే చోట — మీ నగరానికి 📅'],
+      ['en', 'chat', '🤞 Will it work out or not?', 'Why stress? Just ask your planets 😉'],
+      ['en', 'chat', '💼 Don’t tell your boss, but…', 'Your planets are dropping career hints 🤫'],
+      ['en', 'rashi', '🔮 Want a spoiler for tomorrow?', 'Your sign’s reading is ready — keep it secret 🤫'],
+      ['hi', 'chat', '🤞 काम बनेगा या नहीं?', 'टेंशन क्यों? सीधे अपने ग्रहों से पूछ लीजिए 😉'],
+      ['hi', 'chat', '😕 मूड ऑफ़ है?', 'आपकी कुंडली में है एक छोटा-सा जादुई उपाय 🪄'],
     ];
     const ideas = el('select');
     ideas.appendChild(new Option('— Pick a message idea (optional) —', ''));
