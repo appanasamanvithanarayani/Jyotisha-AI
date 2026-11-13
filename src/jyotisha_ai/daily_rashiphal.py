@@ -91,7 +91,7 @@ def facts_for(sign: int, where: dict[str, int]) -> str:
 
 def lucky(day: date) -> dict[str, dict]:
     """Lucky factors for each sign (1..12) on ``day``, as Telugu Panchang apps give them: the colour and direction of the
-    weekday's lord (the same for every sign that day), and the numbers of the weekday's lord followed by the sign lord's.
+    weekday's lord (the same for every sign that day), and the numbers (different per sign) of the weekday's lord followed by the sign lord's.
     ``sign_planet`` is extra, for the sign's own colour and direction: its most favourable transiting planet today (in
     SIGN_LUCKY_ORDER; the sign's lord if none is favourable)."""
     planet = WEEKDAY_LORDS[day.weekday()]

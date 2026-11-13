@@ -657,7 +657,7 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   assert.match(reading[0].textContent, /రాశి ఫలితాలు/);
   assert.match(reading[1].textContent, /Paragraph for sign 6/);
   const luckyBox = reading.find(item => item.className === 'rashi-lucky');
-  assert.match(luckyBox.children[1].textContent, /అందరికీ/);                   // the day's factors, for everyone
+  assert.match(luckyBox.children[1].textContent, /రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి/);
   const chips = luckyBox.children[2].children.map(chip => chip.children[1].textContent);
   assert.deepEqual(chips, ['తెలుపు, గులాబీ', '6, 5', 'ఆగ్నేయం']);
   const special = luckyBox.children[3].children.map(item => item.textContent);  // and Kanya's own (Mercury: green, north)
