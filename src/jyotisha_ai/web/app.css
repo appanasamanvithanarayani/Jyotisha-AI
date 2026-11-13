@@ -820,3 +820,8 @@ main,.app-page,.card{min-width:0}
   .card{padding:12px;margin:10px 0}
   .hero-card{padding:14px 12px 12px;margin-bottom:10px;border-radius:22px}
 }
+
+/* The logo image (zodiac wheel) in the header and on the welcome screen. */
+.brand-mark,.welcome-orb{background:#1d1150;overflow:hidden;padding:0}
+.brand-mark img,.welcome-orb img{width:100%;height:100%;display:block;border-radius:inherit}
+.welcome-orb{border-radius:28px;box-shadow:0 0 0 6px rgba(242,193,78,.18),0 0 50px rgba(242,193,78,.45)}
