@@ -84,7 +84,34 @@
     if (!local) return kind === 'shukla' ? 'Shukla Paksha' : 'Krishna Paksha';
     return kind === 'shukla' ? local.pakshaShukla : local.pakshaKrishna;
   }
-  const api = Object.freeze({ tithiName, tithiBaseName, nakshatraName, yogaName, karanaName, pakshaName });
+  // The 60-year cycle (Prabhava = 1987-88) and the 12 lunar months, for the calendar header.
+  const SAMVATSARA = Object.freeze({
+    en: ['Prabhava', 'Vibhava', 'Shukla', 'Pramoduta', 'Prajotpatti', 'Angirasa', 'Shrimukha', 'Bhava', 'Yuva', 'Dhatu', 'Ishvara', 'Bahudhanya',
+      'Pramathi', 'Vikrama', 'Vrisha', 'Chitrabhanu', 'Svabhanu', 'Tarana', 'Parthiva', 'Vyaya', 'Sarvajit', 'Sarvadhari', 'Virodhi', 'Vikriti',
+      'Khara', 'Nandana', 'Vijaya', 'Jaya', 'Manmatha', 'Durmukhi', 'Hevilambi', 'Vilambi', 'Vikari', 'Sharvari', 'Plava', 'Shubhakrit',
+      'Shobhakrit', 'Krodhi', 'Vishvavasu', 'Parabhava', 'Plavanga', 'Kilaka', 'Saumya', 'Sadharana', 'Virodhikrit', 'Paridhavi', 'Pramadicha',
+      'Ananda', 'Rakshasa', 'Nala', 'Pingala', 'Kalayukti', 'Siddharthi', 'Raudri', 'Durmati', 'Dundubhi', 'Rudhirodgari', 'Raktakshi', 'Krodhana', 'Akshaya'],
+    te: ['ప్రభవ', 'విభవ', 'శుక్ల', 'ప్రమోదూత', 'ప్రజోత్పత్తి', 'ఆంగీరస', 'శ్రీముఖ', 'భావ', 'యువ', 'ధాత', 'ఈశ్వర', 'బహుధాన్య',
+      'ప్రమాది', 'విక్రమ', 'వృష', 'చిత్రభాను', 'స్వభాను', 'తారణ', 'పార్థివ', 'వ్యయ', 'సర్వజిత్', 'సర్వధారి', 'విరోధి', 'వికృతి',
+      'ఖర', 'నందన', 'విజయ', 'జయ', 'మన్మథ', 'దుర్ముఖి', 'హేవిళంబి', 'విళంబి', 'వికారి', 'శార్వరి', 'ప్లవ', 'శుభకృత్',
+      'శోభకృత్', 'క్రోధి', 'విశ్వావసు', 'పరాభవ', 'ప్లవంగ', 'కీలక', 'సౌమ్య', 'సాధారణ', 'విరోధికృత్', 'పరీధావి', 'ప్రమాదీచ',
+      'ఆనంద', 'రాక్షస', 'నల', 'పింగళ', 'కాళయుక్తి', 'సిద్ధార్థి', 'రౌద్రి', 'దుర్మతి', 'దుందుభి', 'రుధిరోద్గారి', 'రక్తాక్షి', 'క్రోధన', 'అక్షయ'],
+    hi: ['प्रभव', 'विभव', 'शुक्ल', 'प्रमोद', 'प्रजापति', 'आंगिरस', 'श्रीमुख', 'भाव', 'युवा', 'धाता', 'ईश्वर', 'बहुधान्य',
+      'प्रमाथी', 'विक्रम', 'वृष', 'चित्रभानु', 'स्वभानु', 'तारण', 'पार्थिव', 'व्यय', 'सर्वजित्', 'सर्वधारी', 'विरोधी', 'विकृति',
+      'खर', 'नंदन', 'विजय', 'जय', 'मन्मथ', 'दुर्मुख', 'हेमलंब', 'विलंब', 'विकारी', 'शार्वरी', 'प्लव', 'शुभकृत्',
+      'शोभकृत्', 'क्रोधी', 'विश्वावसु', 'पराभव', 'प्लवंग', 'कीलक', 'सौम्य', 'साधारण', 'विरोधकृत्', 'परिधावी', 'प्रमादी',
+      'आनंद', 'राक्षस', 'नल', 'पिंगल', 'कालयुक्त', 'सिद्धार्थी', 'रौद्र', 'दुर्मति', 'दुंदुभि', 'रुधिरोद्गारी', 'रक्ताक्ष', 'क्रोधन', 'अक्षय'],
+  });
+  const MASA = Object.freeze({
+    en: ['Chaitra', 'Vaishakha', 'Jyeshtha', 'Ashadha', 'Shravana', 'Bhadrapada', 'Ashvayuja', 'Kartika', 'Margashira', 'Pushya', 'Magha', 'Phalguna'],
+    te: ['చైత్రం', 'వైశాఖం', 'జ్యేష్ఠం', 'ఆషాఢం', 'శ్రావణం', 'భాద్రపదం', 'ఆశ్వయుజం', 'కార్తీకం', 'మార్గశిరం', 'పుష్యం', 'మాఘం', 'ఫాల్గుణం'],
+    hi: ['चैत्र', 'वैशाख', 'ज्येष्ठ', 'आषाढ़', 'श्रावण', 'भाद्रपद', 'आश्विन', 'कार्तिक', 'मार्गशीर्ष', 'पौष', 'माघ', 'फाल्गुन'],
+  });
+  const DEVANAGARI = new Set(['hi', 'mr', 'ne', 'sa', 'kok', 'mai']);
+  const nameTable = (table, language) => table[language] || (DEVANAGARI.has(language) ? table.hi : table.en);
+  const samvatsaraName = (index, language) => (index >= 1 && index <= 60 ? nameTable(SAMVATSARA, language)[index - 1] : '');
+  const masaName = (month, language) => (month >= 1 && month <= 12 ? nameTable(MASA, language)[month - 1] : '');
+  const api = Object.freeze({ tithiName, tithiBaseName, nakshatraName, yogaName, karanaName, pakshaName, samvatsaraName, masaName });
   root.JyotishaPanchangNames = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
