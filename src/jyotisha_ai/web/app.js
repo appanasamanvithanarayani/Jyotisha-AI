@@ -583,6 +583,11 @@
       const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
       const festivals = (state.festivals && state.festivals.events) || [];
       const list = [], days = {};
+      aiBatches = {};
+      try {   // fresh AI-written copy for this language; the built-in messages are used for any day without it
+        const { ok, body } = await post('/api/nudges', { language: state.lang, from: localIso(now), days: NOTIFY_DAYS });
+        if (ok && body && body.batches && typeof body.batches === 'object') aiBatches = body.batches;
+      } catch (_error) { /* offline: built-in messages */ }
       for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
         const iso = localIso(at);
@@ -668,6 +673,7 @@
   const nudgeTexts = window.JyotishaNudges;
   const NUDGE_FIRST_ID = 7120, MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
   const NUDGE_HISTORY_KEY = 'jyotisha.nudges.v1', NO_REPEAT_DAYS = 21;
+  let aiBatches = {};   // date -> AI-written copy for the current language
   const dayNumberOf = date => Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
   const isoMinusDays = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); };
   // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 6 AM to 9:30 PM.
@@ -681,7 +687,9 @@
       const hour = at.getHours() + at.getMinutes() / 60;
       if (Number.isNaN(at.getTime()) || at <= now || hour < 6 || hour > 21.5) return;
       const end = clock(span[1], iso).replace(/[⁦-⁩]/g, '');
-      const [title, body] = options[variant % options.length];
+      const ai = aiBatches[iso] && aiBatches[iso][id === MUHURTA_GOOD_ID ? 'good' : 'bad'];
+      const choices = Array.isArray(ai) && ai.length ? ai.map(item => [item.t, item.b]) : options;
+      const [title, body] = choices[variant % choices.length];
       result.push({ id: id + offset, title, body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
     };
     if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
@@ -711,10 +719,25 @@
     const questions = nudgeTexts.pick(nudgeTexts.QUESTIONS, lang)
       .map((item, index) => ({ item, index })).filter(({ item }) => fits(item))
       .map(({ item, index }) => make(`q-${index}`, [fill(item.t, { dasha }), fill(item.b, { dasha }), item.ask ? fill(item.ask, { dasha }) : ''], item.page));
+    // Fresh AI-written lines for this date (keys are unique per date, so they never repeat).
+    const ai = aiBatches[iso], fresh = [];
+    if (ai) {
+      const filled = (item, values) => ({ t: fill(item.t, values), b: fill(item.b, values), ask: fill(item.ask, values) });
+      const usable = item => !/[{}]/.test(item.t + item.b + item.ask);
+      const signName = chart ? chartUI.signName(chart.positions.Moon.rashi_index, lang) : '';
+      if (dasha) (ai.dasha || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-d${i}`, ...filled(item, { dasha }) }));
+      if (signName) (ai.sign || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-s${i}`, ...filled(item, { sign: signName }) }));
+      (ai.questions || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-q${i}`, ...filled(item, {}) }));
+      for (let i = fresh.length - 1; i >= 0; i -= 1) if (!usable(fresh[i]) || !fresh[i].ask) fresh.splice(i, 1);
+      fresh.forEach(item => { item.page = 'chat'; });
+    }
     // Festive tithis first; then the order rotates by date between sky-based and life questions.
     const shift = dayNumberOf(new Date(`${iso}T12:00:00`));
     const rotated = questions.length ? questions.map((_, i) => questions[(i + shift * 7) % questions.length]) : [];
-    return shift % 2 ? [...special, ...sky, ...rotated] : [...special, ...rotated, ...sky];
+    // Fresh AI lines come first (a different one each day: personal ones on alternate days), then the built-in library.
+    const freshOrdered = fresh.length ? fresh.map((_, i) => fresh[(i + shift) % fresh.length]) : [];
+    const library = shift % 2 ? [...sky, ...rotated] : [...rotated, ...sky];
+    return [...special, ...freshOrdered, ...library];
   }
   function loadNudgeHistory() {
     try { const saved = JSON.parse(window.localStorage.getItem(NUDGE_HISTORY_KEY)); return saved && typeof saved === 'object' ? saved : {}; } catch (_error) { return {}; }

@@ -64,6 +64,7 @@ function boot(setup = {}) {
     const reply = body => ({ ok: true, json: async () => body });
     if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null });
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
+    if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -552,6 +553,39 @@ test('evening notifications are unique: a week has no repeats, reopening keeps t
   boot({ storage, capacitor });
   await settle(); await settle(); await settle();
   assert.equal(JSON.stringify(runs.at(-1).map(item => item.title)), JSON.stringify(first.map(item => item.title)));
+});
+
+test('AI-written copy: evenings use the day\'s fresh lines (with the user\'s dasha filled in) and muhurta alerts use the AI wording', async () => {
+  const runs = [];
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {}, addListener: () => {},
+    schedule: async ({ notifications }) => { runs.push(notifications); },
+  };
+  const iso = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const batches = {};
+  for (let offset = 0; offset < 8; offset += 1) {
+    batches[iso(offset)] = {
+      questions: [{ t: `🆕 Fresh question ${offset}`, b: 'Tap to find out 👀', ask: `Fresh ask ${offset}?` }],
+      dasha: [{ t: '👀 {dasha} has news', b: 'Tap 🤫', ask: 'What does my {dasha} period bring?' }],
+      sign: [], good: [{ t: '⏰ AI golden hour', b: 'Until {end}' }], bad: [{ t: '🚦 AI red signal', b: 'Wait till {end}' }],
+    };
+  }
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, time: '07:00' }));
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const details = { dasha: { current_mahadasha: 'Rahu', antardasha: [{ lord: 'Sun', current: true }] } };
+  const app = boot({ storage, birth: { ...syntheticBirth, details }, nudges: { status: 'ok', batches },
+    capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  await settle(); await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/nudges' && r.body.language === 'en' && r.body.days === 7));
+  const evening = runs.at(-1).filter(item => item.id >= 7120 && item.id < 7127);
+  assert.ok(evening.length >= 6);
+  assert.ok(evening.every(item => /^(🆕 Fresh question|👀 Rahu – Sun has news)/.test(item.title)), evening.map(item => item.title).join(' | '));
+  assert.ok(evening.some(item => item.extra.ask === 'What does my Rahu – Sun period bring?'));
+  assert.ok(evening.every(item => !/[{}]/.test(item.title + item.body + item.extra.ask)));
+  const muhurta = runs.at(-1).filter(item => item.id >= 7130);
+  assert.ok(muhurta.every(item => /^(⏰ AI golden hour|🚦 AI red signal)/.test(item.title)));
 });
 
 function fakeAdMob() {

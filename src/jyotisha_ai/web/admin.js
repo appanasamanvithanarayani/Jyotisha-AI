@@ -98,13 +98,40 @@
     view.appendChild(foot);
   }
 
+  function aiDaily(view, push) {
+    const field = (label, input) => { const box = el('label'); box.style.display = 'block'; box.style.margin = '10px 0'; box.append(el('b', null, label), input); return box; };
+    // What the AI wrote today for the automatic daily notifications.
+    const daily = el('div', 'panel'); daily.appendChild(el('h2', null, 'Today’s AI-written daily notifications'));
+    daily.appendChild(el('p', 'hint', 'Every user’s phone gets fresh evening questions and muhurta alerts from this, filled in with their own dasha and sign. Switch it off in AI chat → “AI-written daily notifications”.'));
+    const lang = el('select'); (push.languages || []).forEach(([code, name]) => lang.appendChild(new Option(name, code))); lang.value = 'te';
+    const show = el('button', 'btn', 'Show'); show.type = 'button'; show.style.marginTop = '8px';
+    const out = el('div');
+    show.addEventListener('click', async () => {
+      show.disabled = true; out.textContent = 'Loading… (writing it now can take up to a minute)';
+      try {
+        const result = await api('/api/admin/nudges', { language: lang.value });
+        out.textContent = '';
+        if (!result.batch) { out.appendChild(el('p', 'off-text', result.enabled ? 'Not written yet (the AI was busy or its text failed the checks). It will be tried again later.' : 'Off, or no AI provider is set up.')); }
+        else {
+          const names = { questions: 'Evening questions', dasha: 'About their dasha', sign: 'About their Moon sign', good: 'Auspicious muhurta', bad: 'Rahu Kalam' };
+          Object.entries(names).forEach(([key, label]) => {
+            out.appendChild(el('h3', null, `${label} (${(result.batch[key] || []).length})`));
+            (result.batch[key] || []).forEach(item => { const row = el('p'); row.append(el('b', null, item.t), el('br'), el('span', 'hint', item.b)); out.appendChild(row); });
+          });
+        }
+      } catch (error) { out.textContent = error.message; }
+      show.disabled = false;
+    });
+    daily.append(field('Language', lang), show, out); view.appendChild(daily);
+  }
+
   // Send a notification to every installed Android app (or one language) through Firebase.
   function notifications(view) {
     const push = state.push || {};
     const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Send a notification'));
     if (!push.ready) {
       panel.appendChild(el('p', 'off-text', 'Not set up: the Firebase server key (firebase-key.json) was not found on the server. See the deploy notes.'));
-      view.appendChild(panel); return;
+      view.appendChild(panel); aiDaily(view, push); return;
     }
     panel.appendChild(el('p', 'hint', `Firebase project: ${push.project}. Reaches every installed app (version 1.0.11 or newer) within seconds. At most 10 messages an hour.`));
     const field = (label, input, hint) => { const box = el('label'); box.style.display = 'block'; box.style.margin = '10px 0';
@@ -157,6 +184,7 @@
       send.disabled = false;
     });
     panel.appendChild(send); view.appendChild(panel);
+    aiDaily(view, push);
     const tips = el('div', 'panel'); tips.appendChild(el('h2', null, 'Tips'));
     ['Keep it short and useful: a festival, a muhurat, a new feature.', 'One or two messages a week is plenty; too many makes people turn notifications off.',
       'Write in the language of the audience you choose.', 'Each message is recorded in the Change log.'].forEach(text => tips.appendChild(el('p', 'hint', `• ${text}`)));

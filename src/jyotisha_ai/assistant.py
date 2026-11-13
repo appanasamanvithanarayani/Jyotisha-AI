@@ -156,3 +156,41 @@ def ask_status(payload: object) -> dict:
     else:
         text = "".join(block.get("text", "") for block in reply.get("content", []) if block.get("type") == "text").strip()
     return {"answer": text} if text else {"status": "unavailable"}
+
+
+def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool = False, timeout: float = 60.0) -> str | None:
+    """One-shot text generation with the configured provider (used for daily notification copy); None if unavailable."""
+    selected = provider()
+    if selected is None:
+        return None
+    if selected == "gemini":
+        model = _setting("JYOTISHA_GEMINI_MODEL") or DEFAULT_GEMINI_MODEL
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+            return None
+        config: dict = {"maxOutputTokens": max_tokens, "temperature": 1.0}
+        if json_output:
+            config["responseMimeType"] = "application/json"
+        body = {"system_instruction": {"parts": [{"text": system}]}, "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": config}
+        request = urllib.request.Request(f"{GEMINI_URL}{model}:generateContent", data=json.dumps(body).encode("utf-8"), method="POST",
+                                         headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")})
+    else:
+        body = {"model": _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL, "max_tokens": max_tokens, "system": system,
+                "messages": [{"role": "user", "content": prompt}]}
+        request = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST",
+                                         headers={"content-type": "application/json", "x-api-key": _api_key(), "anthropic-version": "2023-06-01"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            reply = json.loads(response.read())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError):
+        return None
+    if not isinstance(reply, dict):
+        return None
+    if selected == "gemini":
+        candidates = reply.get("candidates") or []
+        content = candidates[0].get("content") if candidates and isinstance(candidates[0], dict) else None
+        parts = content.get("parts", []) if isinstance(content, dict) else []
+        text = "".join(part.get("text", "") for part in parts if isinstance(part, dict))
+    else:
+        text = "".join(block.get("text", "") for block in reply.get("content", []) if isinstance(block, dict) and block.get("type") == "text")
+    return text.strip() or None

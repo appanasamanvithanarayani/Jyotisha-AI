@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, push, settings_store as store
+from jyotisha_ai import admin, assistant, daily_nudges, push, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -558,6 +558,27 @@ def nearby_place_status(payload: object, root: Path | None = None) -> dict:
             "No approved catalog city within 25 km; enter a city manually."}
 
 
+def nudges_status(payload: object) -> dict:
+    """AI-written notification copy for the coming days in one language (shared by everyone; no personal data)."""
+    if not isinstance(payload, dict):
+        raise ValueError("JSON object required")
+    language, start, days = payload.get("language"), payload.get("from"), payload.get("days", 7)
+    if language not in assistant.LANGUAGES:
+        raise ValueError("unsupported language")
+    if not isinstance(start, str) or not isinstance(days, int) or not 1 <= days <= 8:
+        raise ValueError("from (YYYY-MM-DD) and days (1-8) required")
+    try:
+        first = date.fromisoformat(start)
+    except ValueError as exc:
+        raise ValueError("invalid from date") from exc
+    today = datetime.now(timezone.utc).date()
+    if not today - timedelta(days=2) <= first <= today + timedelta(days=2):
+        raise ValueError("from must be within two days of today")
+    if not daily_nudges.enabled():
+        return {"status": "off", "batches": {}}
+    return {"status": "ok", "batches": daily_nudges.batches(first, days, language)}
+
+
 def experimental_chart(payload: object) -> dict:
     """Invoke the existing calculator only after explicit acknowledgement.
 
@@ -778,6 +799,17 @@ class LocalHandler(BaseHTTPRequestHandler):
             sample = {"question": "Reply with the single word OK.", "language": "en", "facts": ["Test: connection check"], "history": []}
             result = assistant.ask_status(sample)
             self._json(200, {"provider": assistant.provider(), "ok": "answer" in result, "status": result.get("status", "ok")})
+        elif path == "/api/admin/nudges":
+            # Today's AI-written notification copy for one language (writes it now if it does not exist yet).
+            language = payload.get("language")
+            if language not in assistant.LANGUAGES:
+                self._json(400, {"error": "unknown language"})
+                return
+            today = datetime.now(timezone.utc).date()
+            batch = daily_nudges.cached(today, language)
+            if batch is None and daily_nudges.enabled() and limiter.allow(f"admin-nudges:{who}", 10, 3600.0):
+                batch = daily_nudges.generate(today, language)
+            self._json(200, {"enabled": daily_nudges.enabled(), "date": today.isoformat(), "batch": batch})
         elif path == "/api/admin/push":
             # A notification to every installed app (or one language), through Firebase.
             if not limiter.allow(f"admin-push:{who}", 10, 3600.0):
@@ -930,7 +962,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -972,12 +1004,14 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = nearby_place_status(payload, self.server.project_root)
             elif path == "/api/ask":
                 result = assistant.ask_status(payload)
+            elif path == "/api/nudges":
+                result = nudges_status(payload)
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
             self._json(400, {"error": str(exc)})
             return
-        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
+        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
 
 
 def serve_public(port: int | None = None) -> None:
