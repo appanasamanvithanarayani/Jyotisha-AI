@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, push, settings_store as store
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, push, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -579,6 +579,27 @@ def nudges_status(payload: object) -> dict:
     return {"status": "ok", "batches": daily_nudges.batches(first, days, language)}
 
 
+def rashiphal_status(payload: object) -> dict:
+    """The AI-written daily Rashiphal paragraphs for one date and language (shared by everyone; no personal data)."""
+    if not isinstance(payload, dict):
+        raise ValueError("JSON object required")
+    language, day = payload.get("language"), payload.get("date")
+    if language not in assistant.LANGUAGES:
+        raise ValueError("unsupported language")
+    try:
+        chosen = date.fromisoformat(day) if isinstance(day, str) else None
+    except ValueError:
+        chosen = None
+    today = datetime.now(timezone.utc).date()
+    if chosen is None or not today - timedelta(days=2) <= chosen <= today + timedelta(days=2):
+        raise ValueError("date must be within two days of today")
+    lucky = daily_rashiphal.lucky(chosen)   # calculated, so it is there even without the AI
+    if not daily_rashiphal.enabled():
+        return {"status": "off", "readings": None, "lucky": lucky}
+    found = daily_rashiphal.readings(chosen, language)
+    return {"status": "ok" if found else "unavailable", "readings": found, "lucky": lucky}
+
+
 def experimental_chart(payload: object) -> dict:
     """Invoke the existing calculator only after explicit acknowledgement.
 
@@ -968,7 +989,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1012,12 +1033,14 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = assistant.ask_status(payload)
             elif path == "/api/nudges":
                 result = nudges_status(payload)
+            elif path == "/api/rashiphal":
+                result = rashiphal_status(payload)
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
             self._json(400, {"error": str(exc)})
             return
-        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
+        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
 
 
 def serve_public(port: int | None = None) -> None:

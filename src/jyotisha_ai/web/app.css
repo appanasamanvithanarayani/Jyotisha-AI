@@ -760,3 +760,30 @@ main,.app-page,.card{min-width:0}
 :root[data-mode="dark"] .day-card{background:var(--surface);border-color:var(--line);box-shadow:none}
 :root[data-mode="dark"] .day-card .lunar{color:#f0b46a}
 :root[data-mode="dark"] .day-card.panchang h3{color:#f0b46a}:root[data-mode="dark"] .day-card.events h3{color:#c9a8f5}
+
+/* ---------- Rashiphal: sign picker, today's paragraph, lucky factors ---------- */
+.rashi-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.rashi-tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px 8px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 3px 10px rgba(120,80,40,.06);min-width:0}
+.rashi-tile .rashi-icon{font-size:1.7rem;line-height:1.1}
+.rashi-tile b{font-size:.8rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.rashi-tile small{font-size:.66rem;color:var(--muted)}
+.rashi-tile.on{border:2px solid var(--accent-b);background:linear-gradient(180deg,var(--accent-soft),var(--surface));box-shadow:0 6px 16px color-mix(in srgb,var(--accent-b) 25%,transparent)}
+.rashi-find-row{text-align:end;margin:4px 0 8px}
+.link-btn{border:0;background:none;color:var(--rose);font-weight:800;font-size:.9rem;padding:4px 0;cursor:pointer}
+.rashi-reading:empty{display:none}
+.rashi-reading{margin:6px 0 12px;padding:16px;border-radius:20px;background:linear-gradient(165deg,#fffaf2,#fff1e2);border:1px solid #f3dcbc}
+.rashi-reading-title{font-size:1.1rem;margin:0 0 8px;color:var(--heading)}
+.rashi-text{margin:0;font-size:1rem;line-height:1.75}
+.rashi-text.clamp{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.rashi-hint{margin:0;color:var(--muted);text-align:center}
+.rashi-lucky{margin:12px 0 4px}
+.rashi-lucky h4{margin:0 0 8px;font-size:.92rem}
+.lucky-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lucky-chip{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:14px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.lucky-chip small{font-size:.7rem;color:var(--muted)}.lucky-chip b{font-size:.9rem;line-height:1.3;overflow-wrap:break-word}
+.rashi-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.rashi-actions .wa-btn{margin:0}
+.rashi-ask{min-height:46px;border-radius:14px;border:0;font-weight:800;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:var(--accent-text)}
+.rashi-details-head{margin:16px 0 0;font-size:.9rem;color:var(--muted)}
+:root[data-mode="dark"] .rashi-reading{background:linear-gradient(165deg,#2c2620,#2a221d);border-color:#4a3c2c}
+:root[data-mode="dark"] .rashi-tile{background:var(--surface);border-color:var(--line)}
