@@ -181,7 +181,7 @@
     const askField = el('input'); askField.maxLength = 300; askField.placeholder = 'e.g. Will the things I am planning work out?';
     panel.append(field('Message ideas', ideas, 'Fills the form with a tested message and sends it only to that language; edit before sending if you like.'),
       field('Title', title), field('Message', body), count, field('Send to', audience), field('Opens this screen when tapped', page),
-      field('Question Jyotisha AI answers when tapped (optional)', askField, 'If filled, tapping opens the AI chat, asks this in the user’s chart and shows the reply. Write it in the audience’s language.'));
+      field('Question Jyotirmaya AstroChat answers when tapped (optional)', askField, 'If filled, tapping opens the AI chat, asks this in the user’s chart and shows the reply. Write it in the audience’s language.'));
     const send = el('button', 'btn primary', 'Send now'); send.type = 'button'; send.style.marginTop = '12px';
     send.addEventListener('click', async () => {
       if (!title.value.trim() || !body.value.trim()) { toast('Write a title and a message', true); return; }

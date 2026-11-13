@@ -146,10 +146,10 @@
       look: { title: 'Appearance', mode: 'Mode', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
         saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
       notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
-        time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
+        time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotirmaya in your phone’s Settings, then try again.',
         muhurta: 'Good and bad muhurta alerts',
         evening: 'Evening question for you', eveningTime: 'Evening time',
-        rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.', },
+        rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotirmaya to see this week’s Panchang.', },
       lunar: { year: '{s} samvatsara', month: '{m} masa', adhika: 'Adhika {m}' },
       cards: { good: 'Good times', panchang: 'Panchang', events: 'Auspicious muhurtas', bad: 'Inauspicious times', none: 'No auspicious muhurtas today',
         again: 'and', amrita: 'Amrita kalam', durmuhurtam: 'Durmuhurtam', marriage: 'Marriage', gruhapravesam: 'Housewarming', vehicle: 'Vehicle purchase',
@@ -184,10 +184,10 @@
       look: { title: 'రూపం', mode: 'మోడ్', light: 'లైట్', dark: 'డార్క్', auto: 'ఆటో', colour: 'రంగు', done: 'సరే',
         saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
       notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
-        time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
+        time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotirmayaకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
         muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
         evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
-        rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.', },
+        rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotirmaya తెరవండి.', },
       lunar: { year: 'శ్రీ {s} నామ సంవత్సరం', month: '{m} మాసం', adhika: 'అధిక {m}' },
       cards: { good: 'శుభ సమయాలు', panchang: 'పంచాంగం', events: 'శుభ ముహూర్తాలు', bad: 'అశుభ సమయాలు', none: 'ఈ రోజు శుభ ముహూర్తాలు లేవు',
         again: 'మరలా', amrita: 'అమృత కాలం', durmuhurtam: 'దుర్ముహూర్తం', marriage: 'వివాహం', gruhapravesam: 'గృహప్రవేశం', vehicle: 'వాహనం కొనుగోలు',
@@ -222,10 +222,10 @@
       look: { title: 'रूप', mode: 'मोड', light: 'लाइट', dark: 'डार्क', auto: 'ऑटो', colour: 'रंग', done: 'ठीक है',
         saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
       notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
-        time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
+        time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotirmaya को अनुमति दें, फिर दोबारा कोशिश करें।',
         muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
         evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
-        rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।', },
+        rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotirmaya खोलें।', },
       lunar: { year: '{s} संवत्सर', month: '{m} मास', adhika: 'अधिक {m}' },
       cards: { good: 'शुभ समय', panchang: 'पंचांग', events: 'शुभ मुहूर्त', bad: 'अशुभ समय', none: 'आज कोई शुभ मुहूर्त नहीं',
         again: 'फिर', amrita: 'अमृत काल', durmuhurtam: 'दुर्मुहूर्त', marriage: 'विवाह', gruhapravesam: 'गृह प्रवेश', vehicle: 'वाहन ख़रीद',
@@ -805,9 +805,9 @@
     try { window.localStorage.setItem(NUDGE_HISTORY_KEY, JSON.stringify(history)); } catch (_error) { /* not remembered */ }
     return result;
   }
-  // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
+  // Tapping a notification: open its screen, and for a question, ask Jyotirmaya AstroChat straight away.
   // When a notification opens the app, its question waits until the saved Kundli is restored and the AI is known to be on,
-  // so the chat is not reset under it and the reply comes from Jyotisha AI, not the offline answers.
+  // so the chat is not reset under it and the reply comes from Jyotirmaya AstroChat, not the offline answers.
   const startup = { profile: false, readiness: false, pending: null };
   function startupDone(part) {
     startup[part] = true;
@@ -1200,7 +1200,7 @@
     askButton.addEventListener('click', askAboutDay);
     const share = el('button', 'wa-btn', `🟢 ${copy.share}`); share.type = 'button';
     share.addEventListener('click', () => {
-      const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\n— Jyotisha AI: ${window.location && window.location.origin ? window.location.origin : ''}`;
+      const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\n— Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`;
       try { window.open(`https://wa.me/?text=${encodeURIComponent(message.replace(/[\u2066-\u2069]/g, ''))}`, '_blank'); } catch (_error) { /* no browser */ }
     });
     const full = el('button', 'link-btn', `${copy.full} ›`); full.type = 'button';
@@ -1501,7 +1501,7 @@
       `⚠️ ${t('yamaganda')}: ${range(timings.yamaganda)}`,
       (day.durmuhurtam || []).length ? `⛔ ${copy.durmuhurtam}: ${day.durmuhurtam.map(range).join(', ')}` : '',
     ].filter(Boolean);
-    lines.push('', `— Jyotisha AI: ${window.location && window.location.origin ? window.location.origin : ''}`);
+    lines.push('', `— Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`);
     const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');
     try { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); } catch (_error) { /* no browser */ }
   }
@@ -2196,7 +2196,7 @@
     } catch (_error) { return false; }
   }
   async function shareText(title, text) {
-    const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\n— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`;
+    const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\n— Jyotirmaya AstroChat · ${window.location && window.location.origin ? window.location.origin : ''}`;
     const native = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
     try {
       if (native && native.share) { await native.share({ title, text: body, dialogTitle: title }); return; }
@@ -2244,7 +2244,7 @@
   function printPdf(title, makeNode, fallbackText) {
     const root = document.createElement('div'); root.id = 'print-root';
     const sheet = el('div', 'pdf-sheet');
-    sheet.append(el('h1', null, title), makeNode(), el('p', 'pdf-foot', `— Jyotisha AI · ${window.location && window.location.origin ? window.location.origin : ''}`));
+    sheet.append(el('h1', null, title), makeNode(), el('p', 'pdf-foot', `— Jyotirmaya AstroChat · ${window.location && window.location.origin ? window.location.origin : ''}`));
     root.appendChild(sheet);
     document.body.appendChild(root); document.body.classList.add('printing');
     let finished = false;

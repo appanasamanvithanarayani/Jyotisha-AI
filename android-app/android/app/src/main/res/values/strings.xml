@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Jyotisha AI</string>
-    <string name="title_activity_main">Jyotisha AI</string>
+    <string name="app_name">Jyotirmaya</string>
+    <string name="title_activity_main">Jyotirmaya</string>
     <string name="package_name">store.karthiktraders.jyotisha</string>
     <string name="custom_url_scheme">store.karthiktraders.jyotisha</string>
 </resources>

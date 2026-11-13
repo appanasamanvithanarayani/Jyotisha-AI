@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fff7e8">
-  <title>Jyotisha AI</title>
+  <title>Jyotirmaya AstroChat</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Jyotisha">
+  <meta name="apple-mobile-web-app-title" content="Jyotirmaya">
   <link rel="stylesheet" href="/app.css">
   <script>
     // Apply the saved appearance before the page is drawn (no flash). Default: light mode, saffron accent.
@@ -26,13 +26,13 @@
 </head>
 <body class="onboarding-active">
   <div class="sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-  <section id="welcome-screen" class="welcome-screen" aria-labelledby="welcome-title"><div class="welcome-orb" aria-hidden="true">✦</div><span class="eyebrow">Jyotisha AI</span><form id="welcome-form">
-    <div id="step-welcome" class="onboarding-step"><h1 id="welcome-title" data-i18n="welcome">Welcome to Jyotisha AI</h1><p data-i18n="welcomeIntro">Explore your calendar and chart, one step at a time.</p><button id="welcome-next" type="button" data-i18n="getStarted">Get started</button></div>
+  <section id="welcome-screen" class="welcome-screen" aria-labelledby="welcome-title"><div class="welcome-orb" aria-hidden="true">✦</div><span class="eyebrow">Jyotirmaya AstroChat</span><form id="welcome-form">
+    <div id="step-welcome" class="onboarding-step"><h1 id="welcome-title" data-i18n="welcome">Welcome to Jyotirmaya</h1><p data-i18n="welcomeIntro">Explore your calendar and chart, one step at a time.</p><button id="welcome-next" type="button" data-i18n="getStarted">Get started</button></div>
     <div id="step-language" class="onboarding-step" hidden><h1 data-i18n="choose">Choose your language</h1><label for="language-choice" data-i18n="choose">Choose your language</label><select id="language-choice" name="language"></select><p class="welcome-language-note" data-i18n="languageNote">Results, Panchang names and chart answers follow the language you choose.</p><button id="language-next" type="button" data-i18n="continue">Continue</button></div>
     <div id="step-location" class="onboarding-step" hidden><h1 data-i18n="locationTitle">Set your calendar city</h1><p data-i18n="locationIntro">Allow location to suggest a nearby city, or enter one yourself.</p><button id="allow-location" type="button" data-i18n="allowLocation">Allow location</button><p id="location-status" class="location-status" role="status" aria-live="polite"></p><label for="welcome-city" data-i18n="city">Your city for the calendar</label><input id="welcome-city" name="city" type="text" list="place-suggestions" maxlength="200" autocomplete="off" data-i18n-placeholder="placePlaceholder" placeholder="Start typing a city" required><button type="submit" data-i18n="continue">Continue</button></div>
   </form></section>
   <datalist id="place-suggestions"></datalist>
-  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span>Jyotisha<span class="brand-accent">AI</span></span></a><span class="top-actions"><button id="theme-btn" type="button" class="theme-btn" aria-haspopup="dialog" aria-controls="theme-panel">🎨</button><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></span></header>
+  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span>Jyotirmaya <span class="brand-accent">AstroChat</span></span></a><span class="top-actions"><button id="theme-btn" type="button" class="theme-btn" aria-haspopup="dialog" aria-controls="theme-panel">🎨</button><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></span></header>
   <div id="theme-panel" class="theme-panel" role="dialog" aria-modal="false" aria-labelledby="theme-title" hidden></div>
   <main id="top">
   <section id="day-panchang" aria-labelledby="dp-title">

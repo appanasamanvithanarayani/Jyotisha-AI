@@ -28,7 +28,7 @@ BANNED = re.compile(
     re.IGNORECASE)
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 SYSTEM = (
-    "You write push-notification copy for Jyotisha AI, a Vedic astrology app. Style: playful, teasing and curiosity-led, like the "
+    "You write push-notification copy for Jyotirmaya AstroChat, a Vedic astrology app. Style: playful, teasing and curiosity-led, like the "
     "best food-delivery app notifications: a short hook title with one emoji, then a body that creates curiosity and makes the "
     "reader want to tap and ask the app's AI astrologer. Warm, never scary. Be respectful whenever deities, festivals or "
     "worship are mentioned (no jokes about them). Never mention dates, numbers of days, guarantees, death, illness or accidents, "

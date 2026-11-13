@@ -13,7 +13,7 @@
       "review": "source"
     },
     "ui": {
-      "welcome": "Welcome to Jyotisha AI",
+      "welcome": "Welcome to Jyotirmaya",
       "welcomeIntro": "Explore your calendar and chart, one step at a time.",
       "getStarted": "Get started",
       "choose": "Choose your language",

@@ -479,7 +479,7 @@ test('daily notifications: the Android app asks for permission at the start, onc
   assert.ok(evening.length >= 6 && new Set(evening.map(item => item.title)).size === evening.length);   // a different question each evening
   assert.ok(evening.every(item => item.schedule.at.getHours() === 19 && item.schedule.at.getMinutes() === 30));
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' });
-  // Tapping an evening question opens Jyotisha AI and asks it.
+  // Tapping an evening question opens Jyotirmaya AstroChat and asks it.
   const question = evening.find(item => item.extra.ask);
   app.context.__tap({ notification: { extra: question.extra } });
   await settle();
@@ -659,7 +659,7 @@ test('day cards: good times, Panchang, muhurtas and bad times, with a WhatsApp s
   app.element('share-day').onclick();
   assert.match(opened, /^https:\/\/wa\.me\/\?text=/);
   const text = decodeURIComponent(opened.split('text=')[1]);
-  assert.match(text, /పరాభవ/); assert.match(text, /అమృత కాలం/); assert.match(text, /దుర్ముహూర్తం/); assert.match(text, /Jyotisha AI/);
+  assert.match(text, /పరాభవ/); assert.match(text, /అమృత కాలం/); assert.match(text, /దుర్ముహూర్తం/); assert.match(text, /Jyotirmaya AstroChat/);
   assert.ok(!/[\u2066-\u2069]/.test(text));
 });
 
@@ -872,7 +872,7 @@ test('Export / Share sends the Rashiphalalu, the Kundli and the AI chat as plain
   assert.match(share.calls[0].title, /Rashiphal/);
   // With a Kundli, the Rashiphal tab shows (and shares) your own sign only: Taurus for this synthetic chart.
   assert.match(share.calls[0].text, /Taurus/); assert.ok(!/Aries/.test(share.calls[0].text)); assert.match(share.calls[0].text, /Moon is the .* from this sign/);
-  assert.match(share.calls[0].text, /— Jyotisha AI/);                         // a short sign-off, so a forwarded message says where it came from
+  assert.match(share.calls[0].text, /— Jyotirmaya AstroChat/);                         // a short sign-off, so a forwarded message says where it came from
 
   app.element('export-kundli').listeners.click(); await settle();
   assert.equal(share.calls.length, 2);
@@ -908,7 +908,7 @@ test('with no share sheet available, Export / Share copies the text and says so,
   const app = boot({ storage, navigator: { clipboard: { writeText: async text => { copied.push(text); } } } });
   await settle();
   app.element('export-rashi').listeners.click(); await settle();
-  assert.equal(copied.length, 1); assert.match(copied[0], /Aries/); assert.match(copied[0], /— Jyotisha AI/);
+  assert.equal(copied.length, 1); assert.match(copied[0], /Aries/); assert.match(copied[0], /— Jyotirmaya AstroChat/);
   const toast = app.context.document.body.children.at(-1);
   assert.equal(toast.textContent, calendar.tr('en', 'exportCopied'));
 
@@ -936,7 +936,7 @@ test('the PDF button shows only the text to print and opens the print dialog (na
   assert.match(sheet.children[0].textContent, /Rashiphal/);                   // heading
   const printedPage = JSON.stringify(sheet.children[1], (key, value) => (key === 'listeners' ? undefined : value));
   assert.match(printedPage, /Aries/);                                              // the page to print is a copy of the real Rashiphalalu cards
-  assert.match(sheet.children[2].textContent, /Jyotisha AI/);
+  assert.match(sheet.children[2].textContent, /Jyotirmaya AstroChat/);
 
   const shared = [];
   const older = boot({ storage, capacitor: { isNativePlatform: () => true, Plugins: { Share: { share: async o => { shared.push(o); } } } } });
