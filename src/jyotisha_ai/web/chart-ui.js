@@ -903,7 +903,10 @@
         remedies: remedyLines([...rows.filter(item => !item.good).map(item => item.name), ...(moonRow.good ? [] : ['Moon'])], language),
         rashi, tone, favourable, count: fillText(text.count, { n: favourable }), verdict: text.verdict[tone === 'good' ? 0 : tone === 'caution' ? 2 : 1], name: signName(rashi, language),
         moonLine: `${bodyName('Moon', language)} — ${fillText(rd.h, { n: moonRow.house, o: ordinal(moonRow.house) })} ${moonRow.good ? '✔' : '✖'}`,
-        rows: rows.map(item => ({ ...item, text: fillText(text.line, { body: bodyName(item.name, language), h: fillText(rd.h, { n: item.house, o: ordinal(item.house) }), mark: item.good ? '✔' : '✖', phrase: text[item.name][item.good ? 0 : 1] }) }))
+        rows: rows.map(item => {
+          const body = bodyName(item.name, language), houseText = fillText(rd.h, { n: item.house, o: ordinal(item.house) }), phrase = text[item.name][item.good ? 0 : 1];
+          return { ...item, body, houseText, phrase, text: fillText(text.line, { body, h: houseText, mark: item.good ? '✔' : '✖', phrase }) };
+        })
       };
     });
   }

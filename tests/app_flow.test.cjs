@@ -663,6 +663,12 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   assert.ok(!card.open);                                                         // folded at first
   jumps[1].listeners.click();                                                     // remedies: opens the details card
   assert.equal(card.open, true);
+  const transits = card.children.find(item => item.className === 'transit-grid').children;   // planet cards, favourable first
+  assert.equal(transits.length, 8);
+  assert.equal(transits[0].className, 'transit-card ok');
+  const first = transits[0].children[0].children;                                 // symbol, name and house, tag
+  assert.match(first[0].textContent, /[☉♂☿♃♀♄☊☋]/); assert.match(first[2].textContent, /అనుకూలం/);
+  assert.match(transits[transits.length - 1].children[0].children[2].textContent, /జాగ్రత్త/);
   const luckyBox = reading.find(item => item.className === 'rashi-lucky');
   assert.match(luckyBox.children[1].textContent, /రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి/);
   const chips = luckyBox.children[2].children.map(chip => chip.children[1].textContent);
