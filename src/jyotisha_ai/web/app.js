@@ -149,7 +149,9 @@
         time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
         muhurta: 'Good and bad muhurta alerts',
         evening: 'Evening question for you', eveningTime: 'Evening time',
-        rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
+        rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.',
+        test: 'Send a test notification', testTitle: '🔔 Jyotisha AI', testBody: 'Notifications are working on this phone.', testSent: 'Test sent — it should appear in a few seconds.',
+        next: 'Next: {when} — {title}', count: '{n} notifications scheduled', none: 'Nothing is scheduled yet. Keep the internet on and open the app once.', failed: 'Could not schedule notifications: {why}' },
       lunar: { year: '{s} samvatsara', month: '{m} masa', adhika: 'Adhika {m}' },
       cards: { good: 'Good times', panchang: 'Panchang', events: 'Auspicious muhurtas', bad: 'Inauspicious times', none: 'No auspicious muhurtas today',
         again: 'and', amrita: 'Amrita kalam', durmuhurtam: 'Durmuhurtam', marriage: 'Marriage', gruhapravesam: 'Housewarming', vehicle: 'Vehicle purchase',
@@ -187,7 +189,9 @@
         time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
         muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
         evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
-        rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
+        rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.',
+        test: 'టెస్ట్ నోటిఫికేషన్ పంపండి', testTitle: '🔔 Jyotisha AI', testBody: 'ఈ ఫోన్‌లో నోటిఫికేషన్లు పని చేస్తున్నాయి.', testSent: 'టెస్ట్ పంపాము — కొన్ని సెకన్లలో వస్తుంది.',
+        next: 'తదుపరి: {when} — {title}', count: '{n} నోటిఫికేషన్లు సిద్ధంగా ఉన్నాయి', none: 'ఇంకా ఏదీ సెట్ కాలేదు. ఇంటర్నెట్ ఆన్ చేసి యాప్‌ని ఒకసారి తెరవండి.', failed: 'నోటిఫికేషన్లు సెట్ కాలేదు: {why}' },
       lunar: { year: 'శ్రీ {s} నామ సంవత్సరం', month: '{m} మాసం', adhika: 'అధిక {m}' },
       cards: { good: 'శుభ సమయాలు', panchang: 'పంచాంగం', events: 'శుభ ముహూర్తాలు', bad: 'అశుభ సమయాలు', none: 'ఈ రోజు శుభ ముహూర్తాలు లేవు',
         again: 'మరలా', amrita: 'అమృత కాలం', durmuhurtam: 'దుర్ముహూర్తం', marriage: 'వివాహం', gruhapravesam: 'గృహప్రవేశం', vehicle: 'వాహనం కొనుగోలు',
@@ -225,7 +229,9 @@
         time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
         muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
         evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
-        rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
+        rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।',
+        test: 'टेस्ट सूचना भेजें', testTitle: '🔔 Jyotisha AI', testBody: 'इस फ़ोन पर सूचनाएँ काम कर रही हैं।', testSent: 'टेस्ट भेजा — कुछ सेकंड में दिखेगा।',
+        next: 'अगली: {when} — {title}', count: '{n} सूचनाएँ तय हैं', none: 'अभी कुछ तय नहीं है। इंटरनेट चालू रखकर ऐप एक बार खोलें।', failed: 'सूचनाएँ तय नहीं हो सकीं: {why}' },
       lunar: { year: '{s} संवत्सर', month: '{m} मास', adhika: 'अधिक {m}' },
       cards: { good: 'शुभ समय', panchang: 'पंचांग', events: 'शुभ मुहूर्त', bad: 'अशुभ समय', none: 'आज कोई शुभ मुहूर्त नहीं',
         again: 'फिर', amrita: 'अमृत काल', durmuhurtam: 'दुर्मुहूर्त', marriage: 'विवाह', gruhapravesam: 'गृह प्रवेश', vehicle: 'वाहन ख़रीद',
@@ -603,7 +609,8 @@
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
-  let notifyBusy = false, notifyNote = '';
+  let notifyBusy = false, notifyNote = '', notifyInfo = null;   // notifyInfo: what is waiting on the phone, for the settings
+  const TEST_NOTIFY_ID = 7149;
   async function scheduleNotifications() {
     const plugin = notifier();
     if (!plugin || notifyBusy || !state.city) return;
@@ -612,7 +619,9 @@
       const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
       const ours = (pending.notifications || []).filter(item => item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50).map(item => ({ id: item.id }));
       if (ours.length) await plugin.cancel({ notifications: ours });
-      if (!notify.on) return;
+      if (!notify.on) { notifyInfo = null; return; }
+      const permission = await plugin.checkPermissions().catch(() => ({ display: 'granted' }));
+      if (permission.display !== 'granted') { notifyInfo = { blocked: true }; return; }
       const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
       const festivals = (state.festivals && state.festivals.events) || [];
       const list = [], days = {};
@@ -630,8 +639,10 @@
         try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
         if (!day) continue;
         days[iso] = day;
-        list.push(...muhurtaAlerts(day, iso, offset, now));
+        // Each part on its own: one bad day or message must never stop the rest from being scheduled.
+        try { list.push(...muhurtaAlerts(day, iso, offset, now)); } catch (error) { console.warn('muhurta alerts', iso, error); }
         if (at <= now) continue;
+        try {
         const atText = `${iso}T${notify.time}`;
         const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
         const festival = festivals.find(event => event.date === iso);
@@ -643,13 +654,39 @@
         if (personal) lines.push(`✨ ${personal}`);
         const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');   // no direction marks: some phones draw them as boxes
         list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
+        } catch (error) { console.warn('morning notification', iso, error); }
       }
       // After the scheduled week, one reminder to open the app (which schedules the next week).
       const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
-      list.push(...eveningNotifications(now, days));
+      try { list.push(...eveningNotifications(now, days)); } catch (error) { console.warn('evening notifications', error); }
       await plugin.schedule({ notifications: list });
-    } catch (_error) { /* notifications are optional */ } finally { notifyBusy = false; }
+      notifyInfo = await pendingSummary(plugin);
+    } catch (error) {
+      notifyInfo = { error: String((error && error.message) || error || 'unknown').slice(0, 120) };
+    } finally { notifyBusy = false; refreshNotifySettings(); }
+  }
+  // The earliest notification waiting on the phone and how many there are.
+  async function pendingSummary(plugin) {
+    const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
+    const ours = (pending.notifications || []).filter(item => item.id >= NOTIFY_FIRST_ID && item.id < TEST_NOTIFY_ID);
+    const when = item => { const at = item.schedule && item.schedule.at; const date = at ? new Date(at) : null; return date && !Number.isNaN(date.getTime()) ? date : null; };
+    const timed = ours.map(item => ({ item, at: when(item) })).filter(entry => entry.at).sort((a, b) => a.at - b.at);
+    return { count: ours.length, next: timed.length ? { at: timed[0].at, title: timed[0].item.title || '' } : null };
+  }
+  function refreshNotifySettings() {
+    try { const panel = $('theme-panel'); if (panel && !panel.hidden) renderLookPanel(); } catch (_error) { /* not open */ }
+  }
+  async function sendTestNotification() {
+    const plugin = notifier(), copy = toolText().notify;
+    if (!plugin) return;
+    try {
+      await plugin.schedule({ notifications: [{ id: TEST_NOTIFY_ID, title: copy.testTitle, body: copy.testBody, schedule: { at: new Date(Date.now() + 4000), allowWhileIdle: true }, extra: { page: 'home' } }] });
+      notifyNote = copy.testSent;
+    } catch (error) {
+      notifyNote = fill(copy.failed, { why: String((error && error.message) || error).slice(0, 120) });
+    }
+    refreshNotifySettings();
   }
   async function turnNotifications(on) {
     const plugin = notifier(), copy = toolText().notify;
@@ -699,6 +736,22 @@
     const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
     muhurta.appendChild(muhurtaLabel);
     if (notify.on) wrap.append(evening, muhurta);
+    if (notify.on && notifyInfo) {
+      let line = '';
+      if (notifyInfo.blocked) line = copy.denied;
+      else if (notifyInfo.error) line = fill(copy.failed, { why: notifyInfo.error });
+      else if (!notifyInfo.count) line = copy.none;
+      else {
+        const when = notifyInfo.next ? new Intl.DateTimeFormat(calendarUI.LOCALES[state.lang], { weekday: 'short', hour: 'numeric', minute: '2-digit', numberingSystem: 'latn' }).format(notifyInfo.next.at) : '';
+        line = `${fill(copy.count, { n: notifyInfo.count })}${notifyInfo.next ? ` · ${fill(copy.next, { when, title: notifyInfo.next.title })}` : ''}`;
+      }
+      wrap.appendChild(el('p', 'notify-next', line));
+    }
+    if (notify.on) {
+      const test = el('button', 'notify-later notify-test', `🔔 ${copy.test}`); test.type = 'button';
+      test.addEventListener('click', () => { void sendTestNotification(); });
+      wrap.appendChild(test);
+    }
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;
   }

@@ -456,7 +456,7 @@ test('appearance: light by default; dark mode and an accent colour can be chosen
 test('daily notifications: the Android app asks once, then schedules a week of morning notifications', async () => {
   const calls = { schedule: [], requested: 0, cancelled: [] };
   const LocalNotifications = {
-    checkPermissions: async () => ({ display: 'prompt' }),
+    checkPermissions: async () => ({ display: calls.requested ? 'granted' : 'prompt' }),     // like a phone: granted once allowed
     requestPermissions: async () => { calls.requested += 1; return { display: 'granted' }; },
     getPending: async () => ({ notifications: [{ id: 7101 }] }),
     cancel: async ({ notifications }) => { calls.cancelled.push(...notifications.map(item => item.id)); },
@@ -517,6 +517,35 @@ test('admin-panel messages: the app subscribes to "all" and its language, and a 
   app.element('language-switch').listeners.change({ target: app.element('language-switch') });
   await settle();
   assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
+});
+
+test('notifications: a broken message never stops the rest, and settings show what is scheduled plus a test button', async () => {
+  const runs = [], pending = [];
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: pending.slice() }), cancel: async () => { pending.length = 0; }, addListener: () => {},
+    schedule: async ({ notifications }) => { runs.push(notifications); pending.push(...notifications); },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, time: '07:00' }));
+  const days = [0, 1, 2, 3, 4, 5, 6].map(n => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+  // A malformed AI batch: its muhurta lines are broken, which used to throw and drop the whole schedule.
+  const batches = Object.fromEntries(days.map(iso => [iso, { questions: [], dasha: [], sign: [], good: [null], bad: [null] }]));
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, nudges: { status: 'ok', batches } });
+  await settle(); await settle(); await settle();
+  const scheduled = runs.at(-1);
+  assert.ok(scheduled.filter(item => item.id >= 7101 && item.id < 7107).length >= 5);      // the mornings are still there
+  assert.ok(scheduled.some(item => item.id >= 7120 && item.id < 7127));                     // and the evenings
+  app.element('theme-panel').hidden = true;
+  app.element('theme-btn').listeners.click();
+  const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
+  const status = settings.children.find(item => item.className === 'notify-next');
+  assert.match(status.textContent, /notifications scheduled · Next: /);
+  const test = settings.children.find(item => /notify-test/.test(item.className));
+  test.listeners.click();
+  await settle();
+  assert.equal(runs.at(-1)[0].id, 7149);
+  assert.match(runs.at(-1)[0].body, /working on this phone/);
 });
 
 test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
