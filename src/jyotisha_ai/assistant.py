@@ -158,13 +158,19 @@ def ask_status(payload: object) -> dict:
     return {"answer": text} if text else {"status": "unavailable"}
 
 
-def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool = False, timeout: float = 60.0) -> str | None:
-    """One-shot text generation with the configured provider (used for daily notification copy); None if unavailable."""
+def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool = False, timeout: float = 60.0,
+             model: str | None = None) -> str | None:
+    """One-shot text generation with the configured provider (used for daily notification copy); None if unavailable.
+
+    ``model`` overrides the chat model for this call (for example a cheaper model for notifications).
+    """
+    if model is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+        return None
     selected = provider()
     if selected is None:
         return None
     if selected == "gemini":
-        model = _setting("JYOTISHA_GEMINI_MODEL") or DEFAULT_GEMINI_MODEL
+        model = model or _setting("JYOTISHA_GEMINI_MODEL") or DEFAULT_GEMINI_MODEL
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
             return None
         config: dict = {"maxOutputTokens": max_tokens, "temperature": 1.0}
@@ -175,7 +181,7 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
         request = urllib.request.Request(f"{GEMINI_URL}{model}:generateContent", data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")})
     else:
-        body = {"model": _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL, "max_tokens": max_tokens, "system": system,
+        body = {"model": model or _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL, "max_tokens": max_tokens, "system": system,
                 "messages": [{"role": "user", "content": prompt}]}
         request = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-api-key": _api_key(), "anthropic-version": "2023-06-01"})

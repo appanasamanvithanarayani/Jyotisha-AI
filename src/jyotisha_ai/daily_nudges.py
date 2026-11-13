@@ -14,8 +14,9 @@ from datetime import date, datetime, timedelta, timezone
 
 from jyotisha_ai import assistant, settings_store as store
 
-COUNTS = {"questions": 10, "dasha": 2, "sign": 2, "good": 3, "bad": 3}   # what we ask for
-MINIMUM = {"questions": 5, "good": 2, "bad": 2}                            # below this the batch is not used
+# What we ask for each day: about what one user sees (one evening question, two muhurta alerts), with a little choice.
+COUNTS = {"questions": 3, "dasha": 1, "sign": 1, "good": 1, "bad": 1}
+MINIMUM = {"questions": 2, "good": 1, "bad": 1}   # below this the batch is not used
 MAX_TITLE, MAX_BODY, MAX_ASK = 70, 170, 220
 DAILY_GENERATION_CAP = 60
 RETRY_AFTER_FAILURE = 3600.0
@@ -39,15 +40,15 @@ PROMPT = (
     "Write today's notifications. Today is {weekday}, {month}. Make every line new and different from these recent titles: "
     "{recent}.\n"
     "Return a JSON object with exactly these keys:\n"
-    '- "questions": {questions} items about everyday life (money, career, love and marriage, family, mood, health habits, '
+    '- "questions": {questions} items, each on a different topic of everyday life (money, career, love and marriage, family, mood, health habits, '
     "studies, travel, property, business, luck, decisions, spirituality) — each {{\"t\": title, \"b\": body, \"ask\": the full "
     "question the user would ask the AI astrologer about their own chart, in first person}}.\n"
-    '- "dasha": {dasha} items about the user\'s current planetary period; title and ask MUST contain the exact text {{dasha}} '
+    '- "dasha": {dasha} item(s) about the user\'s current planetary period; title and ask MUST contain the exact text {{dasha}} '
     "where the period name goes.\n"
-    '- "sign": {sign} items about the user\'s Moon sign; title and ask MUST contain the exact text {{sign}}.\n'
-    '- "good": {good} items announcing that an auspicious muhurta (Abhijit) has just started; body MUST contain the exact text '
+    '- "sign": {sign} item(s) about the user\'s Moon sign; title and ask MUST contain the exact text {{sign}}.\n'
+    '- "good": {good} item(s) announcing that an auspicious muhurta (Abhijit) has just started; body MUST contain the exact text '
     "{{end}} where its end time goes. Urge doing important work now.\n"
-    '- "bad": {bad} items announcing that Rahu Kalam has just started; body MUST contain the exact text {{end}}. Urge pausing '
+    '- "bad": {bad} item(s) announcing that Rahu Kalam has just started; body MUST contain the exact text {{end}}. Urge pausing '
     "important work until then.\n"
     "Titles under 45 characters, bodies under 110, asks under 150. Every item in {language}."
 )
@@ -127,7 +128,7 @@ def _recent_titles(day: date, language: str) -> list[str]:
     for back in range(1, 8):
         try:
             data = json.loads(_path(day - timedelta(days=back), language).read_text(encoding="utf-8"))
-            titles += [item["t"] for item in data.get("questions", [])][:5]
+            titles += [item["t"] for item in data.get("questions", [])][:3]
         except (OSError, ValueError, KeyError, TypeError):
             continue
     return titles[:30]
@@ -155,7 +156,8 @@ def generate(day: date, language: str) -> dict | None:
         name = assistant.LANGUAGES[language]
         prompt = PROMPT.format(weekday=day.strftime("%A"), month=day.strftime("%B"), recent=json.dumps(_recent_titles(day, language), ensure_ascii=False),
                                language=name, **COUNTS)
-        batch = validate(_parse(assistant.complete(SYSTEM.format(language=name), prompt, json_output=True)))
+        model = store.value("JYOTISHA_NUDGE_MODEL").strip() or None   # empty: the same model as the chat
+        batch = validate(_parse(assistant.complete(SYSTEM.format(language=name), prompt, json_output=True, max_tokens=2048, model=model)))
         if batch is None:
             with _lock:
                 _failed[key] = time.monotonic()
