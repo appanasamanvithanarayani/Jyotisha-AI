@@ -644,7 +644,8 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   const readings = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), `Paragraph for sign ${i + 1}. `.repeat(20)]));
   const lucky = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), { planet: 'Venus', lord: 'Mercury', numbers: [6, 5], sign_planet: i === 5 ? 'Mercury' : 'Venus' }]));
   const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
-  const app = boot({ storage, rashiphal: { status: 'ok', readings, lucky } });
+  const app = boot({ storage, rashiphal: { status: 'ok', readings, lucky },
+    dayExtra: { planet_rashis: { Sun: 7, Mars: 5, Mercury: 7, Jupiter: 5, Venus: 6, Saturn: 12, Rahu: 11, Ketu: 5 } } });
   let opened = '';
   app.context.window.open = url => { opened = url; };
   await settle();
@@ -655,7 +656,13 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   assert.equal(storage.getItem('jyotisha.rashi.v1'), '6');
   const reading = app.element('rashi-reading').children;
   assert.match(reading[0].textContent, /రాశి ఫలితాలు/);
-  assert.match(reading[1].textContent, /Paragraph for sign 6/);
+  const jumps = reading[1].children;                                             // quick links at the top
+  assert.deepEqual(jumps.map(b => b.textContent), ['🪐 గ్రహ సంచారం', '🙏 పరిహారాలు', '📜 పూర్తి జాతకం', '✨ AIని అడగండి']);
+  assert.match(reading[2].textContent, /Paragraph for sign 6/);
+  const card = app.element('rashi-list').children[0];
+  assert.ok(!card.open);                                                         // folded at first
+  jumps[1].listeners.click();                                                     // remedies: opens the details card
+  assert.equal(card.open, true);
   const luckyBox = reading.find(item => item.className === 'rashi-lucky');
   assert.match(luckyBox.children[1].textContent, /రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి/);
   const chips = luckyBox.children[2].children.map(chip => chip.children[1].textContent);
@@ -671,6 +678,8 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   actions[0].listeners.click();                                                  // ask the AI about my day
   await settle();
   assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
+  app.element('rashi-reading').children[1].children[2].listeners.click();         // full Jathakam chip
+  assert.equal(app.element('top').children.find(item => item.id === 'page-kundli').hidden, false);
 });
 
 function fakeAdMob() {
