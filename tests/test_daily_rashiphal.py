@@ -11,12 +11,17 @@ from jyotisha_ai.webapp import rashiphal_status
 PARAGRAPH = "A calm and steady day. " * 12
 
 
-def test_lucky_factors_follow_the_most_favourable_planet_and_the_sign_lord():
-    lucky = daily_rashiphal.lucky(date(2026, 11, 13))
+def test_lucky_factors_follow_the_weekday_lord_and_the_sign_lord():
+    lucky = daily_rashiphal.lucky(date(2026, 11, 13))   # a Friday: Venus -> white/pink, south-east, 6 first
     assert set(lucky) == {str(n) for n in range(1, 13)}
-    # Virgo on 13 Nov 2026: Venus is favourable and Mercury rules Virgo -> white/pink, 5 and 6, south-east
-    # (the same as a published Telugu calendar app's lucky factors for Kanya that day).
-    assert lucky["6"] == {"planet": "Venus", "lord": "Mercury", "numbers": [5, 6]}
+    assert {item["planet"] for item in lucky.values()} == {"Venus"}
+    # The same as a published Telugu calendar app that day (Mithuna to Meena).
+    assert [lucky[str(s)]["numbers"] for s in range(3, 13)] == [
+        [6, 5], [6, 2, 7], [6, 1, 4], [6, 5], [6], [6, 9], [6, 3], [6, 8], [6, 8], [6, 3]]
+    # The sign's own colour and direction follow its most favourable transit: Jupiter for Mesha, Mercury for Meena.
+    assert (lucky["1"]["sign_planet"], lucky["6"]["sign_planet"], lucky["12"]["sign_planet"]) == ("Jupiter", "Venus", "Mercury")
+    sunday = daily_rashiphal.lucky(date(2026, 11, 15))
+    assert sunday["1"]["planet"] == "Sun" and sunday["1"]["numbers"] == [1, 4, 9]
     assert all(1 <= n <= 9 for item in lucky.values() for n in item["numbers"])
 
 
