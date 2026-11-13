@@ -65,6 +65,7 @@ function boot(setup = {}) {
     if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null });
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
+    if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -639,6 +640,36 @@ test('day cards: good times, Panchang, muhurtas and bad times, with a WhatsApp s
   assert.ok(!/[\u2066-\u2069]/.test(text));
 });
 
+test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and direction, and share or ask about it', async () => {
+  const readings = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), `Paragraph for sign ${i + 1}. `.repeat(20)]));
+  const lucky = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), { planet: 'Venus', lord: 'Mercury', numbers: [5, 6] }]));
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, rashiphal: { status: 'ok', readings, lucky } });
+  let opened = '';
+  app.context.window.open = url => { opened = url; };
+  await settle();
+  assert.equal(app.element('rashi-picker').children.length, 12);
+  assert.match(app.element('rashi-reading').children[0].textContent, /రాశిని ఎంచుకోండి/);   // nothing chosen yet: a hint
+  app.element('rashi-picker').children[5].listeners.click();                    // Kanya
+  await settle(); await settle();
+  assert.equal(storage.getItem('jyotisha.rashi.v1'), '6');
+  const reading = app.element('rashi-reading').children;
+  assert.match(reading[0].textContent, /రాశి ఫలితాలు/);
+  assert.match(reading[1].textContent, /Paragraph for sign 6/);
+  const luckyBox = reading.find(item => item.className === 'rashi-lucky');
+  const chips = luckyBox.children[1].children.map(chip => chip.children[1].textContent);
+  assert.deepEqual(chips, ['తెలుపు, గులాబీ', '5, 6', 'ఆగ్నేయం']);
+  assert.ok(app.requests.some(r => r.url === '/api/rashiphal' && r.body.language === 'te'));
+  assert.equal(app.element('rashi-list').children.length, 1);                    // only Kanya's detailed card
+  const actions = reading.find(item => item.className === 'rashi-actions').children;
+  actions[1].listeners.click();                                                  // WhatsApp
+  const text = decodeURIComponent(opened.split('text=')[1]);
+  assert.match(text, /Paragraph for sign 6/); assert.match(text, /అదృష్ట సూచక అంశాలు/); assert.match(text, /ఆగ్నేయం/);
+  actions[0].listeners.click();                                                  // ask the AI about my day
+  await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
+});
+
 function fakeAdMob() {
   const calls = [];
   return { calls, plugin: {
@@ -798,7 +829,8 @@ test('Export / Share sends the Rashiphalalu, the Kundli and the AI chat as plain
   app.element('export-rashi').listeners.click(); await settle();
   assert.equal(share.calls.length, 1);
   assert.match(share.calls[0].title, /Rashiphal/);
-  assert.match(share.calls[0].text, /Aries/); assert.match(share.calls[0].text, /Moon is the .* from this sign/);
+  // With a Kundli, the Rashiphal tab shows (and shares) your own sign only: Taurus for this synthetic chart.
+  assert.match(share.calls[0].text, /Taurus/); assert.ok(!/Aries/.test(share.calls[0].text)); assert.match(share.calls[0].text, /Moon is the .* from this sign/);
   assert.match(share.calls[0].text, /— Jyotisha AI/);                         // a short sign-off, so a forwarded message says where it came from
 
   app.element('export-kundli').listeners.click(); await settle();

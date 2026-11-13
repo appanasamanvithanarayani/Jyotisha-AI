@@ -155,6 +155,12 @@
         again: 'and', amrita: 'Amrita kalam', durmuhurtam: 'Durmuhurtam', marriage: 'Marriage', gruhapravesam: 'Housewarming', vehicle: 'Vehicle purchase',
         eventNote: 'A simple traditional check (tithi, nakshatra, weekday and month; avoids Rahu Kalam, Durmuhurtam and Varjyam). For a wedding or housewarming, confirm the exact muhurtam with your purohit.',
         share: 'Share today on WhatsApp', full: 'Full Panchang tables', swipe: 'Swipe for more →' },
+      rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: '…more', less: 'Show less',
+        ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
+        details: 'Planet-by-planet details', hint: 'Pick your rashi above to see today’s reading.',
+        luckyTitle: 'Lucky factors', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
+        colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
+        directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -187,6 +193,12 @@
         again: 'మరలా', amrita: 'అమృత కాలం', durmuhurtam: 'దుర్ముహూర్తం', marriage: 'వివాహం', gruhapravesam: 'గృహప్రవేశం', vehicle: 'వాహనం కొనుగోలు',
         eventNote: 'సాధారణ సంప్రదాయ పరిశీలన (తిథి, నక్షత్రం, వారం, మాసం; రాహు కాలం, దుర్ముహూర్తం, వర్జ్యం మినహా). పెళ్లి, గృహప్రవేశం వంటి వాటికి ఖచ్చితమైన ముహూర్తాన్ని మీ పురోహితుని ద్వారా నిర్ధారించుకోండి.',
         share: 'ఈ రోజు పంచాంగం WhatsAppలో షేర్ చేయండి', full: 'పూర్తి పంచాంగ పట్టికలు', swipe: 'మరిన్ని చూడటానికి స్వైప్ చేయండి →' },
+      rashi: { pick: 'మీ రాశిని ఎంచుకోండి', find: 'మీ రాశి తెలుసుకోండి', mineButton: 'నా రాశి చూపించు', mine: 'మీది', title: '{sign} రాశి ఫలితాలు ({date})', more: '…మరింత', less: 'తక్కువ చూపు',
+        ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
+        details: 'గ్రహాల వారీగా వివరాలు', hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
+        luckyTitle: 'అదృష్ట సూచక అంశాలు', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
+        colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
+        directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -219,6 +231,12 @@
         again: 'फिर', amrita: 'अमृत काल', durmuhurtam: 'दुर्मुहूर्त', marriage: 'विवाह', gruhapravesam: 'गृह प्रवेश', vehicle: 'वाहन ख़रीद',
         eventNote: 'सरल पारंपरिक जाँच (तिथि, नक्षत्र, वार और मास; राहु काल, दुर्मुहूर्त और वर्ज्य को छोड़कर)। विवाह या गृह प्रवेश के लिए सटीक मुहूर्त अपने पुरोहित से पक्का करें।',
         share: 'आज का पंचांग WhatsApp पर शेयर करें', full: 'पूरी पंचांग तालिकाएँ', swipe: 'और देखने के लिए स्वाइप करें →' },
+      rashi: { pick: 'अपनी राशि चुनें', find: 'अपनी राशि जानें', mineButton: 'मेरी राशि दिखाएँ', mine: 'आपकी', title: '{sign} राशिफल ({date})', more: '…और पढ़ें', less: 'कम दिखाएँ',
+        ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
+        details: 'ग्रह-वार विवरण', hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
+        luckyTitle: 'शुभ संकेत', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
+        colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
+        directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -1077,6 +1095,91 @@
     card.appendChild(list);
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
   }
+  /* ---- Rashiphal: pick your sign, read today's paragraph, share or ask the AI ---- */
+  const RASHI_KEY = 'jyotisha.rashi.v1';
+  const RASHI_ICONS = ['🐏', '🐂', '👫', '🦀', '🦁', '👧', '⚖️', '🦂', '🏹', '🐐', '🏺', '🐟'];
+  const RASHI_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  state.rashiPick = (() => { try { const value = Number(window.localStorage.getItem(RASHI_KEY)); return value >= 1 && value <= 12 ? value : 0; } catch (_error) { return 0; } })();
+  state.rashiAI = {};
+  state.rashiLucky = {};
+  function pickRashi(rashi) {
+    state.rashiPick = rashi;
+    try { window.localStorage.setItem(RASHI_KEY, String(rashi)); } catch (_error) { /* not remembered */ }
+    renderRashi();
+  }
+  function renderRashiPicker() {
+    const copy = toolText().rashi, mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
+    if (!state.rashiPick && mine) state.rashiPick = mine;   // your own sign once there is a Kundli
+    $('rashi-picker').replaceChildren(...RASHI_ICONS.map((icon, index) => {
+      const rashi = index + 1, tile = el('button', `rashi-tile${rashi === state.rashiPick ? ' on' : ''}`);
+      tile.type = 'button'; tile.setAttribute('aria-pressed', rashi === state.rashiPick ? 'true' : 'false');
+      tile.append(el('span', 'rashi-icon', icon), el('b', null, signName(rashi)), el('small', null, rashi === mine ? `★ ${copy.mine}` : RASHI_GLYPHS[index]));
+      tile.addEventListener('click', () => pickRashi(rashi));
+      return tile;
+    }));
+    const find = $('rashi-find');
+    find.textContent = `${state.chart ? copy.mineButton : copy.find} ›`;
+    find.onclick = () => {
+      if (state.chart) { pickRashi(state.chart.positions.Moon.rashi_index); return; }
+      showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ }
+    };
+    if (!state.rashiPick) $('rashi-reading').replaceChildren(el('p', 'rashi-hint', copy.hint));
+  }
+  async function loadRashiAI(date) {
+    const key = `${date}|${state.lang}`;
+    if (key in state.rashiAI) return;
+    state.rashiAI[key] = null;   // loading
+    try {
+      const { ok, body } = await post('/api/rashiphal', { date, language: state.lang });
+      state.rashiAI[key] = ok && body && body.readings ? body.readings : false;
+      state.rashiLucky[key] = ok && body && body.lucky ? body.lucky : null;
+    } catch (_error) { state.rashiAI[key] = false; }
+    if (state.rashiMode === 'day') renderRashi();
+  }
+  // Today's paragraph for the chosen sign: the AI-written one when available, otherwise the rule-based reading.
+  function renderRashiReading(item, detail, day) {
+    const copy = toolText().rashi, key = `${day.date}|${state.lang}`;
+    if (!(key in state.rashiAI)) void loadRashiAI(day.date);
+    const ai = state.rashiAI[key] && state.rashiAI[key][String(item.rashi)];
+    const sentence = part => (/[.!?।]$/.test(part.trim()) ? part.trim() : `${part.trim()}.`);
+    const text = ai || [detail && detail.verdict, item.kind, item.area].filter(Boolean).map(sentence).join(' ');
+    const box = $('rashi-reading'); box.replaceChildren();
+    const title = fill(copy.title, { sign: item.name, date: calendarUI.formatDate(state.lang, day.date, 'long') });
+    box.appendChild(el('h3', 'rashi-reading-title', `${RASHI_ICONS[item.rashi - 1]} ${title}`));
+    const body = el('p', 'rashi-text clamp', text);
+    box.appendChild(body);
+    if (text.length > 260) {
+      const more = el('button', 'link-btn', copy.more); more.type = 'button';
+      more.addEventListener('click', () => { const open = body.classList.contains('clamp'); body.classList.toggle('clamp', !open); more.textContent = open ? copy.less : copy.more; });
+      box.appendChild(more);
+    } else body.classList.remove('clamp');
+    // Lucky colour, numbers and direction (calculated from today's most favourable planet for this sign and its lord).
+    const lucky = state.rashiLucky[key] && state.rashiLucky[key][String(item.rashi)];
+    let luckyText = '';
+    if (lucky && copy.colours[lucky.planet]) {
+      const box2 = el('div', 'rashi-lucky');
+      box2.appendChild(el('h4', null, `🍀 ${copy.luckyTitle}`));
+      const chips = el('div', 'lucky-chips');
+      const chip = (icon, label, value) => { const c = el('span', 'lucky-chip'); c.append(el('small', null, `${icon} ${label}`), el('b', null, value)); return c; };
+      chips.append(chip('🎨', copy.colour, copy.colours[lucky.planet]), chip('🔢', copy.numbers, lucky.numbers.join(', ')), chip('🧭', copy.direction, copy.directions[lucky.planet]));
+      box2.appendChild(chips);
+      box.appendChild(box2);
+      luckyText = `\n\n🍀 ${copy.luckyTitle}\n🎨 ${copy.colour}: ${copy.colours[lucky.planet]} · 🔢 ${copy.numbers}: ${lucky.numbers.join(', ')} · 🧭 ${copy.direction}: ${copy.directions[lucky.planet]}`;
+    }
+    const actions = el('div', 'rashi-actions');
+    const askButton = el('button', 'rashi-ask', `✨ ${copy.ask}`); askButton.type = 'button';
+    askButton.addEventListener('click', () => { const question = fill(copy.askQ, { sign: item.name }); showPage('chat'); ask(question, question, true); });
+    const share = el('button', 'wa-btn', `🟢 ${copy.share}`); share.type = 'button';
+    share.addEventListener('click', () => {
+      const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\n— Jyotisha AI: ${window.location && window.location.origin ? window.location.origin : ''}`;
+      try { window.open(`https://wa.me/?text=${encodeURIComponent(message.replace(/[\u2066-\u2069]/g, ''))}`, '_blank'); } catch (_error) { /* no browser */ }
+    });
+    const full = el('button', 'link-btn', `${copy.full} ›`); full.type = 'button';
+    full.addEventListener('click', () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } });
+    actions.append(askButton, share, full);
+    box.appendChild(actions);
+    box.appendChild(el('h4', 'rashi-details-head', copy.details));
+  }
   function renderRashiDay() {
     const day = state.day;
     if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
@@ -1085,9 +1188,11 @@
     const detail = chartUI.gocharaOutlook(day, state.lang), moonCards = chartUI.rashiOutlook(day, state.lang);
     for (const item of moonCards) {
       const more = detail[item.rashi - 1];
+      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
       const tone = more ? more.tone : item.tone;
       const card = el('details', `rashi-card ${tone}${item.rashi === mine ? ' mine' : ''}`);
-      if (item.rashi === mine) card.open = true;
+      if (item.rashi === mine && !state.rashiPick) card.open = true;
+      if (state.rashiPick) renderRashiReading(item, more, day);
       const head = el('summary', null);
       head.appendChild(el('strong', null, `${tinted(tone)} ${item.name}`));
       if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
@@ -1135,6 +1240,7 @@
     $('rashi-moon').textContent = `${t('viewWeek')}: ${range}`;
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     for (const item of chartUI.weekOutlook(days, state.lang, dayLabel)) {
+      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
       const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
       if (item.rashi === mine) card.open = true;
       const head = el('summary', null);
@@ -1171,6 +1277,7 @@
     $('rashi-list').appendChild(moves);
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     for (const item of chartUI.monthOutlook(days, state.lang, dayNumber)) {
+      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
       const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
       if (item.rashi === mine) card.open = true;
       const head = el('summary', null);
@@ -1193,6 +1300,8 @@
   }
   function renderRashi() {
     $('rashi-list').replaceChildren();
+    $('rashi-reading').replaceChildren();
+    renderRashiPicker();
     $('rashi-title').textContent = t('rashiphal');
     document.querySelectorAll('#rashi-mode button').forEach(button => button.classList.toggle('on', button.dataset.rmode === state.rashiMode));
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
@@ -1672,6 +1781,7 @@
         state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
         saveProfile({ dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
         renderChart(); $('chart').hidden = false;
+    if (!state.rashiPick && state.chart) state.rashiPick = state.chart.positions.Moon.rashi_index;
         setChatEnabled(true); intake.step = null; resetChat(t('chartReady'));
         showPage('kundli');
         const target = $('chart'); if (target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
