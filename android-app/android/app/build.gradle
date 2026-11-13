@@ -40,8 +40,11 @@ android {
     buildTypes {
         release {
             if (keystoreProps['storeFile']) { signingConfig signingConfigs.release }
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8 shrinks and obfuscates the code (Google Play asks for it). Resources are NOT shrunk: the notification
+            // icon is looked up by name, so removing "unused" resources would break it. The mapping file goes inside the .aab.
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
