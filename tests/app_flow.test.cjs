@@ -272,9 +272,10 @@ test('location is read only on request or when the browser already granted it, a
   await settle();
   assert.equal(place.calls, 1);
   assert.equal(app.element('welcome-city').value, 'Mysuru, IN');
-  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  await new Promise(resolve => setTimeout(resolve, 800));                 // the city came from the location: it goes on by itself
   await settle();
   assert.deepEqual(storage.read(), { lang: 'en', city: 'Mysuru, IN', useLocation: true });
+  assert.equal(app.element('welcome-screen').hidden, true);
 
   // later visit with permission already granted: the city follows the current location, silently
   const granted = geolocation();
@@ -721,6 +722,20 @@ function fakeAdMob() {
     showBanner: async options => calls.push(['showBanner', options]),
   } };
 }
+
+test('no ad on the welcome screens: the banner starts only after the first-run steps are done', async () => {
+  const ads = fakeAdMob();
+  const app = boot({ storage: memoryStorage(), capacitor: { Plugins: { AdMob: ads.plugin } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();
+  assert.ok(!ads.calls.some(call => call[0] === 'showBanner'));                   // still on the welcome screens
+  app.element('welcome-next').listeners.click();
+  app.element('language-next').listeners.click();
+  app.element('welcome-city').value = 'Hyderabad, IN';
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  await settle();
+  assert.ok(ads.calls.some(call => call[0] === 'showBanner'));                    // then the app shows it
+});
 
 test('the native app shows an AdMob banner only when the server switches ads on, and the page makes room for it', async () => {
   const on = fakeAdMob();

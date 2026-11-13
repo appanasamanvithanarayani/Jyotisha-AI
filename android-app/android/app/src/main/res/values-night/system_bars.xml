@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark mode: the app's dark background, light icons. -->
+<resources>
+    <color name="system_bars">#1C1F25</color>
+    <bool name="light_system_bars">false</bool>
+</resources>
