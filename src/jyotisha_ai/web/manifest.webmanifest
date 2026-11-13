@@ -1,7 +1,7 @@
 {
-  "name": "Jyotisha AI",
-  "short_name": "Jyotisha",
-  "description": "Daily Panchang, festival calendar, Kundli, Rashiphal and chat in 17 Indian languages.",
+  "name": "Jyotirmaya AstroChat",
+  "short_name": "Jyotirmaya",
+  "description": "Jyotirmaya AstroChat — your AI astrologer: daily Panchang, festival calendar, Kundli, Rashiphal and chat in 17 Indian languages.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

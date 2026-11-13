@@ -8,7 +8,7 @@ test('supported interface languages have the same translation keys', () => {
   assert.deepEqual(Object.keys(calendar.COPY.te).sort(), english);
   assert.deepEqual(Object.keys(calendar.COPY.hi).sort(), english);
   assert.equal(calendar.language('fr'), 'en');
-  assert.equal(calendar.tr('te', 'welcome'), 'జ్యోతిష AI కి స్వాగతం');
+  assert.equal(calendar.tr('te', 'welcome'), 'జ్యోతిర్మయకి స్వాగతం');
 });
 
 test('month grid is Monday-first and includes every leap-day date', () => {

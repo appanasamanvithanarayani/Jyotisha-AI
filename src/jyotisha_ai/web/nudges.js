@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
   // Playful, curiosity-led wording (in the style of food-delivery app notifications); deity and tithi messages stay respectful.
-  // Each row: [title, body, question asked to Jyotisha AI on tap].
+  // Each row: [title, body, question asked to Jyotirmaya AstroChat on tap].
   const HOUSES = {
     "te": [
       [
