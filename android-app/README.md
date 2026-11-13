@@ -51,3 +51,7 @@ Admin panel → **Notifications** sends a message to every installed app (or onl
 - The server sends with the Firebase service-account key at `firebase-key.json` in the repo folder on the server,
   mounted read-only into the container (see `deploy/digitalocean/docker-compose.yml`); it is git- and docker-ignored.
   Make it readable by the container user: `sudo chown 10001:10001 firebase-key.json && chmod 600 firebase-key.json`.
+Besides the morning Panchang, the app also schedules (each can be switched off in the 🎨 panel):
+- **Evening question** (default 7:30 PM): a different curiosity question each day, personal where possible (current dasha,
+  Sade Sati); tapping it opens Jyotisha AI and asks the question.
+- **Muhurta alerts**: when Abhijit muhurta starts (not on Wednesdays) and when Rahu Kalam starts, between 6 AM and 9:30 PM.

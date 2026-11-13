@@ -147,6 +147,8 @@
         saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
       notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
         time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
+        muhurta: 'Good and bad muhurta alerts',
+        evening: 'Evening question for you', eveningTime: 'Evening time',
         rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
@@ -172,6 +174,8 @@
         saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
       notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
         time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
+        muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
+        evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
         rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
@@ -197,6 +201,8 @@
         saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
       notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
         time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
+        muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
+        evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
         rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
@@ -558,8 +564,9 @@
   function loadNotify() {
     try {
       const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
-      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00' }; }
+      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
+        evening: saved.evening !== false, muhurta: saved.muhurta !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' }; }
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
@@ -575,14 +582,23 @@
       if (!notify.on) return;
       const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
       const festivals = (state.festivals && state.festivals.events) || [];
-      const list = [];
+      const list = [], days = {};
+      aiBatches = {};
+      try {   // fresh AI-written copy for this language; the built-in messages are used for any day without it
+        const { ok, body } = await post('/api/nudges', { language: state.lang, from: localIso(now), days: NOTIFY_DAYS });
+        if (ok && body && body.batches && typeof body.batches === 'object') aiBatches = body.batches;
+      } catch (_error) { /* offline: built-in messages */ }
       for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
-        if (at <= now) continue;
         const iso = localIso(at);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, 21, 30, 0);
+        if (endOfDay <= now) continue;
         let day = null;
         try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
         if (!day) continue;
+        days[iso] = day;
+        list.push(...muhurtaAlerts(day, iso, offset, now));
+        if (at <= now) continue;
         const atText = `${iso}T${notify.time}`;
         const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
         const festival = festivals.find(event => event.date === iso);
@@ -593,11 +609,12 @@
         const personal = dayForYou(day, atText);
         if (personal) lines.push(`✨ ${personal}`);
         const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');   // no direction marks: some phones draw them as boxes
-        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true } });
+        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
       }
       // After the scheduled week, one reminder to open the app (which schedules the next week).
       const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
+      list.push(...eveningNotifications(now, days));
       await plugin.schedule({ notifications: list });
     } catch (_error) { /* notifications are optional */ } finally { notifyBusy = false; }
   }
@@ -635,11 +652,127 @@
     const time = el('input'); time.type = 'time'; time.value = notify.time; time.setAttribute('aria-label', copy.time);
     time.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(time.value)) { notify.time = time.value; saveNotify(); renderLookPanel(); void scheduleNotifications(); } });
     const timeRow = el('label', 'notify-time'); timeRow.append(el('span', null, copy.time), time);
+    const evening = el('label', 'notify-time');
+    const eveningBox = el('input'); eveningBox.type = 'checkbox'; eveningBox.checked = notify.evening; eveningBox.style.width = 'auto';
+    eveningBox.addEventListener('change', () => { notify.evening = eveningBox.checked; saveNotify(); void scheduleNotifications(); });
+    const eveningTime = el('input'); eveningTime.type = 'time'; eveningTime.value = notify.eveningTime; eveningTime.setAttribute('aria-label', copy.eveningTime);
+    eveningTime.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(eveningTime.value)) { notify.eveningTime = eveningTime.value; saveNotify(); void scheduleNotifications(); } });
+    const eveningLabel = el('span'); eveningLabel.append(eveningBox, document.createTextNode(` ${copy.evening}`));
+    evening.append(eveningLabel, eveningTime);
     wrap.append(el('span', 'label', `🔔 ${copy.title}`), row, timeRow);
+    const muhurta = el('label', 'notify-time');
+    const muhurtaBox = el('input'); muhurtaBox.type = 'checkbox'; muhurtaBox.checked = notify.muhurta; muhurtaBox.style.width = 'auto';
+    muhurtaBox.addEventListener('change', () => { notify.muhurta = muhurtaBox.checked; saveNotify(); void scheduleNotifications(); });
+    const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
+    muhurta.appendChild(muhurtaLabel);
+    if (notify.on) wrap.append(evening, muhurta);
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;
   }
-  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', () => showPage('home')); } catch (_error) { /* optional */ }
+  /* ---- Unique daily notifications: built from each day's sky for this user, with a no-repeat memory ---- */
+  const nudgeTexts = window.JyotishaNudges;
+  const NUDGE_FIRST_ID = 7120, MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
+  const NUDGE_HISTORY_KEY = 'jyotisha.nudges.v1', NO_REPEAT_DAYS = 21;
+  let aiBatches = {};   // date -> AI-written copy for the current language
+  const dayNumberOf = date => Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  const isoMinusDays = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); };
+  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 6 AM to 9:30 PM.
+  // Three wordings each, rotated by date, so the text changes from day to day.
+  function muhurtaAlerts(day, iso, offset, now) {
+    if (!notify.muhurta || !day.timings || !nudgeTexts) return [];
+    const texts = nudgeTexts.pick(nudgeTexts.MUHURTA, state.lang), variant = dayNumberOf(new Date(`${iso}T12:00:00`)), result = [];
+    const add = (id, span, options) => {
+      if (!Array.isArray(span) || typeof span[0] !== 'string') return;
+      const at = new Date(`${span[0]}:00`);
+      const hour = at.getHours() + at.getMinutes() / 60;
+      if (Number.isNaN(at.getTime()) || at <= now || hour < 6 || hour > 21.5) return;
+      const end = clock(span[1], iso).replace(/[⁦-⁩]/g, '');
+      const ai = aiBatches[iso] && aiBatches[iso][id === MUHURTA_GOOD_ID ? 'good' : 'bad'];
+      const choices = Array.isArray(ai) && ai.length ? ai.map(item => [item.t, item.b]) : options;
+      const [title, body] = choices[variant % choices.length];
+      result.push({ id: id + offset, title, body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
+    };
+    if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
+    add(MUHURTA_BAD_ID, day.timings.rahu_kalam, texts.bad);
+    return result;
+  }
+  // Every message this user could get on a given evening, each with a key used by the no-repeat memory.
+  function nudgeCandidates(day, iso, atText) {
+    const lang = state.lang, details = state.details, chart = state.chart;
+    const dashaInfo = details && details.dasha;
+    const sub = dashaInfo && (dashaInfo.antardasha || []).find(item => item.current);
+    const dasha = dashaInfo && dashaInfo.current_mahadasha ? `${bodyName(dashaInfo.current_mahadasha)}${sub ? ' – ' + bodyName(sub.lord) : ''}` : '';
+    const sade = !!(details && details.doshas && details.doshas.saturn && details.doshas.saturn.sade_sati && details.doshas.saturn.sade_sati.active);
+    const make = (key, [t, b, ask], page) => ({ key, t, b, ask: ask || '', page: ask ? 'chat' : (page || 'home') });
+    const current = list => (Array.isArray(list) && list.find(item => item.starts_at <= atText && atText < item.ends_at)) || (Array.isArray(list) ? list[0] : null);
+    const special = [], sky = [];
+    const tithi = day && current(day.tithi), tithiKey = tithi && nudgeTexts.TITHI_KEYS[tithi.index];
+    if (tithiKey) special.push(make(`tithi-${tithiKey}`, nudgeTexts.pick(nudgeTexts.TITHIS, lang)[tithiKey]));
+    const moon = day && current(day.moon_rashi);
+    if (chart && moon) {
+      const house = (moon.index - chart.positions.Moon.rashi_index + 12) % 12 + 1;
+      sky.push(make(`house-${house}`, nudgeTexts.pick(nudgeTexts.HOUSES, lang)[house - 1]));
+    }
+    const weekday = new Date(`${iso}T12:00:00Z`).getUTCDay();
+    sky.push(make(`weekday-${weekday}`, nudgeTexts.pick(nudgeTexts.WEEKDAYS, lang)[weekday]));
+    const fits = item => !item.need || (item.need === 'nochart' && !chart) || (item.need === 'dasha' && dasha) || (item.need === 'sade' && sade);
+    const questions = nudgeTexts.pick(nudgeTexts.QUESTIONS, lang)
+      .map((item, index) => ({ item, index })).filter(({ item }) => fits(item))
+      .map(({ item, index }) => make(`q-${index}`, [fill(item.t, { dasha }), fill(item.b, { dasha }), item.ask ? fill(item.ask, { dasha }) : ''], item.page));
+    // Fresh AI-written lines for this date (keys are unique per date, so they never repeat).
+    const ai = aiBatches[iso], fresh = [];
+    if (ai) {
+      const filled = (item, values) => ({ t: fill(item.t, values), b: fill(item.b, values), ask: fill(item.ask, values) });
+      const usable = item => !/[{}]/.test(item.t + item.b + item.ask);
+      const signName = chart ? chartUI.signName(chart.positions.Moon.rashi_index, lang) : '';
+      if (dasha) (ai.dasha || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-d${i}`, ...filled(item, { dasha }) }));
+      if (signName) (ai.sign || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-s${i}`, ...filled(item, { sign: signName }) }));
+      (ai.questions || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-q${i}`, ...filled(item, {}) }));
+      for (let i = fresh.length - 1; i >= 0; i -= 1) if (!usable(fresh[i]) || !fresh[i].ask) fresh.splice(i, 1);
+      fresh.forEach(item => { item.page = 'chat'; });
+    }
+    // Festive tithis first; then the order rotates by date between sky-based and life questions.
+    const shift = dayNumberOf(new Date(`${iso}T12:00:00`));
+    const rotated = questions.length ? questions.map((_, i) => questions[(i + shift * 7) % questions.length]) : [];
+    // Fresh AI lines come first (a different one each day: personal ones on alternate days), then the built-in library.
+    const freshOrdered = fresh.length ? fresh.map((_, i) => fresh[(i + shift) % fresh.length]) : [];
+    const library = shift % 2 ? [...sky, ...rotated] : [...rotated, ...sky];
+    return [...special, ...freshOrdered, ...library];
+  }
+  function loadNudgeHistory() {
+    try { const saved = JSON.parse(window.localStorage.getItem(NUDGE_HISTORY_KEY)); return saved && typeof saved === 'object' ? saved : {}; } catch (_error) { return {}; }
+  }
+  // One message per evening; the same message never comes back within NO_REPEAT_DAYS (falls back to the least recent).
+  function eveningNotifications(now, days) {
+    if (!notify.evening || !nudgeTexts) return [];
+    const history = loadNudgeHistory(), today = localIso(now), result = [];
+    for (const date of Object.keys(history)) if (date >= today || date < isoMinusDays(today, 45)) delete history[date];   // future days are planned again
+    const [hour, minute] = notify.eveningTime.split(':').map(Number);
+    for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
+      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
+      if (at <= now) continue;
+      const iso = localIso(at), from = isoMinusDays(iso, NO_REPEAT_DAYS);
+      const lastUsed = {};
+      for (const [date, key] of Object.entries(history)) if (date < iso && (!lastUsed[key] || date > lastUsed[key])) lastUsed[key] = date;
+      const candidates = nudgeCandidates(days[iso], iso, `${iso}T${notify.eveningTime}`);
+      if (!candidates.length) continue;
+      const choice = candidates.find(item => !lastUsed[item.key] || lastUsed[item.key] < from)
+        || candidates.slice().sort((a, b) => (lastUsed[a.key] || '').localeCompare(lastUsed[b.key] || ''))[0];
+      history[iso] = choice.key;
+      result.push({ id: NUDGE_FIRST_ID + offset, title: choice.t, body: choice.b, largeBody: choice.b, schedule: { at, allowWhileIdle: true },
+        extra: { page: choice.page, ask: choice.ask } });
+    }
+    try { window.localStorage.setItem(NUDGE_HISTORY_KEY, JSON.stringify(history)); } catch (_error) { /* not remembered */ }
+    return result;
+  }
+  // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
+  function openFromNotification(extra) {
+    const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
+    showPage(page);
+    const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
+    if (page === 'chat' && question) ask(question, question, true);
+  }
+  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.extra)); } catch (_error) { /* optional */ }
 
   /* ---- Messages sent from the admin panel (Firebase): subscribe to "all" and to this phone's language ---- */
   const PUSH_KEY = 'jyotisha.push.v1';

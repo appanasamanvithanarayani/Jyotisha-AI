@@ -58,6 +58,7 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_GEMINI_MODEL", "AI chat", "Gemini model", "Leave empty for the built-in default.", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", example="gemini-3.5-flash-lite"),
     Setting("JYOTISHA_ASSISTANT_MODEL", "AI chat", "Claude model", "Used only when the provider is Anthropic.", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", example="claude-haiku-5-5"),
     Setting("JYOTISHA_ASK_DAILY_LIMIT", "AI chat", "Daily AI questions, whole site", "Hard cap on AI questions per day across everyone. Protects your bill.", "int", "1000", minimum=0, maximum=1000000),
+    Setting("JYOTISHA_AI_NUDGES", "AI chat", "AI-written daily notifications", "The AI writes fresh notification text every day for each language. Off uses the built-in messages only.", "bool", "1"),
     Setting("JYOTISHA_ASK_PER_VISITOR_DAY", "AI chat", "Daily AI questions per visitor", "Per network address, per day.", "int", "60", minimum=1, maximum=10000),
     Setting("JYOTISHA_ASK_PER_VISITOR_MINUTE", "AI chat", "AI questions per visitor per minute", "Slows down automated use.", "int", "8", minimum=1, maximum=1000),
     Setting("GEMINI_API_KEY", "API keys", "Gemini API key", "Write-only: once saved it is shown only as the last four characters.", "secret"),
