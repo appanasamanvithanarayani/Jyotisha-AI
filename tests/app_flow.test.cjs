@@ -642,7 +642,7 @@ test('day cards: good times, Panchang, muhurtas and bad times, with a WhatsApp s
 
 test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and direction, and share or ask about it', async () => {
   const readings = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), `Paragraph for sign ${i + 1}. `.repeat(20)]));
-  const lucky = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), { planet: 'Venus', lord: 'Mercury', numbers: [5, 6] }]));
+  const lucky = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), { planet: 'Venus', lord: 'Mercury', numbers: [6, 5], sign_planet: i === 5 ? 'Mercury' : 'Venus' }]));
   const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
   const app = boot({ storage, rashiphal: { status: 'ok', readings, lucky } });
   let opened = '';
@@ -657,14 +657,17 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   assert.match(reading[0].textContent, /రాశి ఫలితాలు/);
   assert.match(reading[1].textContent, /Paragraph for sign 6/);
   const luckyBox = reading.find(item => item.className === 'rashi-lucky');
-  const chips = luckyBox.children[1].children.map(chip => chip.children[1].textContent);
-  assert.deepEqual(chips, ['తెలుపు, గులాబీ', '5, 6', 'ఆగ్నేయం']);
+  assert.match(luckyBox.children[1].textContent, /అందరికీ/);                   // the day's factors, for everyone
+  const chips = luckyBox.children[2].children.map(chip => chip.children[1].textContent);
+  assert.deepEqual(chips, ['తెలుపు, గులాబీ', '6, 5', 'ఆగ్నేయం']);
+  const special = luckyBox.children[3].children.map(item => item.textContent);  // and Kanya's own (Mercury: green, north)
+  assert.match(special[0], /మీ రాశికి ప్రత్యేకం/); assert.match(special[1], /ఆకుపచ్చ.*ఉత్తరం/);
   assert.ok(app.requests.some(r => r.url === '/api/rashiphal' && r.body.language === 'te'));
   assert.equal(app.element('rashi-list').children.length, 1);                    // only Kanya's detailed card
   const actions = reading.find(item => item.className === 'rashi-actions').children;
   actions[1].listeners.click();                                                  // WhatsApp
   const text = decodeURIComponent(opened.split('text=')[1]);
-  assert.match(text, /Paragraph for sign 6/); assert.match(text, /అదృష్ట సూచక అంశాలు/); assert.match(text, /ఆగ్నేయం/);
+  assert.match(text, /Paragraph for sign 6/); assert.match(text, /అదృష్ట సూచక అంశాలు/); assert.match(text, /ఆగ్నేయం/); assert.match(text, /మీ రాశికి ప్రత్యేకం/);
   actions[0].listeners.click();                                                  // ask the AI about my day
   await settle();
   assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);

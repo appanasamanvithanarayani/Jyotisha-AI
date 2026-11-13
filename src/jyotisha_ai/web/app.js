@@ -158,7 +158,7 @@
       rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: '…more', less: 'Show less',
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
         details: 'Planet-by-planet details', hint: 'Pick your rashi above to see today’s reading.',
-        luckyTitle: 'Lucky factors', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
+        luckyTitle: 'Lucky factors', luckyDay: 'For today (everyone)', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
@@ -196,7 +196,7 @@
       rashi: { pick: 'మీ రాశిని ఎంచుకోండి', find: 'మీ రాశి తెలుసుకోండి', mineButton: 'నా రాశి చూపించు', mine: 'మీది', title: '{sign} రాశి ఫలితాలు ({date})', more: '…మరింత', less: 'తక్కువ చూపు',
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
         details: 'గ్రహాల వారీగా వివరాలు', hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
-        luckyTitle: 'అదృష్ట సూచక అంశాలు', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
+        luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'ఈరోజు (అందరికీ)', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
@@ -234,7 +234,7 @@
       rashi: { pick: 'अपनी राशि चुनें', find: 'अपनी राशि जानें', mineButton: 'मेरी राशि दिखाएँ', mine: 'आपकी', title: '{sign} राशिफल ({date})', more: '…और पढ़ें', less: 'कम दिखाएँ',
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
         details: 'ग्रह-वार विवरण', hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
-        luckyTitle: 'शुभ संकेत', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
+        luckyTitle: 'शुभ संकेत', luckyDay: 'आज (सबके लिए)', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
@@ -1153,18 +1153,27 @@
       more.addEventListener('click', () => { const open = body.classList.contains('clamp'); body.classList.toggle('clamp', !open); more.textContent = open ? copy.less : copy.more; });
       box.appendChild(more);
     } else body.classList.remove('clamp');
-    // Lucky colour, numbers and direction (calculated from today's most favourable planet for this sign and its lord).
+    // Lucky colour, numbers and direction (calculated: the weekday's lord and the sign's lord; plus the sign's best transit).
     const lucky = state.rashiLucky[key] && state.rashiLucky[key][String(item.rashi)];
     let luckyText = '';
     if (lucky && copy.colours[lucky.planet]) {
       const box2 = el('div', 'rashi-lucky');
       box2.appendChild(el('h4', null, `🍀 ${copy.luckyTitle}`));
+      // The day's colour and direction (weekday lord) are the same for every sign; the sign's own is added when it differs.
+      const own = lucky.sign_planet && lucky.sign_planet !== lucky.planet && copy.colours[lucky.sign_planet] ? lucky.sign_planet : null;
+      if (own) box2.appendChild(el('small', 'lucky-sub', copy.luckyDay));
       const chips = el('div', 'lucky-chips');
       const chip = (icon, label, value) => { const c = el('span', 'lucky-chip'); c.append(el('small', null, `${icon} ${label}`), el('b', null, value)); return c; };
       chips.append(chip('🎨', copy.colour, copy.colours[lucky.planet]), chip('🔢', copy.numbers, lucky.numbers.join(', ')), chip('🧭', copy.direction, copy.directions[lucky.planet]));
       box2.appendChild(chips);
-      box.appendChild(box2);
       luckyText = `\n\n🍀 ${copy.luckyTitle}\n🎨 ${copy.colour}: ${copy.colours[lucky.planet]} · 🔢 ${copy.numbers}: ${lucky.numbers.join(', ')} · 🧭 ${copy.direction}: ${copy.directions[lucky.planet]}`;
+      if (own) {
+        const special = el('div', 'lucky-sign');
+        special.append(el('small', 'lucky-sub', `✨ ${copy.luckySign}`), el('b', null, `🎨 ${copy.colours[own]} · 🧭 ${copy.directions[own]}`));
+        box2.appendChild(special);
+        luckyText += `\n✨ ${copy.luckySign}: 🎨 ${copy.colours[own]} · 🧭 ${copy.directions[own]}`;
+      }
+      box.appendChild(box2);
     }
     const actions = el('div', 'rashi-actions');
     const askButton = el('button', 'rashi-ask', `✨ ${copy.ask}`); askButton.type = 'button';

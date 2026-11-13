@@ -28,9 +28,12 @@ GOCHARA_GOOD = {"Sun": (3, 6, 10, 11), "Moon": (1, 3, 6, 7, 10, 11), "Mars": (3,
                 "Jupiter": (2, 5, 7, 9, 11), "Venus": (1, 2, 3, 4, 5, 8, 9, 11, 12), "Saturn": (3, 6, 11), "Rahu": (3, 6, 10, 11), "Ketu": (3, 6, 11)}
 MIN_CHARS, MAX_CHARS = 200, 2200
 SIGN_LORDS = ("Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter")
-# Traditional planet numbers (numerology) and the planet the lucky colour and direction follow, in priority order.
-PLANET_NUMBER = {"Sun": 1, "Moon": 2, "Jupiter": 3, "Rahu": 4, "Mercury": 5, "Venus": 6, "Ketu": 7, "Saturn": 8, "Mars": 9}
-LUCKY_ORDER = ("Jupiter", "Venus", "Mercury", "Moon", "Sun", "Mars", "Saturn", "Rahu", "Ketu")
+# Traditional numerology numbers of each planet (the Sun also rules 4 and the Moon 7) and the lord of each weekday, Monday first.
+PLANET_NUMBERS = {"Sun": (1, 4), "Moon": (2, 7), "Jupiter": (3,), "Rahu": (4,), "Mercury": (5,), "Venus": (6,), "Ketu": (7,),
+                  "Saturn": (8,), "Mars": (9,)}
+WEEKDAY_LORDS = ("Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Sun")
+# For the sign's own colour and direction: the first planet in this order whose transit is favourable for the sign.
+SIGN_LUCKY_ORDER = ("Jupiter", "Venus", "Mercury", "Moon", "Sun", "Mars", "Saturn", "Rahu", "Ketu")
 RETRY_AFTER_FAILURE = 3600.0
 SYSTEM = (
     "You are a warm, experienced Vedic astrologer writing the daily Rashiphal (Moon-sign horoscope) for a popular app. "
@@ -87,16 +90,18 @@ def facts_for(sign: int, where: dict[str, int]) -> str:
 
 
 def lucky(day: date) -> dict[str, dict]:
-    """Lucky factors for each sign (1..12) on ``day``: the colour and direction of the most favourable transiting planet for
-    that sign (in LUCKY_ORDER; the sign's lord if none is favourable), and the numbers of that planet and the sign's lord."""
+    """Lucky factors for each sign (1..12) on ``day``, as Telugu Panchang apps give them: the colour and direction of the
+    weekday's lord (the same for every sign that day), and the numbers of the weekday's lord followed by the sign lord's.
+    ``sign_planet`` is extra, for the sign's own colour and direction: its most favourable transiting planet today (in
+    SIGN_LUCKY_ORDER; the sign's lord if none is favourable)."""
+    planet = WEEKDAY_LORDS[day.weekday()]
     where = transits(day)
     result = {}
     for sign in range(1, 13):
         lord = SIGN_LORDS[sign - 1]
-        good = [planet for planet in LUCKY_ORDER if (where[planet] - sign) % 12 + 1 in GOCHARA_GOOD[planet]]
-        planet = good[0] if good else lord
-        numbers = sorted({PLANET_NUMBER[planet], PLANET_NUMBER[lord]})
-        result[str(sign)] = {"planet": planet, "lord": lord, "numbers": numbers}
+        numbers = list(dict.fromkeys(PLANET_NUMBERS[planet] + PLANET_NUMBERS[lord]))
+        good = [name for name in SIGN_LUCKY_ORDER if (where[name] - sign) % 12 + 1 in GOCHARA_GOOD[name]]
+        result[str(sign)] = {"planet": planet, "lord": lord, "numbers": numbers, "sign_planet": good[0] if good else lord}
     return result
 
 
