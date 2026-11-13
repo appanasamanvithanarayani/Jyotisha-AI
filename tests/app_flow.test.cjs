@@ -519,7 +519,7 @@ test('admin-panel messages: the app subscribes to "all" and its language, and a 
   assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
 });
 
-test('notifications: a broken message never stops the rest, and settings show what is scheduled plus a test button', async () => {
+test('notifications: a broken message never stops the rest, and settings show when the next one comes', async () => {
   const runs = [], pending = [];
   const LocalNotifications = {
     checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
@@ -540,12 +540,8 @@ test('notifications: a broken message never stops the rest, and settings show wh
   app.element('theme-btn').listeners.click();
   const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
   const status = settings.children.find(item => item.className === 'notify-next');
-  assert.match(status.textContent, /notifications scheduled · Next: /);
-  const test = settings.children.find(item => /notify-test/.test(item.className));
-  test.listeners.click();
-  await settle();
-  assert.equal(runs.at(-1)[0].id, 7149);
-  assert.match(runs.at(-1)[0].body, /working on this phone/);
+  assert.match(status.textContent, /^🔔 Next: /);                               // just when, never the text in advance
+  assert.ok(!settings.children.some(item => /notify-test/.test(item.className || '')));   // no test button: it should feel real
 });
 
 test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
