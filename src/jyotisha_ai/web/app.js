@@ -1115,6 +1115,13 @@
   state.rashiPick = (() => { try { const value = Number(window.localStorage.getItem(RASHI_KEY)); return value >= 1 && value <= 12 ? value : 0; } catch (_error) { return 0; } })();
   state.rashiAI = {};
   state.rashiLucky = {};
+  // With a Kundli, Rashiphal opens on the user's own Moon sign (set whenever the chart is made or restored).
+  function useOwnRashi() {
+    if (!state.chart) return;
+    state.rashiPick = state.chart.positions.Moon.rashi_index;
+    try { window.localStorage.setItem(RASHI_KEY, String(state.rashiPick)); } catch (_error) { /* not remembered */ }
+    try { renderRashi(); } catch (_error) { /* the page is not ready yet */ }
+  }
   function pickRashi(rashi) {
     state.rashiPick = rashi;
     try { window.localStorage.setItem(RASHI_KEY, String(rashi)); } catch (_error) { /* not remembered */ }
@@ -1366,6 +1373,10 @@
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
+    if (!state.rashiPick) {   // nothing picked yet: just the sign grid and a hint
+      $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
+      return;
+    }
     if (state.rashiMode === 'week') renderRashiWeek(); else if (state.rashiMode === 'month') renderRashiMonth(); else renderRashiDay();
   }
   document.querySelectorAll('#rashi-mode button').forEach(button => button.addEventListener('click', () => { state.rashiMode = button.dataset.rmode; renderRashi(); }));
@@ -1840,7 +1851,7 @@
         state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
         saveProfile({ dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
         renderChart(); $('chart').hidden = false;
-    if (!state.rashiPick && state.chart) state.rashiPick = state.chart.positions.Moon.rashi_index;
+        useOwnRashi();
         setChatEnabled(true); intake.step = null; resetChat(t('chartReady'));
         showPage('kundli');
         const target = $('chart'); if (target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2027,6 +2038,7 @@
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
     renderChart(); $('chart').hidden = false;
+    useOwnRashi();
     void scheduleNotifications();
   }
   async function finishIntake() {

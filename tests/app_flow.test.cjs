@@ -327,6 +327,27 @@ test('saved birth details restore the chart on the next visit, so the chat does 
   assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chartReady'));
 });
 
+test('Rashiphal opens on the user\'s own Moon sign once there is a Kundli, even if another sign was picked before', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  storage.setItem('jyotisha.rashi.v1', '9');                                       // looked at Dhanu earlier
+  const app = boot({ storage, birth: syntheticBirth });
+  await settle(); await settle();
+  assert.equal(storage.getItem('jyotisha.rashi.v1'), '2');                          // the chart's Moon is in Vrishabha
+  const tiles = app.element('rashi-picker').children;
+  assert.equal(tiles[1].className, 'rashi-tile on');
+  assert.match(tiles[1].children[2].textContent, /Yours/);
+});
+
+test('Rashiphal before a sign is picked shows only the symbol grid and a hint, not the old list of 12 cards', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  assert.equal(app.element('rashi-picker').children.length, 12);
+  assert.match(app.element('rashi-picker').children[0].children[0].textContent, /🐏/);
+  assert.equal(app.element('rashi-list').children.length, 0);
+  assert.equal(app.element('rashi-reading').children[0].className, 'rashi-hint');
+});
+
 test('without saved details nothing is calculated, and corrupt saved details are ignored', async () => {
   for (const raw of [null, '{"dob":"15-08-1995","pob":"x","tob":"6:30"}', 'not json']) {
     const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
@@ -902,6 +923,7 @@ test('Export / Share sends the Rashiphalalu, the Kundli and the AI chat as plain
 test('outside the app Export / Share uses the browser share sheet, and never breaks when sharing is cancelled or missing', async () => {
   const shared = [];
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.rashi.v1', '1');                                      // Aries picked
   const app = boot({ storage, navigator: { share: async options => { shared.push(options); } } });
   await settle();
   app.element('export-rashi').listeners.click(); await settle();
@@ -920,6 +942,7 @@ test('outside the app Export / Share uses the browser share sheet, and never bre
 test('with no share sheet available, Export / Share copies the text and says so, instead of silently doing nothing', async () => {
   const copied = [];
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.rashi.v1', '1');                                      // Aries picked
   const app = boot({ storage, navigator: { clipboard: { writeText: async text => { copied.push(text); } } } });
   await settle();
   app.element('export-rashi').listeners.click(); await settle();
@@ -940,6 +963,7 @@ test('with no share sheet available, Export / Share copies the text and says so,
 test('the PDF button shows only the text to print and opens the print dialog (native plugin in the app, window.print in a browser)', async () => {
   const printed = [];
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.rashi.v1', '1');                                      // Aries picked
   const app = boot({ storage, capacitor: { isNativePlatform: () => true, Plugins: { PdfPrint: { print: async options => { printed.push(options); } } } } });
   await settle();
   app.element('pdf-rashi').listeners.click();
