@@ -14,16 +14,15 @@ from datetime import date, datetime, timedelta, timezone
 
 from jyotisha_ai import assistant, settings_store as store
 
-# What we ask for each day: about what one user sees (one evening question, two muhurta alerts), with a little choice.
-COUNTS = {"questions": 3, "dasha": 1, "sign": 1, "good": 1, "bad": 1}
-MINIMUM = {"questions": 2, "good": 1, "bad": 1}   # below this the batch is not used
+COUNTS = {"questions": 10, "dasha": 2, "sign": 2, "good": 3, "bad": 3}   # what we ask for each day
+MINIMUM = {"questions": 3, "good": 1, "bad": 1}                            # below this the batch is not used
 MAX_TITLE, MAX_BODY, MAX_ASK = 70, 170, 220
 DAILY_GENERATION_CAP = 60
 RETRY_AFTER_FAILURE = 3600.0
 PAGES = ("chat", "kundli", "relationship", "rashi", "calendar", "home")
 # Words that must never appear (promises, gemstones, money requests, fear) in any of the supported scripts.
 BANNED = re.compile(
-    r"guarantee|100\s*%|gemstone|\bgem\b|ratna|payment|pay now|death|die\b|accident|cancer|http|www\.|@|"
+    r"guarantee|100\s*%|gemstone|\bgem\b|ratna|pay (?:us|now|money)|send money|death|\bdie\b|accident|cancer|http|www\.|@|"
     r"గ్యారంటీ|రత్నం|రత్నాలు|మరణం|చావు|ప్రమాదం|"
     r"गारंटी|रत्न|मृत्यु|मौत|दुर्घटना",
     re.IGNORECASE)
@@ -66,45 +65,73 @@ def _path(day: date, language: str):
     return store.data_dir() / "nudges" / f"{day.isoformat()}-{language}.json"
 
 
-def _clean(text: object, limit: int, allowed: set) -> str | None:
+def _check(text: object, limit: int, allowed: set) -> tuple[str | None, str]:
+    """(cleaned text, '') or (None, why it was rejected)."""
     if not isinstance(text, str):
-        return None
+        return None, "missing"
     text = " ".join(text.split())
-    if not 2 <= len(text) <= limit or BANNED.search(text) or re.search(r"\d{3,}", text):
-        return None
-    if any(name not in allowed for name in PLACEHOLDER.findall(text)) or "{" in PLACEHOLDER.sub("", text):
-        return None
-    return text
+    if not 2 <= len(text) <= limit:
+        return None, f"length {len(text)} (max {limit})"
+    banned = BANNED.search(text)
+    if banned:
+        return None, f"banned word {banned.group(0)!r}"
+    if re.search(r"\d{3,}", text):
+        return None, "looks like a date or long number"
+    unknown = [name for name in PLACEHOLDER.findall(text) if name not in allowed]
+    if unknown or "{" in PLACEHOLDER.sub("", text) or "}" in PLACEHOLDER.sub("", text):
+        return None, f"unexpected blank {unknown[0] if unknown else '{…}'}"
+    return text, ""
 
 
-def validate(raw: object) -> dict | None:
-    """Keep only well-formed, rule-following lines; None if too few remain to use."""
+def _clean(text: object, limit: int, allowed: set) -> str | None:
+    return _check(text, limit, allowed)[0]
+
+
+LAST_REPORT: dict = {}   # (date, language) -> why the last attempt failed, for the admin panel
+
+
+def validate(raw: object, report: list | None = None) -> dict | None:
+    """Keep only well-formed, rule-following lines; None if too few remain to use. Rejections go into ``report``."""
+    report = report if report is not None else []
     if not isinstance(raw, dict):
+        report.append("the reply was not a JSON object")
         return None
     batch: dict = {}
+    # fields and their allowed blanks; which blank must appear somewhere (title, body or ask) for the line to be usable
     rules = {
-        "questions": ({"t": set(), "b": set(), "ask": set()}, ()),
-        "dasha": ({"t": {"dasha"}, "b": {"dasha"}, "ask": {"dasha"}}, ("t", "ask")),
-        "sign": ({"t": {"sign"}, "b": {"sign"}, "ask": {"sign"}}, ("t", "ask")),
-        "good": ({"t": set(), "b": {"end"}}, ("b",)),
-        "bad": ({"t": set(), "b": {"end"}}, ("b",)),
+        "questions": ({"t": set(), "b": set(), "ask": set()}, None),
+        "dasha": ({"t": {"dasha"}, "b": {"dasha"}, "ask": {"dasha"}}, "dasha"),
+        "sign": ({"t": {"sign"}, "b": {"sign"}, "ask": {"sign"}}, "sign"),
+        "good": ({"t": {"end"}, "b": {"end"}}, "end"),
+        "bad": ({"t": {"end"}, "b": {"end"}}, "end"),
     }
     limits = {"t": MAX_TITLE, "b": MAX_BODY, "ask": MAX_ASK}
-    for key, (fields, must_have_placeholder) in rules.items():
+    for key, (fields, needed) in rules.items():
         items = raw.get(key)
         kept = []
         for item in items if isinstance(items, list) else []:
             if not isinstance(item, dict):
+                report.append(f"{key}: an item was not an object")
                 continue
-            cleaned = {field: _clean(item.get(field), limits[field], allowed) for field, allowed in fields.items()}
-            if any(value is None for value in cleaned.values()):
-                continue
-            if any(not PLACEHOLDER.search(cleaned[field]) for field in must_have_placeholder):
+            cleaned, problems = {}, []
+            for field, allowed in fields.items():
+                value, why = _check(item.get(field), limits[field], allowed)
+                cleaned[field] = value
+                if why:
+                    problems.append(f"{field} {why}")
+            if not problems and needed and all("{" + needed + "}" not in cleaned[field] for field in fields if field != "ask"):
+                problems.append(f"no {{{needed}}} in title or body")
+            if not problems and needed in ("dasha", "sign") and "{" + needed + "}" not in cleaned["ask"]:
+                problems.append(f"no {{{needed}}} in ask")
+            if problems:
+                report.append(f"{key}: {'; '.join(problems)} — {str(item.get('t', ''))[:60]!r}")
                 continue
             if cleaned["t"] not in {other["t"] for other in kept}:
                 kept.append(cleaned)
         batch[key] = kept[:COUNTS[key]]
-    if any(len(batch[key]) < count for key, count in MINIMUM.items()):
+    short = [f"{key} {len(batch[key])}/{count}" for key, count in MINIMUM.items() if len(batch[key]) < count]
+    if short:
+        report.insert(0, "too few usable lines: " + ", ".join(short))
         return None
     return batch
 
@@ -128,7 +155,7 @@ def _recent_titles(day: date, language: str) -> list[str]:
     for back in range(1, 8):
         try:
             data = json.loads(_path(day - timedelta(days=back), language).read_text(encoding="utf-8"))
-            titles += [item["t"] for item in data.get("questions", [])][:3]
+            titles += [item["t"] for item in data.get("questions", [])][:5]
         except (OSError, ValueError, KeyError, TypeError):
             continue
     return titles[:30]
@@ -143,25 +170,41 @@ def _generations_today() -> int:
         return 0
 
 
-def generate(day: date, language: str) -> dict | None:
-    """Write, check and save the batch for one day and language (once); returns the saved batch or None."""
+def generate(day: date, language: str, force: bool = False) -> dict | None:
+    """Write, check and save the batch for one day and language (once); returns the saved batch or None.
+
+    After a failure it is not tried again for an hour unless ``force`` (the admin's "Try again now").
+    """
     key = (day.isoformat(), language)
     with _lock:
-        if key in _running or time.monotonic() - _failed.get(key, -1e9) < RETRY_AFTER_FAILURE:
+        if key in _running or (not force and time.monotonic() - _failed.get(key, -1e9) < RETRY_AFTER_FAILURE):
             return None
         _running.add(key)
     try:
         if _generations_today() >= DAILY_GENERATION_CAP:
+            LAST_REPORT[key] = f"daily limit of {DAILY_GENERATION_CAP} batches reached"
             return None
         name = assistant.LANGUAGES[language]
         prompt = PROMPT.format(weekday=day.strftime("%A"), month=day.strftime("%B"), recent=json.dumps(_recent_titles(day, language), ensure_ascii=False),
                                language=name, **COUNTS)
         model = store.value("JYOTISHA_NUDGE_MODEL").strip() or None   # empty: the same model as the chat
-        batch = validate(_parse(assistant.complete(SYSTEM.format(language=name), prompt, json_output=True, max_tokens=2048, model=model)))
+        # Room for the reply (and any "thinking" newer models do first); only the tokens actually used are paid for.
+        text = assistant.complete(SYSTEM.format(language=name), prompt, json_output=True, max_tokens=8192, model=model)
+        report: list = []
+        if text is None:
+            report.append(assistant.LAST_ERROR["text"] or "no reply from the AI")
+            batch = None
+        else:
+            parsed = _parse(text)
+            if parsed is None:
+                report.append(f"the reply was not valid JSON: {text[:120]!r}")
+            batch = validate(parsed, report) if parsed is not None else None
         if batch is None:
             with _lock:
                 _failed[key] = time.monotonic()
+                LAST_REPORT[key] = " | ".join(report)[:600] or "unknown"
             return None
+        LAST_REPORT.pop(key, None)
         path = _path(day, language)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"date": day.isoformat(), "language": language, **batch}, ensure_ascii=False), encoding="utf-8")

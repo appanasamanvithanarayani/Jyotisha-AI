@@ -106,12 +106,20 @@
     const lang = el('select'); (push.languages || []).forEach(([code, name]) => lang.appendChild(new Option(name, code))); lang.value = 'te';
     const show = el('button', 'btn', 'Show'); show.type = 'button'; show.style.marginTop = '8px';
     const out = el('div');
-    show.addEventListener('click', async () => {
+    const load = async retry => {
       show.disabled = true; out.textContent = 'Loading… (writing it now can take up to a minute)';
       try {
-        const result = await api('/api/admin/nudges', { language: lang.value });
+        const result = await api('/api/admin/nudges', { language: lang.value, retry });
         out.textContent = '';
-        if (!result.batch) { out.appendChild(el('p', 'off-text', result.enabled ? 'Not written yet (the AI was busy or its text failed the checks). It will be tried again later.' : 'Off, or no AI provider is set up.')); }
+        if (!result.batch) {
+          out.appendChild(el('p', 'off-text', 'Not written yet. The app uses its built-in messages meanwhile.'));
+          if (result.reason) out.appendChild(el('p', 'hint', `Why: ${result.reason}`));
+          if (result.enabled) {
+            const again = el('button', 'btn', 'Try again now'); again.type = 'button';
+            again.addEventListener('click', () => { void load(true); });
+            out.appendChild(again);
+          }
+        }
         else {
           const names = { questions: 'Evening questions', dasha: 'About their dasha', sign: 'About their Moon sign', good: 'Auspicious muhurta', bad: 'Rahu Kalam' };
           Object.entries(names).forEach(([key, label]) => {
@@ -121,7 +129,8 @@
         }
       } catch (error) { out.textContent = error.message; }
       show.disabled = false;
-    });
+    };
+    show.addEventListener('click', () => { void load(false); });
     daily.append(field('Language', lang), show, out); view.appendChild(daily);
   }
 

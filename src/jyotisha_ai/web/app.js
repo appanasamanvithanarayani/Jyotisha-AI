@@ -690,7 +690,7 @@
       const ai = aiBatches[iso] && aiBatches[iso][id === MUHURTA_GOOD_ID ? 'good' : 'bad'];
       const choices = Array.isArray(ai) && ai.length ? ai.map(item => [item.t, item.b]) : options;
       const [title, body] = choices[variant % choices.length];
-      result.push({ id: id + offset, title, body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
+      result.push({ id: id + offset, title: fill(title, { end }), body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
     };
     if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
     add(MUHURTA_BAD_ID, day.timings.rahu_kalam, texts.bad);

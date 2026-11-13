@@ -158,20 +158,32 @@ def ask_status(payload: object) -> dict:
     return {"answer": text} if text else {"status": "unavailable"}
 
 
+LAST_ERROR = {"text": ""}   # why the last complete() call returned nothing (shown in the admin panel)
+
+
+def _fail(reason: str) -> None:
+    LAST_ERROR["text"] = reason[:300]
+
+
 def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool = False, timeout: float = 60.0,
              model: str | None = None) -> str | None:
     """One-shot text generation with the configured provider (used for daily notification copy); None if unavailable.
 
     ``model`` overrides the chat model for this call (for example a cheaper model for notifications).
+    On failure the reason is kept in LAST_ERROR for the admin panel.
     """
+    LAST_ERROR["text"] = ""
     if model is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+        _fail(f"Invalid model name {model!r}")
         return None
     selected = provider()
     if selected is None:
+        _fail("No AI provider is set up (provider and API key)")
         return None
     if selected == "gemini":
         model = model or _setting("JYOTISHA_GEMINI_MODEL") or DEFAULT_GEMINI_MODEL
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+            _fail(f"Invalid Gemini model name {model!r}")
             return None
         config: dict = {"maxOutputTokens": max_tokens, "temperature": 1.0}
         if json_output:
@@ -181,22 +193,45 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
         request = urllib.request.Request(f"{GEMINI_URL}{model}:generateContent", data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")})
     else:
-        body = {"model": model or _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL, "max_tokens": max_tokens, "system": system,
-                "messages": [{"role": "user", "content": prompt}]}
+        model = model or _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL
+        body = {"model": model, "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": prompt}]}
         request = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-api-key": _api_key(), "anthropic-version": "2023-06-01"})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             reply = json.loads(response.read())
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError):
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            error = json.loads(exc.read()).get("error", {})
+            detail = error.get("message", "") if isinstance(error, dict) else str(error)
+        except (ValueError, OSError, AttributeError):
+            pass
+        _fail(f"{selected} model {model} answered HTTP {exc.code}: {detail}".strip())
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError) as exc:
+        _fail(f"Could not reach {selected}: {type(exc).__name__}")
         return None
     if not isinstance(reply, dict):
+        _fail("Unexpected reply from the AI")
         return None
     if selected == "gemini":
         candidates = reply.get("candidates") or []
-        content = candidates[0].get("content") if candidates and isinstance(candidates[0], dict) else None
+        first = candidates[0] if candidates and isinstance(candidates[0], dict) else {}
+        content = first.get("content")
         parts = content.get("parts", []) if isinstance(content, dict) else []
-        text = "".join(part.get("text", "") for part in parts if isinstance(part, dict))
+        text = "".join(part.get("text", "") for part in parts if isinstance(part, dict) and not part.get("thought"))
+        finish = first.get("finishReason", "")
+        if finish == "MAX_TOKENS":
+            _fail("The reply was cut off (output limit reached)")
+            return None
+        if not text:
+            block = (reply.get("promptFeedback") or {}).get("blockReason", "")
+            _fail(f"Empty reply from Gemini ({finish or block or 'no text'})")
+            return None
     else:
         text = "".join(block.get("text", "") for block in reply.get("content", []) if isinstance(block, dict) and block.get("type") == "text")
+        if reply.get("stop_reason") == "max_tokens":
+            _fail("The reply was cut off (output limit reached)")
+            return None
     return text.strip() or None
