@@ -766,11 +766,24 @@
     return result;
   }
   // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
+  // When a notification opens the app, its question waits until the saved Kundli is restored and the AI is known to be on,
+  // so the chat is not reset under it and the reply comes from Jyotisha AI, not the offline answers.
+  const startup = { profile: false, readiness: false, pending: null };
+  function startupDone(part) {
+    startup[part] = true;
+    if (startup.profile && startup.readiness && startup.pending) {
+      const question = startup.pending; startup.pending = null;
+      showPage('chat'); ask(question, question, true);
+    }
+  }
   function openFromNotification(extra) {
     const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
     showPage(page);
     const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
-    if (page === 'chat' && question) ask(question, question, true);
+    if (!question) return;
+    showPage('chat');
+    if (startup.profile && startup.readiness) ask(question, question, true);
+    else startup.pending = question;
   }
   try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.extra)); } catch (_error) { /* optional */ }
 
@@ -795,10 +808,7 @@
     const plugin = messenger();
     if (plugin) {
       // Tapping a message opens the screen chosen in the admin panel.
-      plugin.addListener('notificationActionPerformed', event => {
-        const page = event && event.notification && event.notification.data && event.notification.data.page;
-        showPage(Object.hasOwn(pages, page) ? page : 'home');
-      });
+      plugin.addListener('notificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.data));
       // While the app is open Android does not show the message itself, so show it as a local notification.
       plugin.addListener('notificationReceived', event => {
         const message = event && event.notification, local = notifier();
@@ -887,11 +897,12 @@
   }
   async function restoreProfile() {
     const profile = loadProfile();
-    if (!profile) return;
     try {
+      if (!profile) return;
       const { ok, body } = await post('/api/birth-chart', profile);
       if (ok && body && body.chart) { applyChart(body, profile); intake.step = null; resetChat(t('chartReady')); }
     } catch (_error) { /* offline or unavailable: the chat simply asks for the details again */ }
+    finally { startupDone('profile'); }
   }
   function startHome() {
     const today = localIso(new Date());
@@ -1995,6 +2006,7 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
+    startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);
     if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
@@ -2011,7 +2023,7 @@
         document.head.appendChild(ad);
       } catch (_error) { /* ads are optional */ }
     }
-  }).catch(() => { $('availability').textContent = t('inputDisabled'); });
+  }).catch(() => { $('availability').textContent = t('inputDisabled'); startupDone('readiness'); });
   const saved = loadSettings();
   if (saved) {
     state.city = saved.city; state.useLocation = saved.useLocation; state.onboarded = true;

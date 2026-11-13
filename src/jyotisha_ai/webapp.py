@@ -823,7 +823,7 @@ class LocalHandler(BaseHTTPRequestHandler):
                 return
             try:
                 message = push.validate(payload.get("title"), payload.get("body"), payload.get("audience"), payload.get("page", "home"),
-                                        tuple(assistant.LANGUAGES))
+                                        tuple(assistant.LANGUAGES), payload.get("ask", ""))
                 message_id = push.send(message)
             except push.PushError as exc:
                 self._json(400, {"error": str(exc)})

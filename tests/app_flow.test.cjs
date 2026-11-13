@@ -588,6 +588,30 @@ test('AI-written copy: evenings use the day\'s fresh lines (with the user\'s das
   assert.ok(muhurta.every(item => /^(⏰ AI golden hour|🚦 AI red signal)/.test(item.title)));
 });
 
+test('tapping a notification that opens the app asks its question once the Kundli is loaded, and shows the AI reply', async () => {
+  let tap = null;
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {}, schedule: async () => {},
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') tap = fn; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
+  // Android delivers the tap right away, before the saved Kundli has been restored.
+  tap({ notification: { extra: { page: 'chat', ask: 'Will my plans work out?' } } });
+  await settle(); await settle(); await settle();
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('chat').hidden, false);
+  const texts = app.element('chat-log').children.map(item => item.textContent);
+  assert.ok(texts.includes('Will my plans work out?'), texts.join(' | '));
+  assert.equal(texts.at(-1), 'AI answer');                                        // the AI's reply, not the offline answer
+  const asked = app.requests.filter(r => r.url === '/api/ask');
+  assert.equal(asked.length, 1);
+  assert.equal(asked[0].body.question, 'Will my plans work out?');
+  assert.ok(!texts.some(text => /date of birth/i.test(text)));                    // it did not start asking for birth details
+});
+
 function fakeAdMob() {
   const calls = [];
   return { calls, plugin: {

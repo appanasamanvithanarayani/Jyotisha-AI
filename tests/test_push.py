@@ -47,7 +47,11 @@ def fake_google(monkeypatch):
 def test_validate_checks_lengths_audience_and_screen():
     languages = ("en", "te", "hi")
     assert push.validate(" 🪔 Happy Diwali ", "See the muhurat.", "te", "calendar", languages) == {
-        "title": "🪔 Happy Diwali", "body": "See the muhurat.", "topic": "lang-te", "page": "calendar"}
+        "title": "🪔 Happy Diwali", "body": "See the muhurat.", "topic": "lang-te", "page": "calendar", "ask": ""}
+    with_question = push.validate("🤞 Will it work out?", "Ask your stars", "en", "home", languages, " Will my plans work out? ")
+    assert with_question["ask"] == "Will my plans work out?" and with_question["page"] == "chat"   # a question opens the chat
+    with pytest.raises(push.PushError):
+        push.validate("x", "y", "all", "home", languages, "q" * 301)
     assert push.validate("Hi", "Hello", "all", "home", languages)["topic"] == "all"
     for bad in [("", "x", "all", "home"), ("x" * 66, "x", "all", "home"), ("x", "y" * 241, "all", "home"),
                 ("x", "y", "fr", "home"), ("x", "y", "all", "admin"), ("x\x07", "y", "all", "home")]:
@@ -73,8 +77,10 @@ def test_send_signs_in_and_posts_an_fcm_v1_message(firebase_key, fake_google):
     message = json.loads(fcm_call["body"])["message"]
     assert message["topic"] == "lang-te" and message["notification"] == {"title": "🪔 Happy Diwali", "body": "Muhurat inside."}
     assert message["data"] == {"page": "calendar"} and message["android"]["notification"]["icon"] == "ic_stat_jyotisha"
+    push.send({"title": "🤞", "body": "b", "topic": "all", "page": "chat", "ask": "Will my plans work out?"})
+    assert json.loads(fake_google[-1]["body"])["message"]["data"] == {"page": "chat", "ask": "Will my plans work out?"}
     push.send({"title": "again", "body": "b", "topic": "all", "page": "home"})
-    assert len(fake_google) == 3                                       # the access token is reused
+    assert len(fake_google) == 4                                       # the access token is reused
 
 
 def test_admin_route_sends_and_records_it(panel, firebase_key, fake_google):  # noqa: F811
