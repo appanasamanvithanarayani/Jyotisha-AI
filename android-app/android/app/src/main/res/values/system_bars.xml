@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colours behind the phone's status and navigation bars: the app's light theme (cream, dark icons). -->
+<resources>
+    <color name="system_bars">#FFF7E8</color>
+    <bool name="light_system_bars">true</bool>
+</resources>

@@ -13,6 +13,11 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- The status and navigation bars show the app's colour, not white (on Android 15+ this is the window behind them). -->
+        <item name="android:windowBackground">@color/system_bars</item>
+        <item name="android:statusBarColor">@color/system_bars</item>
+        <item name="android:navigationBarColor">@color/system_bars</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
     </style>
 
 

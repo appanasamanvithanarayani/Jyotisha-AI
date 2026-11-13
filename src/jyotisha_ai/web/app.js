@@ -983,11 +983,14 @@
     status.textContent = t('locationChecking');
     locate(city => {
       $('welcome-city').value = city; state.pendingLocation = true;
-      status.textContent = t('confirmCity').replace('{city}', city);
+      status.textContent = `📍 ${city}`;
+      // The city comes from the location, so there is nothing more to ask: go straight on.
+      setTimeout(() => { if (!state.onboarded) finishWelcome(); }, 700);
     }, key => { state.pendingLocation = false; status.textContent = t(key); });
   });
-  $('welcome-form').addEventListener('submit', event => {
-    event.preventDefault();
+  $('welcome-form').addEventListener('submit', event => { event.preventDefault(); finishWelcome(); });
+  function finishWelcome() {
+    if (!$('welcome-city').value.trim()) return;
     applyLanguage(choice.value);
     state.city = $('welcome-city').value.trim();
     state.useLocation = state.pendingLocation; state.pendingLocation = false;
@@ -996,7 +999,8 @@
     document.body.classList.remove('onboarding-active');
     saveSettings();
     startHome();
-  });
+    if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }   // ads only after the welcome steps
+  }
 
   /* ----------------------------------------------------- change city (Home) */
   const cityPanel = $('city-panel');
@@ -1981,6 +1985,7 @@
   async function startAppAds(config) {
     const admob = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
     if (!admob || !adUnitOk(config.banner_id)) return;
+    if (!state.onboarded) { appAds.waiting = config; return; }   // no ads on the welcome screens
     appAds.config = config; appAds.admob = admob;
     try {
       await admob.initialize({ initializeForTesting: config.testing === true });
