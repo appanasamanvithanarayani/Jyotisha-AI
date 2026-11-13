@@ -806,10 +806,16 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(400, {"error": "unknown language"})
                 return
             today = datetime.now(timezone.utc).date()
-            batch = daily_nudges.cached(today, language)
+            retry = payload.get("retry") is True
+            batch = None if retry else daily_nudges.cached(today, language)
             if batch is None and daily_nudges.enabled() and limiter.allow(f"admin-nudges:{who}", 10, 3600.0):
-                batch = daily_nudges.generate(today, language)
-            self._json(200, {"enabled": daily_nudges.enabled(), "date": today.isoformat(), "batch": batch})
+                batch = daily_nudges.generate(today, language, force=retry)
+            if batch is None and not retry:
+                batch = daily_nudges.cached(today, language)
+            reason = None if batch is not None else daily_nudges.LAST_REPORT.get((today.isoformat(), language))
+            if batch is None and not daily_nudges.enabled():
+                reason = "Off in AI chat settings, or no AI provider / API key is set up"
+            self._json(200, {"enabled": daily_nudges.enabled(), "date": today.isoformat(), "batch": batch, "reason": reason})
         elif path == "/api/admin/push":
             # A notification to every installed app (or one language), through Firebase.
             if not limiter.allow(f"admin-push:{who}", 10, 3600.0):
