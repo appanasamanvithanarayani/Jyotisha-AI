@@ -10,6 +10,7 @@ const calendar = require(path.join(root, 'calendar-ui.js'));
 const names = require(path.join(root, 'panchang-names.js'));
 const chart = require(path.join(root, 'chart-ui.js'));
 const match = require(path.join(root, 'match-ui.js'));
+const nudges = require(path.join(root, 'nudges.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
@@ -71,7 +72,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -514,6 +515,43 @@ test('admin-panel messages: the app subscribes to "all" and its language, and a 
   app.element('language-switch').listeners.change({ target: app.element('language-switch') });
   await settle();
   assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
+});
+
+test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
+  const runs = [];
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {}, addListener: () => {},
+    schedule: async ({ notifications }) => { runs.push(notifications.filter(item => item.id >= 7120 && item.id < 7127)); },
+  };
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, time: '07:00' }));
+  // Pretend every life question was shown in the last few days: they must not come back yet.
+  const recent = {};
+  for (let back = 1; back <= 22; back += 1) {
+    const d = new Date(); d.setDate(d.getDate() - back);
+    recent[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`] = `q-${back - 1}`;
+  }
+  storage.setItem('jyotisha.nudges.v1', JSON.stringify(recent));
+  const capacitor = { Plugins: { LocalNotifications }, getPlatform: () => 'android' };
+  boot({ storage, capacitor });
+  await settle(); await settle(); await settle();
+  const first = runs.at(-1);
+  assert.ok(first.length >= 6);
+  assert.equal(new Set(first.map(item => item.title)).size, first.length);              // no repeats within the week
+  const history = JSON.parse(storage.getItem('jyotisha.nudges.v1'));
+  const planned = Object.entries(history).filter(([date]) => !recent[date]);
+  assert.equal(planned.length, first.length);
+  const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000);
+  for (const [date, key] of planned) {   // nothing comes back within 21 days of when it was last shown
+    for (const [usedOn, usedKey] of Object.entries(history)) {
+      if (usedKey === key && usedOn < date) assert.ok(daysBetween(usedOn, date) > 21, `${key} on ${date} was used on ${usedOn}`);
+    }
+  }
+  // Opening the app again the same day plans the same messages (no churn).
+  boot({ storage, capacitor });
+  await settle(); await settle(); await settle();
+  assert.equal(JSON.stringify(runs.at(-1).map(item => item.title)), JSON.stringify(first.map(item => item.title)));
 });
 
 function fakeAdMob() {

@@ -148,8 +148,6 @@
       notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
         time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotisha AI in your phone’s Settings, then try again.',
         muhurta: 'Good and bad muhurta alerts',
-        goodTitle: '✅ Auspicious muhurta has started', goodBody: 'Abhijit muhurta — do your important work now (until {end}).',
-        badTitle: '⚠️ Careful: Rahu Kalam now', badBody: 'Avoid starting important work until {end}.',
         evening: 'Evening question for you', eveningTime: 'Evening time',
         rahu: 'Rahu Kalam', fest: '🪔 {name} today', reopenTitle: '🌙 Your week ahead', reopenBody: 'Open Jyotisha AI to see this week’s Panchang.' },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
@@ -177,8 +175,6 @@
       notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
         time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotisha AIకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
         muhurta: 'శుభ / అశుభ ముహూర్తం హెచ్చరికలు',
-        goodTitle: '✅ శుభ ముహూర్తం మొదలైంది', goodBody: 'అభిజిత్ ముహూర్తం — మీ ముఖ్యమైన పనులు ఇప్పుడు చేసుకోండి ({end} వరకు).',
-        badTitle: '⚠️ జాగ్రత్త! ఇప్పుడు రాహు కాలం', badBody: 'ముఖ్యమైన పనులు {end} తర్వాత మొదలుపెట్టండి.',
         evening: 'సాయంత్రం మీ కోసం ఒక ప్రశ్న', eveningTime: 'సాయంత్రం సమయం',
         rahu: 'రాహు కాలం', fest: '🪔 ఈ రోజు {name}', reopenTitle: '🌙 ఈ వారం మీ కోసం', reopenBody: 'ఈ వారం పంచాంగం చూడటానికి Jyotisha AI తెరవండి.' },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
@@ -206,8 +202,6 @@
       notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
         time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotisha AI को अनुमति दें, फिर दोबारा कोशिश करें।',
         muhurta: 'शुभ / अशुभ मुहूर्त की सूचना',
-        goodTitle: '✅ शुभ मुहूर्त शुरू हो गया', goodBody: 'अभिजित मुहूर्त — अपने ज़रूरी काम अभी करें ({end} तक)।',
-        badTitle: '⚠️ सावधान! अभी राहु काल है', badBody: 'ज़रूरी काम {end} के बाद शुरू करें।',
         evening: 'शाम को आपके लिए एक सवाल', eveningTime: 'शाम का समय',
         rahu: 'राहु काल', fest: '🪔 आज {name}', reopenTitle: '🌙 आपका आने वाला सप्ताह', reopenBody: 'इस सप्ताह का पंचांग देखने के लिए Jyotisha AI खोलें।' },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
@@ -588,7 +582,7 @@
       if (!notify.on) return;
       const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
       const festivals = (state.festivals && state.festivals.events) || [];
-      const list = [];
+      const list = [], days = {};
       for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
         const iso = localIso(at);
@@ -597,7 +591,8 @@
         let day = null;
         try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
         if (!day) continue;
-        list.push(...muhurtaAlerts(day, iso, offset, now, copy));
+        days[iso] = day;
+        list.push(...muhurtaAlerts(day, iso, offset, now));
         if (at <= now) continue;
         const atText = `${iso}T${notify.time}`;
         const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
@@ -614,7 +609,7 @@
       // After the scheduled week, one reminder to open the app (which schedules the next week).
       const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
-      list.push(...eveningNotifications(now));
+      list.push(...eveningNotifications(now, days));
       await plugin.schedule({ notifications: list });
     } catch (_error) { /* notifications are optional */ } finally { notifyBusy = false; }
   }
@@ -669,95 +664,82 @@
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;
   }
-  /* ---- Evening "curiosity" notifications: one personal question a day; tapping it opens Jyotisha AI and asks it ---- */
-  // need: 'chart' (has a Kundli), 'nochart', 'dasha' (current dasha known), 'sade' (Sade Sati running); none = anyone.
-  const NUDGES = {
-    te: [
-      { need: 'dasha', t: '⏳ ఇప్పుడు మీకు {dasha} దశ నడుస్తోంది', b: 'ఈ దశ మీ జీవితంలో ఏం తెస్తుందో చూడాలనుకుంటున్నారా? 👉', ask: 'ఇప్పుడు నడుస్తున్న {dasha} దశ నాకు ఎలా ఉంటుంది?' },
-      { t: '🤔 మీరు అనుకున్న పనులు జరుగుతాయా?', b: 'తెలుసుకోవాలని ఉందా? మీ జాతకం ఏం చెబుతుందో Jyotisha AIని అడగండి.', ask: 'నేను అనుకున్న పనులు జరుగుతాయా?' },
-      { t: '💭 ఏదైనా పని మొదలుపెట్టాలని ఆలోచిస్తున్నారా?', b: 'మొదలుపెట్టే ముందు Jyotisha AIని అడిగి కన్ఫర్మ్ చేసుకోండి. ✨', page: 'chat' },
-      { t: '😔 మూడ్ బాలేదా?', b: 'మీ జాతకానికి సరిపోయే చిన్న పరిహారం చూడండి. 🙏', ask: 'నా మూడ్ బాలేదు. నాకు సరిపోయే చిన్న పరిహారం చెప్పండి.' },
-      { t: '💰 డబ్బు విషయంలో ఈ నెల ఎలా ఉంటుంది?', b: 'ఖర్చులు, ఆదాయం — మీ గ్రహాలు ఏమంటున్నాయో చూడండి.', ask: 'ఈ నెల నా డబ్బు పరిస్థితి ఎలా ఉంటుంది?' },
-      { t: '💼 ఉద్యోగంలో మార్పు వస్తుందా?', b: 'కెరీర్ గురించి మీ మనసులో ఉన్న ప్రశ్న Jyotisha AIని అడగండి.', ask: 'ఈ సంవత్సరం నా ఉద్యోగం, కెరీర్ ఎలా ఉంటుంది?' },
-      { t: '💞 పెళ్లి ఎప్పుడు?', b: 'మీ జాతకంలో వివాహ యోగం గురించి తెలుసుకోండి.', ask: 'నా పెళ్లి, వైవాహిక జీవితం గురించి నా జాతకం ఏం చెబుతుంది?' },
-      { t: '🔮 రేపు మీకు ఎలా ఉంటుంది?', b: 'మీ రాశికి రేపటి ఫలం ఒక్క ట్యాప్‌లో.', page: 'rashi' },
-      { need: 'sade', t: '🪐 ఏలినాటి శని నడుస్తోంది', b: 'ఈ సమయంలో ఏం చేయాలి, ఏం చేయకూడదు — తెలుసుకోండి.', ask: 'నాకు ఏలినాటి శని నడుస్తోంది. ఈ సమయంలో ఏం చేయాలి?' },
-      { t: '🙏 ఈ రోజు ఏ దేవుడిని పూజిస్తే మంచిది?', b: 'మీ జాతకానికి తగిన దైవం, మంత్రం తెలుసుకోండి.', ask: 'నా జాతకం ప్రకారం నేను ఏ దేవుడిని పూజిస్తే మంచిది?' },
-      { t: '🏠 ఆరోగ్యం, కుటుంబం ఎలా ఉంటాయి?', b: 'మీ ఇంటి గురించి మీ గ్రహాలు ఏం చెబుతున్నాయో చూడండి.', ask: 'నా ఆరోగ్యం, కుటుంబ జీవితం ఎలా ఉంటుంది?' },
-      { need: 'nochart', t: '🪐 మీ జాతకం తెలుసుకోవాలని ఉందా?', b: 'పుట్టిన తేదీ, సమయం, స్థలం చాలు — 30 సెకన్లలో ఉచిత జాతకం.', page: 'kundli' },
-    ],
-    en: [
-      { need: 'dasha', t: '⏳ You are in your {dasha} period', b: 'Want to see what this period brings to your life? 👉', ask: 'How will my current {dasha} period be for me?' },
-      { t: '🤔 Will your plans work out?', b: 'Curious? Ask Jyotisha AI what your chart says.', ask: 'Will the things I am planning work out?' },
-      { t: '💭 Thinking of starting something new?', b: 'Ask Jyotisha AI and confirm before you begin. ✨', page: 'chat' },
-      { t: '😔 Not feeling great today?', b: 'See a small remedy that suits your chart. 🙏', ask: 'I am not feeling good. Suggest a simple remedy for my chart.' },
-      { t: '💰 How will money be this month?', b: 'Income and expenses — see what your planets say.', ask: 'How will my money situation be this month?' },
-      { t: '💼 Is a job change coming?', b: 'Ask Jyotisha AI the career question on your mind.', ask: 'How will my job and career be this year?' },
-      { t: '💞 When is marriage likely?', b: 'Find out what your chart says about marriage.', ask: 'What does my chart say about marriage and married life?' },
-      { t: '🔮 How will tomorrow be for you?', b: 'Tomorrow’s reading for your sign, one tap away.', page: 'rashi' },
-      { need: 'sade', t: '🪐 Sade Sati is running for you', b: 'What to do — and avoid — in this period.', ask: 'Sade Sati is running for me. What should I do in this time?' },
-      { t: '🙏 Which deity suits you best?', b: 'Find the deity and mantra that match your chart.', ask: 'According to my chart, which deity should I worship?' },
-      { t: '🏠 How will health and family be?', b: 'See what your planets say about home.', ask: 'How will my health and family life be?' },
-      { need: 'nochart', t: '🪐 Want to know your Jathakam?', b: 'Just your birth date, time and place — free Kundli in 30 seconds.', page: 'kundli' },
-    ],
-    hi: [
-      { need: 'dasha', t: '⏳ अभी आपकी {dasha} दशा चल रही है', b: 'यह दशा आपके जीवन में क्या लाएगी, देखना चाहेंगे? 👉', ask: 'मेरी अभी चल रही {dasha} दशा मेरे लिए कैसी रहेगी?' },
-      { t: '🤔 क्या आपके सोचे हुए काम होंगे?', b: 'जानना चाहते हैं? Jyotisha AI से पूछें आपकी कुंडली क्या कहती है।', ask: 'क्या मेरे सोचे हुए काम पूरे होंगे?' },
-      { t: '💭 कोई नया काम शुरू करने की सोच रहे हैं?', b: 'शुरू करने से पहले Jyotisha AI से पूछकर पक्का कर लें। ✨', page: 'chat' },
-      { t: '😔 मूड ठीक नहीं है?', b: 'अपनी कुंडली के अनुसार एक छोटा उपाय देखें। 🙏', ask: 'मेरा मूड ठीक नहीं है। मेरी कुंडली के अनुसार कोई सरल उपाय बताइए।' },
-      { t: '💰 इस महीने पैसा कैसा रहेगा?', b: 'आमदनी और खर्च — देखें आपके ग्रह क्या कहते हैं।', ask: 'इस महीने मेरी आर्थिक स्थिति कैसी रहेगी?' },
-      { t: '💼 क्या नौकरी में बदलाव आएगा?', b: 'करियर का अपना सवाल Jyotisha AI से पूछें।', ask: 'इस साल मेरी नौकरी और करियर कैसा रहेगा?' },
-      { t: '💞 शादी कब होगी?', b: 'जानें आपकी कुंडली विवाह के बारे में क्या कहती है।', ask: 'मेरी कुंडली विवाह और वैवाहिक जीवन के बारे में क्या कहती है?' },
-      { t: '🔮 कल आपका दिन कैसा रहेगा?', b: 'आपकी राशि का कल का फल, एक टैप में।', page: 'rashi' },
-      { need: 'sade', t: '🪐 आपकी साढ़ेसाती चल रही है', b: 'इस समय क्या करें और क्या न करें — जानें।', ask: 'मेरी साढ़ेसाती चल रही है। इस समय मुझे क्या करना चाहिए?' },
-      { t: '🙏 आपके लिए कौन-से देवता शुभ हैं?', b: 'अपनी कुंडली के अनुसार देवता और मंत्र जानें।', ask: 'मेरी कुंडली के अनुसार मुझे किस देवता की पूजा करनी चाहिए?' },
-      { t: '🏠 सेहत और परिवार कैसे रहेंगे?', b: 'देखें आपके ग्रह घर-परिवार के बारे में क्या कहते हैं।', ask: 'मेरा स्वास्थ्य और पारिवारिक जीवन कैसा रहेगा?' },
-      { need: 'nochart', t: '🪐 अपनी कुंडली जानना चाहते हैं?', b: 'बस जन्म तिथि, समय और स्थान — 30 सेकंड में मुफ़्त कुंडली।', page: 'kundli' },
-    ],
-  };
-  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, between 6 AM and 9:30 PM.
-  const MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
-  function muhurtaAlerts(day, iso, offset, now, copy) {
-    if (!notify.muhurta || !day.timings) return [];
-    const result = [];
-    const add = (id, span, title, body) => {
+  /* ---- Unique daily notifications: built from each day's sky for this user, with a no-repeat memory ---- */
+  const nudgeTexts = window.JyotishaNudges;
+  const NUDGE_FIRST_ID = 7120, MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
+  const NUDGE_HISTORY_KEY = 'jyotisha.nudges.v1', NO_REPEAT_DAYS = 21;
+  const dayNumberOf = date => Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  const isoMinusDays = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); };
+  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 6 AM to 9:30 PM.
+  // Three wordings each, rotated by date, so the text changes from day to day.
+  function muhurtaAlerts(day, iso, offset, now) {
+    if (!notify.muhurta || !day.timings || !nudgeTexts) return [];
+    const texts = nudgeTexts.pick(nudgeTexts.MUHURTA, state.lang), variant = dayNumberOf(new Date(`${iso}T12:00:00`)), result = [];
+    const add = (id, span, options) => {
       if (!Array.isArray(span) || typeof span[0] !== 'string') return;
       const at = new Date(`${span[0]}:00`);
       const hour = at.getHours() + at.getMinutes() / 60;
       if (Number.isNaN(at.getTime()) || at <= now || hour < 6 || hour > 21.5) return;
-      const end = clock(span[1], iso).replace(/[\u2066-\u2069]/g, '');
+      const end = clock(span[1], iso).replace(/[⁦-⁩]/g, '');
+      const [title, body] = options[variant % options.length];
       result.push({ id: id + offset, title, body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
     };
-    const wednesday = new Date(`${iso}T12:00:00Z`).getUTCDay() === 3;
-    if (!wednesday) add(MUHURTA_GOOD_ID, day.timings.abhijit, copy.goodTitle, copy.goodBody);
-    add(MUHURTA_BAD_ID, day.timings.rahu_kalam, copy.badTitle, copy.badBody);
+    if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
+    add(MUHURTA_BAD_ID, day.timings.rahu_kalam, texts.bad);
     return result;
   }
-  const NUDGE_FIRST_ID = 7120;
-  function nudgesFor() {
-    const pool = NUDGES[state.lang] || NUDGES.en, details = state.details;
+  // Every message this user could get on a given evening, each with a key used by the no-repeat memory.
+  function nudgeCandidates(day, iso, atText) {
+    const lang = state.lang, details = state.details, chart = state.chart;
     const dashaInfo = details && details.dasha;
     const sub = dashaInfo && (dashaInfo.antardasha || []).find(item => item.current);
     const dasha = dashaInfo && dashaInfo.current_mahadasha ? `${bodyName(dashaInfo.current_mahadasha)}${sub ? ' – ' + bodyName(sub.lord) : ''}` : '';
     const sade = !!(details && details.doshas && details.doshas.saturn && details.doshas.saturn.sade_sati && details.doshas.saturn.sade_sati.active);
-    const ok = item => !item.need || (item.need === 'chart' && state.chart) || (item.need === 'nochart' && !state.chart)
-      || (item.need === 'dasha' && dasha) || (item.need === 'sade' && sade);
-    return pool.filter(ok).map(item => ({ ...item, t: fill(item.t, { dasha }), b: fill(item.b, { dasha }), ask: item.ask ? fill(item.ask, { dasha }) : '' }));
+    const make = (key, [t, b, ask], page) => ({ key, t, b, ask: ask || '', page: ask ? 'chat' : (page || 'home') });
+    const current = list => (Array.isArray(list) && list.find(item => item.starts_at <= atText && atText < item.ends_at)) || (Array.isArray(list) ? list[0] : null);
+    const special = [], sky = [];
+    const tithi = day && current(day.tithi), tithiKey = tithi && nudgeTexts.TITHI_KEYS[tithi.index];
+    if (tithiKey) special.push(make(`tithi-${tithiKey}`, nudgeTexts.pick(nudgeTexts.TITHIS, lang)[tithiKey]));
+    const moon = day && current(day.moon_rashi);
+    if (chart && moon) {
+      const house = (moon.index - chart.positions.Moon.rashi_index + 12) % 12 + 1;
+      sky.push(make(`house-${house}`, nudgeTexts.pick(nudgeTexts.HOUSES, lang)[house - 1]));
+    }
+    const weekday = new Date(`${iso}T12:00:00Z`).getUTCDay();
+    sky.push(make(`weekday-${weekday}`, nudgeTexts.pick(nudgeTexts.WEEKDAYS, lang)[weekday]));
+    const fits = item => !item.need || (item.need === 'nochart' && !chart) || (item.need === 'dasha' && dasha) || (item.need === 'sade' && sade);
+    const questions = nudgeTexts.pick(nudgeTexts.QUESTIONS, lang)
+      .map((item, index) => ({ item, index })).filter(({ item }) => fits(item))
+      .map(({ item, index }) => make(`q-${index}`, [fill(item.t, { dasha }), fill(item.b, { dasha }), item.ask ? fill(item.ask, { dasha }) : ''], item.page));
+    // Festive tithis first; then the order rotates by date between sky-based and life questions.
+    const shift = dayNumberOf(new Date(`${iso}T12:00:00`));
+    const rotated = questions.length ? questions.map((_, i) => questions[(i + shift * 7) % questions.length]) : [];
+    return shift % 2 ? [...special, ...sky, ...rotated] : [...special, ...rotated, ...sky];
   }
-  // A different message each evening (rotates through the list by date), so people do not see the same one twice in a row.
-  function eveningNotifications(now) {
-    if (!notify.evening) return [];
-    const list = nudgesFor();
-    if (!list.length) return [];
-    const [hour, minute] = notify.eveningTime.split(':').map(Number), result = [];
+  function loadNudgeHistory() {
+    try { const saved = JSON.parse(window.localStorage.getItem(NUDGE_HISTORY_KEY)); return saved && typeof saved === 'object' ? saved : {}; } catch (_error) { return {}; }
+  }
+  // One message per evening; the same message never comes back within NO_REPEAT_DAYS (falls back to the least recent).
+  function eveningNotifications(now, days) {
+    if (!notify.evening || !nudgeTexts) return [];
+    const history = loadNudgeHistory(), today = localIso(now), result = [];
+    for (const date of Object.keys(history)) if (date >= today || date < isoMinusDays(today, 45)) delete history[date];   // future days are planned again
+    const [hour, minute] = notify.eveningTime.split(':').map(Number);
     for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
       const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
       if (at <= now) continue;
-      const dayNumber = Math.floor(Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()) / 86400000);
-      const item = list[dayNumber % list.length];
-      result.push({ id: NUDGE_FIRST_ID + offset, title: item.t, body: item.b, largeBody: item.b, schedule: { at, allowWhileIdle: true },
-        extra: { page: item.ask ? 'chat' : (item.page || 'home'), ask: item.ask || '' } });
+      const iso = localIso(at), from = isoMinusDays(iso, NO_REPEAT_DAYS);
+      const lastUsed = {};
+      for (const [date, key] of Object.entries(history)) if (date < iso && (!lastUsed[key] || date > lastUsed[key])) lastUsed[key] = date;
+      const candidates = nudgeCandidates(days[iso], iso, `${iso}T${notify.eveningTime}`);
+      if (!candidates.length) continue;
+      const choice = candidates.find(item => !lastUsed[item.key] || lastUsed[item.key] < from)
+        || candidates.slice().sort((a, b) => (lastUsed[a.key] || '').localeCompare(lastUsed[b.key] || ''))[0];
+      history[iso] = choice.key;
+      result.push({ id: NUDGE_FIRST_ID + offset, title: choice.t, body: choice.b, largeBody: choice.b, schedule: { at, allowWhileIdle: true },
+        extra: { page: choice.page, ask: choice.ask } });
     }
+    try { window.localStorage.setItem(NUDGE_HISTORY_KEY, JSON.stringify(history)); } catch (_error) { /* not remembered */ }
     return result;
   }
   // Tapping a notification: open its screen, and for a question, ask Jyotisha AI straight away.
