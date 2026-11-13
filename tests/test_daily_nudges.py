@@ -30,7 +30,8 @@ def test_validate_keeps_good_lines_and_drops_rule_breakers():
     raw["dasha"].append({"t": "No blank here", "b": "b", "ask": "ask"})                             # must contain {dasha}
     raw["good"].append({"t": "No end time", "b": "Go now"})                                         # must contain {end}
     batch = daily_nudges.validate(raw)
-    assert len(batch["questions"]) == 10 and len(batch["dasha"]) == 1 and len(batch["good"]) == 3
+    # Only what is needed is kept: 3 questions, 1 dasha line, 1 sign line, 1 of each muhurta wording.
+    assert len(batch["questions"]) == 3 and len(batch["dasha"]) == 1 and len(batch["good"]) == 1 and len(batch["bad"]) == 1
     assert all("gemstone" not in item["t"].lower() for item in batch["questions"])
     assert daily_nudges.validate({"questions": [], "good": [], "bad": []}) is None                  # too few to use
     assert daily_nudges._parse("```json\n" + json.dumps(raw) + "\n```")["questions"][0]["t"].startswith("🤞")
@@ -41,7 +42,7 @@ def ai(monkeypatch):
     calls = []
 
     def complete(system, prompt, **kwargs):
-        calls.append((system, prompt))
+        calls.append((system, prompt, kwargs))
         return json.dumps(good_batch(str(len(calls))))
 
     monkeypatch.setattr(daily_nudges.assistant, "complete", complete)
@@ -55,11 +56,18 @@ def test_batches_are_written_once_per_day_and_language_then_cached(ai):
     first = daily_nudges.batches(today, 3, "te")
     assert sorted(first) == [(today + timedelta(days=i)).isoformat() for i in range(3)]
     assert len(ai) == 3 and "Telugu" in ai[0][0]
+    assert ai[0][2]["model"] is None and ai[0][2]["max_tokens"] <= 2048     # same model as the chat unless set
     again = daily_nudges.batches(today, 3, "te")
     assert again == first and len(ai) == 3                                    # served from the cache
     assert "Question 1" in ai[1][1]                                           # recent titles are passed on, to keep it fresh
     daily_nudges.batches(today, 1, "hi")
     assert len(ai) == 4 and "Hindi" in ai[3][0]
+
+
+def test_a_separate_notification_model_can_be_set(monkeypatch, ai):
+    monkeypatch.setenv("JYOTISHA_NUDGE_MODEL", "gemini-cheap-lite")
+    daily_nudges.generate(date(2031, 2, 2), "en")
+    assert ai[-1][2]["model"] == "gemini-cheap-lite"
 
 
 def test_failed_generation_is_not_retried_at_once_and_switch_off_works(monkeypatch, ai):
@@ -94,10 +102,38 @@ def test_admin_sees_todays_batch(ai):
         cookie = sign_in(server)
         status, _, body = call(server, "POST", "/api/admin/nudges", {"language": "te"}, cookie=cookie)
         data = json.loads(body)
-        assert status == 200 and data["enabled"] is True and len(data["batch"]["questions"]) == 10
+        assert status == 200 and data["enabled"] is True and len(data["batch"]["questions"]) == 3
         assert call(server, "POST", "/api/admin/nudges", {"language": "te"})[0] == 401
     finally:
         os.environ.pop("JYOTISHA_ADMIN_PASSWORD", None)
         server.shutdown()
         thread.join(timeout=3)
         server.server_close()
+
+
+def test_complete_sends_the_chosen_model_to_gemini(monkeypatch):
+    import io
+    from jyotisha_ai import assistant
+    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    seen = []
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(request, timeout=0):
+        seen.append((request.full_url, json.loads(request.data)))
+        return Reply(json.dumps({"candidates": [{"content": {"parts": [{"text": "{}"}]}}]}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", urlopen)
+    assert assistant.complete("sys", "hi", model="gemini-cheap-lite", json_output=True, max_tokens=2048) == "{}"
+    url, body = seen[-1]
+    assert "/models/gemini-cheap-lite:generateContent" in url
+    assert body["generationConfig"]["maxOutputTokens"] == 2048 and body["generationConfig"]["responseMimeType"] == "application/json"
+    assistant.complete("sys", "hi")
+    assert f"/models/{assistant.DEFAULT_GEMINI_MODEL}:generateContent" in seen[-1][0]            # chat model when not set
+    assert assistant.complete("sys", "hi", model="bad model!") is None
