@@ -453,7 +453,7 @@ test('appearance: light by default; dark mode and an accent colour can be chosen
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
 });
 
-test('daily notifications: the Android app asks once, then schedules a week of morning notifications', async () => {
+test('daily notifications: the Android app asks for permission at the start, once, then schedules a week of morning notifications', async () => {
   const calls = { schedule: [], requested: 0, cancelled: [] };
   const LocalNotifications = {
     checkPermissions: async () => ({ display: calls.requested ? 'granted' : 'prompt' }),     // like a phone: granted once allowed
@@ -467,12 +467,9 @@ test('daily notifications: the Android app asks once, then schedules a week of m
   const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });
   app.context.__tap = event => LocalNotifications.tap(event);
   await settle();
-  const card = app.element('notify-card');
-  assert.equal(card.hidden, false);                                   // invite shown once in the app
-  assert.match(card.children[0].children[0].textContent, /Daily notifications/);
-  await card.children[1].children[0].listeners.click();               // Turn on
   await settle(); await settle();
-  assert.equal(calls.requested, 1);
+  assert.equal(app.element('notify-card').hidden, true);              // no extra card: the phone's own prompt
+  assert.equal(calls.requested, 1);                                   // asked straight away
   assert.ok(calls.cancelled.includes(7101));                          // old ones replaced
   const scheduled = calls.schedule.at(-1);
   const morning = scheduled.filter(item => item.id >= 7100 && item.id < 7107), evening = scheduled.filter(item => item.id >= 7120 && item.id < 7127);
@@ -488,7 +485,10 @@ test('daily notifications: the Android app asks once, then schedules a week of m
   await settle();
   assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
   assert.ok(app.element('chat-log').children.some(item => item.textContent === question.extra.ask));
-  assert.equal(app.element('notify-card').hidden, true);              // not asked again
+  assert.equal(app.element('notify-card').hidden, true);
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' } });   // the next start
+  await settle(); await settle();
+  assert.equal(calls.requested, 1);                                   // not asked again
 });
 
 test('daily notifications are not offered in a browser (no Android plugin)', async () => {
@@ -519,7 +519,7 @@ test('admin-panel messages: the app subscribes to "all" and its language, and a 
   assert.deepEqual(topics.slice(2), [['+', 'all'], ['-', 'lang-te'], ['+', 'lang-hi']]);
 });
 
-test('notifications: a broken message never stops the rest, and settings show when the next one comes', async () => {
+test('notifications: a broken message never stops the rest, and settings do not list what is scheduled', async () => {
   const runs = [], pending = [];
   const LocalNotifications = {
     checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
@@ -539,9 +539,7 @@ test('notifications: a broken message never stops the rest, and settings show wh
   app.element('theme-panel').hidden = true;
   app.element('theme-btn').listeners.click();
   const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
-  const status = settings.children.find(item => item.className === 'notify-next');
-  assert.match(status.textContent, /^🔔 Next: /);                               // just when, never the text in advance
-  assert.ok(!settings.children.some(item => /notify-test/.test(item.className || '')));   // no test button: it should feel real
+  assert.ok(!settings.children.some(item => item.className === 'notify-next'));   // nothing about what is scheduled
 });
 
 test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
