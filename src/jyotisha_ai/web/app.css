@@ -798,6 +798,7 @@ main,.app-page,.card{min-width:0}
 .transit-tag.ok{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
 .transit-tag.no{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .transit-phrase{margin:0;font-size:.82rem;line-height:1.4;color:var(--ink)}
+.notify-next{margin:8px 0 4px;font-size:.8rem;line-height:1.4;color:var(--ink);padding:8px 10px;border-radius:12px;background:var(--cream)}
 .rashi-jumps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
 @media (min-width:560px){.rashi-jumps{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .rashi-jump{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--heading);font-size:.82rem;font-weight:600;white-space:nowrap;cursor:pointer}
