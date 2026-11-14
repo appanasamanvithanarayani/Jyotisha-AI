@@ -24,5 +24,9 @@ if (xml.includes('com.google.android.gms.ads.APPLICATION_ID')) {
 } else {
   xml = xml.replace(/<\/application>/, `        ${meta}\n    </application>`);
 }
+// The palm reading opens the phone's camera app (ACTION_IMAGE_CAPTURE); Android 11+ needs it declared to find it.
+if (!xml.includes('android.media.action.IMAGE_CAPTURE')) {
+  xml = xml.replace(/<\/manifest>/, `    <queries>\n        <intent>\n            <action android:name="android.media.action.IMAGE_CAPTURE" />\n        </intent>\n    </queries>\n</manifest>`);
+}
 writeFileSync(manifestPath, xml);
 console.log(`Patched ${manifestPath} (AdMob app id ${appId === TEST_APP_ID ? 'TEST' : 'yours'}).`);

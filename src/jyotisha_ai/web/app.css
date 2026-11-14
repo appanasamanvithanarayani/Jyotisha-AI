@@ -1033,3 +1033,30 @@ main,.app-page,.card{min-width:0}
 .tarot-sec.advice{border-color:rgba(230,194,122,.55);background:linear-gradient(165deg,rgba(70,40,50,.9),rgba(36,16,40,.94))}
 :root:not([data-skin="mystic"]) .tarot-sec,:root:not([data-skin="mystic"]) .tarot-topic{background:var(--surface);border-color:var(--line)}
 .tarot-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+
+/* ---------- Palm reading ---------- */
+.palm-page{padding:6px 0 20px;text-align:center}
+.palm-title{margin:6px 2px 4px;font-family:Georgia,'Noto Serif',serif;font-size:1.35rem;color:var(--heading);text-align:start}
+.palm-hands{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.palm-hand{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 10px 14px;border-radius:20px;border:1px solid rgba(214,90,180,.35);background:#1d0a27;color:var(--ink);font-weight:800}
+.palm-hand.on{border-color:#ff5ec4;box-shadow:0 0 0 2px rgba(255,94,196,.35),0 0 24px rgba(255,94,196,.35);background:linear-gradient(165deg,#3a1648,#1f0b2b)}
+.palm-pic{display:block;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden}
+.palm-pic svg{width:100%;height:100%;display:block}
+.palm-hand.left .palm-pic svg{transform:scaleX(-1)}
+.palm-tips{text-align:start;margin:14px 0;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(214,90,180,.25)}
+.palm-tips h4{margin:0 0 8px;color:var(--heading)}
+.palm-tips p{margin:4px 0;color:var(--ink)}
+.palm-tips p::first-letter{color:#ff5ec4}
+.palm-tips small{display:block;margin-top:10px;color:var(--muted)}
+.palm-scan{width:100%;min-height:52px;border:0;border-radius:999px;font-weight:800;font-size:1.05rem;color:#fff;
+  background:linear-gradient(90deg,#ff5ec4,#c42aa6);box-shadow:0 0 0 1px rgba(255,140,214,.45),0 10px 28px rgba(255,94,196,.4)}
+.palm-scanning{position:relative;width:min(280px,80%);aspect-ratio:1/1;margin:20px auto 10px;border-radius:24px;overflow:hidden;box-shadow:0 0 30px rgba(255,94,196,.4)}
+.palm-scanning svg{width:100%;height:100%;display:block}
+.palm-beam{position:absolute;left:0;right:0;height:14%;top:0;background:linear-gradient(180deg,transparent,rgba(255,94,196,.55),transparent);animation:palmBeam 1.6s ease-in-out infinite alternate}
+@keyframes palmBeam{to{top:86%}}
+.palm-wait{margin:14px auto;max-width:420px;color:var(--ink);font-weight:700}
+.palm-sec{text-align:start;margin:12px 0;padding:14px;border-radius:18px;background:linear-gradient(165deg,rgba(52,20,66,.92),rgba(30,11,42,.94));border:1px solid rgba(214,90,180,.35)}
+.palm-sec h4{margin:0 0 6px;color:var(--heading)}
+.palm-sec p{margin:0;line-height:1.6;color:var(--ink)}
+.palm-sec.summary{border-color:rgba(230,194,122,.55)}
+:root:not([data-skin="mystic"]) .palm-sec,:root:not([data-skin="mystic"]) .palm-hand{background:var(--surface);border-color:var(--line)}

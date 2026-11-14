@@ -69,6 +69,7 @@ function boot(setup = {}) {
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
+    if (url === '/api/palm') return reply(setup.palm || { status: 'off', reading: null });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -357,6 +358,60 @@ test('Rashiphal before a sign is picked shows only the symbol grid and a hint, n
   assert.equal(app.element('rashi-reading').children[0].className, 'rashi-hint');
 });
 
+// A pretend camera: the file input, FileReader, Image and canvas the palm page uses to shrink the photo.
+function fakeCamera(app) {
+  const created = [];
+  const make = app.context.document.createElement;
+  app.context.document.createElement = tag => {
+    const node = make(tag);
+    if (tag === 'input') { node.click = () => {}; created.push(node); }
+    if (tag === 'canvas') { node.getContext = () => ({ drawImage() {} }); node.toDataURL = type => `data:${type};base64,SMALLPHOTO`; }
+    return node;
+  };
+  app.context.FileReader = class { readAsDataURL() { this.result = 'data:image/jpeg;base64,BIGPHOTO'; setTimeout(() => this.onload(), 0); } };
+  app.context.Image = class { set src(_value) { this.width = 3000; this.height = 4000; setTimeout(() => this.onload(), 0); } };
+  return created;
+}
+
+test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrunk and read, the lines are shown', async () => {
+  const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.' };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading } });
+  await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  let page = app.element('palmread').children;
+  assert.equal(page[1].textContent, 'Step 1 · Pick a hand');
+  const hands = page[2].children;
+  assert.deepEqual(hands.map(h => h.children[1].textContent), ['Left palm', 'Right palm']);
+  hands[0].listeners.click();                                                      // left
+  page = app.element('palmread').children;
+  assert.match(page[3].textContent || page[3].children.map(c => c.textContent).join(' '), /Tips for a clear scan/);
+  page.find(item => item.className === 'palm-scan').listeners.click();
+  assert.equal(inputs.length, 1); assert.equal(inputs[0].accept, 'image/*'); assert.equal(inputs[0].getAttribute('capture'), 'environment');
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change();
+  await settle(); await settle();
+  const request = app.requests.find(r => r.url === '/api/palm');
+  assert.equal(request.body.hand, 'left'); assert.equal(request.body.language, 'en');
+  assert.equal(request.body.image, 'data:image/jpeg;base64,SMALLPHOTO');            // shrunk on the phone before sending
+  const secs = app.element('palmread').children.filter(item => /^palm-sec/.test(item.className));
+  assert.deepEqual(secs.map(sec => sec.children[0].textContent), ['❤️ Heart line', '🧠 Head line', '🌱 Life line', '⭐ Fate line', '✨ Your palm says']);
+  assert.equal(secs[4].children[1].textContent, 'Summary text.');
+});
+
+test('Palm reading: a photo without a clear palm asks for another one', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'not_palm', reading: null } });
+  await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'sky.jpg' }];
+  await inputs[0].listeners.change();
+  await settle(); await settle();
+  assert.match(app.element('palmread').children[1].textContent, /could not see a palm clearly/);
+});
+
 test('Tarot: pick a topic, pick 3 of 12 face-down cards, then past / present / future with the AI reading', async () => {
   const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
   const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), tarot: { status: 'ok', reading } });
@@ -518,9 +573,9 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
   const app = boot({ storage, birth });
   await settle();
-  assert.equal(app.element('tool-grid').children.length, 3);                  // three sections
-  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & tarot', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Kundli matching', 'Tarot', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
+  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm & tarot', 'Love & match', 'Time & festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.

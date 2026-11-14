@@ -48,7 +48,7 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -61,6 +61,7 @@
   pages.rashi.appendChild($('rashi'));
   pages.moon.appendChild($('moonsign'));
   pages.tarot.appendChild($('tarot'));
+  pages.palm.appendChild($('palmread'));
   function showPage(name) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
@@ -165,6 +166,13 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
+      palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 · Pick a hand', left: 'Left palm', right: 'Right palm',
+        tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
+        scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
+        off: 'Palm reading is switched off right now.', failed: 'Could not read the palm right now. Please try again in a little while.',
+        lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
+        again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
+        askQ: 'My palm reading says: “{summary}” What should I focus on now?' },
       tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
         topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
@@ -181,7 +189,7 @@
           'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
           'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
           'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
-      sections: { chart: 'Your chart', love: 'Love & tarot', time: 'Time & festivals' }, daily: 'Daily',
+      sections: { chart: 'Your chart', palm: 'Palm & tarot', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -222,6 +230,13 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
+      palm: { card: ['హస్త రేఖలు', 'కెమెరాతో మీ అరచేతిని స్కాన్ చేయండి'], title: 'హస్త రేఖా విశ్లేషణ', step: 'దశ 1 · చేయి ఎంచుకోండి', left: 'ఎడమ అరచేయి', right: 'కుడి అరచేయి',
+        tipsTitle: 'స్పష్టమైన స్కాన్ కోసం', tips: ['మంచి వెలుతురులో తీయండి', 'అరచేయి చదునుగా, వేళ్లు విడదీసి ఉంచండి', 'పూర్తి చేయి ఫ్రేమ్‌లో ఉండాలి'],
+        scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
+        off: 'హస్త రేఖా పఠనం ప్రస్తుతం ఆపివేయబడింది.', failed: 'ఇప్పుడు చదవలేకపోయాం. కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.',
+        lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
+        again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
+        askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?' },
       tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
         topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
@@ -238,7 +253,7 @@
           'సౌమ్యంగా, న్యాయంగా ఉంటారు; సామరస్యం కోరుకుంటారు, మంచి సాంగత్యంలో ఆనందంగా ఉంటారు.', 'లోతైన భావాలు, గోప్యత; గాఢంగా ప్రేమిస్తారు, విధేయులు, సంకల్ప బలం ఎక్కువ.',
           'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
           'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
-      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & టారో', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు & టారో', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -279,6 +294,13 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
+      palm: { card: ['हस्त रेखा', 'कैमरे से अपनी हथेली स्कैन करें'], title: 'हस्त रेखा विश्लेषण', step: 'चरण 1 · हाथ चुनें', left: 'बाईं हथेली', right: 'दाईं हथेली',
+        tipsTitle: 'साफ़ स्कैन के लिए', tips: ['अच्छी रोशनी में लें', 'हथेली सीधी, उँगलियाँ फैलाकर रखें', 'पूरा हाथ फ्रेम में रखें'],
+        scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
+        off: 'हस्त रेखा पठन अभी बंद है।', failed: 'अभी पढ़ नहीं पाए। थोड़ी देर बाद फिर कोशिश करें।',
+        lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
+        again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
+        askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?' },
       tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
         topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
@@ -295,7 +317,7 @@
           'सौम्य और न्यायप्रिय; सामंजस्य चाहते हैं, अच्छे साथ में सबसे खुश।', 'गहरे और निजी; गहराई से प्रेम करते हैं, वफ़ादार, इच्छाशक्ति प्रबल।',
           'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
           'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
-      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और टैरो', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा और टैरो', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -497,10 +519,12 @@
         card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
         card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
+      section(sections.palm || TOOLS_COPY.en.sections.palm, [
+        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot)]),
       section(sections.love, [
         card('match', copy.match[0], copy.match[1], open('relationship')),
-        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
-        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'), { wide: true })]),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
       section(sections.time, [
         card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true }),
         card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
@@ -989,6 +1013,7 @@
     renderRelationship();
     if (pages.moon && !pages.moon.hidden) renderMoonSign();
     if (pages.tarot && !pages.tarot.hidden) renderTarot();
+    if (pages.palm && !pages.palm.hidden) renderPalm();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1269,6 +1294,106 @@
     card.appendChild(list);
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
     return head;
+  }
+  /* ---- Palm reading: pick a hand, take a photo (the phone's camera), the AI reads the lines ---- */
+  const palmCopy = () => toolText().palm || TOOLS_COPY.en.palm;
+  const palmState = { hand: 'right', step: 'pick', reading: null, status: '' };
+  function openPalm() { palmState.step = 'pick'; palmState.reading = null; palmState.status = ''; showPage('palm'); renderPalm(); }
+  // The photo is made smaller on the phone (longest side 1024 px, JPEG) before it is sent; it is never stored.
+  function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('image'));
+        img.onload = () => {
+          const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  async function readPalm(image) {
+    palmState.step = 'reading'; renderPalm();
+    try {
+      const { ok, body } = await post('/api/palm', { hand: palmState.hand, language: state.lang, image });
+      palmState.status = ok && body ? body.status : 'unavailable';
+      palmState.reading = ok && body && body.reading ? body.reading : null;
+    } catch (_error) { palmState.status = 'unavailable'; palmState.reading = null; }
+    palmState.step = 'result'; renderPalm();
+  }
+  function choosePalmPhoto() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      try { await readPalm(await shrinkPhoto(file)); } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
+    });
+    input.click();
+  }
+  function renderPalm() {
+    const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
+    box.replaceChildren(el('h2', 'palm-title', copy.title));
+    if (palmState.step === 'pick') {
+      box.appendChild(el('p', 'tarot-ask', copy.step));
+      const hands = el('div', 'palm-hands');
+      for (const hand of ['left', 'right']) {
+        const tile = el('button', `palm-hand ${hand}${palmState.hand === hand ? ' on' : ''}`); tile.type = 'button';
+        const pic = el('span', 'palm-pic'); if (art) pic.innerHTML = art.palm();
+        tile.append(pic, el('b', null, copy[hand]));
+        tile.addEventListener('click', () => { palmState.hand = hand; renderPalm(); });
+        hands.appendChild(tile);
+      }
+      box.appendChild(hands);
+      const tips = el('div', 'palm-tips');
+      tips.appendChild(el('h4', null, copy.tipsTitle));
+      for (const tip of copy.tips) tips.appendChild(el('p', null, `✓ ${tip}`));
+      tips.appendChild(el('small', null, `🔒 ${copy.privacy}`));
+      box.appendChild(tips);
+      const scan = el('button', 'palm-scan', `📷 ${copy.scan}`); scan.type = 'button';
+      scan.addEventListener('click', choosePalmPhoto);
+      box.appendChild(scan);
+      return;
+    }
+    if (palmState.step === 'reading') {
+      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
+      pic.appendChild(el('i', 'palm-beam'));
+      box.append(pic, el('p', 'palm-wait', copy.reading));
+      return;
+    }
+    const reading = palmState.reading, lines = [];
+    if (!reading) {
+      box.appendChild(el('p', 'palm-wait', palmState.status === 'not_palm' ? copy.notPalm : palmState.status === 'off' ? copy.off : copy.failed));
+    } else {
+      for (const [key, icon] of [['heart', '❤️'], ['head', '🧠'], ['life', '🌱'], ['fate', '⭐'], ['summary', '✨']]) {
+        const sec = el('section', `palm-sec${key === 'summary' ? ' summary' : ''}`);
+        sec.append(el('h4', null, `${icon} ${copy.lines[key]}`), el('p', null, reading[key]));
+        box.appendChild(sec);
+        lines.push(`${icon} ${copy.lines[key]}\n${reading[key]}`);
+      }
+    }
+    const actions = el('div', 'tarot-actions');
+    if (reading) {
+      const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
+      askAi.addEventListener('click', () => {
+        const question = fill(copy.askQ, { summary: reading.summary.slice(0, 180) }).slice(0, 290);
+        showPage('chat'); ask(question, question, true);
+      });
+      const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+      share.addEventListener('click', () => { void shareText(`✋ ${copy.title}`, lines.join('\n\n')); });
+      actions.append(askAi, share);
+    }
+    const again = el('button', 'chip-btn', `↻ ${copy.again}`); again.type = 'button';
+    again.addEventListener('click', () => { palmState.step = 'pick'; renderPalm(); });
+    actions.appendChild(again);
+    box.appendChild(actions);
   }
   /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
   // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.

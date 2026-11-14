@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, moon_sign, push, settings_store as store, tarot
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, moon_sign, palm, push, settings_store as store, tarot
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -91,6 +91,7 @@ class RateLimiter:
                     self._hits.pop(stale, None)
             return True
 MAX_ASK_BYTES = 49152  # chart facts for the optional assistant
+MAX_PALM_BYTES = 900_000  # a resized palm photo (base64 JPEG); used once, never stored
 DEFAULT_PORT = 8765
 PRIVATE_LAN_RANGES = tuple(ipaddress.IPv4Network(value) for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
 
@@ -718,7 +719,10 @@ class LocalHandler(BaseHTTPRequestHandler):
             return False
         who, limiter = self._client(), self.server.limiter
         allowed = limiter.allow(f"api:{who}", PUBLIC_API_PER_MINUTE, 60.0)
-        if allowed and path in ("/api/ask", "/api/tarot"):   # AI calls share the same allowance
+        if allowed and path == "/api/palm":
+            # A photo read by the AI costs more: a few a day per visitor, on top of the shared AI allowance below.
+            allowed = limiter.allow(f"palm-day:{who}", store.number("JYOTISHA_PALM_PER_VISITOR_DAY", 5), 86400.0)
+        if allowed and path in ("/api/ask", "/api/tarot", "/api/palm"):   # AI calls share the same allowance
             today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
             # These three can be changed in the admin panel without restarting.
             per_minute = store.number("JYOTISHA_ASK_PER_VISITOR_MINUTE", PUBLIC_ASK_PER_MINUTE)
@@ -1010,7 +1014,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/moon-sign", "/api/tarot") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/moon-sign", "/api/tarot", "/api/palm") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1026,7 +1030,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         except ValueError:
             self._json(400, {"error": "invalid request length"})
             return
-        if length <= 0 or length > (MAX_ASK_BYTES if path == "/api/ask" else MAX_REQUEST_BYTES):
+        if length <= 0 or length > (MAX_ASK_BYTES if path == "/api/ask" else MAX_PALM_BYTES if path == "/api/palm" else MAX_REQUEST_BYTES):
             self._json(413, {"error": "request body is too large"})
             return
         try:
@@ -1060,6 +1064,8 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = moon_sign_status(payload)
             elif path == "/api/tarot":
                 result = tarot.reading(payload)
+            elif path == "/api/palm":
+                result = palm.reading(payload)
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
