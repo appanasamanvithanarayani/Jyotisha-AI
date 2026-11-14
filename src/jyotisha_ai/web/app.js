@@ -167,6 +167,7 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
+      shortcuts: { title: 'Your stars, one tap from here', text: 'Choose a reading to start.', labels: ['Palm', 'Rashiphal', 'Tarot', 'Match'], channel: 'Shortcuts', toggle: 'Shortcuts in the notification bar' },
       palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 · Pick a hand', left: 'Left palm', right: 'Right palm',
         tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
         scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
@@ -232,6 +233,7 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
+      shortcuts: { title: 'మీ నక్షత్రాలు, ఒక్క టచ్‌లో', text: 'ఒక రీడింగ్ ఎంచుకోండి.', labels: ['అరచేయి', 'రాశిఫలం', 'టారో', 'పొంతన'], channel: 'షార్ట్‌కట్‌లు', toggle: 'నోటిఫికేషన్ బార్‌లో షార్ట్‌కట్‌లు' },
       palm: { card: ['హస్త రేఖలు', 'కెమెరాతో మీ అరచేతిని స్కాన్ చేయండి'], title: 'హస్త రేఖా విశ్లేషణ', step: 'దశ 1 · చేయి ఎంచుకోండి', left: 'ఎడమ అరచేయి', right: 'కుడి అరచేయి',
         tipsTitle: 'స్పష్టమైన స్కాన్ కోసం', tips: ['మంచి వెలుతురులో తీయండి', 'అరచేయి చదునుగా, వేళ్లు విడదీసి ఉంచండి', 'పూర్తి చేయి ఫ్రేమ్‌లో ఉండాలి'],
         scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
@@ -297,6 +299,7 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
+      shortcuts: { title: 'आपके सितारे, बस एक टैप पर', text: 'कोई रीडिंग चुनें।', labels: ['हथेली', 'राशिफल', 'टैरो', 'मिलान'], channel: 'शॉर्टकट', toggle: 'नोटिफ़िकेशन बार में शॉर्टकट' },
       palm: { card: ['हस्त रेखा', 'कैमरे से अपनी हथेली स्कैन करें'], title: 'हस्त रेखा विश्लेषण', step: 'चरण 1 · हाथ चुनें', left: 'बाईं हथेली', right: 'दाईं हथेली',
         tipsTitle: 'साफ़ स्कैन के लिए', tips: ['अच्छी रोशनी में लें', 'हथेली सीधी, उँगलियाँ फैलाकर रखें', 'पूरा हाथ फ्रेम में रखें'],
         scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
@@ -728,8 +731,8 @@
     try {
       const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
       return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
-        evening: saved.evening !== false, muhurta: saved.muhurta !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' }; }
+        evening: saved.evening !== false, muhurta: saved.muhurta !== false, shortcuts: saved.shortcuts !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' }; }
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
@@ -787,8 +790,32 @@
       notifyInfo = null;
     } catch (error) {
       console.warn('notifications', error);
-    } finally { notifyBusy = false; refreshNotifySettings(); }
+    } finally { notifyBusy = false; refreshNotifySettings(); void syncShortcuts(); }
   }
+  /* ---- The pinned "Shortcuts" notification (Android app): four buttons that open Palm, Rashiphal, Tarot and Match ---- */
+  const shortcutsPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Shortcuts) || null;
+  async function syncShortcuts() {
+    const plugin = shortcutsPlugin();
+    if (!plugin) return;
+    try {
+      if (!notify.on || notify.shortcuts === false || !state.onboarded) { await plugin.hide(); return; }
+      const copy = toolText().shortcuts || TOOLS_COPY.en.shortcuts;
+      await plugin.show({ title: copy.title, text: copy.text, labels: copy.labels, pages: ['palm', 'rashi', 'tarot', 'match'], channelName: copy.channel });
+    } catch (_error) { /* optional */ }
+  }
+  function openShortcut(page) {
+    if (!state.onboarded) return;
+    if (page === 'palm') openPalm();
+    else if (page === 'tarot') openTarot();
+    else if (page === 'match') { state.loveMode = 'match'; renderRelationship(); showPage('relationship'); }
+    else if (page === 'rashi') showPage('rashi');
+    else showPage('home');
+  }
+  try {
+    const plugin = shortcutsPlugin();
+    // A tap that opened the app arrives right after start-up: wait a moment so Home has settled first.
+    if (plugin && plugin.addListener) plugin.addListener('shortcut', event => { setTimeout(() => openShortcut(event && event.page), 300); });
+  } catch (_error) { /* optional */ }
   function refreshNotifySettings() {
     try { const panel = $('theme-panel'); if (panel && !panel.hidden) renderLookPanel(); } catch (_error) { /* not open */ }
   }
@@ -835,7 +862,15 @@
     muhurtaBox.addEventListener('change', () => { notify.muhurta = muhurtaBox.checked; saveNotify(); void scheduleNotifications(); });
     const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
     muhurta.appendChild(muhurtaLabel);
+    const shortcuts = el('label', 'notify-time');
+    if (shortcutsPlugin()) {
+      const shortcutsBox = el('input'); shortcutsBox.type = 'checkbox'; shortcutsBox.checked = notify.shortcuts !== false; shortcutsBox.style.width = 'auto';
+      shortcutsBox.addEventListener('change', () => { notify.shortcuts = shortcutsBox.checked; saveNotify(); void syncShortcuts(); });
+      const shortcutsLabel = el('span'); shortcutsLabel.append(shortcutsBox, document.createTextNode(` ${(toolText().shortcuts || TOOLS_COPY.en.shortcuts).toggle}`));
+      shortcuts.appendChild(shortcutsLabel);
+    }
     if (notify.on) wrap.append(evening, muhurta);
+    if (notify.on && shortcutsPlugin()) wrap.append(shortcuts);
     if (notify.on && notifyInfo && notifyInfo.blocked) wrap.appendChild(el('p', 'notify-next', copy.denied));   // only a problem is shown
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;

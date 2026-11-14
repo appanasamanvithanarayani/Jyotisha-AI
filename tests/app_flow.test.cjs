@@ -666,7 +666,7 @@ test('daily notifications: the Android app asks for permission at the start, onc
   assert.match(scheduled.find(item => item.id === 7107).title, /week ahead/);   // then a reminder to open the app
   assert.ok(evening.length >= 6 && new Set(evening.map(item => item.title)).size === evening.length);   // a different question each evening
   assert.ok(evening.every(item => item.schedule.at.getHours() === 19 && item.schedule.at.getMinutes() === 30));
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' });
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' });
   // Tapping an evening question opens Jyotirmaya AstroChat and asks it.
   const question = evening.find(item => item.extra.ask);
   app.context.__tap({ notification: { extra: question.extra } });
@@ -728,6 +728,45 @@ test('notifications: a broken message never stops the rest, and settings do not 
   app.element('theme-btn').listeners.click();
   const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
   assert.ok(!settings.children.some(item => item.className === 'notify-next'));   // nothing about what is scheduled
+});
+
+test('the pinned Shortcuts notification: shown in the user\'s language when notifications are on, buttons open the screens, and it can be switched off', async () => {
+  const calls = [];
+  let tap = null;
+  const Shortcuts = {
+    show: async options => { calls.push(['show', options]); return { shown: true }; },
+    hide: async () => { calls.push(['hide']); },
+    addListener: (name, fn) => { if (name === 'shortcut') tap = fn; },
+  };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {}, addListener: () => {}, schedule: async () => {},
+  };
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, time: '07:00' }));
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications, Shortcuts }, getPlatform: () => 'android' } });
+  await settle(); await settle(); await settle();
+  const shown = calls.filter(c => c[0] === 'show').at(-1)[1];
+  assert.equal(shown.title, 'మీ నక్షత్రాలు, ఒక్క టచ్‌లో');
+  assert.equal(JSON.stringify(shown.labels), JSON.stringify(['అరచేయి', 'రాశిఫలం', 'టారో', 'పొంతన']));   // (arrays from the app's sandbox)
+  assert.equal(JSON.stringify(shown.pages), JSON.stringify(['palm', 'rashi', 'tarot', 'match']));
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  tap({ page: 'tarot' });
+  await new Promise(resolve => setTimeout(resolve, 350));
+  assert.equal(page('tarot').hidden, false);
+  tap({ page: 'match' });
+  await new Promise(resolve => setTimeout(resolve, 350));
+  assert.equal(page('relationship').hidden, false);
+  // the toggle in the notification settings switches it off
+  app.element('theme-panel').hidden = true;
+  app.element('theme-btn').listeners.click();
+  const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
+  const toggle = settings.children.at(-1).children[0].children[0];
+  assert.equal(toggle.checked, true);
+  toggle.checked = false; toggle.listeners.change();
+  await settle();
+  assert.equal(calls.at(-1)[0], 'hide');
+  assert.equal(JSON.parse(storage.getItem('jyotisha.notify.v1')).shortcuts, false);
 });
 
 test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
