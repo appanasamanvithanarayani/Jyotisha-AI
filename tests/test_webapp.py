@@ -774,8 +774,9 @@ def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_
 
 
 def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(local_server, monkeypatch):
-    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT"):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT", "JYOTISHA_ADMOB_INTERSTITIAL_ID"):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("JYOTISHA_ONBOARDING_ADS", "0")      # the welcome-step ads have their own test below
     readiness = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     assert readiness() is None
     monkeypatch.setenv("JYOTISHA_APP_ADS", "0")
@@ -790,6 +791,19 @@ def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(l
     assert readiness()["testing"] is True
     monkeypatch.setenv("JYOTISHA_ADMOB_BANNER_ID", "not-a-unit")                    # a malformed unit never reaches the app
     assert readiness()["banner_id"] == "ca-app-pub-3940256099942544/6300978111"
+
+
+def test_welcome_step_ads_are_on_by_default_and_can_be_switched_off(local_server, monkeypatch):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ONBOARDING_ADS", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING"):
+        monkeypatch.delenv(name, raising=False)
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert config() is None                                              # no ads at all while the master switch is off
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    assert config()["onboarding_interstitial_id"] == "ca-app-pub-3940256099942544/1033173712"   # Google's test unit until one is set
+    monkeypatch.setenv("JYOTISHA_ADMOB_INTERSTITIAL_ID", "ca-app-pub-1234567890123456/9999999999")
+    assert config()["onboarding_interstitial_id"] == "ca-app-pub-1234567890123456/9999999999"
+    monkeypatch.setenv("JYOTISHA_ONBOARDING_ADS", "0")
+    assert "onboarding_interstitial_id" not in config()
 
 
 def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_master_switch(local_server, monkeypatch):

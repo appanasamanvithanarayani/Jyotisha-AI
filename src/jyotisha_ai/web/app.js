@@ -143,7 +143,7 @@
       liveDosha: 'Kuja dosha: {k} · Sade Sati: {s}', yes: 'Yes', no: 'No',
       jkAsk: 'Want to know your Jathakam?', jkSub: 'Your free Kundli — Lagna, Rashi, Nakshatra, planets, dasha and doshas — in 30 seconds.',
       jkCreate: 'Create my Kundli →', jkMine: 'My Jathakam', jkView: 'View full Kundli →', jkDasha: 'Dasha now',
-      look: { title: 'Appearance', mode: 'Mode', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
+      look: { title: 'Appearance', mode: 'Mode', mystic: 'Mystic', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
         saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
       notify: { title: 'Daily notifications', invite: 'Get today’s Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
         time: 'Time', off: 'Turn off', enabled: 'On — every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotirmaya in your phone’s Settings, then try again.',
@@ -163,7 +163,10 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
-      tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
+      sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
+      aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
+      tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
     },
     te: {
       views: { chart: 'చక్రం', planets: 'గ్రహాలు', dasha: 'దశ', doshas: 'దోషాలు', panchang: 'పంచాంగం' },
@@ -181,7 +184,7 @@
       liveDosha: 'కుజ దోషం: {k} · ఏలినాటి శని: {s}', yes: 'ఉంది', no: 'లేదు',
       jkAsk: 'మీ జాతకం తెలుసుకోవాలని ఉందా?', jkSub: 'మీ ఉచిత జాతకం — లగ్నం, రాశి, నక్షత్రం, గ్రహాలు, దశ, దోషాలు — 30 సెకన్లలో.',
       jkCreate: 'నా జాతకం చూపించు →', jkMine: 'నా జాతకం', jkView: 'పూర్తి జాతకం చూడండి →', jkDasha: 'ప్రస్తుత దశ',
-      look: { title: 'రూపం', mode: 'మోడ్', light: 'లైట్', dark: 'డార్క్', auto: 'ఆటో', colour: 'రంగు', done: 'సరే',
+      look: { title: 'రూపం', mode: 'మోడ్', mystic: 'మిస్టిక్', light: 'లైట్', dark: 'డార్క్', auto: 'ఆటో', colour: 'రంగు', done: 'సరే',
         saffron: 'కాషాయం', teal: 'పచ్చ', rose: 'గులాబీ', blue: 'నీలం', button: 'రూపం మార్చండి' },
       notify: { title: 'రోజువారీ నోటిఫికేషన్లు', invite: 'ప్రతి ఉదయం ఈ రోజు పంచాంగం, మీ రోజు ఎలా ఉంటుందో పొందండి.', on: 'ఆన్ చేయండి', later: 'తర్వాత',
         time: 'సమయం', off: 'ఆఫ్ చేయండి', enabled: 'ఆన్ — ప్రతి రోజు {time}కి', disabled: 'ఆఫ్', denied: 'నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో Jyotirmayaకి అనుమతి ఇచ్చి మళ్ళీ ప్రయత్నించండి.',
@@ -201,7 +204,10 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
-      tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
+      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
+      aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
+      tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
     },
     hi: {
       views: { chart: 'चक्र', planets: 'ग्रह', dasha: 'दशा', doshas: 'दोष', panchang: 'पंचांग' },
@@ -219,7 +225,7 @@
       liveDosha: 'मांगलिक: {k} · साढ़ेसाती: {s}', yes: 'हाँ', no: 'नहीं',
       jkAsk: 'अपनी कुंडली जानना चाहते हैं?', jkSub: 'आपकी मुफ़्त कुंडली — लग्न, राशि, नक्षत्र, ग्रह, दशा और दोष — 30 सेकंड में।',
       jkCreate: 'मेरी कुंडली बनाएँ →', jkMine: 'मेरी कुंडली', jkView: 'पूरी कुंडली देखें →', jkDasha: 'वर्तमान दशा',
-      look: { title: 'रूप', mode: 'मोड', light: 'लाइट', dark: 'डार्क', auto: 'ऑटो', colour: 'रंग', done: 'ठीक है',
+      look: { title: 'रूप', mode: 'मोड', mystic: 'मिस्टिक', light: 'लाइट', dark: 'डार्क', auto: 'ऑटो', colour: 'रंग', done: 'ठीक है',
         saffron: 'केसरिया', teal: 'हरा-नीला', rose: 'गुलाबी', blue: 'नीला', button: 'रूप बदलें' },
       notify: { title: 'रोज़ाना सूचनाएँ', invite: 'हर सुबह आज का पंचांग और आपका दिन कैसा रहेगा, पाएँ।', on: 'चालू करें', later: 'अभी नहीं',
         time: 'समय', off: 'बंद करें', enabled: 'चालू — हर दिन {time} बजे', disabled: 'बंद', denied: 'सूचनाएँ बंद हैं। फ़ोन की सेटिंग्स में Jyotirmaya को अनुमति दें, फिर दोबारा कोशिश करें।',
@@ -239,7 +245,10 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
-      tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
+      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
+      aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
+      tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
     },
   };
   const loveText = () => RELATIONSHIP_COPY[state.lang] || RELATIONSHIP_COPY.en;
@@ -414,16 +423,51 @@
       }
     };
     const toFestivals = () => showPage('calendar');
+    const toPanchang = () => { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } };
     const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
+    const toJathakam = () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } };
+    // Big illustrated cards in sections, like a magazine: picture on top, name and a live line at the bottom.
+    const art = window.JyotishaArt || null;
+    const card = (key, title, sub, onClick, extra = {}) => {
+      const button = el('button', `art-card${extra.wide ? ' wide' : ''}`); button.type = 'button';
+      const picture = el('span', 'art-pic');
+      if (art && art[extra.art || key]) picture.innerHTML = art[extra.art || key](); else picture.textContent = extra.emoji || '✨';
+      button.append(picture, el('b', null, title), el('small', null, sub));
+      if (extra.badge) button.appendChild(el('span', 'art-badge', extra.badge));
+      button.addEventListener('click', onClick);
+      return button;
+    };
+    const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
+    const sections = text.sections || TOOLS_COPY.en.sections;
+    const jathakam = copy.jathakam || TOOLS_COPY.en.tools.jathakam;
+    const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
+    const todayTithi = state.day && state.day.tithi && state.day.tithi[0] ? names.tithiName(state.day.tithi[0].index, state.lang) : '';
     $('tool-grid').replaceChildren(
-      optionCard('💞', copy.match[0], copy.match[1], open('relationship')),
-      optionCard('🪐', copy.doshas[0], needs('doshas'), open('kundli', 'doshas')),
-      optionCard('🔮', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi')),
-      optionCard('⏳', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
-      optionCard('🎉', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals));
+      section(sections.chart, [
+        card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily })]),
+      section(sections.love, [
+        card('match', copy.match[0], copy.match[1], open('relationship')),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
+      section(sections.time, [
+        card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true }),
+        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
+        card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang)]));
+    renderGreeting();
     renderJathakamCard();
     renderHomeAi();
     renderNotify();
+  }
+  // Home greeting: "Good afternoon" and the user's name (or Namaste when we do not know it).
+  function renderGreeting() {
+    const text = toolText(), greet = text.greet || TOOLS_COPY.en.greet, hour = new Date().getHours();
+    const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
+    $('greet-time').textContent = greet[part];
+    $('greet-name').textContent = state.userName || greet.hello;
+    const art = window.JyotishaArt, box = $('ai-art');
+    if (art && box && !box.dataset.done) { box.innerHTML = art.orb(); box.dataset.done = '1'; }
+    $('ai-eyebrow').textContent = text.aiEyebrow || TOOLS_COPY.en.aiEyebrow;
+    $('try-asking').textContent = `✦ ${text.tryAsking || TOOLS_COPY.en.tryAsking}`;
   }
   // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
   function renderJathakamCard() {
@@ -542,22 +586,28 @@
   }
   $('festival-more').addEventListener('click', () => { state.festivalsAll = !state.festivalsAll; renderFestivals(); });
 
-  /* ---- Appearance: light / dark / auto mode and an accent colour, remembered on this device ---- */
-  const LOOK_KEY = 'jyotisha.appearance.v1';
+  /* ---- Appearance: mystic (plum, the default) / light / dark / auto, and an accent colour, remembered on this device ---- */
+  const LOOK_KEY = 'jyotisha.appearance.v2';   // v2: everyone starts on the mystic plum look once
   const ACCENTS = { saffron: ['#f6b04a', '#f08a3a'], teal: ['#4cc7ae', '#1f9d8a'], rose: ['#ef93aa', '#d95478'], blue: ['#86aef2', '#4a7fd8'] };
+  const MODES = ['mystic', 'light', 'dark', 'auto'];
   function loadLook() {
     try {
       const saved = JSON.parse(window.localStorage.getItem(LOOK_KEY)) || {};
-      return { mode: ['light', 'dark', 'auto'].includes(saved.mode) ? saved.mode : 'light', accent: Object.hasOwn(ACCENTS, saved.accent) ? saved.accent : 'saffron' };
-    } catch (_error) { return { mode: 'light', accent: 'saffron' }; }
+      return { mode: MODES.includes(saved.mode) ? saved.mode : 'mystic', accent: Object.hasOwn(ACCENTS, saved.accent) ? saved.accent : 'saffron' };
+    } catch (_error) { return { mode: 'mystic', accent: 'saffron' }; }
   }
   const look = loadLook();
   const systemDark = () => { try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (_error) { return false; } };
   function applyLook() {
-    const dark = look.mode === 'dark' || (look.mode === 'auto' && systemDark());
+    const mystic = look.mode === 'mystic';
+    const dark = mystic || look.mode === 'dark' || (look.mode === 'auto' && systemDark());
     const root = document.documentElement;
-    if (root.setAttribute) { root.setAttribute('data-mode', dark ? 'dark' : 'light'); root.setAttribute('data-accent', look.accent); }
-    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', dark ? '#1c1f25' : '#fff7e8'); } catch (_error) { /* optional */ }
+    if (root.setAttribute) {
+      root.setAttribute('data-mode', dark ? 'dark' : 'light');
+      root.setAttribute('data-accent', mystic ? 'mystic' : look.accent);
+      root.setAttribute('data-skin', mystic ? 'mystic' : 'plain');
+    }
+    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', mystic ? '#1a0b24' : dark ? '#1c1f25' : '#fff7e8'); } catch (_error) { /* optional */ }
     try { window.localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (_error) { /* not remembered */ }
   }
   function renderLookPanel() {
@@ -566,8 +616,8 @@
     panel.replaceChildren();
     const title = el('h3', null, `🎨 ${copy.title}`); title.id = 'theme-title';
     const modes = el('div', 'seg'); modes.setAttribute('role', 'group');
-    for (const mode of ['light', 'dark', 'auto']) {
-      const button = el('button', mode === look.mode ? 'on' : '', `${{ light: '☀️', dark: '🌙', auto: '📱' }[mode]} ${copy[mode]}`); button.type = 'button';
+    for (const mode of MODES) {
+      const button = el('button', mode === look.mode ? 'on' : '', `${{ mystic: '🔮', light: '☀️', dark: '🌙', auto: '📱' }[mode]} ${copy[mode]}`); button.type = 'button';
       button.setAttribute('aria-pressed', mode === look.mode ? 'true' : 'false');
       button.addEventListener('click', () => { look.mode = mode; applyLook(); renderLookPanel(); });
       modes.appendChild(button);
@@ -583,7 +633,8 @@
     }
     const done = el('button', 'theme-done', copy.done); done.type = 'button';
     done.addEventListener('click', () => { panel.hidden = true; });
-    panel.append(title, el('span', 'label', copy.mode), modes, el('span', 'label', copy.colour), swatches);
+    panel.append(title, el('span', 'label', copy.mode), modes);
+    if (look.mode !== 'mystic') panel.append(el('span', 'label', copy.colour), swatches);   // the mystic look has its own colours
     const notifyBox = notifySettings(); if (notifyBox) panel.appendChild(notifyBox);
     panel.appendChild(done);
   }
@@ -674,11 +725,12 @@
     notify.on = !!on; saveNotify(); renderNotify(); renderLookPanel();
     await scheduleNotifications();
   }
+  let notifyAsking = Promise.resolve();   // the first-start permission prompt, so the loading screen can wait for it
   // On the first start in the Android app, ask the phone's own "Allow notifications?" straight away (once, no extra card).
   function renderNotify() {
     const box = $('notify-card');
     box.replaceChildren(); box.hidden = true;
-    if (notifier() && !notify.asked) void turnNotifications(true);
+    if (notifier() && !notify.asked) notifyAsking = turnNotifications(true);
   }
   function notifySettings() {
     if (!notifier()) return null;
@@ -809,7 +861,10 @@
   // When a notification opens the app, its question waits until the saved Kundli is restored and the AI is known to be on,
   // so the chat is not reset under it and the reply comes from Jyotirmaya AstroChat, not the offline answers.
   const startup = { profile: false, readiness: false, pending: null };
+  let markReadiness = () => {};
+  const readinessSeen = new Promise(resolve => { markReadiness = resolve; });   // the server's settings (ads etc.) have arrived
   function startupDone(part) {
+    if (part === 'readiness') markReadiness();
     startup[part] = true;
     if (startup.profile && startup.readiness && startup.pending) {
       const question = startup.pending; startup.pending = null;
@@ -889,12 +944,35 @@
   choice.addEventListener('change', event => applyLanguage(event.target.value));
 
   /* ----------------------------------------------------------- onboarding */
+  let onboardingStep = 'welcome';
   function showOnboardingStep(step) {
+    onboardingStep = step;
     document.body.classList.add('onboarding-active');
     $('welcome-screen').hidden = false;
-    for (const name of ['welcome', 'language', 'location']) $(`step-${name}`).hidden = name !== step;
+    for (const name of ['welcome', 'language', 'location', 'profile']) $(`step-${name}`).hidden = name !== step;
   }
   $('welcome-next').addEventListener('click', () => showOnboardingStep('language'));
+  // First start: a short loading screen ("Aligning your stars…"); the phone's notification prompt appears meanwhile
+  // (renderNotify asks once at start), then a full-screen ad if the server switched it on, then the language step.
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  // Waits for a promise, but at most `ms`; the timer is cleared as soon as the promise settles. Resolves to the
+  // promise's value, or to `fallback` on timeout.
+  const within = (promise, ms, fallback) => new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); }, () => { clearTimeout(timer); resolve(fallback); });
+  });
+  async function runSplash() {
+    const fill = $('splash-fill'), pct = $('splash-pct');
+    for (let n = 0; n <= 100; n += 4) {
+      if (onboardingStep !== 'welcome' || state.onboarded) return;
+      if (fill.style) fill.style.width = `${n}%`;
+      pct.textContent = `${n}%`;
+      await wait(70);
+    }
+    await notifyAsking;          // let the notification prompt finish first
+    await onboardingAd();
+    if (onboardingStep === 'welcome' && !state.onboarded) showOnboardingStep('language');
+  }
   $('language-next').addEventListener('click', () => {
     applyLanguage(choice.value);
     if (state.onboarded) { $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active'); }
@@ -908,14 +986,18 @@
       const raw = window.localStorage && window.localStorage.getItem(STORE_KEY);
       const value = raw ? JSON.parse(raw) : null;
       if (value && typeof value === 'object' && typeof value.city === 'string' && value.city.trim()) {
-        return { lang: calendarUI.language(value.lang), city: value.city.trim().slice(0, 200), useLocation: value.useLocation === true };
+        return { lang: calendarUI.language(value.lang), city: value.city.trim().slice(0, 200), useLocation: value.useLocation === true,
+          name: typeof value.name === 'string' ? value.name.slice(0, 40) : '', dob: /^\d{4}-\d{2}-\d{2}$/.test(value.dob || '') ? value.dob : '' };
       }
     } catch (_error) { /* storage unavailable or corrupt: behave like a first visit */ }
     return null;
   }
   function saveSettings() {
     if (!state.onboarded) return;
-    try { window.localStorage.setItem(STORE_KEY, JSON.stringify({ lang: state.lang, city: state.city, useLocation: state.useLocation })); } catch (_error) { /* not persisted */ }
+    const data = { lang: state.lang, city: state.city, useLocation: state.useLocation };
+    if (state.userName) data.name = state.userName;
+    if (state.userDob) data.dob = state.userDob;
+    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (_error) { /* not persisted */ }
   }
   // The birth details of the last chart are kept on this device only (never on the server) so they need not be typed again.
   const PROFILE_KEY = 'jyotisha.profile.v1';
@@ -985,10 +1067,35 @@
       $('welcome-city').value = city; state.pendingLocation = true;
       status.textContent = `📍 ${city}`;
       // The city comes from the location, so there is nothing more to ask: go straight on.
-      setTimeout(() => { if (!state.onboarded) finishWelcome(); }, 700);
+      setTimeout(() => { if (!state.onboarded && onboardingStep === 'location') toProfileStep(); }, 700);
     }, key => { state.pendingLocation = false; status.textContent = t(key); });
   });
-  $('welcome-form').addEventListener('submit', event => { event.preventDefault(); finishWelcome(); });
+  $('welcome-form').addEventListener('submit', event => {
+    event.preventDefault();
+    if (onboardingStep === 'profile') void finishProfile(); else toProfileStep();
+  });
+  function toProfileStep() {
+    if (!$('welcome-city').value.trim()) return;
+    showOnboardingStep('profile');
+  }
+  // Name and birth date (time optional): the name personalises greetings; with a time the Kundli is made straight away.
+  let profileBusy = false;
+  async function finishProfile(skip = false) {
+    if (profileBusy) return;
+    profileBusy = true;
+    const name = skip ? '' : $('welcome-name').value.trim().slice(0, 40);
+    const dob = skip ? '' : $('welcome-dob').value, tob = skip ? '' : $('welcome-tob').value;
+    state.userName = name;
+    state.userDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : '';
+    if (state.userDob && /^\d{2}:\d{2}$/.test(tob)) saveProfile({ dob: state.userDob, pob: $('welcome-city').value.trim(), tob });
+    await onboardingAd();
+    finishWelcome();
+    profileBusy = false;
+    if (state.userDob && tob) void restoreProfile();
+    else if (state.userDob) { try { document.querySelector('[name="dob"]').value = state.userDob; } catch (_error) { /* optional */ } }
+  }
+  $('profile-next').addEventListener('click', () => { void finishProfile(); });
+  $('profile-skip').addEventListener('click', () => { void finishProfile(true); });
   function finishWelcome() {
     if (!$('welcome-city').value.trim()) return;
     applyLanguage(choice.value);
@@ -999,7 +1106,8 @@
     document.body.classList.remove('onboarding-active');
     saveSettings();
     startHome();
-    if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }   // ads only after the welcome steps
+    if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }   // the banner only after the welcome steps
+    void scheduleNotifications();   // now that the city is known
   }
 
   /* ----------------------------------------------------- change city (Home) */
@@ -1870,7 +1978,14 @@
     const entry = el('div', `chat-message ${kind}`, message);
     chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
-  function resetChat(message) { chatLog.replaceChildren(); addMessage('assistant', message); history.length = 0; }
+  // The astrologer introduces itself by name and greets the user by theirs, then says what comes next.
+  function resetChat(message) {
+    chatLog.replaceChildren();
+    const persona = toolText().persona || TOOLS_COPY.en.persona;
+    if (message === t('chartReady') || message === t('chatAskDob')) addMessage('assistant', fill(persona.hello, { name: state.userName ? ` ${state.userName}` : '' }));
+    addMessage('assistant', message);
+    history.length = 0;
+  }
   // The full Jathakam is assembled from the tables already rendered for the chart, so it always matches them and the language.
   function buildJathakam() {
     const section = (title, ...nodes) => { const box = el('section', 'jk-sec'); box.appendChild(el('h4', null, title)); nodes.forEach(node => box.appendChild(node)); return box; };
@@ -1993,17 +2108,46 @@
     Promise.resolve(admob.prepareInterstitial({ adId: config.interstitial_id, isTesting: config.testing === true }))
       .then(() => admob.showInterstitial()).catch(() => { /* no ad available: carry on */ });
   }
+  const admobPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) || null;
+  // AdMob is started once (with the consent form where the law requires it), for the banner and the welcome-step ads.
+  function ensureAdmob(admob, config) {
+    if (!appAds.ready) {
+      appAds.ready = (async () => {
+        await admob.initialize({ initializeForTesting: config.testing === true });
+        try {
+          const consent = await admob.requestConsentInfo();
+          if (consent && consent.isConsentFormAvailable && consent.status === 'REQUIRED') await admob.showConsentForm();
+        } catch (_error) { /* consent is only required in some regions */ }
+      })();
+    }
+    return appAds.ready;
+  }
+  // A full-screen ad between the first-run steps (switched on in the admin panel). Never blocks the flow: if no ad
+  // loads in a few seconds, or the plugin is missing, the steps simply go on.
+  async function onboardingAd() {
+    if (!appAds.waiting && !appAds.config) await within(readinessSeen, 2500);
+    const config = appAds.waiting || appAds.config, admob = admobPlugin();
+    if (!admob || !config || !adUnitOk(config.onboarding_interstitial_id)) return;
+    try {
+      await within(ensureAdmob(admob, config), 6000);
+      let done;
+      const closed = new Promise(resolve => { done = resolve; });
+      const handles = [];
+      for (const name of ['interstitialAdDismissed', 'interstitialAdFailedToShow', 'interstitialAdFailedToLoad']) {
+        try { handles.push(await admob.addListener(name, () => done())); } catch (_error) { /* older plugin */ }
+      }
+      const loaded = await within(Promise.resolve(admob.prepareInterstitial({ adId: config.onboarding_interstitial_id, isTesting: config.testing === true })).then(() => true), 6000, false);
+      if (loaded) { await admob.showInterstitial(); await within(closed, 60000); }
+      for (const handle of handles) { try { if (handle && handle.remove) await handle.remove(); } catch (_error) { /* gone */ } }
+    } catch (_error) { /* no ad: carry on */ }
+  }
   async function startAppAds(config) {
-    const admob = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+    const admob = admobPlugin();
     if (!admob || !adUnitOk(config.banner_id)) return;
-    if (!state.onboarded) { appAds.waiting = config; return; }   // no ads on the welcome screens
+    if (!state.onboarded) { appAds.waiting = config; return; }   // the banner only after the welcome screens
     appAds.config = config; appAds.admob = admob;
     try {
-      await admob.initialize({ initializeForTesting: config.testing === true });
-      try {
-        const consent = await admob.requestConsentInfo();
-        if (consent && consent.isConsentFormAvailable && consent.status === 'REQUIRED') await admob.showConsentForm();
-      } catch (_error) { /* consent is only required in some regions */ }
+      await ensureAdmob(admob, config);
       admob.addListener('bannerAdSizeChanged', size => setAdHeight(size && size.height));
       await admob.showBanner({ adId: config.banner_id, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: config.testing === true });
     } catch (_error) { setAdHeight(0); }
@@ -2325,12 +2469,12 @@
   }).catch(() => { $('availability').textContent = t('inputDisabled'); startupDone('readiness'); });
   const saved = loadSettings();
   if (saved) {
-    state.city = saved.city; state.useLocation = saved.useLocation; state.onboarded = true;
+    state.city = saved.city; state.useLocation = saved.useLocation; state.onboarded = true; state.userName = saved.name; state.userDob = saved.dob;
     $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
     applyLanguage(saved.lang);
     startHome();
     if (saved.useLocation) void refreshCityFromLocation();
-  } else applyLanguage('en');
+  } else { applyLanguage('en'); showOnboardingStep('welcome'); void runSplash(); }
   void restoreProfile();
   $('forget-profile').addEventListener('click', () => {
     forgetProfile();

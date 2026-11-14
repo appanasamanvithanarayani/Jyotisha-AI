@@ -158,6 +158,9 @@ def _app_ads() -> dict | None:
 
         config["chat_free_questions"] = count("JYOTISHA_CHAT_FREE_QUESTIONS", 10)
         config["chat_bonus_questions"] = count("JYOTISHA_CHAT_BONUS_QUESTIONS", 5)
+    if store.value("JYOTISHA_ONBOARDING_ADS", "1") == "1":
+        # Two full-screen ads during the first-run steps (after the opening screen, and after name + birth date).
+        config["onboarding_interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
     if store.value("JYOTISHA_INTERSTITIAL") == "1":
         config["interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
         config["interstitial_every"] = 4          # at most one ad per this many screen switches
@@ -953,6 +956,9 @@ class LocalHandler(BaseHTTPRequestHandler):
             self._send(200, body, "application/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
         elif path == "/chart-ui.js":
             body = files("jyotisha_ai.web").joinpath("chart-ui.js").read_bytes()
+            self._send(200, body, "application/javascript; charset=utf-8")
+        elif path == "/art.js":
+            body = files("jyotisha_ai.web").joinpath("art.js").read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8")
         elif path == "/nudges.js":
             body = files("jyotisha_ai.web").joinpath("nudges.js").read_bytes()

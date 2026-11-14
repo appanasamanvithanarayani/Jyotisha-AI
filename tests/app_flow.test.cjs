@@ -11,6 +11,7 @@ const names = require(path.join(root, 'panchang-names.js'));
 const chart = require(path.join(root, 'chart-ui.js'));
 const match = require(path.join(root, 'match-ui.js'));
 const nudges = require(path.join(root, 'nudges.js'));
+const art = require(path.join(root, 'art.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
@@ -74,7 +75,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -87,8 +88,9 @@ async function enter(app, language) {
   app.element('welcome-next').listeners.click();
   app.element('language-next').listeners.click();
   app.element('welcome-city').value = 'Bengaluru, IN';
-  app.element('welcome-form').listeners.submit({ preventDefault() {} });
-  await settle();
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });   // city -> the name and birth-date step
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
 }
 
 test('after onboarding Home shows the month calendar and the full day Panchang in the chosen language', async () => {
@@ -273,7 +275,9 @@ test('location is read only on request or when the browser already granted it, a
   assert.equal(place.calls, 1);
   assert.equal(app.element('welcome-city').value, 'Mysuru, IN');
   await new Promise(resolve => setTimeout(resolve, 800));                 // the city came from the location: it goes on by itself
-  await settle();
+  assert.equal(app.element('step-profile').hidden, false);                // to the name and birth-date step
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
   assert.deepEqual(storage.read(), { lang: 'en', city: 'Mysuru, IN', useLocation: true });
   assert.equal(app.element('welcome-screen').hidden, true);
 
@@ -314,6 +318,9 @@ const syntheticBirth = {
   },
   details: null, resolved_birth: null
 };
+// Home's illustrated cards, in section order: Jathakam, Rashiphal | Kundli matching, Doshas | Festivals, Dasha.
+const homeCards = app => app.element('tool-grid').children.flatMap(section => section.children[1].children);
+const homeCard = (app, title) => homeCards(app).find(card => card.children[1].textContent === title);
 const birthRequests = app => app.requests.filter(r => r.url === '/api/birth-chart');
 
 test('saved birth details restore the chart on the next visit, so the chat does not ask again', async () => {
@@ -415,9 +422,13 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
   const app = boot({ storage, birth });
   await settle();
-  assert.equal(app.element('tool-grid').children.length, 5);
+  assert.equal(app.element('tool-grid').children.length, 3);                  // three sections
+  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & match', 'Time & festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
+  assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
-  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Sade Sati: phase 2 of 3 running');
+  assert.equal(homeCard(app, 'Doshas').children[2].textContent, 'Sade Sati: phase 2 of 3 running');
   assert.equal(app.element('my-jathakam').children.length, 3);          // heading, Lagna/Rashi/Nakshatra/Dasha, View full Kundli
   // Typing a question on Home opens the chat and asks it.
   app.element('home-question').value = 'Will I get a job this year?';
@@ -431,7 +442,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   assert.ok(app.requests.filter(r => r.url === '/api/month-calendar').length >= 3);
   assert.ok(app.element('festival-list').children.length > 0);
   assert.equal(app.element('festivals-title').textContent, 'Upcoming festivals');
-  app.element('tool-grid').children[1].listeners.click();     // Doshas card opens the Kundli on the Doshas view
+  homeCard(app, 'Doshas').listeners.click();                  // Doshas card opens the Kundli on the Doshas view
   const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
   assert.equal(page('kundli').hidden, false);
   const cards = app.element('dosha-body').children;
@@ -451,28 +462,32 @@ test('without a Kundli, Home nudges the user to make one and the personal cards 
   // Festivals and the month calendar live in the Calendar tab.
   const calendarPage = app.element('top').children.find(item => item.id === 'page-calendar');
   assert.ok(calendarPage && calendarPage.children.length === 3);   // title, festivals, month calendar
-  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
+  assert.equal(homeCard(app, 'Doshas').children[2].textContent, 'Create your Kundli to see');
+  assert.equal(app.element('greet-name').textContent, 'Namaste 🙏');            // no name given: a greeting instead
   assert.equal(app.element('home-today').hidden, true);
 });
 
-test('appearance: light by default; dark mode and an accent colour can be chosen and are remembered', async () => {
+test('appearance: the mystic plum look by default; light/dark and an accent colour can be chosen and are remembered', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   const app = boot({ storage });
   await settle();
   const root = app.context.document.documentElement;
-  assert.equal(root.getAttribute('data-mode'), 'light');
-  assert.equal(root.getAttribute('data-accent'), 'saffron');
+  assert.equal(root.getAttribute('data-skin'), 'mystic');               // the default for everyone
+  assert.equal(root.getAttribute('data-mode'), 'dark');
   app.element('theme-panel').hidden = true;           // as in the page markup
   app.element('theme-btn').listeners.click();
   const panel = app.element('theme-panel');
   assert.equal(panel.hidden, false);
-  const [title, , modes, , swatches] = panel.children;
+  const [title, , modes] = panel.children;
   assert.match(title.textContent, /Appearance/);
-  modes.children[1].listeners.click();                 // Dark
-  assert.equal(root.getAttribute('data-mode'), 'dark');
-  app.element('theme-panel').children[4].children[2].listeners.click();   // Rose
+  assert.deepEqual(modes.children.map(b => b.textContent), ['🔮 Mystic', '☀️ Light', '🌙 Dark', '📱 Auto']);
+  modes.children[2].listeners.click();                 // Dark
+  assert.equal(root.getAttribute('data-mode'), 'dark'); assert.equal(root.getAttribute('data-skin'), 'plain');
+  app.element('theme-panel').children[4].children[2].listeners.click();   // Rose (colours show outside the mystic look)
   assert.equal(root.getAttribute('data-accent'), 'rose');
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v2')), { mode: 'dark', accent: 'rose' });
+  app.element('theme-panel').children[2].children[1].listeners.click();   // Light
+  assert.equal(root.getAttribute('data-mode'), 'light');
 });
 
 test('daily notifications: the Android app asks for permission at the start, once, then schedules a week of morning notifications', async () => {
@@ -744,6 +759,44 @@ function fakeAdMob() {
   } };
 }
 
+test('first run like Palm AI: loading screen, a full-screen ad, language, city, name + birth date, another ad, then Home', async () => {
+  const calls = [];
+  const listeners = {};
+  const AdMob = {
+    initialize: async () => calls.push('initialize'), requestConsentInfo: async () => ({}), showConsentForm: async () => {},
+    addListener: async (name, fn) => { (listeners[name] = listeners[name] || []).push(fn); return { remove: async () => { listeners[name] = (listeners[name] || []).filter(f => f !== fn); } }; },
+    prepareInterstitial: async options => calls.push(['prepare', options.adId]),
+    showInterstitial: async () => { calls.push('showInterstitial'); setTimeout(() => (listeners.interstitialAdDismissed || []).forEach(fn => fn()), 5); },
+    showBanner: async () => calls.push('showBanner'),
+  };
+  const storage = memoryStorage();
+  const app = boot({ storage, capacitor: { Plugins: { AdMob } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', onboarding_interstitial_id: 'ca-app-pub-3940256099942544/1033173712', testing: true } });
+  assert.equal(app.element('step-welcome').hidden, false);                 // the loading screen
+  await new Promise(resolve => setTimeout(resolve, 2400));                 // it fills up and goes on by itself
+  await settle();
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, 1);     // ad no. 1
+  assert.equal(app.element('step-language').hidden, false);
+  app.element('language-next').listeners.click();
+  app.element('welcome-city').value = 'Hyderabad, IN';
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  assert.equal(app.element('step-profile').hidden, false);
+  app.element('welcome-name').value = 'Samanvitha';
+  app.element('welcome-dob').value = '1994-03-18';
+  app.element('welcome-tob').value = '07:45';
+  app.element('profile-next').listeners.click();
+  await new Promise(resolve => setTimeout(resolve, 60)); await settle();
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, 2);     // ad no. 2
+  assert.equal(app.element('welcome-screen').hidden, true);                // Home
+  assert.ok(calls.includes('showBanner'));
+  assert.equal(storage.read().name, 'Samanvitha'); assert.equal(storage.read().dob, '1994-03-18');
+  assert.equal(app.element('greet-name').textContent, 'Samanvitha');        // Home greets by name
+  assert.match(app.element('chat-log').children[0].textContent, /^Namaste Samanvitha! 🙏 I am Jyotirmaya, your astrologer/);   // and so does the astrologer
+  assert.match(app.element('greet-time').textContent, /^Good (morning|afternoon|evening|night)$/);
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1994-03-18', pob: 'Hyderabad, IN', tob: '07:45' });
+  assert.ok(app.requests.some(r => r.url === '/api/birth-chart'));          // with a time, the Kundli is made right away
+});
+
 test('no ad on the welcome screens: the banner starts only after the first-run steps are done', async () => {
   const ads = fakeAdMob();
   const app = boot({ storage: memoryStorage(), capacitor: { Plugins: { AdMob: ads.plugin } },
@@ -754,7 +807,8 @@ test('no ad on the welcome screens: the banner starts only after the first-run s
   app.element('language-next').listeners.click();
   app.element('welcome-city').value = 'Hyderabad, IN';
   app.element('welcome-form').listeners.submit({ preventDefault() {} });
-  await settle();
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
   assert.ok(ads.calls.some(call => call[0] === 'showBanner'));                    // then the app shows it
 });
 
