@@ -1409,7 +1409,7 @@ test('when switched on, each later opening of the app shows the loading screen, 
   const appAds = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', launch_interstitial_id: 'ca-app-pub-3940256099942544/1033173712', testing: true };
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.launch-ad.v1', '1');                                 // remembered from the last start
-  const app = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds });
+  const app = boot({ storage, capacitor: { Plugins: { AdMob }, isNativePlatform: () => true }, appAds });
   await settle();
   assert.equal(app.element('welcome-screen').hidden, false);                     // the loading screen
   assert.ok(!calls.includes('showBanner'));
@@ -1420,12 +1420,14 @@ test('when switched on, each later opening of the app shows the loading screen, 
   assert.ok(calls.includes('showBanner'));
 
   // Switched off on the server: the next start goes straight to Home.
-  const later = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds: { ...appAds, launch_interstitial_id: undefined } });
-  await settle();
+  const later = boot({ storage, capacitor: { Plugins: { AdMob }, isNativePlatform: () => true }, appAds: { ...appAds, launch_interstitial_id: undefined } });
+  await new Promise(resolve => setTimeout(resolve, 900)); await settle();
   assert.equal(storage.getItem('jyotisha.launch-ad.v1'), '0');
-  const fresh = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds });
-  await settle();
-  assert.equal(fresh.element('welcome-screen').hidden, true);                    // not shown when the last start had it off
+  const shown = calls.filter(c => c === 'showInterstitial').length;
+  const fresh = boot({ storage, capacitor: { Plugins: { AdMob }, isNativePlatform: () => true }, appAds });
+  await new Promise(resolve => setTimeout(resolve, 900)); await settle();
+  assert.equal(fresh.element('welcome-screen').hidden, true);                    // Home, and no ad when the last start had it off
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, shown);
   assert.ok(later);
 });
 
@@ -1529,4 +1531,27 @@ test('timing alerts: Vijaya starts, Rahu Kalam is over, Yamagandam and Varjyam s
   assert.equal(JSON.stringify(teasers.map(item => item.schedule.at.getHours())), JSON.stringify([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]));
   // A tap on a timing alert opens today's Panchang.
   LocalNotifications.tap({ notification: { extra: { page: 'panchang' } } });
+});
+
+test('opening the app: the loading screen stays until today’s Panchang is ready, and a saved one shows at once', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const native = { Plugins: {}, isNativePlatform: () => true };
+  const app = boot({ storage, capacitor: native });
+  await settle();
+  // the fake server answers at once, so the screen fills up and goes away quickly
+  await new Promise(resolve => setTimeout(resolve, 800)); await settle();
+  assert.equal(app.element('welcome-screen').hidden, true);
+  assert.equal(app.element('dp-tables').children.length, 7);                       // the Panchang is there when Home shows
+  // Today's Panchang saved on the phone: the next opening shows it straight away, without the loading screen.
+  const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  storage.setItem('jyotisha.today.v1', JSON.stringify({ city: 'Bengaluru, IN', day: { ...day, date: today, today_local_date: today } }));
+  const again = boot({ storage, capacitor: native });
+  assert.equal(again.element('dp-date').value, today);                            // before any network reply
+  assert.equal(again.element('dp-tables').children.length, 7);
+  await settle();
+  assert.equal(again.element('welcome-screen').hidden, true);
+  // A saved Panchang for another city is not used.
+  storage.setItem('jyotisha.today.v1', JSON.stringify({ city: 'Mysuru, IN', day: { ...day, date: today, today_local_date: today } }));
+  const other = boot({ storage, capacitor: native });
+  assert.notEqual(other.element('dp-date').value, today);
 });
