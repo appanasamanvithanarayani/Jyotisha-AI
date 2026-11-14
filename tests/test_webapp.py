@@ -964,3 +964,13 @@ def test_app_ads_txt_lists_the_admob_publisher_from_the_ad_units(tmp_path, monke
         server.shutdown()
         thread.join(timeout=3)
         server.server_close()
+
+
+def test_the_ad_when_the_app_opens_is_off_until_switched_on(local_server, monkeypatch):
+    for name in ("JYOTISHA_LAUNCH_AD", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert "launch_interstitial_id" not in config()
+    monkeypatch.setenv("JYOTISHA_LAUNCH_AD", "1")
+    assert config()["launch_interstitial_id"] == "ca-app-pub-3940256099942544/1033173712"

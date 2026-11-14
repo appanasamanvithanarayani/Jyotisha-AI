@@ -964,7 +964,7 @@ test('first run like Palm AI: loading screen, a full-screen ad, language, city, 
   const app = boot({ storage, capacitor: { Plugins: { AdMob } },
     appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', onboarding_interstitial_id: 'ca-app-pub-3940256099942544/1033173712', testing: true } });
   assert.equal(app.element('step-welcome').hidden, false);                 // the loading screen
-  await new Promise(resolve => setTimeout(resolve, 2400));                 // it fills up and goes on by itself
+  await new Promise(resolve => setTimeout(resolve, 3800));                 // it fills up (about 3.5 s) and goes on by itself
   await settle();
   assert.equal(calls.filter(c => c === 'showInterstitial').length, 1);     // ad no. 1
   assert.equal(app.element('step-language').hidden, false);
@@ -1391,4 +1391,47 @@ test('the side menu lists every feature, opens one, and Back closes the menu fir
   app.element('side-scrim').listeners.click();
   assert.equal(app.element('side-menu').hidden, true);
   assert.equal(stack.length, 2);
+});
+
+test('Home starts with today: date, weekday, year, tithi and nakshatra, and a tap opens the full Panchang', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle(); await settle();
+  const strip = app.element('today-strip');
+  assert.equal(strip.hidden, false);
+  assert.equal(strip.children[0].textContent, '30 Oct | Daily Panchang · Friday, 2026');   // date | name · weekday, year
+  assert.match(strip.children[1].textContent, / · .* ›$/);                        // tithi · nakshatra ›
+  strip.listeners.click();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-home').hidden, false);
+});
+
+test('when switched on, each later opening of the app shows the loading screen, one full-screen ad, then Home', async () => {
+  const calls = [], listeners = {};
+  const AdMob = {
+    initialize: async () => calls.push('initialize'), requestConsentInfo: async () => ({}), showConsentForm: async () => {},
+    addListener: async (name, fn) => { (listeners[name] = listeners[name] || []).push(fn); return { remove: async () => { listeners[name] = (listeners[name] || []).filter(f => f !== fn); } }; },
+    prepareInterstitial: async options => calls.push(['prepare', options.adId]),
+    showInterstitial: async () => { calls.push('showInterstitial'); setTimeout(() => (listeners.interstitialAdDismissed || []).forEach(fn => fn()), 5); },
+    showBanner: async () => calls.push('showBanner'),
+  };
+  const appAds = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', launch_interstitial_id: 'ca-app-pub-3940256099942544/1033173712', testing: true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.launch-ad.v1', '1');                                 // remembered from the last start
+  const app = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds });
+  await settle();
+  assert.equal(app.element('welcome-screen').hidden, false);                     // the loading screen
+  assert.ok(!calls.includes('showBanner'));
+  await new Promise(resolve => setTimeout(resolve, 2900)); await settle();
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, 1);
+  assert.ok(calls.some(c => Array.isArray(c) && c[1] === 'ca-app-pub-3940256099942544/1033173712'));
+  assert.equal(app.element('welcome-screen').hidden, true);                      // then Home, with the banner
+  assert.ok(calls.includes('showBanner'));
+
+  // Switched off on the server: the next start goes straight to Home.
+  const later = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds: { ...appAds, launch_interstitial_id: undefined } });
+  await settle();
+  assert.equal(storage.getItem('jyotisha.launch-ad.v1'), '0');
+  const fresh = boot({ storage, capacitor: { Plugins: { AdMob } }, appAds });
+  await settle();
+  assert.equal(fresh.element('welcome-screen').hidden, true);                    // not shown when the last start had it off
+  assert.ok(later);
 });

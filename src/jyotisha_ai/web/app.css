@@ -1145,3 +1145,10 @@ body.menu-open{overflow:hidden}
 :root[data-mode="dark"] .rashi-planets.remedies li{background:rgba(232,176,75,.1);color:var(--ink)}
 :root[data-mode="dark"] .relationship-score strong{color:var(--heading)}
 :root[data-skin="mystic"] .k-table tbody tr:nth-child(even){background:rgba(214,90,180,.1)}
+/* ---------- Today strip (top of Home): date, weekday, year, tithi and nakshatra; opens today's Panchang ---------- */
+.today-strip{display:grid;justify-items:center;gap:2px;width:100%;margin:2px 0 12px;padding:0;border:0;background:none;color:var(--ink);font:inherit;text-align:center;cursor:pointer}
+.today-strip[hidden]{display:none}
+.ts-when{color:var(--heading);font-size:.98rem}
+.ts-what{color:var(--muted);font-size:.86rem}
+:root[data-skin="mystic"] .ts-what{color:#e6c27a}
+#day-panchang .hero-card{scroll-margin-top:84px}
