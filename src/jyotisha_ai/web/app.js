@@ -48,7 +48,7 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm', 'numbers']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -62,9 +62,11 @@
   pages.moon.appendChild($('moonsign'));
   pages.tarot.appendChild($('tarot'));
   pages.palm.appendChild($('palmread'));
+  pages.numbers.appendChild($('numerology'));
   // Each page change is a step in the WebView's history, so the phone's Back button returns to the previous screen
   // (Capacitor goes back while there is history and only closes the app from the first screen).
   let currentPage = null;
+  let replaceNext = false;   // a page opened from the side menu takes the menu's history step
   function remember(page, replace) {
     try {
       if (!window.history || typeof window.history.pushState !== 'function') return;
@@ -73,13 +75,16 @@
   }
   if (typeof window.addEventListener === 'function') window.addEventListener('popstate', event => {
     const page = event && event.state && event.state.page;
+    hideMenu(); menuHistory = false;                 // Back closes the side menu first
+    if (page && page === currentPage) return;
     showPage(Object.hasOwn(pages, page) ? page : 'home', { back: true });
   });
   function showPage(name, how = {}) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
-    if (!how.back && chosen !== currentPage) remember(chosen, currentPage === null);
+    if (!how.back && chosen !== currentPage) remember(chosen, currentPage === null || replaceNext);
     currentPage = chosen;
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
+    if (typeof hideMenu === 'function' && $('side-menu')) hideMenu();
     document.querySelectorAll('.bottom-nav a').forEach(link => {
       const active = link.getAttribute('href') === `#${chosen}`;
       link.classList.toggle('active', active);
@@ -183,6 +188,15 @@
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       shortcuts: { title: 'Your stars, one tap from here', text: 'Choose a reading to start.', labels: ['Palm', 'Rashiphal', 'Tarot', 'Match'], channel: 'Shortcuts', toggle: 'Shortcuts in the notification bar' },
+      numerology: { card: ['Numerology', 'Your numbers from name & birth date'], title: 'Numerology', intro: 'Your Moolank, Bhagyank and name number, worked out from your date of birth and name.',
+        dob: 'Date of birth', name: 'Name (in English letters)', show: 'Show my numbers', bad: 'Please enter a valid date of birth.', change: 'Change',
+        moolank: ['Moolank', 'Birth number · how you are'], bhagyank: ['Bhagyank', 'Destiny number · where life leads'], nameNum: ['Name number', 'How others see you'],
+        noName: 'Type your name in English letters to see your name number.', planet: 'Planet', strengths: 'Strengths', care: 'Watch out for',
+        harmonyGood: 'Your name number and Moolank are friendly: a good match.', harmonyNeutral: 'Your name number and Moolank are neutral to each other.',
+        year: 'Your year {year}: number {n}', lucky: 'Lucky for you', luckyNumbers: 'Numbers', luckyDays: 'Days', luckyColours: 'Colours',
+        askAi: 'Ask AI about my numbers', askQ: 'My numerology Moolank is {m} and Bhagyank is {b}. What do these numbers say about my career and relationships?', share: 'Share',
+        note: 'Numerology is a traditional system for reflection, not a certainty.' },
+      menu: { title: 'Menu', open: 'Open menu', close: 'Close menu', home: 'Home', panchang: 'Today’s Panchang', appearance: 'Appearance', privacy: 'Privacy and terms' },
       palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 · Pick a hand', left: 'Left palm', right: 'Right palm',
         tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
         scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
@@ -206,7 +220,7 @@
           'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
           'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
           'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
-      sections: { chart: 'Your chart', palm: 'Palm & tarot', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      sections: { chart: 'Your chart', palm: 'Palm, tarot & numbers', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -249,6 +263,15 @@
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       shortcuts: { title: 'మీ నక్షత్రాలు, ఒక్క టచ్‌లో', text: 'ఒక రీడింగ్ ఎంచుకోండి.', labels: ['అరచేయి', 'రాశిఫలం', 'టారో', 'పొంతన'], channel: 'షార్ట్‌కట్‌లు', toggle: 'నోటిఫికేషన్ బార్‌లో షార్ట్‌కట్‌లు' },
+      numerology: { card: ['సంఖ్యా శాస్త్రం', 'పేరు, పుట్టిన తేదీ నుంచి మీ సంఖ్యలు'], title: 'సంఖ్యా శాస్త్రం', intro: 'మీ పుట్టిన తేదీ, పేరు ఆధారంగా మీ మూలాంకం, భాగ్యాంకం, నామ సంఖ్య.',
+        dob: 'పుట్టిన తేదీ', name: 'పేరు (ఇంగ్లీష్ అక్షరాల్లో)', show: 'నా సంఖ్యలు చూపించు', bad: 'దయచేసి సరైన పుట్టిన తేదీ ఇవ్వండి.', change: 'మార్చండి',
+        moolank: ['మూలాంకం', 'జన్మ సంఖ్య · మీ స్వభావం'], bhagyank: ['భాగ్యాంకం', 'అదృష్ట సంఖ్య · జీవిత మార్గం'], nameNum: ['నామ సంఖ్య', 'ఇతరులు మిమ్మల్ని ఎలా చూస్తారు'],
+        noName: 'నామ సంఖ్య కోసం మీ పేరును ఇంగ్లీష్ అక్షరాల్లో టైప్ చేయండి.', planet: 'గ్రహం', strengths: 'బలాలు', care: 'జాగ్రత్త',
+        harmonyGood: 'మీ నామ సంఖ్య, మూలాంకం మిత్ర సంఖ్యలు: మంచి పొంతన.', harmonyNeutral: 'మీ నామ సంఖ్య, మూలాంకం ఒకదానికొకటి సమం (తటస్థం).',
+        year: 'మీ {year} సంవత్సరం: సంఖ్య {n}', lucky: 'మీకు అదృష్టం', luckyNumbers: 'సంఖ్యలు', luckyDays: 'రోజులు', luckyColours: 'రంగులు',
+        askAi: 'నా సంఖ్యల గురించి AIని అడగండి', askQ: 'నా మూలాంకం {m}, భాగ్యాంకం {b}. ఈ సంఖ్యలు నా ఉద్యోగం, బంధాల గురించి ఏం చెబుతున్నాయి?', share: 'షేర్ చేయండి',
+        note: 'సంఖ్యా శాస్త్రం ఆలోచనకు ఒక సంప్రదాయ మార్గం మాత్రమే, ఖచ్చితమైనది కాదు.' },
+      menu: { title: 'మెనూ', open: 'మెనూ తెరవండి', close: 'మెనూ మూసివేయండి', home: 'హోమ్', panchang: 'నేటి పంచాంగం', appearance: 'రూపం', privacy: 'గోప్యత, నిబంధనలు' },
       palm: { card: ['హస్త రేఖలు', 'కెమెరాతో మీ అరచేతిని స్కాన్ చేయండి'], title: 'హస్త రేఖా విశ్లేషణ', step: 'దశ 1 · చేయి ఎంచుకోండి', left: 'ఎడమ అరచేయి', right: 'కుడి అరచేయి',
         tipsTitle: 'స్పష్టమైన స్కాన్ కోసం', tips: ['మంచి వెలుతురులో తీయండి', 'అరచేయి చదునుగా, వేళ్లు విడదీసి ఉంచండి', 'పూర్తి చేయి ఫ్రేమ్‌లో ఉండాలి'],
         scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
@@ -272,7 +295,7 @@
           'సౌమ్యంగా, న్యాయంగా ఉంటారు; సామరస్యం కోరుకుంటారు, మంచి సాంగత్యంలో ఆనందంగా ఉంటారు.', 'లోతైన భావాలు, గోప్యత; గాఢంగా ప్రేమిస్తారు, విధేయులు, సంకల్ప బలం ఎక్కువ.',
           'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
           'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
-      sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు & టారో', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు, టారో & సంఖ్యలు', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -315,6 +338,15 @@
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       shortcuts: { title: 'आपके सितारे, बस एक टैप पर', text: 'कोई रीडिंग चुनें।', labels: ['हथेली', 'राशिफल', 'टैरो', 'मिलान'], channel: 'शॉर्टकट', toggle: 'नोटिफ़िकेशन बार में शॉर्टकट' },
+      numerology: { card: ['अंक ज्योतिष', 'नाम और जन्म तिथि से आपके अंक'], title: 'अंक ज्योतिष', intro: 'आपकी जन्म तिथि और नाम से आपका मूलांक, भाग्यांक और नामांक।',
+        dob: 'जन्म तिथि', name: 'नाम (अंग्रेज़ी अक्षरों में)', show: 'मेरे अंक दिखाएँ', bad: 'कृपया सही जन्म तिथि डालें।', change: 'बदलें',
+        moolank: ['मूलांक', 'जन्म अंक · आपका स्वभाव'], bhagyank: ['भाग्यांक', 'भाग्य अंक · जीवन की दिशा'], nameNum: ['नामांक', 'दूसरे आपको कैसे देखते हैं'],
+        noName: 'नामांक के लिए अपना नाम अंग्रेज़ी अक्षरों में लिखें।', planet: 'ग्रह', strengths: 'खूबियाँ', care: 'सावधानी',
+        harmonyGood: 'आपका नामांक और मूलांक मित्र हैं: अच्छा मेल।', harmonyNeutral: 'आपका नामांक और मूलांक एक-दूसरे के लिए सम (तटस्थ) हैं।',
+        year: 'आपका {year} साल: अंक {n}', lucky: 'आपके लिए शुभ', luckyNumbers: 'अंक', luckyDays: 'दिन', luckyColours: 'रंग',
+        askAi: 'मेरे अंकों के बारे में AI से पूछें', askQ: 'मेरा मूलांक {m} और भाग्यांक {b} है। ये अंक मेरे करियर और रिश्तों के बारे में क्या कहते हैं?', share: 'शेयर करें',
+        note: 'अंक ज्योतिष सोचने का एक पारंपरिक तरीका है, निश्चितता नहीं।' },
+      menu: { title: 'मेनू', open: 'मेनू खोलें', close: 'मेनू बंद करें', home: 'होम', panchang: 'आज का पंचांग', appearance: 'रूप', privacy: 'गोपनीयता और शर्तें' },
       palm: { card: ['हस्त रेखा', 'कैमरे से अपनी हथेली स्कैन करें'], title: 'हस्त रेखा विश्लेषण', step: 'चरण 1 · हाथ चुनें', left: 'बाईं हथेली', right: 'दाईं हथेली',
         tipsTitle: 'साफ़ स्कैन के लिए', tips: ['अच्छी रोशनी में लें', 'हथेली सीधी, उँगलियाँ फैलाकर रखें', 'पूरा हाथ फ्रेम में रखें'],
         scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
@@ -338,7 +370,7 @@
           'सौम्य और न्यायप्रिय; सामंजस्य चाहते हैं, अच्छे साथ में सबसे खुश।', 'गहरे और निजी; गहराई से प्रेम करते हैं, वफ़ादार, इच्छाशक्ति प्रबल।',
           'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
           'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
-      sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा और टैरो', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा, टैरो और अंक', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -502,23 +534,29 @@
     live.festivals = nextFestivalText();
     return live;
   }
+  // Where the Home cards and the side menu take people (one place, so both behave the same).
+  function openTool(page, view) {
+    if (page === 'relationship') { state.loveMode = 'match'; renderRelationship(); }
+    showPage(page);
+    if (view) {
+      showKundliView(view);
+      // With a chart already made, jump straight to the chosen view instead of the birth form.
+      if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
+    }
+  }
+  function toPanchang() { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } }
+  function openJathakam() {
+    showPage('kundli');
+    if (state.chart) { showKundliView('chart'); try { $('chart').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } }
+    else { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } }
+  }
   function renderTools() {
     const text = toolText(), copy = text.tools, live = liveSubtitles();
     $('detail-title').textContent = text.detailTitle;
     $('festivals-title').textContent = text.festTitle;
-    const open = (page, view) => () => {
-      if (page === 'relationship') { state.loveMode = 'match'; renderRelationship(); }
-      showPage(page);
-      if (view) {
-        showKundliView(view);
-        // With a chart already made, jump straight to the chosen view instead of the birth form.
-        if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
-      }
-    };
+    const open = (page, view) => () => openTool(page, view);
     const toFestivals = () => showPage('calendar');
-    const toPanchang = () => { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } };
     const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
-    // No Jathakam card here: the "My Jathakam" card above the sections already opens it (it was shown twice).
     // Big illustrated cards in sections, like a magazine: picture on top, name and a live line at the bottom.
     const art = window.JyotishaArt || null;
     const card = (key, title, sub, onClick, extra = {}) => {
@@ -540,7 +578,8 @@
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
       section(sections.palm || TOOLS_COPY.en.sections.palm, [
         card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
-        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot)]),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
+        card('numerology', numCopy().card[0], numberLine() || numCopy().card[1], openNumerology)]),
       section(sections.love, [
         card('match', copy.match[0], copy.match[1], open('relationship')),
         card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
@@ -552,6 +591,7 @@
     renderJathakamCard();
     renderHomeAi();
     renderNotify();
+    renderMenu();
   }
   // Home greeting: "Good afternoon" and the user's name (or Namaste when we do not know it).
   function renderGreeting() {
@@ -569,11 +609,7 @@
     const copy = toolText(), box = $('my-jathakam'), chart = state.chart;
     box.replaceChildren();
     const button = el('button', 'jk-cta', chart ? copy.jkView : copy.jkCreate); button.type = 'button';
-    button.addEventListener('click', () => {
-      showPage('kundli');
-      if (chart) { showKundliView('chart'); try { $('chart').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } }
-      else { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } }
-    });
+    button.addEventListener('click', openJathakam);
     const head = el('div', 'jk-head');
     head.append(el('span', 'jk-icon', '🪐'), el('div'));
     head.children[1].append(el('h2', null, chart ? copy.jkMine : copy.jkAsk));
@@ -1065,6 +1101,7 @@
     if (pages.moon && !pages.moon.hidden) renderMoonSign();
     if (pages.tarot && !pages.tarot.hidden) renderTarot();
     if (pages.palm && !pages.palm.hidden) renderPalm();
+    if (pages.numbers && !pages.numbers.hidden) renderNumerology();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1461,6 +1498,155 @@
     again.addEventListener('click', () => { palmState.step = 'pick'; renderPalm(); });
     actions.appendChild(again);
     box.appendChild(actions);
+  }
+  /* ---- Side menu (☰): every feature in one list, opened from the header ---- */
+  let menuHistory = false;   // the open menu added a history step (so the phone's Back closes it)
+  function menuItems() {
+    const text = toolText(), copy = text.tools, menu = text.menu || TOOLS_COPY.en.menu;
+    return [
+      ['home', '🏠', menu.home, () => showPage('home')],
+      ['chat', '💬', copy.chat[0], () => showPage('chat')],
+      ['kundli', '📜', copy.jathakam[0], openJathakam],
+      ['rashi', '🔮', copy.rashi[0], () => showPage('rashi')],
+      ['moon', '🌙', moonCopy().card[0], openMoonSign],
+      ['palm', '✋', palmCopy().card[0], openPalm],
+      ['tarot', '🃏', tarotCopy().card[0], openTarot],
+      ['numbers', '🔢', numCopy().card[0], openNumerology],
+      ['relationship', '💞', copy.match[0], () => openTool('relationship')],
+      ['doshas', '🧿', copy.doshas[0], () => openTool('kundli', 'doshas')],
+      ['dasha', '⏳', copy.dasha[0], () => openTool('kundli', 'dasha')],
+      ['calendar', '🪔', copy.festivals[0], () => showPage('calendar')],
+      ['panchang', '🌅', menu.panchang, toPanchang],
+      ['look', '🎨', menu.appearance, () => { renderLookPanel(); $('theme-panel').hidden = false; }],
+      ['privacy', '🔒', menu.privacy, () => { try { window.location.href = '/privacy'; } catch (_error) { /* optional */ } }],
+    ];
+  }
+  function renderMenu() {
+    const menu = toolText().menu || TOOLS_COPY.en.menu;
+    $('side-title').textContent = menu.title;
+    $('menu-btn').setAttribute('aria-label', menu.open);
+    $('side-close').setAttribute('aria-label', menu.close);
+    $('side-list').replaceChildren(...menuItems().map(([key, icon, label, go]) => {
+      const item = el('button', `side-item${key === currentPage ? ' on' : ''}`); item.type = 'button';
+      item.append(el('span', 'side-icon', icon), el('span', null, label));
+      item.addEventListener('click', () => chooseFromMenu(go));
+      return item;
+    }));
+  }
+  function hideMenu() {
+    $('side-menu').hidden = true;
+    $('menu-btn').setAttribute('aria-expanded', 'false');
+    if (document.body && document.body.classList) document.body.classList.remove('menu-open');
+  }
+  function openMenu() {
+    renderMenu();
+    $('side-menu').hidden = false;
+    $('menu-btn').setAttribute('aria-expanded', 'true');
+    if (document.body && document.body.classList) document.body.classList.add('menu-open');
+    menuHistory = false;
+    try {
+      if (window.history && typeof window.history.pushState === 'function') { window.history.pushState({ page: currentPage, menu: true }, '', `#${currentPage}`); menuHistory = true; }
+    } catch (_error) { /* history is optional */ }
+  }
+  // Closing with ✕ or a tap outside also removes the menu's history step, so Back is not needed twice.
+  function closeMenu() {
+    if ($('side-menu').hidden) return;
+    hideMenu();
+    if (menuHistory) { menuHistory = false; try { window.history.back(); } catch (_error) { /* optional */ } }
+  }
+  function chooseFromMenu(go) {
+    hideMenu();
+    const before = currentPage, stepped = menuHistory;
+    replaceNext = stepped;
+    try { go(); } finally { replaceNext = false; menuHistory = false; }
+    if (stepped && currentPage === before) { try { window.history.back(); } catch (_error) { /* optional */ } }   // nothing new opened
+  }
+  $('menu-btn').addEventListener('click', openMenu);
+  $('side-close').addEventListener('click', closeMenu);
+  $('side-scrim').addEventListener('click', closeMenu);
+
+  /* ---- Numerology: Moolank, Bhagyank, name number and personal year, worked out on the phone (no AI) ---- */
+  const numCopy = () => toolText().numerology || TOOLS_COPY.en.numerology;
+  const numState = { dob: '', name: '', editing: false, error: '' };
+  const numberDob = () => numState.dob || state.userDob || (loadProfile() || {}).dob || '';
+  function numberLine() {
+    const tool = window.JyotishaNumerology, dob = numberDob(), copy = numCopy();
+    if (!tool || !tool.parse(dob)) return '';
+    return `${copy.moolank[0]} ${tool.moolank(dob)} · ${copy.bhagyank[0]} ${tool.bhagyank(dob)}`;
+  }
+  function openNumerology() { numState.editing = false; numState.error = ''; showPage('numbers'); renderNumerology(); }
+  function numberForm(copy, dob, name) {
+    const form = el('form', 'num-form');
+    const dobInput = el('input'); dobInput.type = 'date'; dobInput.id = 'num-dob'; dobInput.max = '2100-12-31'; dobInput.value = dob;
+    const nameInput = el('input'); nameInput.type = 'text'; nameInput.id = 'num-name'; nameInput.maxLength = 60; nameInput.autocomplete = 'name'; nameInput.value = name;
+    const field = (label, input) => { const box = el('label', 'num-field'); box.append(el('span', null, label), input); return box; };
+    const go = el('button', 'palm-scan', `🔢 ${copy.show}`); go.type = 'submit';
+    form.append(field(copy.dob, dobInput), field(copy.name, nameInput), go);
+    if (numState.error) form.appendChild(el('p', 'num-error', numState.error));
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const tool = window.JyotishaNumerology;
+      if (!tool || !tool.parse(dobInput.value)) { numState.error = copy.bad; renderNumerology(); return; }
+      Object.assign(numState, { dob: dobInput.value, name: nameInput.value.trim().slice(0, 60), editing: false, error: '' });
+      renderNumerology();
+      renderTools();
+    });
+    return form;
+  }
+  function renderNumerology() {
+    const copy = numCopy(), box = $('numerology'), art = window.JyotishaArt, tool = window.JyotishaNumerology;
+    const hero = el('div', 'num-hero'); if (art && art.numerology) hero.innerHTML = art.numerology();
+    box.replaceChildren(hero, el('h2', 'palm-title', copy.title));
+    const dob = numberDob(), name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
+    const result = tool && !numState.editing && dob ? tool.report(dob, name, state.lang, year) : null;
+    if (!result) { box.append(el('p', 'tarot-ask', copy.intro), numberForm(copy, dob, name)); return; }
+    let dateText = dob;
+    try { dateText = new Intl.DateTimeFormat(state.lang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${dob}T12:00:00Z`)); } catch (_error) { /* keep ISO */ }
+    const who = el('div', 'num-who');
+    const change = el('button', 'chip-btn', `✎ ${copy.change}`); change.type = 'button';
+    change.addEventListener('click', () => { numState.editing = true; renderNumerology(); });
+    who.append(el('span', null, [name, dateText].filter(Boolean).join(' · ')), change);
+    const tiles = el('div', 'num-tiles');
+    const tile = (n, label) => { const item = el('div', 'num-tile'); item.append(el('b', 'num-digit', String(n)), el('strong', null, label[0]), el('small', null, label[1])); return item; };
+    tiles.append(tile(result.moolank.number, copy.moolank), tile(result.bhagyank.number, copy.bhagyank));
+    if (result.name) tiles.appendChild(tile(result.name.number, copy.nameNum));
+    box.append(who, tiles);
+    const lines = [`🔢 ${copy.title}${name ? ` · ${name}` : ''}`];
+    const section = (label, info, extra) => {
+      const sec = el('section', 'num-sec');
+      const heading = `${label} ${info.number} · ${info.title}`;
+      sec.append(el('h4', null, heading), el('p', 'num-planet', `🪐 ${copy.planet}: ${bodyName(info.planet)}`), el('p', null, info.nature),
+        el('p', null, `💪 ${copy.strengths}: ${info.strengths}`), el('p', null, `⚠️ ${copy.care}: ${info.care}`));
+      if (extra) sec.appendChild(el('p', 'num-harmony', extra));
+      lines.push(`${heading}\n${info.nature}`);
+      return sec;
+    };
+    box.appendChild(section(copy.moolank[0], result.moolank));
+    box.appendChild(section(copy.bhagyank[0], result.bhagyank));
+    if (result.name) box.appendChild(section(copy.nameNum[0], result.name, result.harmony ? `✓ ${copy.harmonyGood}` : `• ${copy.harmonyNeutral}`));
+    else box.appendChild(el('p', 'num-note', copy.noName));
+    const yearBox = el('section', 'num-sec num-year');
+    const yearTitle = `📅 ${fill(copy.year, { year, n: result.year.number })}`;
+    yearBox.append(el('h4', null, yearTitle), el('p', null, result.year.text));
+    lines.push(`${yearTitle}\n${result.year.text}`);
+    const colours = ((toolText().rashi || TOOLS_COPY.en.rashi).colours || TOOLS_COPY.en.rashi.colours)[result.lucky.planet];
+    const days = result.lucky.days.map(day => calendarUI.weekdayName(state.lang, day, 'long')).join(', ');
+    const lucky = el('section', 'num-lucky');
+    lucky.appendChild(el('h4', null, `🍀 ${copy.lucky}`));
+    for (const [label, value] of [[copy.luckyNumbers, result.lucky.numbers.join(', ')], [copy.luckyDays, days], [copy.luckyColours, colours]]) {
+      const row = el('p'); row.append(el('span', null, label), el('b', null, value)); lucky.appendChild(row);
+    }
+    box.append(yearBox, lucky);
+    const actions = el('div', 'tarot-actions');
+    const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
+    askAi.addEventListener('click', () => {
+      const question = fill(copy.askQ, { m: result.moolank.number, b: result.bhagyank.number });
+      showPage('chat'); ask(question, question, true);
+    });
+    const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+    share.addEventListener('click', () => { void shareText(`🔢 ${copy.title}`, lines.join('\n\n')); });
+    actions.append(askAi, share);
+    box.append(actions, el('p', 'num-note', copy.note));
   }
   /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
   // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.

@@ -29,8 +29,11 @@ PROMPT = (
     "{{\"palm\": false}}. If it does, reply with a JSON object with \"palm\": true and these keys, each 40 to 90 words in "
     "{language}: \"heart\" (heart line: love and emotions), \"head\" (head line: thinking and decisions), \"life\" (life "
     "line: energy and vitality; never about how long one lives), \"fate\" (fate line: work and life path; if faint or "
-    "absent, say so gently), \"summary\" (60 to 110 words: overall nature and one kind piece of advice)."
+    "absent, say so gently), \"summary\" (60 to 110 words: overall nature and one kind piece of advice). "
+    "Write every value in {language}, in the {language} script; do not write the values in English."
 )
+# Sent on a second try when the first reply came back in English instead of the user's language.
+REMINDER = "\nIMPORTANT: your previous answer was in English. Write all the values in {language} script only."
 
 
 def enabled() -> bool:
@@ -87,9 +90,16 @@ def reading(payload: object) -> dict:
     if not enabled():
         return {"status": "off", "reading": None}
     name = assistant.LANGUAGES[language]
-    text = assistant.complete(SYSTEM.format(hand=hand, language=name), PROMPT.format(language=name), json_output=True,
-                              max_tokens=3000, image=(mime, data))
-    found = validate(_parse(text)) if text else None
+    found = None
+    for attempt in range(2):
+        prompt = PROMPT.format(language=name) + (REMINDER.format(language=name) if attempt else "")
+        text = assistant.complete(SYSTEM.format(hand=hand, language=name), prompt, json_output=True,
+                                  max_tokens=3000, image=(mime, data))
+        found = validate(_parse(text)) if text else None
+        # Vision replies sometimes slip into English; ask once more in the user's language (keep the second answer).
+        if found and found["palm"] and not attempt and not all(assistant.in_language(found[key], language) for key in (*LINES, "summary")):
+            continue
+        break
     if found is None:
         return {"status": "unavailable", "reading": None}
     if not found["palm"]:

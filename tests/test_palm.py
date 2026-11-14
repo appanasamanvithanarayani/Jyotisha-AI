@@ -73,3 +73,24 @@ def test_endpoint_takes_a_real_size_photo_and_refuses_an_oversized_body(ai, loca
     assert status == 413
     status, _, _ = request(local_server, "POST", "/api/tarot", "x" * 20_000, {"Content-Type": "application/json"})
     assert status == 413                                                    # other endpoints keep the small limit
+
+
+def test_an_english_reply_to_a_telugu_reading_is_asked_again_in_telugu(ai, monkeypatch):
+    telugu = "మీ హృదయ రేఖ పొడవుగా స్పష్టంగా ఉంది, ఇది ప్రేమ, దయ, నమ్మకమైన స్వభావాన్ని సూచిస్తుంది. మీరు ఇతరులను బాగా అర్థం చేసుకుంటారు."
+    replies = [json.dumps(GOOD), json.dumps({"palm": True, **{key: telugu for key in ("heart", "head", "life", "fate")}, "summary": telugu + " " + telugu})]
+    prompts = []
+
+    def complete(system, prompt, **kwargs):
+        prompts.append(prompt)
+        return replies[min(len(prompts), 2) - 1]
+
+    monkeypatch.setattr(palm.assistant, "complete", complete)
+    result = palm.reading(REQUEST)
+    assert len(prompts) == 2 and "Telugu script only" in prompts[1]
+    assert result["status"] == "ok" and result["reading"]["heart"] == telugu
+    assert palm.reading({**REQUEST, "language": "en"})["status"] == "ok" and len(prompts) == 3   # English is asked once
+
+
+def test_in_language():
+    assert palm.assistant.in_language("మీ హృదయ రేఖ", "te") and not palm.assistant.in_language("Your heart line", "te")
+    assert palm.assistant.in_language("Your heart line", "en") and palm.assistant.in_language("आपकी रेखा", "hi")

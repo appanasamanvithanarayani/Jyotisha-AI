@@ -25,6 +25,27 @@ LANGUAGES = {
     "bn": "Bengali", "gu": "Gujarati", "pa": "Punjabi", "or": "Odia", "as": "Assamese", "ur": "Urdu", "ne": "Nepali",
     "sa": "Sanskrit", "kok": "Konkani", "mai": "Maithili",
 }
+# Unicode block of each language's script, to check that an AI reply is really in the language asked for.
+SCRIPTS = {
+    "te": (0x0C00, 0x0C7F), "hi": (0x0900, 0x097F), "mr": (0x0900, 0x097F), "ne": (0x0900, 0x097F), "sa": (0x0900, 0x097F),
+    "kok": (0x0900, 0x097F), "mai": (0x0900, 0x097F), "ta": (0x0B80, 0x0BFF), "kn": (0x0C80, 0x0CFF), "ml": (0x0D00, 0x0D7F),
+    "bn": (0x0980, 0x09FF), "as": (0x0980, 0x09FF), "gu": (0x0A80, 0x0AFF), "pa": (0x0A00, 0x0A7F), "or": (0x0B00, 0x0B7F),
+    "ur": (0x0600, 0x06FF),
+}
+
+
+def in_language(text: str, language: str) -> bool:
+    """True when most letters of the text are in the language's script (always true for English)."""
+    block = SCRIPTS.get(language)
+    if block is None:
+        return True
+    letters = [char for char in text if char.isalpha()]
+    if not letters:
+        return False
+    low, high = block
+    return sum(low <= ord(char) <= high for char in letters) / len(letters) >= 0.6
+
+
 SYSTEM = (
     "You are Jyotirmaya, an experienced, kind family astrologer (jyotishi) talking with a client in the Jyotirmaya AstroChat app. Base every answer on the "
     "calculated chart facts between <facts> tags, but never invent placements, dates or periods that are not there. "
