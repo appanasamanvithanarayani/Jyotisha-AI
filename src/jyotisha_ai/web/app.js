@@ -2340,13 +2340,9 @@
     const iso = day.date, now = `${localIso(new Date())}T${new Date().toTimeString().slice(0, 5)}`;
     const pick = items => (Array.isArray(items) && items.length ? items.find(item => item.starts_at <= now && now < item.ends_at) || items[0] : null);
     const tithi = pick(day.tithi), star = pick(day.nakshatra), date = new Date(`${iso}T12:00:00Z`);
-    const dateBox = el('span', 'ts-date');
-    dateBox.append(el('b', null, String(date.getUTCDate())), el('small', null, calendarUI.monthName(state.lang, date.getUTCMonth(), 'short')));
-    const main = el('span', 'ts-main');
-    main.append(el('small', null, `${moonEmoji(tithi.index)} ${t('dpTitle')}`),
-      el('b', null, `${calendarUI.weekdayName(state.lang, date.getUTCDay())}, ${date.getUTCFullYear()}`),
-      el('span', null, [names.tithiName(tithi.index, state.lang), star ? names.nakshatraName(star.index, state.lang) : ''].filter(Boolean).join(' · ')));
-    box.replaceChildren(dateBox, main, el('span', 'ts-go', '›'));
+    const when = `${calendarUI.weekdayName(state.lang, date.getUTCDay())}, ${date.getUTCDate()} ${calendarUI.monthName(state.lang, date.getUTCMonth())} ${date.getUTCFullYear()}`;
+    const what = [names.tithiName(tithi.index, state.lang), star ? names.nakshatraName(star.index, state.lang) : ''].filter(Boolean).join(' · ');
+    box.replaceChildren(el('b', 'ts-when', when), el('span', 'ts-what', `${moonEmoji(tithi.index)} ${what} ›`));
     box.hidden = false;
   }
   function openToday() {

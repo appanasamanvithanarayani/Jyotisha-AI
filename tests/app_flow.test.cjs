@@ -1398,10 +1398,8 @@ test('Home starts with today: date, weekday, year, tithi and nakshatra, and a ta
   await settle(); await settle();
   const strip = app.element('today-strip');
   assert.equal(strip.hidden, false);
-  assert.equal(strip.children[0].children[0].textContent, '30');                 // the date of the fixture day
-  assert.equal(strip.children[1].children[1].textContent, 'Friday, 2026');
-  assert.match(strip.children[1].children[0].textContent, /Daily Panchang/);
-  assert.ok(strip.children[1].children[2].textContent.includes(' · '));           // tithi · nakshatra
+  assert.equal(strip.children[0].textContent, 'Friday, 30 October 2026');          // weekday, date and year
+  assert.match(strip.children[1].textContent, / · .* ›$/);                        // tithi · nakshatra ›
   strip.listeners.click();
   assert.equal(app.element('top').children.find(item => item.id === 'page-home').hidden, false);
 });
