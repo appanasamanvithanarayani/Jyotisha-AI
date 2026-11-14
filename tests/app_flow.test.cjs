@@ -1004,6 +1004,64 @@ async function typeInChat(app, text) {
   await settle();
 }
 
+const resultsConfig = { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true, rewarded_id: 'ca-app-pub-3940256099942544/5224354917',
+  rewarded: { tarot: true, palm: true, rashiphal: true } };
+const earnReward = async ad => { await settle(); ad.handlers.onRewardedVideoAdReward({}); ad.handlers.onRewardedVideoAdDismissed(); await settle(); await settle(); };
+
+test('"▶ See my reading": Tarot asks for a rewarded ad after the third card, with no extra prompt, and an early close keeps the cards hidden', async () => {
+  const ad = fakeRewardedAdMob();
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: ad.plugin } },
+    appAds: resultsConfig, tarot: { status: 'ok', reading }, confirm: () => { throw new Error('no confirm dialog expected'); } });
+  await settle(); await settle();
+  homeCard(app, 'Tarot').listeners.click();
+  app.element('tarot').children[2].children[0].listeners.click();
+  for (const n of [0, 1, 2]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+  let see = app.element('tarot').children.find(item => /reward-btn/.test(item.className));
+  assert.equal(see.textContent, '▶ See my reading');
+  assert.ok(!app.requests.some(r => r.url === '/api/tarot'));                // nothing is read (or paid for) before the ad
+  see.listeners.click();
+  await settle();
+  ad.handlers.onRewardedVideoAdDismissed();                                    // closed early, no reward
+  await settle();
+  assert.ok(app.element('tarot').children.some(item => /reward-btn/.test(item.className)));
+  see = app.element('tarot').children.find(item => /reward-btn/.test(item.className));
+  see.listeners.click();
+  await earnReward(ad);
+  assert.ok(app.requests.some(r => r.url === '/api/tarot'));
+  assert.ok(app.element('tarot').children.some(item => item.className === 'tarot-sec advice'));
+  assert.deepEqual(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 2);
+});
+
+test('"▶ See my reading": Palm waits for the ad after the photo; Rashiphal needs one ad a day', async () => {
+  const ad = fakeRewardedAdMob();
+  const reading = { heart: 'H.', head: 'He.', life: 'L.', fate: 'F.', summary: 'S.' };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: resultsConfig, palm: { status: 'ok', reading } });
+  await settle(); await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();   // the camera opens first
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change(); await settle();
+  assert.ok(!app.requests.some(r => r.url === '/api/palm'));
+  app.element('palmread').children.find(item => /reward-btn/.test(item.className)).listeners.click();
+  await earnReward(ad);
+  assert.ok(app.requests.some(r => r.url === '/api/palm' && r.body.image === 'data:image/jpeg;base64,SMALLPHOTO'));
+  // Rashiphal: locked until one ad today, then open for the rest of the day
+  homeCard(app, 'Rashiphal').listeners.click();
+  app.element('rashi-picker').children[4].listeners.click();                  // Simha
+  const lock = app.element('rashi-reading').children;
+  assert.match(lock[1].textContent, /one short ad/);
+  lock[2].listeners.click();
+  await earnReward(ad);
+  const today = new Date(); const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  assert.equal(storage.getItem('jyotisha.rashi-unlock.v1'), iso);
+  assert.ok(!app.element('rashi-reading').children.some(item => /reward-btn/.test(item.className || '')));
+  app.element('rashi-picker').children[5].listeners.click();                  // another sign: no second ad today
+  assert.ok(!app.element('rashi-reading').children.some(item => /reward-btn/.test(item.className || '')));
+});
+
 test('generating a Kundli asks the user to watch a rewarded ad first, and only calculates after the reward', async () => {
   const ad = fakeRewardedAdMob();
   const prompts = [];

@@ -777,6 +777,8 @@ def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(l
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT", "JYOTISHA_ADMOB_INTERSTITIAL_ID"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("JYOTISHA_ONBOARDING_ADS", "0")      # the welcome-step ads have their own test below
+    for feature in ("TAROT", "PALM", "RASHIPHAL"):
+        monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")    # the result ads have their own test below
     readiness = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     assert readiness() is None
     monkeypatch.setenv("JYOTISHA_APP_ADS", "0")
@@ -806,9 +808,27 @@ def test_welcome_step_ads_are_on_by_default_and_can_be_switched_off(local_server
     assert "onboarding_interstitial_id" not in config()
 
 
+def test_watch_an_ad_to_see_the_reading_is_on_for_tarot_palm_and_rashiphal_and_can_be_switched_off(local_server, monkeypatch):
+    for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_TAROT", "JYOTISHA_REWARDED_PALM", "JYOTISHA_REWARDED_RASHIPHAL",
+                 "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_ADMOB_REWARDED_ID"):
+        monkeypatch.delenv(name, raising=False)
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert config() is None                                                  # never without the app-ads master switch
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    assert config()["rewarded"] == {"tarot": True, "palm": True, "rashiphal": True}
+    assert config()["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"   # Google's test unit until one is set
+    monkeypatch.setenv("JYOTISHA_REWARDED_RASHIPHAL", "0")
+    assert config()["rewarded"] == {"tarot": True, "palm": True}
+    for feature in ("TAROT", "PALM"):
+        monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")
+    assert "rewarded" not in config() and "rewarded_id" not in config()
+
+
 def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_master_switch(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_ADMOB_REWARDED_ID", "JYOTISHA_INTERSTITIAL", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING"):
         monkeypatch.delenv(name, raising=False)
+    for name in ("JYOTISHA_REWARDED_TAROT", "JYOTISHA_REWARDED_PALM", "JYOTISHA_REWARDED_RASHIPHAL", "JYOTISHA_ONBOARDING_ADS"):
+        monkeypatch.setenv(name, "0")
     config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
     assert config() is None                                              # the master switch is still off
@@ -829,6 +849,8 @@ def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_m
 def test_chat_allowance_switch_sets_free_and_bonus_question_counts(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_CHAT_FREE_QUESTIONS", "JYOTISHA_CHAT_BONUS_QUESTIONS", "JYOTISHA_ADMOB_REWARDED_ID"):
         monkeypatch.delenv(name, raising=False)
+    for feature in ("TAROT", "PALM", "RASHIPHAL"):
+        monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")         # the result ads have their own test
     monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
     config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     assert "chat_free_questions" not in config() and "rewarded_id" not in config()

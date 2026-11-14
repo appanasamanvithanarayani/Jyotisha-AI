@@ -161,6 +161,7 @@
       rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: '…more', less: 'Show less',
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
         details: 'Planet-by-planet details', transitGood: 'Favourable', transitCare: 'Take care', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see today’s reading.',
+        unlock: '▶ See today’s reading', unlockNote: 'Watch one short ad to open today’s Rashiphal for all signs.',
         luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis · Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
@@ -171,13 +172,13 @@
         scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
         off: 'Palm reading is switched off right now.', failed: 'Could not read the palm right now. Please try again in a little while.',
         lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
-        again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
+        ready: 'Your palm photo is ready.', see: '▶ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
         askQ: 'My palm reading says: “{summary}” What should I focus on now?' },
       tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
         topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
         positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cards…',
-        again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
+        see: '▶ See my reading', again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
         askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
       moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
         approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
@@ -225,6 +226,7 @@
       rashi: { pick: 'మీ రాశిని ఎంచుకోండి', find: 'మీ రాశి తెలుసుకోండి', mineButton: 'నా రాశి చూపించు', mine: 'మీది', title: '{sign} రాశి ఫలితాలు ({date})', more: '…మరింత', less: 'తక్కువ చూపు',
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
         details: 'గ్రహాల వారీగా వివరాలు', transitGood: 'అనుకూలం', transitCare: 'జాగ్రత్త', jump: { transits: 'గ్రహ సంచారం', remedies: 'పరిహారాలు', full: 'పూర్తి జాతకం', ask: 'AIని అడగండి' }, hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
+        unlock: '▶ నేటి రాశిఫలం చూడండి', unlockNote: 'ఒక చిన్న యాడ్ చూస్తే ఈరోజు అన్ని రాశుల ఫలాలు తెరుచుకుంటాయి.',
         luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
@@ -235,13 +237,13 @@
         scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
         off: 'హస్త రేఖా పఠనం ప్రస్తుతం ఆపివేయబడింది.', failed: 'ఇప్పుడు చదవలేకపోయాం. కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.',
         lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
-        again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
+        ready: 'మీ అరచేయి ఫోటో సిద్ధం.', see: '▶ నా రీడింగ్ చూడండి', again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
         askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?' },
       tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
         topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
         positions: ['గతం', 'వర్తమానం', 'భవిష్యత్తు'], reversed: 'తలకిందులు', advice: 'మీకో సందేశం', loading: 'మీ కార్డులు చదువుతున్నాం…',
-        again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
+        see: '▶ నా రీడింగ్ చూడండి', again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
         askQ: '{topic} టారో రీడింగ్‌లో నాకు {cards} వచ్చాయి. దీని అర్థం ఏమిటి?' },
       moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
         approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
@@ -289,6 +291,7 @@
       rashi: { pick: 'अपनी राशि चुनें', find: 'अपनी राशि जानें', mineButton: 'मेरी राशि दिखाएँ', mine: 'आपकी', title: '{sign} राशिफल ({date})', more: '…और पढ़ें', less: 'कम दिखाएँ',
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
         details: 'ग्रह-वार विवरण', transitGood: 'अनुकूल', transitCare: 'सावधानी', jump: { transits: 'ग्रह गोचर', remedies: 'उपाय', full: 'पूरी कुंडली', ask: 'AI से पूछें' }, hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
+        unlock: '▶ आज का राशिफल देखें', unlockNote: 'एक छोटा विज्ञापन देखें, आज सभी राशियों का राशिफल खुल जाएगा।',
         luckyTitle: 'शुभ संकेत', luckyDay: 'रंग और दिशा: आज सभी राशियों के लिए एक · अंक: आपकी राशि के लिए', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
@@ -299,13 +302,13 @@
         scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
         off: 'हस्त रेखा पठन अभी बंद है।', failed: 'अभी पढ़ नहीं पाए। थोड़ी देर बाद फिर कोशिश करें।',
         lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
-        again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
+        ready: 'आपकी हथेली की फ़ोटो तैयार है।', see: '▶ मेरी रीडिंग देखें', again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
         askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?' },
       tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
         topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
         positions: ['अतीत', 'वर्तमान', 'भविष्य'], reversed: 'उल्टा', advice: 'आपके लिए संदेश', loading: 'आपके कार्ड पढ़ रहे हैं…',
-        again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
+        see: '▶ मेरी रीडिंग देखें', again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
         askQ: '{topic} टैरो रीडिंग में मुझे {cards} मिले। इसका मेरे लिए क्या अर्थ है?' },
       moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
         approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
@@ -1334,7 +1337,12 @@
     input.addEventListener('change', async () => {
       const file = input.files && input.files[0];
       if (!file) return;
-      try { await readPalm(await shrinkPhoto(file)); } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
+      try {
+        const photo = await shrinkPhoto(file);
+        // With "watch an ad to see the reading" on, the photo waits behind a ▶ button (the camera must open first:
+        // Android only opens it straight from a tap, not after an ad).
+        if (rewardedFor('palm')) { palmState.photo = photo; palmState.step = 'ready'; renderPalm(); } else await readPalm(photo);
+      } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
     });
     input.click();
   }
@@ -1360,6 +1368,17 @@
       const scan = el('button', 'palm-scan', `📷 ${copy.scan}`); scan.type = 'button';
       scan.addEventListener('click', choosePalmPhoto);
       box.appendChild(scan);
+      return;
+    }
+    if (palmState.step === 'ready') {
+      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
+      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;
+        const photo = palmState.photo; palmState.photo = null;
+        void readPalm(photo);
+      });
+      box.append(pic, el('p', 'palm-wait', copy.ready), see);
       return;
     }
     if (palmState.step === 'reading') {
@@ -1468,12 +1487,32 @@
         back.addEventListener('click', () => {
           if (tarot.chosen.includes(n) || tarot.chosen.length >= 3) return;
           tarot.chosen.push(n);
-          if (tarot.chosen.length === 3) { tarot.step = 'result'; void loadTarotReading(); }
+          if (tarot.chosen.length === 3) {
+            if (rewardedFor('tarot')) tarot.step = 'locked';   // the three cards wait face down behind "▶ See my reading"
+            else { tarot.step = 'result'; void loadTarotReading(); }
+          }
           renderTarot();
         });
         grid.appendChild(back);
       });
       box.appendChild(grid);
+      return;
+    }
+    if (tarot.step === 'locked') {
+      box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
+      const row = el('div', 'tarot-row');
+      copy.positions.forEach(position => {
+        const face = el('div', 'tarot-face');
+        const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotBack();
+        face.append(el('small', 'tarot-pos', position), pic);
+        row.appendChild(face);
+      });
+      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;   // closed the ad early: the cards stay face down
+        tarot.step = 'result'; void loadTarotReading(); renderTarot();
+      });
+      box.append(row, see);
       return;
     }
     // Result: the three cards face up, then the reading (AI, or the built-in meanings).
@@ -1872,6 +1911,18 @@
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
+    if (state.rashiPick && rewardedFor('rashiphal') && !rashiUnlocked()) {   // once a day: one ad opens the readings
+      const copy = toolText().rashi, box = $('rashi-reading');
+      $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
+      const see = el('button', 'palm-scan reward-btn', copy.unlock || TOOLS_COPY.en.rashi.unlock); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;
+        try { window.localStorage.setItem(RASHI_UNLOCK_KEY, localIso(new Date())); } catch (_error) { /* not remembered: asks again next time */ }
+        renderRashi();
+      });
+      box.replaceChildren(el('h3', 'rashi-reading-title', `${RASHI_ICONS[state.rashiPick - 1]} ${signName(state.rashiPick)}`), el('p', 'rashi-hint', copy.unlockNote || TOOLS_COPY.en.rashi.unlockNote), see);
+      return;
+    }
     if (!state.rashiPick) {   // nothing picked yet: just the sign grid and a hint
       $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
       return;
@@ -2440,6 +2491,12 @@
     document.documentElement.style.setProperty('--ad-height', `${height}px`);
   }
   const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
+  // "▶ See my reading": a rewarded ad before a Tarot or palm reading, and once a day before the Rashiphal (like Palm AI).
+  // Only in the Android app with ads on and the feature switched on in the admin panel; elsewhere results are free.
+  const rewardedFor = feature => { const { config, admob } = appAds; return !!(config && admob && config.rewarded && config.rewarded[feature] === true && adUnitOk(config.rewarded_id)); };
+  const watchForResult = () => watchRewardedAd('', false, false);   // the ▶ button itself is the user's choice: no extra prompt
+  const RASHI_UNLOCK_KEY = 'jyotisha.rashi-unlock.v1';
+  const rashiUnlocked = () => { try { return window.localStorage.getItem(RASHI_UNLOCK_KEY) === localIso(new Date()); } catch (_error) { return false; } };
   // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
   // the free window after a recent ad, or the ad could not be shown (an ad problem never blocks the user).
   function rewardedGate() {
@@ -2448,10 +2505,10 @@
     return watchRewardedAd(t('watchAdPrompt'), true);
   }
   // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
-  function watchRewardedAd(promptText, startsFreeWindow) {
+  function watchRewardedAd(promptText, startsFreeWindow, ask = true) {
     const { config, admob } = appAds;
     if (!config || !admob || !adUnitOk(config.rewarded_id)) return Promise.resolve(true);
-    if (!window.confirm || !window.confirm(promptText)) return Promise.resolve(false);
+    if (ask && (!window.confirm || !window.confirm(promptText))) return Promise.resolve(false);
     return new Promise(resolve => {
       let earned = false, settled = false;
       const handles = [];

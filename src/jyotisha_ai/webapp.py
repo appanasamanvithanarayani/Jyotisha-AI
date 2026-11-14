@@ -146,7 +146,11 @@ def _app_ads() -> dict | None:
     # A rewarded ad before a Kundli is generated, and an occasional ad between screens; both off unless switched on.
     rewarded_kundli = store.value("JYOTISHA_REWARDED_KUNDLI") == "1"
     rewarded_chat = store.value("JYOTISHA_REWARDED_CHAT") == "1"
-    if rewarded_kundli or rewarded_chat:
+    # "Watch an ad to see the reading" for Tarot and Palm (every reading) and Rashiphal (once a day), like Palm AI.
+    rewarded_results = {feature: store.value(f"JYOTISHA_REWARDED_{feature.upper()}", "1") == "1" for feature in ("tarot", "palm", "rashiphal")}
+    if any(rewarded_results.values()):
+        config["rewarded"] = {feature: True for feature, on in rewarded_results.items() if on}
+    if rewarded_kundli or rewarded_chat or any(rewarded_results.values()):
         config["rewarded_id"] = unit_id("JYOTISHA_ADMOB_REWARDED_ID", TEST_REWARDED_ID)
     if rewarded_kundli:
         config["rewarded_kundli"] = True

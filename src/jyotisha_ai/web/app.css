@@ -1060,3 +1060,4 @@ main,.app-page,.card{min-width:0}
 .palm-sec p{margin:0;line-height:1.6;color:var(--ink)}
 .palm-sec.summary{border-color:rgba(230,194,122,.55)}
 :root:not([data-skin="mystic"]) .palm-sec,:root:not([data-skin="mystic"]) .palm-hand{background:var(--surface);border-color:var(--line)}
+.reward-btn{margin-top:16px}
