@@ -165,7 +165,7 @@
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
-      aiEyebrow: 'AI astrologer', panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
+      aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
     },
     te: {
@@ -206,7 +206,7 @@
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
-      aiEyebrow: 'AI జ్యోతిష్కుడు', panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
+      aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
     },
     hi: {
@@ -247,7 +247,7 @@
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
-      aiEyebrow: 'AI ज्योतिषी', panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
+      aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
     },
   };
@@ -467,6 +467,7 @@
     const art = window.JyotishaArt, box = $('ai-art');
     if (art && box && !box.dataset.done) { box.innerHTML = art.orb(); box.dataset.done = '1'; }
     $('ai-eyebrow').textContent = text.aiEyebrow || TOOLS_COPY.en.aiEyebrow;
+    $('try-asking').textContent = `✦ ${text.tryAsking || TOOLS_COPY.en.tryAsking}`;
   }
   // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
   function renderJathakamCard() {
@@ -1977,7 +1978,14 @@
     const entry = el('div', `chat-message ${kind}`, message);
     chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
-  function resetChat(message) { chatLog.replaceChildren(); addMessage('assistant', message); history.length = 0; }
+  // The astrologer introduces itself by name and greets the user by theirs, then says what comes next.
+  function resetChat(message) {
+    chatLog.replaceChildren();
+    const persona = toolText().persona || TOOLS_COPY.en.persona;
+    if (message === t('chartReady') || message === t('chatAskDob')) addMessage('assistant', fill(persona.hello, { name: state.userName ? ` ${state.userName}` : '' }));
+    addMessage('assistant', message);
+    history.length = 0;
+  }
   // The full Jathakam is assembled from the tables already rendered for the chart, so it always matches them and the language.
   function buildJathakam() {
     const section = (title, ...nodes) => { const box = el('section', 'jk-sec'); box.appendChild(el('h4', null, title)); nodes.forEach(node => box.appendChild(node)); return box; };

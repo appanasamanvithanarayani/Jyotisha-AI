@@ -791,6 +791,7 @@ test('first run like Palm AI: loading screen, a full-screen ad, language, city, 
   assert.ok(calls.includes('showBanner'));
   assert.equal(storage.read().name, 'Samanvitha'); assert.equal(storage.read().dob, '1994-03-18');
   assert.equal(app.element('greet-name').textContent, 'Samanvitha');        // Home greets by name
+  assert.match(app.element('chat-log').children[0].textContent, /^Namaste Samanvitha! 🙏 I am Jyotirmaya, your astrologer/);   // and so does the astrologer
   assert.match(app.element('greet-time').textContent, /^Good (morning|afternoon|evening|night)$/);
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1994-03-18', pob: 'Hyderabad, IN', tob: '07:45' });
   assert.ok(app.requests.some(r => r.url === '/api/birth-chart'));          // with a time, the Kundli is made right away
