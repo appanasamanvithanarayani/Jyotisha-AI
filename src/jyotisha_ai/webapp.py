@@ -983,6 +983,9 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/art.js":
             body = files("jyotisha_ai.web").joinpath("art.js").read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8")
+        elif path == "/numerology.js":
+            body = files("jyotisha_ai.web").joinpath("numerology.js").read_bytes()
+            self._send(200, body, "application/javascript; charset=utf-8")
         elif path == "/nudges.js":
             body = files("jyotisha_ai.web").joinpath("nudges.js").read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8")

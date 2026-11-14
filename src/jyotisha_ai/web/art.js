@@ -140,6 +140,16 @@
     g += `<path d="M118 28a14 14 0 1 0 0 26a11 11 0 1 1 0-26z" fill="#fff3d1"/>` + sparkle(100, 30, 4) + sparkle(138, 64, 4, PINK2);
     return frame('g', g + clouds('g'), 47);
   }
+  // The Lo Shu square in gold, the middle 5 glowing: numerology.
+  function numerology() {
+    let n = `<circle cx="80" cy="60" r="50" fill="url(#n-glow)"/><rect x="50" y="30" width="60" height="60" rx="6" fill="#2e0f3b" stroke="${GOLD}" stroke-width="1.6"/>`;
+    n += `<path d="M70 30v60M90 30v60M50 50h60M50 70h60" stroke="${GOLD2}" stroke-width="1"/><circle cx="80" cy="60" r="9" fill="url(#n-pink)" opacity="0.85"/>`;
+    [[4, 9, 2], [3, 5, 7], [8, 1, 6]].forEach((row, r) => row.forEach((value, c) => {
+      n += `<text x="${60 + c * 20}" y="${45 + r * 20}" font-size="13" text-anchor="middle" fill="${value === 5 ? '#fff' : GOLD}" font-family="Georgia, serif">${value}</text>`;
+    }));
+    n += sparkle(34, 34, 6) + sparkle(128, 30, 5, PINK2) + sparkle(130, 92, 4);
+    return frame('n', n + clouds('n'), 53);
+  }
   // ---- Tarot cards (portrait 100 x 160): a patterned back, and a face per Major Arcana card with its own emblem ----
   const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
   const sun = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#c-gold)"/>` + Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<line x1="${(x + (r + 3) * Math.cos(a)).toFixed(1)}" y1="${(y + (r + 3) * Math.sin(a)).toFixed(1)}" x2="${(x + (r + 8) * Math.cos(a)).toFixed(1)}" y2="${(y + (r + 8) * Math.sin(a)).toFixed(1)}" stroke="${GOLD}" stroke-width="1.6"/>`; }).join('');
@@ -189,5 +199,5 @@
     const emblem = EMBLEMS[index] || EMBLEMS[0];
     return cardFrame(`<circle cx="50" cy="80" r="30" fill="url(#c-glow)"/><text x="50" y="26" font-size="12" text-anchor="middle" fill="${GOLD}" font-family="Georgia, serif">${ROMAN[index] || ''}</text>${emblem()}`);
   }
-  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, tarotBack, tarotCard };
+  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, numerology, tarotBack, tarotCard };
 });

@@ -39,7 +39,8 @@
       <button id="profile-next" type="button" data-i18n="continue">Continue</button><button id="profile-skip" type="button" class="link-btn onb-skip" data-i18n="skip">Skip for now</button></div>
   </form></section>
   <datalist id="place-suggestions"></datalist>
-  <header class="masthead"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"><img src="/icons/icon-192.png" alt=""></span><span>Jyotirmaya <span class="brand-accent">AstroChat</span></span></a><span class="top-actions"><button id="theme-btn" type="button" class="theme-btn" aria-haspopup="dialog" aria-controls="theme-panel">🎨</button><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></span></header>
+  <header class="masthead"><button id="menu-btn" type="button" class="menu-btn" aria-label="Open menu" aria-controls="side-menu" aria-expanded="false"><i></i><i></i><i></i></button><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"><img src="/icons/icon-192.png" alt=""></span><span>Jyotirmaya <span class="brand-accent">AstroChat</span></span></a><span class="top-actions"><button id="theme-btn" type="button" class="theme-btn" aria-haspopup="dialog" aria-controls="theme-panel">🎨</button><span class="lang-wrap"><select id="language-switch" class="language-switch" data-i18n-aria="changeLanguageAria" aria-label="Change language"></select></span></span></header>
+  <nav id="side-menu" class="side-menu" hidden><div id="side-scrim" class="side-scrim"></div><div class="side-panel" role="dialog" aria-modal="true" aria-labelledby="side-title"><div class="side-head"><img src="/icons/icon-192.png" alt=""><h2 id="side-title">Menu</h2><button id="side-close" type="button" class="side-close" aria-label="Close menu">✕</button></div><div id="side-list" class="side-list"></div></div></nav>
   <div id="theme-panel" class="theme-panel" role="dialog" aria-modal="false" aria-labelledby="theme-title" hidden></div>
   <main id="top">
   <section id="day-panchang" aria-labelledby="dp-title">
@@ -173,6 +174,7 @@
   <section id="palmread" class="palm-page" aria-live="polite"></section>
   <section id="tarot" class="tarot-page" aria-live="polite"></section>
   <section id="moonsign" class="moon-page" aria-live="polite"></section>
+  <section id="numerology" class="num-page" aria-live="polite"></section>
   <section id="rashi" class="card" aria-labelledby="rashi-title">
     <h2 id="rashi-title"></h2>
     <p id="rashi-intro" class="section-intro" data-i18n="rashiIntro">Today's outlook for each Moon sign, from where the Moon is today.</p>
@@ -199,6 +201,7 @@
   <script src="/chart-ui.js"></script>
   <script src="/match-ui.js"></script>
   <script src="/art.js"></script>
+  <script src="/numerology.js"></script>
   <script src="/nudges.js"></script>
   <script src="/calendar-ui.js"></script>
   <script src="/panchang-names.js"></script>

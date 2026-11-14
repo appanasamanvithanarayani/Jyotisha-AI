@@ -12,6 +12,7 @@ const chart = require(path.join(root, 'chart-ui.js'));
 const match = require(path.join(root, 'match-ui.js'));
 const nudges = require(path.join(root, 'nudges.js'));
 const art = require(path.join(root, 'art.js'));
+const numerologyTool = require(path.join(root, 'numerology.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
@@ -78,7 +79,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, JyotishaNumerology: numerologyTool, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -574,8 +575,8 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const app = boot({ storage, birth });
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
-  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm & tarot', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm, tarot & numbers', 'Love & match', 'Time & festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
@@ -1311,4 +1312,83 @@ test('the phone Back button returns to the previous screen instead of closing th
   assert.equal(page('home').hidden, false);
   assert.equal(page('tarot').hidden, true);
   assert.equal(stack.length, pushed);                         // going back does not add a new step
+});
+
+test('numerology works out Moolank, Bhagyank, name number and personal year on the phone', () => {
+  const N = require(path.join(root, 'numerology.js'));
+  assert.equal(N.moolank('1995-08-15'), 6);                       // 15 -> 1+5
+  assert.equal(N.bhagyank('1995-08-15'), 2);                      // 1+9+9+5+0+8+1+5 = 38 -> 11 -> 2
+  assert.equal(N.moolank('2000-01-29'), 2);                       // 29 -> 11 -> 2
+  assert.deepEqual(N.nameNumber('Samanvitha'), { compound: 31, number: 4 });   // Chaldean values
+  assert.equal(N.nameNumber('సమన్విత'), null);                     // the name number needs English letters
+  assert.equal(N.personalYear('1995-08-15', 2026), 6);            // 1+5 + 8 + 2+0+2+6 = 24 -> 6
+  assert.equal(N.parse('2023-02-30'), null);
+  const report = N.report('1995-08-15', 'Samanvitha', 'te', 2026);
+  assert.equal(report.moolank.planet, 'Venus');
+  assert.equal(report.moolank.title, 'ప్రేమమూర్తి');
+  assert.equal(report.harmony, true);                              // 4 is friendly to 6
+  assert.equal(JSON.stringify(report.lucky.numbers), JSON.stringify([6, 2, 4, 5]));
+  assert.equal(N.report('1995-08-15', '', 'ta', 2026).moolank.title, 'The Nurturer');   // other languages: English
+  for (const lang of Object.keys(N.TEXT)) for (let n = 1; n <= 9; n += 1) {
+    const item = N.TEXT[lang].numbers[n];
+    assert.ok(item.title && item.nature && item.strengths && item.care && N.TEXT[lang].years[n], `${lang} ${n}`);
+  }
+});
+
+test('the numerology page uses the saved birth date, shows the numbers, and can be changed', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false, name: 'Samanvitha', dob: '1995-08-15' });
+  const app = boot({ storage });
+  await settle();
+  assert.equal(homeCard(app, 'Numerology').children[2].textContent, 'Moolank 6 · Bhagyank 2');
+  homeCard(app, 'Numerology').listeners.click();
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(page('numbers').hidden, false);
+  const box = app.element('numerology');
+  const tiles = box.children.find(item => item.className === 'num-tiles');
+  assert.equal(JSON.stringify(tiles.children.map(tile => tile.children[0].textContent)), '["6","2","4"]');
+  assert.ok(box.children.some(item => item.className === 'num-sec' && item.children[0].textContent === 'Moolank 6 · The Nurturer'));
+  assert.ok(box.children.some(item => item.className === 'num-lucky'));
+  // "Change" shows the form; a wrong date is refused, a new one gives new numbers.
+  box.children.find(item => item.className === 'num-who').children[1].listeners.click();
+  const form = () => box.children.find(item => item.className === 'num-form');
+  const input = id => form().children.map(field => field.children[1]).find(item => item && item.id === id);
+  input('num-dob').value = 'nope';
+  form().listeners.submit({ preventDefault() {} });
+  assert.equal(form().children.at(-1).textContent, 'Please enter a valid date of birth.');
+  input('num-dob').value = '2000-01-29'; input('num-name').value = '';
+  form().listeners.submit({ preventDefault() {} });
+  assert.equal(JSON.stringify(box.children.find(item => item.className === 'num-tiles').children.map(tile => tile.children[0].textContent)), '["2","5"]');
+  assert.ok(box.children.some(item => item.className === 'num-note' && /English letters/.test(item.textContent)));
+});
+
+test('the side menu lists every feature, opens one, and Back closes the menu first', async () => {
+  const stack = [];
+  const history = { pushState(state) { stack.push(state); }, replaceState(state) { stack[Math.max(stack.length - 1, 0)] = state; }, back() { stack.pop(); } };
+  const windowEvents = {};
+  const app = boot({ history, windowEvents });
+  await enter(app, 'en');
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  const items = () => app.element('side-list').children;
+  app.element('menu-btn').listeners.click();
+  assert.equal(app.element('side-menu').hidden, false);
+  assert.equal(stack.length, 2);                                        // home + the open menu
+  const labels = items().map(item => item.children[1].textContent);
+  for (const label of ['Home', 'Ask AI', 'Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Festivals', 'Today’s Panchang', 'Appearance']) {
+    assert.ok(labels.includes(label), label);
+  }
+  assert.equal(items()[0].className, 'side-item on');                  // Home is the current page
+  items().find(item => item.children[1].textContent === 'Tarot').listeners.click();
+  assert.equal(app.element('side-menu').hidden, true);
+  assert.equal(page('tarot').hidden, false);
+  assert.equal(JSON.stringify(stack.map(item => item.page)), JSON.stringify(['home', 'tarot']));   // the menu step became Tarot
+  // Open the menu again and press the phone's Back: only the menu closes.
+  app.element('menu-btn').listeners.click();
+  stack.pop(); windowEvents.popstate({ state: { page: 'tarot' } });   // what the browser does on Back
+  assert.equal(app.element('side-menu').hidden, true);
+  assert.equal(page('tarot').hidden, false);
+  // Tapping outside closes it too and removes its history step.
+  app.element('menu-btn').listeners.click();
+  app.element('side-scrim').listeners.click();
+  assert.equal(app.element('side-menu').hidden, true);
+  assert.equal(stack.length, 2);
 });
