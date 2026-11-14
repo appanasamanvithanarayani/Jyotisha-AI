@@ -793,14 +793,14 @@
     notifyBusy = true;
     try {
       const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
-      const ours = (pending.notifications || []).filter(item => (item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50) || (item.id >= TEASE_FIRST_ID && item.id < TEASE_FIRST_ID + TEASE_MAX)).map(item => ({ id: item.id }));
+      const ours = (pending.notifications || []).filter(item => (item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50) || (item.id >= TEASE_FIRST_ID && item.id < TEASE_FIRST_ID + TEASE_MAX) || (item.id >= MORE_FIRST_ID && item.id < MORE_FIRST_ID + MORE_MAX)).map(item => ({ id: item.id }));
       if (ours.length) await plugin.cancel({ notifications: ours });
       if (!notify.on) { notifyInfo = null; return; }
       const permission = await plugin.checkPermissions().catch(() => ({ display: 'granted' }));
       if (permission.display !== 'granted') { notifyInfo = { blocked: true }; return; }
       const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
       const festivals = (state.festivals && state.festivals.events) || [];
-      const list = [], days = {};
+      const list = [], days = {}, moreSeen = { keys: new Set(), ids: 0 };
       aiBatches = {};
       try {   // fresh AI-written copy for this language; the built-in messages are used for any day without it
         const { ok, body } = await post('/api/nudges', { language: state.lang, from: localIso(now), days: NOTIFY_DAYS });
@@ -817,6 +817,7 @@
         days[iso] = day;
         // Each part on its own: one bad day or message must never stop the rest from being scheduled.
         try { list.push(...muhurtaAlerts(day, iso, offset, now)); } catch (error) { console.warn('muhurta alerts', iso, error); }
+        try { list.push(...moreAlerts(day, iso, now, moreSeen)); } catch (error) { console.warn('more alerts', iso, error); }
         if (at <= now) continue;
         try {
         const atText = `${iso}T${notify.time}`;
@@ -921,12 +922,11 @@
     const config = teaserConfig;
     if (!notify.teasers || !config) return [];
     const choices = teaserChoices(), list = [], used = {};
-    const near = (at, time) => { const [h, m] = time.split(':').map(Number); return Math.abs(at.getHours() * 60 + at.getMinutes() - (h * 60 + m)) < 30; };
     let turn = now.getDate() % choices.length;   // a different first reminder each day
     for (let offset = 0; offset < TEASE_DAYS && list.length < TEASE_MAX; offset += 1) {
       for (let hour = config.from; hour <= config.to && list.length < TEASE_MAX; hour += config.every_hours) {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, 0, 0);
-        if (at <= now || near(at, notify.time) || (notify.evening && near(at, notify.eveningTime))) continue;
+        if (at <= now) continue;   // every hour, even when another alert is due around then
         const choice = choices[turn % choices.length]; turn += 1;
         const options = teaserOptions(choice, localIso(at));
         const [title, body] = options[(used[choice.key] = (used[choice.key] || 0) + 1) % options.length];
@@ -1033,7 +1033,7 @@
   let aiBatches = {};   // date -> AI-written copy for the current language
   const dayNumberOf = date => Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
   const isoMinusDays = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); };
-  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 6 AM to 9:30 PM.
+  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 5 AM to 9 PM.
   // Three wordings each, rotated by date, so the text changes from day to day.
   function muhurtaAlerts(day, iso, offset, now) {
     if (!notify.muhurta || !day.timings || !nudgeTexts) return [];
@@ -1042,7 +1042,7 @@
       if (!Array.isArray(span) || typeof span[0] !== 'string') return;
       const at = new Date(`${span[0]}:00`);
       const hour = at.getHours() + at.getMinutes() / 60;
-      if (Number.isNaN(at.getTime()) || at <= now || hour < 6 || hour > 21.5) return;
+      if (Number.isNaN(at.getTime()) || at <= now || hour < ALERT_FROM || hour > ALERT_TO) return;
       const end = clock(span[1], iso).replace(/[⁦-⁩]/g, '');
       const ai = aiBatches[iso] && aiBatches[iso][id === MUHURTA_GOOD_ID ? 'good' : 'bad'];
       const choices = Array.isArray(ai) && ai.length ? ai.map(item => [item.t, item.b]) : options;
@@ -1051,6 +1051,76 @@
     };
     if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
     add(MUHURTA_BAD_ID, day.timings.rahu_kalam, texts.bad);
+    return result;
+  }
+  // More timing alerts: Vijaya muhurta starts, Rahu Kalam is over, Yamagandam and Varjyam start, and the user's own rashi:
+  // when Chandrabalam turns good for them, and when Ashtama Chandra starts. Each invites them to open the app.
+  const MORE_FIRST_ID = 7200, MORE_MAX = 100, ALERT_FROM = 5, ALERT_TO = 21;   // alerts only from 5 AM to 9 PM
+  const MORE_COPY = {
+    en: {
+      vijaya: ['🏆 Vijaya muhurta has started', 'The “victory” time is on till {end}. Good for starting something you want to win. See today’s full timings in the app.'],
+      rahuEnd: ['✅ Rahu Kalam is over', 'You can go ahead with important work now. See today’s next good time in the app.'],
+      yama: ['⚠️ Yamagandam has started', 'Avoid starting new work till {end}. Open the app to see when the next good time is.'],
+      varjyam: ['⛔ Varjyam has started', 'Not a good time for new beginnings till {end}. Check the best hours in the app.'],
+      rashiGood: ['✨ {sign}: your good time starts now', 'Chandrabalam is strong for you till {end}. A good stretch for important work. See your best hours in the app.'],
+      rashiCare: ['🌘 {sign}: go slow till {end}', 'Ashtama Chandra is running for your rashi. Keep big decisions for later. See your day in the app.'] },
+    te: {
+      vijaya: ['🏆 విజయ ముహూర్తం మొదలైంది', '{end} వరకు విజయ సమయం. గెలవాలనుకునే పని మొదలుపెట్టడానికి మంచిది. ఈ రోజు పూర్తి సమయాలు యాప్‌లో చూడండి.'],
+      rahuEnd: ['✅ రాహుకాలం ముగిసింది', 'ఇప్పుడు ముఖ్యమైన పనులు మొదలుపెట్టవచ్చు. తదుపరి మంచి సమయం యాప్‌లో చూడండి.'],
+      yama: ['⚠️ యమగండం మొదలైంది', '{end} వరకు కొత్త పనులు మొదలుపెట్టకండి. తదుపరి మంచి సమయం యాప్‌లో చూడండి.'],
+      varjyam: ['⛔ వర్జ్యం మొదలైంది', '{end} వరకు శుభకార్యాలకు మంచి సమయం కాదు. మంచి గంటలు యాప్‌లో చూడండి.'],
+      rashiGood: ['✨ {sign}: మీ మంచి సమయం మొదలైంది', '{end} వరకు మీకు చంద్రబలం బాగుంది. ముఖ్యమైన పనులకు అనుకూలం. మంచి గంటలు యాప్‌లో చూడండి.'],
+      rashiCare: ['🌘 {sign}: {end} వరకు నిదానంగా', 'మీ రాశికి అష్టమ చంద్రుడు నడుస్తున్నాడు. పెద్ద నిర్ణయాలు తర్వాతకు ఉంచండి. మీ రోజు యాప్‌లో చూడండి.'] },
+    hi: {
+      vijaya: ['🏆 विजय मुहूर्त शुरू हो गया', '{end} तक विजय का समय है। जीतने वाले काम शुरू करने के लिए अच्छा। आज का पूरा समय ऐप में देखें।'],
+      rahuEnd: ['✅ राहुकाल खत्म हुआ', 'अब ज़रूरी काम आगे बढ़ा सकते हैं। अगला शुभ समय ऐप में देखें।'],
+      yama: ['⚠️ यमगंड शुरू हो गया', '{end} तक नया काम शुरू न करें। अगला शुभ समय ऐप में देखें।'],
+      varjyam: ['⛔ वर्ज्य शुरू हो गया', '{end} तक शुभ शुरुआत के लिए अच्छा समय नहीं। शुभ घड़ियाँ ऐप में देखें।'],
+      rashiGood: ['✨ {sign}: आपका अच्छा समय शुरू', '{end} तक आपका चंद्रबल मज़बूत है। ज़रूरी कामों के लिए अनुकूल। शुभ घड़ियाँ ऐप में देखें।'],
+      rashiCare: ['🌘 {sign}: {end} तक धीरे चलें', 'आपकी राशि के लिए अष्टम चंद्र चल रहा है। बड़े फ़ैसले बाद में लें। अपना दिन ऐप में देखें।'] },
+  };
+  // seen: start times already used (a Moon-sign period shows up in two days' data), and the running count of ids.
+  function moreAlerts(day, iso, now, seen) {
+    if (!notify.muhurta || !day) return [];
+    const copy = MORE_COPY[state.lang] || MORE_COPY.en, result = [];
+    const clean = text => text.replace(/[⁦-⁩]/g, '');
+    // Only between ALERT_FROM and ALERT_TO o'clock. A rashi period that began in the night is told at ALERT_FROM.
+    const add = (key, startText, endText, page, values = {}, moveFromNight = false) => {
+      if (typeof startText !== 'string' || typeof endText !== 'string' || seen.ids >= MORE_MAX) return;
+      let at = new Date(`${startText}:00`);
+      const end = new Date(`${endText}:00`);
+      if (Number.isNaN(at.getTime()) || Number.isNaN(end.getTime())) return;
+      if (at.getHours() < ALERT_FROM) {
+        if (!moveFromNight) return;
+        at = new Date(at.getFullYear(), at.getMonth(), at.getDate(), ALERT_FROM, 0, 0);
+        if (at >= end) return;
+      }
+      if (at <= now || at.getHours() * 60 + at.getMinutes() > ALERT_TO * 60) return;
+      const mark = `${key}@${at.getTime()}`;
+      if (seen.keys.has(mark)) return;
+      seen.keys.add(mark);
+      const filled = { ...values, end: clean(clock(endText, iso)) };
+      const [title, body] = copy[key].map(line => clean(fill(fill(line, filled), filled)));
+      result.push({ id: MORE_FIRST_ID + seen.ids, title, body, largeBody: body, schedule: { at, allowWhileIdle: true }, extra: { page } });
+      seen.ids += 1;
+    };
+    const timings = day.timings || {};
+    if (Array.isArray(timings.vijaya_muhurta)) add('vijaya', timings.vijaya_muhurta[0], timings.vijaya_muhurta[1], 'panchang');
+    if (Array.isArray(timings.rahu_kalam)) add('rahuEnd', timings.rahu_kalam[1], timings.rahu_kalam[1], 'panchang');
+    if (Array.isArray(timings.yamaganda)) add('yama', timings.yamaganda[0], timings.yamaganda[1], 'panchang');
+    for (const item of Array.isArray(day.varjyam) ? day.varjyam : []) {
+      if (item && String(item.starts_at).startsWith(iso)) add('varjyam', item.starts_at, item.ends_at, 'panchang');
+    }
+    // The user's own rashi (from the chart, or the approximate Moon sign from the date of birth).
+    const mine = ownMoon();
+    if (mine && Array.isArray(day.moon_rashi)) {
+      const sign = signName(mine.sign);
+      day.moon_rashi.forEach((item, index) => {
+        const good = list => Array.isArray(list && list.good_chandrabalam_rashis) && list.good_chandrabalam_rashis.includes(mine.sign);
+        if (good(item) && !good(day.moon_rashi[index - 1])) add('rashiGood', item.starts_at, item.ends_at, 'rashi', { sign }, true);
+        if (item.ashtama_chandra_rashi === mine.sign) add('rashiCare', item.starts_at, item.ends_at, 'rashi', { sign }, true);
+      });
+    }
     return result;
   }
   // Every message this user could get on a given evening, each with a key used by the no-repeat memory.
@@ -1137,9 +1207,9 @@
     }
   }
   function openFromNotification(extra) {
-    const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
+    const page = extra && typeof extra.page === 'string' && (Object.hasOwn(pages, extra.page) || extra.page === 'panchang') ? extra.page : 'home';
     // Features with their own start screen are opened the way their Home card opens them.
-    const openers = { palm: openPalm, tarot: openTarot, moon: openMoonSign, numbers: openNumerology, kundli: openJathakam, relationship: () => openTool('relationship') };
+    const openers = { panchang: openToday, palm: openPalm, tarot: openTarot, moon: openMoonSign, numbers: openNumerology, kundli: openJathakam, relationship: () => openTool('relationship') };
     if (openers[page]) openers[page](); else showPage(page);
     const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
     if (!question) return;

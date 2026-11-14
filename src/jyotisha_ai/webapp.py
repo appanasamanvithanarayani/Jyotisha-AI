@@ -134,7 +134,7 @@ def _teasers() -> dict | None:
         return int(raw) if raw.isdigit() and low <= int(raw) <= high else default
 
     every = hour("JYOTISHA_TEASER_HOURS", 1, 0, 12)
-    start, end = hour("JYOTISHA_TEASER_FROM", 9, 0, 23), hour("JYOTISHA_TEASER_TO", 21, 0, 23)
+    start, end = hour("JYOTISHA_TEASER_FROM", 5, 0, 23), hour("JYOTISHA_TEASER_TO", 21, 0, 23)
     if not every or end < start:
         return None
     return {"every_hours": every, "from": start, "to": end}

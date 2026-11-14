@@ -980,7 +980,7 @@ def test_reading_reminders_are_hourly_by_default_and_can_be_switched_off(local_s
     for name in ("JYOTISHA_TEASER_HOURS", "JYOTISHA_TEASER_FROM", "JYOTISHA_TEASER_TO"):
         monkeypatch.delenv(name, raising=False)
     teasers = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["teasers"]
-    assert teasers() == {"every_hours": 1, "from": 9, "to": 21}
+    assert teasers() == {"every_hours": 1, "from": 5, "to": 21}
     monkeypatch.setenv("JYOTISHA_TEASER_HOURS", "3")
     monkeypatch.setenv("JYOTISHA_TEASER_FROM", "10")
     assert teasers() == {"every_hours": 3, "from": 10, "to": 21}
