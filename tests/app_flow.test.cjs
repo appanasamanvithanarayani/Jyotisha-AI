@@ -68,6 +68,7 @@ function boot(setup = {}) {
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
+    if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -356,6 +357,54 @@ test('Rashiphal before a sign is picked shows only the symbol grid and a hint, n
   assert.equal(app.element('rashi-reading').children[0].className, 'rashi-hint');
 });
 
+test('Tarot: pick a topic, pick 3 of 12 face-down cards, then past / present / future with the AI reading', async () => {
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), tarot: { status: 'ok', reading } });
+  await settle();
+  homeCard(app, 'Tarot').listeners.click();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-tarot').hidden, false);
+  let page = app.element('tarot').children;
+  assert.equal(page[1].textContent, 'What do you want to ask the cards?');
+  const topics = page[2].children;
+  assert.deepEqual(topics.map(tile => tile.children[1].textContent), ['Love', 'Career', 'Money', 'Health', 'Luck', 'Family']);
+  topics[1].listeners.click();                                                    // Career
+  page = app.element('tarot').children;
+  const spread = page.find(item => item.className === 'tarot-spread').children;
+  assert.equal(spread.length, 12);
+  assert.ok(spread[0].innerHTML.startsWith('<svg'));                              // card backs
+  spread[2].listeners.click(); spread[2].listeners.click();                         // tapping the same card twice counts once
+  assert.match(app.element('tarot').children.find(item => item.className === 'tarot-count').textContent, /1 of 3/);
+  app.element('tarot').children.find(item => item.className === 'tarot-spread').children[5].listeners.click();
+  app.element('tarot').children.find(item => item.className === 'tarot-spread').children[9].listeners.click();
+  await settle();
+  const request = app.requests.find(r => r.url === '/api/tarot');
+  assert.equal(request.body.topic, 'career'); assert.equal(request.body.language, 'en');
+  assert.equal(request.body.cards.length, 3); assert.equal(new Set(request.body.cards.map(c => c.id)).size, 3);
+  assert.ok(request.body.cards.every(c => Number.isInteger(c.id) && c.id >= 0 && c.id < 22 && typeof c.reversed === 'boolean'));
+  page = app.element('tarot').children;
+  const faces = page.find(item => item.className === 'tarot-row').children;
+  assert.deepEqual(faces.map(face => face.children[0].textContent), ['Past', 'Present', 'Future']);
+  const secs = page.filter(item => /^tarot-sec/.test(item.className));
+  assert.deepEqual(secs.map(sec => sec.children[1].textContent), ['Past text.', 'Present text.', 'Future text.', 'Advice text.']);
+  page.find(item => item.className === 'tarot-actions').children[0].listeners.click();   // ask the AI about this draw
+  await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
+  assert.ok(app.element('chat-log').children.some(item => /career tarot reading/i.test(item.textContent) || /Career tarot reading/.test(item.textContent)));
+});
+
+test('Tarot with the AI off shows the traditional meaning of each card', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  homeCard(app, 'టారో').listeners.click();
+  app.element('tarot').children[2].children[0].listeners.click();                  // ప్రేమ (Love)
+  for (const n of [0, 1, 2]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+  await settle();
+  const secs = app.element('tarot').children.filter(item => /^tarot-sec/.test(item.className));
+  assert.equal(secs.length, 4);
+  assert.ok(secs.slice(0, 3).every(sec => /: .+\.$/.test(sec.children[1].textContent)));   // card name: meaning.
+  assert.match(secs[0].children[0].textContent, /^గతం · /);
+});
+
 test('Moon Sign page: your Vedic Moon sign and nakshatra, five AI sections, share, and any sign to explore', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
@@ -470,8 +519,8 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const app = boot({ storage, birth });
   await settle();
   assert.equal(app.element('tool-grid').children.length, 3);                  // three sections
-  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & tarot', 'Time & festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Kundli matching', 'Tarot', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.

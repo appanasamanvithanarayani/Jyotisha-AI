@@ -48,7 +48,7 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -60,6 +60,7 @@
   pages.chat.appendChild($('chat'));
   pages.rashi.appendChild($('rashi'));
   pages.moon.appendChild($('moonsign'));
+  pages.tarot.appendChild($('tarot'));
   function showPage(name) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
@@ -164,6 +165,12 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
+      tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
+        topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
+        pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
+        positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cards…',
+        again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
+        askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
       moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
         approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
         pick: 'Explore any sign', loading: 'Reading the moon…', share: 'Share', report: 'Report', yours: 'Yours',
@@ -174,7 +181,7 @@
           'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
           'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
           'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
-      sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      sections: { chart: 'Your chart', love: 'Love & tarot', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -215,6 +222,12 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
+      tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
+        topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
+        pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
+        positions: ['గతం', 'వర్తమానం', 'భవిష్యత్తు'], reversed: 'తలకిందులు', advice: 'మీకో సందేశం', loading: 'మీ కార్డులు చదువుతున్నాం…',
+        again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
+        askQ: '{topic} టారో రీడింగ్‌లో నాకు {cards} వచ్చాయి. దీని అర్థం ఏమిటి?' },
       moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
         approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
         pick: 'ఏ రాశినైనా చూడండి', loading: 'చంద్రుడిని చదువుతున్నాం…', share: 'షేర్', report: 'రిపోర్ట్', yours: 'మీది',
@@ -225,7 +238,7 @@
           'సౌమ్యంగా, న్యాయంగా ఉంటారు; సామరస్యం కోరుకుంటారు, మంచి సాంగత్యంలో ఆనందంగా ఉంటారు.', 'లోతైన భావాలు, గోప్యత; గాఢంగా ప్రేమిస్తారు, విధేయులు, సంకల్ప బలం ఎక్కువ.',
           'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
           'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
-      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & టారో', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -266,6 +279,12 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
+      tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
+        topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
+        pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
+        positions: ['अतीत', 'वर्तमान', 'भविष्य'], reversed: 'उल्टा', advice: 'आपके लिए संदेश', loading: 'आपके कार्ड पढ़ रहे हैं…',
+        again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
+        askQ: '{topic} टैरो रीडिंग में मुझे {cards} मिले। इसका मेरे लिए क्या अर्थ है?' },
       moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
         approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
         pick: 'कोई भी राशि देखें', loading: 'चंद्रमा पढ़ रहे हैं…', share: 'शेयर', report: 'रिपोर्ट', yours: 'आपकी',
@@ -276,7 +295,7 @@
           'सौम्य और न्यायप्रिय; सामंजस्य चाहते हैं, अच्छे साथ में सबसे खुश।', 'गहरे और निजी; गहराई से प्रेम करते हैं, वफ़ादार, इच्छाशक्ति प्रबल।',
           'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
           'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
-      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और टैरो', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -480,7 +499,8 @@
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
       section(sections.love, [
         card('match', copy.match[0], copy.match[1], open('relationship')),
-        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'), { wide: true })]),
       section(sections.time, [
         card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true }),
         card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
@@ -968,6 +988,7 @@
     showKundliView(state.kundliView);
     renderRelationship();
     if (pages.moon && !pages.moon.hidden) renderMoonSign();
+    if (pages.tarot && !pages.tarot.hidden) renderTarot();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1248,6 +1269,128 @@
     card.appendChild(list);
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
     return head;
+  }
+  /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
+  // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.
+  const TAROT = [
+    ['The Fool', 'new beginnings, trust and a fresh start', 'hesitation and careless choices', 'మూర్ఖుడు', 'मूर्ख'],
+    ['The Magician', 'skill, focus and making things happen', 'scattered energy and unused talent', 'మాంత్రికుడు', 'जादूगर'],
+    ['The High Priestess', 'intuition, inner wisdom and patience', 'ignoring your inner voice', 'ప్రధాన పూజారిణి', 'महापुजारिन'],
+    ['The Empress', 'care, abundance and creativity', 'neglecting yourself or others', 'సామ్రాజ్ఞి', 'सम्राज्ञी'],
+    ['The Emperor', 'structure, stability and leadership', 'rigidity and control', 'చక్రవర్తి', 'सम्राट'],
+    ['The Hierophant', 'tradition, guidance and learning', 'breaking from convention', 'గురువు', 'गुरु'],
+    ['The Lovers', 'love, harmony and true choices', 'imbalance and doubt in a choice', 'ప్రేమికులు', 'प्रेमी'],
+    ['The Chariot', 'determination and moving forward', 'lost direction and delays', 'రథం', 'रथ'],
+    ['Strength', 'courage, kindness and inner strength', 'self-doubt and impatience', 'బలం', 'शक्ति'],
+    ['The Hermit', 'reflection, solitude and wisdom', 'isolation and withdrawal', 'సన్యాసి', 'साधु'],
+    ['Wheel of Fortune', 'change, cycles and good timing', 'resistance to change', 'అదృష్ట చక్రం', 'भाग्य चक्र'],
+    ['Justice', 'fairness, truth and balance', 'imbalance and avoiding responsibility', 'న్యాయం', 'न्याय'],
+    ['The Hanged Man', 'pause, new perspective and surrender', 'stalling and indecision', 'వేలాడే మనిషి', 'लटका हुआ व्यक्ति'],
+    ['Death', 'endings that open new beginnings', 'fear of change and holding on', 'పరివర్తన', 'परिवर्तन'],
+    ['Temperance', 'balance, patience and moderation', 'excess and impatience', 'సంయమనం', 'संयम'],
+    ['The Devil', 'attachments and temptations to notice', 'breaking free from what binds you', 'బంధనాలు', 'बंधन'],
+    ['The Tower', 'sudden change that clears the way', 'avoiding a needed change', 'గోపురం', 'मीनार'],
+    ['The Star', 'hope, healing and renewal', 'losing faith for a while', 'నక్షత్రం', 'तारा'],
+    ['The Moon', 'dreams, intuition and uncertainty', 'confusion clearing up', 'చంద్రుడు', 'चंद्रमा'],
+    ['The Sun', 'joy, success and warmth', 'temporary clouds over happiness', 'సూర్యుడు', 'सूर्य'],
+    ['Judgement', 'awakening and a fresh calling', 'self-doubt and old regrets', 'జాగృతి', 'जागृति'],
+    ['The World', 'completion, fulfilment and wholeness', 'unfinished business', 'ప్రపంచం', 'संसार'],
+  ];
+  const TAROT_TOPICS = [['love', '💞'], ['career', '💼'], ['money', '🪙'], ['health', '🌿'], ['luck', '🍀'], ['family', '🏡']];
+  const tarotCopy = () => toolText().tarot || TOOLS_COPY.en.tarot;
+  const tarotName = index => (state.lang === 'te' ? TAROT[index][3] : state.lang === 'hi' ? TAROT[index][4] : TAROT[index][0]);
+  const randomInt = n => { try { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] % n; } catch (_error) { return Math.floor(Math.random() * n); } };
+  const tarot = { step: 'topic', topic: '', spread: [], chosen: [], reading: undefined };
+  function openTarot() { tarot.step = 'topic'; tarot.topic = ''; tarot.chosen = []; tarot.reading = undefined; showPage('tarot'); renderTarot(); }
+  function startTarotDraw(topic) {
+    const deck = TAROT.map((_, i) => i);
+    for (let i = deck.length - 1; i > 0; i -= 1) { const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }   // shuffle
+    tarot.topic = topic; tarot.step = 'draw'; tarot.chosen = []; tarot.reading = undefined;
+    tarot.spread = deck.slice(0, 12).map(id => ({ id, reversed: randomInt(4) === 0 }));                                   // about 1 in 4 reversed
+    renderTarot();
+  }
+  async function loadTarotReading() {
+    const cards = tarot.chosen.map(n => tarot.spread[n]);
+    tarot.reading = null;   // loading
+    try {
+      const { ok, body } = await post('/api/tarot', { topic: tarot.topic, language: state.lang, cards });
+      tarot.reading = ok && body && body.reading ? body.reading : false;
+    } catch (_error) { tarot.reading = false; }
+    if (tarot.step === 'result') renderTarot();
+  }
+  function renderTarot() {
+    const copy = tarotCopy(), box = $('tarot'), art = window.JyotishaArt;
+    box.replaceChildren(el('h2', 'tarot-title', copy.title));
+    if (tarot.step === 'topic') {
+      box.appendChild(el('p', 'tarot-ask', copy.ask));
+      const grid = el('div', 'tarot-topics');
+      for (const [key, icon] of TAROT_TOPICS) {
+        const tile = el('button', 'tarot-topic'); tile.type = 'button';
+        tile.append(el('span', 'tarot-topic-icon', icon), el('b', null, copy.topics[key]));
+        tile.addEventListener('click', () => startTarotDraw(key));
+        grid.appendChild(tile);
+      }
+      box.appendChild(grid);
+      return;
+    }
+    if (tarot.step === 'draw') {
+      box.append(el('p', 'tarot-ask', `${copy.topics[tarot.topic]} · ${copy.pick}`), el('p', 'tarot-hint', copy.shuffle),
+        el('p', 'tarot-count', fill(copy.picked, { n: tarot.chosen.length })));
+      const grid = el('div', 'tarot-spread');
+      tarot.spread.forEach((_card, n) => {
+        const back = el('button', `tarot-back${tarot.chosen.includes(n) ? ' on' : ''}`); back.type = 'button';
+        if (art) back.innerHTML = art.tarotBack();
+        back.addEventListener('click', () => {
+          if (tarot.chosen.includes(n) || tarot.chosen.length >= 3) return;
+          tarot.chosen.push(n);
+          if (tarot.chosen.length === 3) { tarot.step = 'result'; void loadTarotReading(); }
+          renderTarot();
+        });
+        grid.appendChild(back);
+      });
+      box.appendChild(grid);
+      return;
+    }
+    // Result: the three cards face up, then the reading (AI, or the built-in meanings).
+    const cards = tarot.chosen.map(n => tarot.spread[n]);
+    box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
+    const row = el('div', 'tarot-row');
+    cards.forEach((card, i) => {
+      const face = el('div', `tarot-face${card.reversed ? ' reversed' : ''}`);
+      const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotCard(card.id);
+      face.append(el('small', 'tarot-pos', copy.positions[i]), pic, el('b', null, tarotName(card.id)));
+      if (card.reversed) face.appendChild(el('span', 'tarot-rev', copy.reversed));
+      row.appendChild(face);
+    });
+    box.appendChild(row);
+    const reading = tarot.reading, lines = [];
+    ['past', 'present', 'future'].forEach((key, i) => {
+      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
+      const text = reading ? reading[key] : reading === null ? copy.loading : `${tarotName(card.id)}: ${meaning}.`;
+      const sec = el('section', `tarot-sec${reading === null ? ' loading' : ''}`);
+      sec.append(el('h4', null, `${copy.positions[i]} · ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}`), el('p', null, text));
+      box.appendChild(sec);
+      lines.push(`${copy.positions[i]} · ${tarotName(card.id)}: ${text}`);
+    });
+    if (reading !== null) {
+      const advice = reading ? reading.advice : copy.fallbackAdvice;
+      const sec = el('section', 'tarot-sec advice');
+      sec.append(el('h4', null, `✨ ${copy.advice}`), el('p', null, advice));
+      box.appendChild(sec);
+      lines.push(`✨ ${advice}`);
+    }
+    const actions = el('div', 'tarot-actions');
+    const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
+    askAi.addEventListener('click', () => {
+      const question = fill(copy.askQ, { cards: cards.map(card => tarotName(card.id)).join(', '), topic: copy.topics[tarot.topic] });
+      showPage('chat'); ask(question, question, true);
+    });
+    const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+    share.addEventListener('click', () => { void shareText(`🃏 ${copy.title}: ${copy.topics[tarot.topic]}`, lines.join('\n\n')); });
+    const again = el('button', 'chip-btn', `↻ ${copy.again}`); again.type = 'button';
+    again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+    actions.append(askAi, share, again);
+    box.appendChild(actions);
   }
   /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
   state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
