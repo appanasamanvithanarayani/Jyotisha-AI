@@ -166,10 +166,11 @@ def _fail(reason: str) -> None:
 
 
 def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool = False, timeout: float = 60.0,
-             model: str | None = None) -> str | None:
+             model: str | None = None, image: tuple[str, str] | None = None) -> str | None:
     """One-shot text generation with the configured provider (used for daily notification copy); None if unavailable.
 
     ``model`` overrides the chat model for this call (for example a cheaper model for notifications).
+    ``image`` is an optional (mime type, base64 data) picture sent along with the prompt (the palm reading).
     On failure the reason is kept in LAST_ERROR for the admin panel.
     """
     LAST_ERROR["text"] = ""
@@ -188,13 +189,17 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
         config: dict = {"maxOutputTokens": max_tokens, "temperature": 1.0}
         if json_output:
             config["responseMimeType"] = "application/json"
-        body = {"system_instruction": {"parts": [{"text": system}]}, "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        parts: list = [{"inline_data": {"mime_type": image[0], "data": image[1]}}] if image else []
+        body = {"system_instruction": {"parts": [{"text": system}]}, "contents": [{"role": "user", "parts": [*parts, {"text": prompt}]}],
                 "generationConfig": config}
         request = urllib.request.Request(f"{GEMINI_URL}{model}:generateContent", data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")})
     else:
         model = model or _setting("JYOTISHA_ASSISTANT_MODEL") or MODEL
-        body = {"model": model, "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": prompt}]}
+        content: object = prompt
+        if image:
+            content = [{"type": "image", "source": {"type": "base64", "media_type": image[0], "data": image[1]}}, {"type": "text", "text": prompt}]
+        body = {"model": model, "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": content}]}
         request = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST",
                                          headers={"content-type": "application/json", "x-api-key": _api_key(), "anthropic-version": "2023-06-01"})
     try:

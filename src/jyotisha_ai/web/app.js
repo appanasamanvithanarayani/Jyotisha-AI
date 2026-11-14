@@ -48,7 +48,7 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -59,6 +59,9 @@
   pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));
   pages.rashi.appendChild($('rashi'));
+  pages.moon.appendChild($('moonsign'));
+  pages.tarot.appendChild($('tarot'));
+  pages.palm.appendChild($('palmread'));
   function showPage(name) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
@@ -158,12 +161,37 @@
       rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: '…more', less: 'Show less',
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
         details: 'Planet-by-planet details', transitGood: 'Favourable', transitCare: 'Take care', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see today’s reading.',
+        unlock: '▶ See today’s reading', unlockNote: 'Watch one short ad to open today’s Rashiphal for all signs.',
         luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis · Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
-      sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      shortcuts: { title: 'Your stars, one tap from here', text: 'Choose a reading to start.', labels: ['Palm', 'Rashiphal', 'Tarot', 'Match'], channel: 'Shortcuts', toggle: 'Shortcuts in the notification bar' },
+      palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 · Pick a hand', left: 'Left palm', right: 'Right palm',
+        tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
+        scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
+        off: 'Palm reading is switched off right now.', failed: 'Could not read the palm right now. Please try again in a little while.',
+        lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
+        ready: 'Your palm photo is ready.', see: '▶ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
+        askQ: 'My palm reading says: “{summary}” What should I focus on now?' },
+      tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
+        topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
+        pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
+        positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cards…',
+        see: '▶ See my reading', again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
+        askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
+      moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
+        approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
+        pick: 'Explore any sign', loading: 'Reading the moon…', share: 'Share', report: 'Report', yours: 'Yours',
+        sections: { emotional: 'Emotional nature', love: 'Love & family', career: 'Work & money', wellbeing: 'Wellbeing', remedy: 'Simple remedy' },
+        nature: ['Bold and quick to act, you feel things honestly and need room to be yourself.', 'Steady and loyal, you love comfort and beauty and stay calm under pressure.',
+          'Curious and quick-minded, you love conversation and need variety to feel alive.', 'Caring and sensitive, family means everything to you and your intuition is strong.',
+          'Warm-hearted and generous, you shine when you lead and when your effort is seen.', 'Thoughtful and careful, you love to help and find calm in order and small routines.',
+          'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
+          'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
+          'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
+      sections: { chart: 'Your chart', palm: 'Palm & tarot', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -199,12 +227,37 @@
       rashi: { pick: 'మీ రాశిని ఎంచుకోండి', find: 'మీ రాశి తెలుసుకోండి', mineButton: 'నా రాశి చూపించు', mine: 'మీది', title: '{sign} రాశి ఫలితాలు ({date})', more: '…మరింత', less: 'తక్కువ చూపు',
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
         details: 'గ్రహాల వారీగా వివరాలు', transitGood: 'అనుకూలం', transitCare: 'జాగ్రత్త', jump: { transits: 'గ్రహ సంచారం', remedies: 'పరిహారాలు', full: 'పూర్తి జాతకం', ask: 'AIని అడగండి' }, hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
+        unlock: '▶ నేటి రాశిఫలం చూడండి', unlockNote: 'ఒక చిన్న యాడ్ చూస్తే ఈరోజు అన్ని రాశుల ఫలాలు తెరుచుకుంటాయి.',
         luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
-      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      shortcuts: { title: 'మీ నక్షత్రాలు, ఒక్క టచ్‌లో', text: 'ఒక రీడింగ్ ఎంచుకోండి.', labels: ['అరచేయి', 'రాశిఫలం', 'టారో', 'పొంతన'], channel: 'షార్ట్‌కట్‌లు', toggle: 'నోటిఫికేషన్ బార్‌లో షార్ట్‌కట్‌లు' },
+      palm: { card: ['హస్త రేఖలు', 'కెమెరాతో మీ అరచేతిని స్కాన్ చేయండి'], title: 'హస్త రేఖా విశ్లేషణ', step: 'దశ 1 · చేయి ఎంచుకోండి', left: 'ఎడమ అరచేయి', right: 'కుడి అరచేయి',
+        tipsTitle: 'స్పష్టమైన స్కాన్ కోసం', tips: ['మంచి వెలుతురులో తీయండి', 'అరచేయి చదునుగా, వేళ్లు విడదీసి ఉంచండి', 'పూర్తి చేయి ఫ్రేమ్‌లో ఉండాలి'],
+        scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
+        off: 'హస్త రేఖా పఠనం ప్రస్తుతం ఆపివేయబడింది.', failed: 'ఇప్పుడు చదవలేకపోయాం. కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.',
+        lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
+        ready: 'మీ అరచేయి ఫోటో సిద్ధం.', see: '▶ నా రీడింగ్ చూడండి', again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
+        askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?' },
+      tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
+        topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
+        pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
+        positions: ['గతం', 'వర్తమానం', 'భవిష్యత్తు'], reversed: 'తలకిందులు', advice: 'మీకో సందేశం', loading: 'మీ కార్డులు చదువుతున్నాం…',
+        see: '▶ నా రీడింగ్ చూడండి', again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
+        askQ: '{topic} టారో రీడింగ్‌లో నాకు {cards} వచ్చాయి. దీని అర్థం ఏమిటి?' },
+      moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
+        approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
+        pick: 'ఏ రాశినైనా చూడండి', loading: 'చంద్రుడిని చదువుతున్నాం…', share: 'షేర్', report: 'రిపోర్ట్', yours: 'మీది',
+        sections: { emotional: 'భావోద్వేగ స్వభావం', love: 'ప్రేమ & కుటుంబం', career: 'ఉద్యోగం & డబ్బు', wellbeing: 'ఆరోగ్యం & ప్రశాంతత', remedy: 'సులభ పరిహారం' },
+        nature: ['ధైర్యంగా, వేగంగా ముందడుగు వేస్తారు; మనసులో ఉన్నది నిజాయితీగా చెప్తారు, స్వేచ్ఛ కావాలి.', 'స్థిరంగా, నమ్మకంగా ఉంటారు; సౌకర్యం, అందం ఇష్టం, ఒత్తిడిలోనూ ప్రశాంతంగా ఉంటారు.',
+          'ఆసక్తి, చురుకైన బుద్ధి; మాట్లాడటం ఇష్టం, కొత్తదనం కావాలి.', 'ప్రేమగా, సున్నితంగా ఉంటారు; కుటుంబమే సర్వస్వం, అంతర్ దృష్టి బలంగా ఉంటుంది.',
+          'మంచి మనసు, దాతృత్వం; నాయకత్వంలో, మీ కృషి గుర్తింపు పొందినప్పుడు వెలుగుతారు.', 'ఆలోచనాపరులు, జాగ్రత్తపరులు; సహాయం చేయడం ఇష్టం, క్రమశిక్షణలో ప్రశాంతత పొందుతారు.',
+          'సౌమ్యంగా, న్యాయంగా ఉంటారు; సామరస్యం కోరుకుంటారు, మంచి సాంగత్యంలో ఆనందంగా ఉంటారు.', 'లోతైన భావాలు, గోప్యత; గాఢంగా ప్రేమిస్తారు, విధేయులు, సంకల్ప బలం ఎక్కువ.',
+          'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
+          'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
+      sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు & టారో', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -240,12 +293,37 @@
       rashi: { pick: 'अपनी राशि चुनें', find: 'अपनी राशि जानें', mineButton: 'मेरी राशि दिखाएँ', mine: 'आपकी', title: '{sign} राशिफल ({date})', more: '…और पढ़ें', less: 'कम दिखाएँ',
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
         details: 'ग्रह-वार विवरण', transitGood: 'अनुकूल', transitCare: 'सावधानी', jump: { transits: 'ग्रह गोचर', remedies: 'उपाय', full: 'पूरी कुंडली', ask: 'AI से पूछें' }, hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
+        unlock: '▶ आज का राशिफल देखें', unlockNote: 'एक छोटा विज्ञापन देखें, आज सभी राशियों का राशिफल खुल जाएगा।',
         luckyTitle: 'शुभ संकेत', luckyDay: 'रंग और दिशा: आज सभी राशियों के लिए एक · अंक: आपकी राशि के लिए', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
-      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      shortcuts: { title: 'आपके सितारे, बस एक टैप पर', text: 'कोई रीडिंग चुनें।', labels: ['हथेली', 'राशिफल', 'टैरो', 'मिलान'], channel: 'शॉर्टकट', toggle: 'नोटिफ़िकेशन बार में शॉर्टकट' },
+      palm: { card: ['हस्त रेखा', 'कैमरे से अपनी हथेली स्कैन करें'], title: 'हस्त रेखा विश्लेषण', step: 'चरण 1 · हाथ चुनें', left: 'बाईं हथेली', right: 'दाईं हथेली',
+        tipsTitle: 'साफ़ स्कैन के लिए', tips: ['अच्छी रोशनी में लें', 'हथेली सीधी, उँगलियाँ फैलाकर रखें', 'पूरा हाथ फ्रेम में रखें'],
+        scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
+        off: 'हस्त रेखा पठन अभी बंद है।', failed: 'अभी पढ़ नहीं पाए। थोड़ी देर बाद फिर कोशिश करें।',
+        lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
+        ready: 'आपकी हथेली की फ़ोटो तैयार है।', see: '▶ मेरी रीडिंग देखें', again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
+        askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?' },
+      tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
+        topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
+        pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
+        positions: ['अतीत', 'वर्तमान', 'भविष्य'], reversed: 'उल्टा', advice: 'आपके लिए संदेश', loading: 'आपके कार्ड पढ़ रहे हैं…',
+        see: '▶ मेरी रीडिंग देखें', again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
+        askQ: '{topic} टैरो रीडिंग में मुझे {cards} मिले। इसका मेरे लिए क्या अर्थ है?' },
+      moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
+        approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
+        pick: 'कोई भी राशि देखें', loading: 'चंद्रमा पढ़ रहे हैं…', share: 'शेयर', report: 'रिपोर्ट', yours: 'आपकी',
+        sections: { emotional: 'भावनात्मक स्वभाव', love: 'प्रेम और परिवार', career: 'काम और पैसा', wellbeing: 'सेहत और सुकून', remedy: 'सरल उपाय' },
+        nature: ['साहसी और तुरंत कदम उठाने वाले; मन की बात ईमानदारी से कहते हैं, आज़ादी चाहिए।', 'स्थिर और वफ़ादार; आराम और सुंदरता पसंद, दबाव में भी शांत।',
+          'जिज्ञासु और तेज़ दिमाग; बातचीत पसंद, नयापन चाहिए।', 'देखभाल करने वाले और संवेदनशील; परिवार सब कुछ है, अंतर्ज्ञान मज़बूत।',
+          'उदार और गर्मजोशी भरे; नेतृत्व में और मेहनत की पहचान मिलने पर चमकते हैं।', 'विचारशील और सावधान; मदद करना पसंद, व्यवस्था में सुकून पाते हैं।',
+          'सौम्य और न्यायप्रिय; सामंजस्य चाहते हैं, अच्छे साथ में सबसे खुश।', 'गहरे और निजी; गहराई से प्रेम करते हैं, वफ़ादार, इच्छाशक्ति प्रबल।',
+          'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
+          'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
+      sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा और टैरो', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -445,7 +523,11 @@
     $('tool-grid').replaceChildren(
       section(sections.chart, [
         card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
-        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily })]),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
+        card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
+      section(sections.palm || TOOLS_COPY.en.sections.palm, [
+        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot)]),
       section(sections.love, [
         card('match', copy.match[0], copy.match[1], open('relationship')),
         card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
@@ -649,8 +731,8 @@
     try {
       const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
       return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
-        evening: saved.evening !== false, muhurta: saved.muhurta !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, eveningTime: '19:30' }; }
+        evening: saved.evening !== false, muhurta: saved.muhurta !== false, shortcuts: saved.shortcuts !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' }; }
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
@@ -708,8 +790,32 @@
       notifyInfo = null;
     } catch (error) {
       console.warn('notifications', error);
-    } finally { notifyBusy = false; refreshNotifySettings(); }
+    } finally { notifyBusy = false; refreshNotifySettings(); void syncShortcuts(); }
   }
+  /* ---- The pinned "Shortcuts" notification (Android app): four buttons that open Palm, Rashiphal, Tarot and Match ---- */
+  const shortcutsPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Shortcuts) || null;
+  async function syncShortcuts() {
+    const plugin = shortcutsPlugin();
+    if (!plugin) return;
+    try {
+      if (!notify.on || notify.shortcuts === false || !state.onboarded) { await plugin.hide(); return; }
+      const copy = toolText().shortcuts || TOOLS_COPY.en.shortcuts;
+      await plugin.show({ title: copy.title, text: copy.text, labels: copy.labels, pages: ['palm', 'rashi', 'tarot', 'match'], channelName: copy.channel });
+    } catch (_error) { /* optional */ }
+  }
+  function openShortcut(page) {
+    if (!state.onboarded) return;
+    if (page === 'palm') openPalm();
+    else if (page === 'tarot') openTarot();
+    else if (page === 'match') { state.loveMode = 'match'; renderRelationship(); showPage('relationship'); }
+    else if (page === 'rashi') showPage('rashi');
+    else showPage('home');
+  }
+  try {
+    const plugin = shortcutsPlugin();
+    // A tap that opened the app arrives right after start-up: wait a moment so Home has settled first.
+    if (plugin && plugin.addListener) plugin.addListener('shortcut', event => { setTimeout(() => openShortcut(event && event.page), 300); });
+  } catch (_error) { /* optional */ }
   function refreshNotifySettings() {
     try { const panel = $('theme-panel'); if (panel && !panel.hidden) renderLookPanel(); } catch (_error) { /* not open */ }
   }
@@ -756,7 +862,15 @@
     muhurtaBox.addEventListener('change', () => { notify.muhurta = muhurtaBox.checked; saveNotify(); void scheduleNotifications(); });
     const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
     muhurta.appendChild(muhurtaLabel);
+    const shortcuts = el('label', 'notify-time');
+    if (shortcutsPlugin()) {
+      const shortcutsBox = el('input'); shortcutsBox.type = 'checkbox'; shortcutsBox.checked = notify.shortcuts !== false; shortcutsBox.style.width = 'auto';
+      shortcutsBox.addEventListener('change', () => { notify.shortcuts = shortcutsBox.checked; saveNotify(); void syncShortcuts(); });
+      const shortcutsLabel = el('span'); shortcutsLabel.append(shortcutsBox, document.createTextNode(` ${(toolText().shortcuts || TOOLS_COPY.en.shortcuts).toggle}`));
+      shortcuts.appendChild(shortcutsLabel);
+    }
     if (notify.on) wrap.append(evening, muhurta);
+    if (notify.on && shortcutsPlugin()) wrap.append(shortcuts);
     if (notify.on && notifyInfo && notifyInfo.blocked) wrap.appendChild(el('p', 'notify-next', copy.denied));   // only a problem is shown
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
     return wrap;
@@ -935,6 +1049,9 @@
     renderLookPanel();
     showKundliView(state.kundliView);
     renderRelationship();
+    if (pages.moon && !pages.moon.hidden) renderMoonSign();
+    if (pages.tarot && !pages.tarot.hidden) renderTarot();
+    if (pages.palm && !pages.palm.hidden) renderPalm();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1216,6 +1333,354 @@
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
     return head;
   }
+  /* ---- Palm reading: pick a hand, take a photo (the phone's camera), the AI reads the lines ---- */
+  const palmCopy = () => toolText().palm || TOOLS_COPY.en.palm;
+  const palmState = { hand: 'right', step: 'pick', reading: null, status: '' };
+  function openPalm() { palmState.step = 'pick'; palmState.reading = null; palmState.status = ''; showPage('palm'); renderPalm(); }
+  // The photo is made smaller on the phone (longest side 1024 px, JPEG) before it is sent; it is never stored.
+  function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('image'));
+        img.onload = () => {
+          const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  async function readPalm(image) {
+    palmState.step = 'reading'; renderPalm();
+    try {
+      const { ok, body } = await post('/api/palm', { hand: palmState.hand, language: state.lang, image });
+      palmState.status = ok && body ? body.status : 'unavailable';
+      palmState.reading = ok && body && body.reading ? body.reading : null;
+    } catch (_error) { palmState.status = 'unavailable'; palmState.reading = null; }
+    palmState.step = 'result'; renderPalm();
+  }
+  function choosePalmPhoto() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      try {
+        const photo = await shrinkPhoto(file);
+        // With "watch an ad to see the reading" on, the photo waits behind a ▶ button (the camera must open first:
+        // Android only opens it straight from a tap, not after an ad).
+        if (rewardedFor('palm')) { palmState.photo = photo; palmState.step = 'ready'; renderPalm(); } else await readPalm(photo);
+      } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
+    });
+    input.click();
+  }
+  function renderPalm() {
+    const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
+    box.replaceChildren(el('h2', 'palm-title', copy.title));
+    if (palmState.step === 'pick') {
+      box.appendChild(el('p', 'tarot-ask', copy.step));
+      const hands = el('div', 'palm-hands');
+      for (const hand of ['left', 'right']) {
+        const tile = el('button', `palm-hand ${hand}${palmState.hand === hand ? ' on' : ''}`); tile.type = 'button';
+        const pic = el('span', 'palm-pic'); if (art) pic.innerHTML = art.palm();
+        tile.append(pic, el('b', null, copy[hand]));
+        tile.addEventListener('click', () => { palmState.hand = hand; renderPalm(); });
+        hands.appendChild(tile);
+      }
+      box.appendChild(hands);
+      const tips = el('div', 'palm-tips');
+      tips.appendChild(el('h4', null, copy.tipsTitle));
+      for (const tip of copy.tips) tips.appendChild(el('p', null, `✓ ${tip}`));
+      tips.appendChild(el('small', null, `🔒 ${copy.privacy}`));
+      box.appendChild(tips);
+      const scan = el('button', 'palm-scan', `📷 ${copy.scan}`); scan.type = 'button';
+      scan.addEventListener('click', choosePalmPhoto);
+      box.appendChild(scan);
+      return;
+    }
+    if (palmState.step === 'ready') {
+      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
+      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;
+        const photo = palmState.photo; palmState.photo = null;
+        void readPalm(photo);
+      });
+      box.append(pic, el('p', 'palm-wait', copy.ready), see);
+      return;
+    }
+    if (palmState.step === 'reading') {
+      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
+      pic.appendChild(el('i', 'palm-beam'));
+      box.append(pic, el('p', 'palm-wait', copy.reading));
+      return;
+    }
+    const reading = palmState.reading, lines = [];
+    if (!reading) {
+      box.appendChild(el('p', 'palm-wait', palmState.status === 'not_palm' ? copy.notPalm : palmState.status === 'off' ? copy.off : copy.failed));
+    } else {
+      for (const [key, icon] of [['heart', '❤️'], ['head', '🧠'], ['life', '🌱'], ['fate', '⭐'], ['summary', '✨']]) {
+        const sec = el('section', `palm-sec${key === 'summary' ? ' summary' : ''}`);
+        sec.append(el('h4', null, `${icon} ${copy.lines[key]}`), el('p', null, reading[key]));
+        box.appendChild(sec);
+        lines.push(`${icon} ${copy.lines[key]}\n${reading[key]}`);
+      }
+    }
+    const actions = el('div', 'tarot-actions');
+    if (reading) {
+      const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
+      askAi.addEventListener('click', () => {
+        const question = fill(copy.askQ, { summary: reading.summary.slice(0, 180) }).slice(0, 290);
+        showPage('chat'); ask(question, question, true);
+      });
+      const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+      share.addEventListener('click', () => { void shareText(`✋ ${copy.title}`, lines.join('\n\n')); });
+      actions.append(askAi, share);
+    }
+    const again = el('button', 'chip-btn', `↻ ${copy.again}`); again.type = 'button';
+    again.addEventListener('click', () => { palmState.step = 'pick'; renderPalm(); });
+    actions.appendChild(again);
+    box.appendChild(actions);
+  }
+  /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
+  // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.
+  const TAROT = [
+    ['The Fool', 'new beginnings, trust and a fresh start', 'hesitation and careless choices', 'మూర్ఖుడు', 'मूर्ख'],
+    ['The Magician', 'skill, focus and making things happen', 'scattered energy and unused talent', 'మాంత్రికుడు', 'जादूगर'],
+    ['The High Priestess', 'intuition, inner wisdom and patience', 'ignoring your inner voice', 'ప్రధాన పూజారిణి', 'महापुजारिन'],
+    ['The Empress', 'care, abundance and creativity', 'neglecting yourself or others', 'సామ్రాజ్ఞి', 'सम्राज्ञी'],
+    ['The Emperor', 'structure, stability and leadership', 'rigidity and control', 'చక్రవర్తి', 'सम्राट'],
+    ['The Hierophant', 'tradition, guidance and learning', 'breaking from convention', 'గురువు', 'गुरु'],
+    ['The Lovers', 'love, harmony and true choices', 'imbalance and doubt in a choice', 'ప్రేమికులు', 'प्रेमी'],
+    ['The Chariot', 'determination and moving forward', 'lost direction and delays', 'రథం', 'रथ'],
+    ['Strength', 'courage, kindness and inner strength', 'self-doubt and impatience', 'బలం', 'शक्ति'],
+    ['The Hermit', 'reflection, solitude and wisdom', 'isolation and withdrawal', 'సన్యాసి', 'साधु'],
+    ['Wheel of Fortune', 'change, cycles and good timing', 'resistance to change', 'అదృష్ట చక్రం', 'भाग्य चक्र'],
+    ['Justice', 'fairness, truth and balance', 'imbalance and avoiding responsibility', 'న్యాయం', 'न्याय'],
+    ['The Hanged Man', 'pause, new perspective and surrender', 'stalling and indecision', 'వేలాడే మనిషి', 'लटका हुआ व्यक्ति'],
+    ['Death', 'endings that open new beginnings', 'fear of change and holding on', 'పరివర్తన', 'परिवर्तन'],
+    ['Temperance', 'balance, patience and moderation', 'excess and impatience', 'సంయమనం', 'संयम'],
+    ['The Devil', 'attachments and temptations to notice', 'breaking free from what binds you', 'బంధనాలు', 'बंधन'],
+    ['The Tower', 'sudden change that clears the way', 'avoiding a needed change', 'గోపురం', 'मीनार'],
+    ['The Star', 'hope, healing and renewal', 'losing faith for a while', 'నక్షత్రం', 'तारा'],
+    ['The Moon', 'dreams, intuition and uncertainty', 'confusion clearing up', 'చంద్రుడు', 'चंद्रमा'],
+    ['The Sun', 'joy, success and warmth', 'temporary clouds over happiness', 'సూర్యుడు', 'सूर्य'],
+    ['Judgement', 'awakening and a fresh calling', 'self-doubt and old regrets', 'జాగృతి', 'जागृति'],
+    ['The World', 'completion, fulfilment and wholeness', 'unfinished business', 'ప్రపంచం', 'संसार'],
+  ];
+  const TAROT_TOPICS = [['love', '💞'], ['career', '💼'], ['money', '🪙'], ['health', '🌿'], ['luck', '🍀'], ['family', '🏡']];
+  const tarotCopy = () => toolText().tarot || TOOLS_COPY.en.tarot;
+  const tarotName = index => (state.lang === 'te' ? TAROT[index][3] : state.lang === 'hi' ? TAROT[index][4] : TAROT[index][0]);
+  const randomInt = n => { try { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] % n; } catch (_error) { return Math.floor(Math.random() * n); } };
+  const tarot = { step: 'topic', topic: '', spread: [], chosen: [], reading: undefined };
+  function openTarot() { tarot.step = 'topic'; tarot.topic = ''; tarot.chosen = []; tarot.reading = undefined; showPage('tarot'); renderTarot(); }
+  function startTarotDraw(topic) {
+    const deck = TAROT.map((_, i) => i);
+    for (let i = deck.length - 1; i > 0; i -= 1) { const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }   // shuffle
+    tarot.topic = topic; tarot.step = 'draw'; tarot.chosen = []; tarot.reading = undefined;
+    tarot.spread = deck.slice(0, 12).map(id => ({ id, reversed: randomInt(4) === 0 }));                                   // about 1 in 4 reversed
+    renderTarot();
+  }
+  async function loadTarotReading() {
+    const cards = tarot.chosen.map(n => tarot.spread[n]);
+    tarot.reading = null;   // loading
+    try {
+      const { ok, body } = await post('/api/tarot', { topic: tarot.topic, language: state.lang, cards });
+      tarot.reading = ok && body && body.reading ? body.reading : false;
+    } catch (_error) { tarot.reading = false; }
+    if (tarot.step === 'result') renderTarot();
+  }
+  function renderTarot() {
+    const copy = tarotCopy(), box = $('tarot'), art = window.JyotishaArt;
+    box.replaceChildren(el('h2', 'tarot-title', copy.title));
+    if (tarot.step === 'topic') {
+      box.appendChild(el('p', 'tarot-ask', copy.ask));
+      const grid = el('div', 'tarot-topics');
+      for (const [key, icon] of TAROT_TOPICS) {
+        const tile = el('button', 'tarot-topic'); tile.type = 'button';
+        tile.append(el('span', 'tarot-topic-icon', icon), el('b', null, copy.topics[key]));
+        tile.addEventListener('click', () => startTarotDraw(key));
+        grid.appendChild(tile);
+      }
+      box.appendChild(grid);
+      return;
+    }
+    if (tarot.step === 'draw') {
+      box.append(el('p', 'tarot-ask', `${copy.topics[tarot.topic]} · ${copy.pick}`), el('p', 'tarot-hint', copy.shuffle),
+        el('p', 'tarot-count', fill(copy.picked, { n: tarot.chosen.length })));
+      const grid = el('div', 'tarot-spread');
+      tarot.spread.forEach((_card, n) => {
+        const back = el('button', `tarot-back${tarot.chosen.includes(n) ? ' on' : ''}`); back.type = 'button';
+        if (art) back.innerHTML = art.tarotBack();
+        back.addEventListener('click', () => {
+          if (tarot.chosen.includes(n) || tarot.chosen.length >= 3) return;
+          tarot.chosen.push(n);
+          if (tarot.chosen.length === 3) {
+            if (rewardedFor('tarot')) tarot.step = 'locked';   // the three cards wait face down behind "▶ See my reading"
+            else { tarot.step = 'result'; void loadTarotReading(); }
+          }
+          renderTarot();
+        });
+        grid.appendChild(back);
+      });
+      box.appendChild(grid);
+      return;
+    }
+    if (tarot.step === 'locked') {
+      box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
+      const row = el('div', 'tarot-row');
+      copy.positions.forEach(position => {
+        const face = el('div', 'tarot-face');
+        const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotBack();
+        face.append(el('small', 'tarot-pos', position), pic);
+        row.appendChild(face);
+      });
+      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;   // closed the ad early: the cards stay face down
+        tarot.step = 'result'; void loadTarotReading(); renderTarot();
+      });
+      box.append(row, see);
+      return;
+    }
+    // Result: the three cards face up, then the reading (AI, or the built-in meanings).
+    const cards = tarot.chosen.map(n => tarot.spread[n]);
+    box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
+    const row = el('div', 'tarot-row');
+    cards.forEach((card, i) => {
+      const face = el('div', `tarot-face${card.reversed ? ' reversed' : ''}`);
+      const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotCard(card.id);
+      face.append(el('small', 'tarot-pos', copy.positions[i]), pic, el('b', null, tarotName(card.id)));
+      if (card.reversed) face.appendChild(el('span', 'tarot-rev', copy.reversed));
+      row.appendChild(face);
+    });
+    box.appendChild(row);
+    const reading = tarot.reading, lines = [];
+    ['past', 'present', 'future'].forEach((key, i) => {
+      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
+      const text = reading ? reading[key] : reading === null ? copy.loading : `${tarotName(card.id)}: ${meaning}.`;
+      const sec = el('section', `tarot-sec${reading === null ? ' loading' : ''}`);
+      sec.append(el('h4', null, `${copy.positions[i]} · ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}`), el('p', null, text));
+      box.appendChild(sec);
+      lines.push(`${copy.positions[i]} · ${tarotName(card.id)}: ${text}`);
+    });
+    if (reading !== null) {
+      const advice = reading ? reading.advice : copy.fallbackAdvice;
+      const sec = el('section', 'tarot-sec advice');
+      sec.append(el('h4', null, `✨ ${copy.advice}`), el('p', null, advice));
+      box.appendChild(sec);
+      lines.push(`✨ ${advice}`);
+    }
+    const actions = el('div', 'tarot-actions');
+    const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
+    askAi.addEventListener('click', () => {
+      const question = fill(copy.askQ, { cards: cards.map(card => tarotName(card.id)).join(', '), topic: copy.topics[tarot.topic] });
+      showPage('chat'); ask(question, question, true);
+    });
+    const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+    share.addEventListener('click', () => { void shareText(`🃏 ${copy.title}: ${copy.topics[tarot.topic]}`, lines.join('\n\n')); });
+    const again = el('button', 'chip-btn', `↻ ${copy.again}`); again.type = 'button';
+    again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+    actions.append(askAi, share, again);
+    box.appendChild(actions);
+  }
+  /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
+  state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
+  const MOON_SECTIONS = [['emotional', '🌸'], ['love', '💞'], ['career', '💼'], ['wellbeing', '🌿'], ['remedy', '🪔']];
+  const moonCopy = () => toolText().moon || TOOLS_COPY.en.moon;
+  function ownMoon() {
+    if (state.chart) {
+      const birth = state.chart.panchanga_at_birth || {};
+      return { sign: state.chart.positions.Moon.rashi_index, star: birth.nakshatra_index, pada: birth.nakshatra_pada, approx: false };
+    }
+    return state.moonApprox;
+  }
+  // Only a birth date (no time): the Moon at noon that day, marked as approximate (it can change sign within the day).
+  async function loadApproxMoon() {
+    if (state.chart || state.moonApprox || state.moonApproxBusy || !state.userDob || !state.city) return;
+    state.moonApproxBusy = true;
+    try {
+      const { ok, body } = await post('/api/birth-chart', { dob: state.userDob, pob: state.city, tob: '12:00' });
+      if (ok && body && body.chart) state.moonApprox = { sign: body.chart.positions.Moon.rashi_index, approx: true };
+    } catch (_error) { /* offline: ask for details instead */ }
+    state.moonApproxBusy = false;
+    if (!pages.moon.hidden) renderMoonSign();
+  }
+  async function loadMoonText(sign) {
+    const key = `${sign}|${state.lang}`;
+    if (key in state.moonText) return;
+    state.moonText[key] = null;   // loading
+    try {
+      const { ok, body } = await post('/api/moon-sign', { sign, language: state.lang });
+      state.moonText[key] = ok && body && body.readings ? body.readings : false;
+    } catch (_error) { state.moonText[key] = false; }
+    if (!pages.moon.hidden) renderMoonSign();
+  }
+  function openMoonSign() { state.moonPick = 0; showPage('moon'); renderMoonSign(); }
+  function renderMoonSign() {
+    const copy = moonCopy(), box = $('moonsign'), own = ownMoon();
+    if (!own) void loadApproxMoon();
+    const sign = state.moonPick || (own ? own.sign : 0);
+    box.replaceChildren();
+    const head = el('div', 'moon-head');
+    head.appendChild(el('h2', 'moon-title', copy.title));
+    box.appendChild(head);
+    const art = el('div', 'moon-art');
+    if (window.JyotishaArt) art.innerHTML = window.JyotishaArt.moon();
+    box.appendChild(art);
+    if (!sign) {
+      box.appendChild(el('p', 'moon-need', copy.need));
+      const add = el('button', 'moon-add', `${copy.add} ›`); add.type = 'button';
+      add.addEventListener('click', () => { showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } });
+      box.appendChild(add);
+    } else {
+      box.appendChild(el('h3', 'moon-sign', `✦ ${signName(sign)} ✦`));
+      if (own && sign === own.sign) {
+        if (own.star) box.appendChild(el('p', 'moon-star', `${copy.nakshatra}: ${names.nakshatraName(own.star, state.lang)}${own.pada ? ` · ${copy.pada} ${own.pada}` : ''}`));
+        if (own.approx) box.appendChild(el('p', 'moon-approx', copy.approx));
+      }
+      const key = `${sign}|${state.lang}`;
+      if (!(key in state.moonText)) void loadMoonText(sign);
+      const text = state.moonText[key];
+      const lines = [];
+      for (const [name, icon] of MOON_SECTIONS) {
+        const body = text ? text[name] : (name === 'emotional' ? copy.nature[sign - 1] : '');
+        if (!body && text !== null) continue;
+        const card = el('section', `moon-sec${text === null && name !== 'emotional' ? ' loading' : ''}`);
+        card.append(el('span', 'moon-icon', icon), el('h4', null, copy.sections[name]), el('p', null, body || copy.loading));
+        box.appendChild(card);
+        if (body) lines.push(`${icon} ${copy.sections[name]}\n${body}`);
+      }
+      const tools = el('div', 'moon-tools');
+      const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+      share.addEventListener('click', () => { void shareText(`🌙 ${copy.title}: ${signName(sign)}`, lines.join('\n\n')); });
+      tools.appendChild(share);
+      if (state.contactEmail) {
+        const report = el('a', 'chip-btn', `⚑ ${copy.report}`);
+        report.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent(`Report: Moon sign ${sign} (${state.lang})`)}`;
+        tools.appendChild(report);
+      }
+      head.appendChild(tools);
+    }
+    // Explore any sign: twelve small tiles.
+    box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
+    const grid = el('div', 'moon-pick');
+    for (let n = 1; n <= 12; n += 1) {
+      const tile = el('button', `moon-tile${n === sign ? ' on' : ''}`); tile.type = 'button';
+      tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
+      if (own && n === own.sign) tile.appendChild(el('i', null, `★ ${copy.yours}`));
+      tile.addEventListener('click', () => { state.moonPick = n; renderMoonSign(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+      grid.appendChild(tile);
+    }
+    box.appendChild(grid);
+  }
   /* ---- Rashiphal: pick your sign, read today's paragraph, share or ask the AI ---- */
   const RASHI_KEY = 'jyotisha.rashi.v1';
   const RASHI_ICONS = ['🐏', '🐂', '👫', '🦀', '🦁', '👧', '⚖️', '🦂', '🏹', '🐐', '🏺', '🐟'];
@@ -1481,6 +1946,18 @@
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
+    if (state.rashiPick && rewardedFor('rashiphal') && !rashiUnlocked()) {   // once a day: one ad opens the readings
+      const copy = toolText().rashi, box = $('rashi-reading');
+      $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
+      const see = el('button', 'palm-scan reward-btn', copy.unlock || TOOLS_COPY.en.rashi.unlock); see.type = 'button';
+      see.addEventListener('click', async () => {
+        if (!(await watchForResult())) return;
+        try { window.localStorage.setItem(RASHI_UNLOCK_KEY, localIso(new Date())); } catch (_error) { /* not remembered: asks again next time */ }
+        renderRashi();
+      });
+      box.replaceChildren(el('h3', 'rashi-reading-title', `${RASHI_ICONS[state.rashiPick - 1]} ${signName(state.rashiPick)}`), el('p', 'rashi-hint', copy.unlockNote || TOOLS_COPY.en.rashi.unlockNote), see);
+      return;
+    }
     if (!state.rashiPick) {   // nothing picked yet: just the sign grid and a hint
       $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
       return;
@@ -2049,6 +2526,12 @@
     document.documentElement.style.setProperty('--ad-height', `${height}px`);
   }
   const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
+  // "▶ See my reading": a rewarded ad before a Tarot or palm reading, and once a day before the Rashiphal (like Palm AI).
+  // Only in the Android app with ads on and the feature switched on in the admin panel; elsewhere results are free.
+  const rewardedFor = feature => { const { config, admob } = appAds; return !!(config && admob && config.rewarded && config.rewarded[feature] === true && adUnitOk(config.rewarded_id)); };
+  const watchForResult = () => watchRewardedAd('', false, false);   // the ▶ button itself is the user's choice: no extra prompt
+  const RASHI_UNLOCK_KEY = 'jyotisha.rashi-unlock.v1';
+  const rashiUnlocked = () => { try { return window.localStorage.getItem(RASHI_UNLOCK_KEY) === localIso(new Date()); } catch (_error) { return false; } };
   // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
   // the free window after a recent ad, or the ad could not be shown (an ad problem never blocks the user).
   function rewardedGate() {
@@ -2057,10 +2540,10 @@
     return watchRewardedAd(t('watchAdPrompt'), true);
   }
   // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
-  function watchRewardedAd(promptText, startsFreeWindow) {
+  function watchRewardedAd(promptText, startsFreeWindow, ask = true) {
     const { config, admob } = appAds;
     if (!config || !admob || !adUnitOk(config.rewarded_id)) return Promise.resolve(true);
-    if (!window.confirm || !window.confirm(promptText)) return Promise.resolve(false);
+    if (ask && (!window.confirm || !window.confirm(promptText))) return Promise.resolve(false);
     return new Promise(resolve => {
       let earned = false, settled = false;
       const handles = [];

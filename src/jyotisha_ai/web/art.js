@@ -20,7 +20,14 @@
     return out;
   };
   const sparkle = (x, y, size, fill = GOLD) => `<path d="M${x} ${y - size}C${x + size * 0.15} ${y - size * 0.15} ${x + size * 0.15} ${y - size * 0.15} ${x + size} ${y}C${x + size * 0.15} ${y + size * 0.15} ${x + size * 0.15} ${y + size * 0.15} ${x} ${y + size}C${x - size * 0.15} ${y + size * 0.15} ${x - size * 0.15} ${y + size * 0.15} ${x - size} ${y}C${x - size * 0.15} ${y - size * 0.15} ${x - size * 0.15} ${y - size * 0.15} ${x} ${y - size}Z" fill="${fill}"/>`;
-  const frame = (id, body, seed, vb = '0 0 160 120') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs(id)}<rect width="100%" height="100%" fill="url(#${id}-sky)"/>${stars(seed)}${body}</svg>`;
+  // Every drawing gets its own gradient ids: the same picture can be on the page twice (a Home card and a feature
+  // page), and a second copy must not borrow gradients from a hidden first one (they would not paint).
+  let drawings = 0;
+  const frame = (id, body, seed, vb = '0 0 160 120') => {
+    const uid = `${id}${drawings += 1}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs(id)}<rect width="100%" height="100%" fill="url(#${id}-sky)"/>${stars(seed)}${body}</svg>`;
+    return svg.split(`id="${id}-`).join(`id="${uid}-`).split(`url(#${id}-`).join(`url(#${uid}-`);
+  };
   const clouds = id => `<g fill="#7a2a7e" opacity="0.55"><ellipse cx="20" cy="118" rx="44" ry="14"/><ellipse cx="140" cy="120" rx="50" ry="15"/></g><g fill="#a03c8a" opacity="0.35"><ellipse cx="80" cy="124" rx="60" ry="12"/></g>`;
 
   // South Indian chart: a 4x4 square with the middle open, planets glowing in a few houses.
@@ -133,5 +140,54 @@
     g += `<path d="M118 28a14 14 0 1 0 0 26a11 11 0 1 1 0-26z" fill="#fff3d1"/>` + sparkle(100, 30, 4) + sparkle(138, 64, 4, PINK2);
     return frame('g', g + clouds('g'), 47);
   }
-  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang };
+  // ---- Tarot cards (portrait 100 x 160): a patterned back, and a face per Major Arcana card with its own emblem ----
+  const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
+  const sun = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#c-gold)"/>` + Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<line x1="${(x + (r + 3) * Math.cos(a)).toFixed(1)}" y1="${(y + (r + 3) * Math.sin(a)).toFixed(1)}" x2="${(x + (r + 8) * Math.cos(a)).toFixed(1)}" y2="${(y + (r + 8) * Math.sin(a)).toFixed(1)}" stroke="${GOLD}" stroke-width="1.6"/>`; }).join('');
+  const crescent = (x, y, r, fill = GOLD) => `<path d="M${x + r * 0.3} ${y - r * 0.85}a${r} ${r} 0 1 0 0 ${1.7 * r}a${r * 0.78} ${r * 0.78} 0 1 1 0-${1.7 * r}z" fill="${fill}"/>`;
+  const heart = (x, y, r) => `<path d="M${x} ${y + r}c-${r * 1.6}-${r} -${r * 1.4}-${r * 2.2} 0-${r * 1.3}c${r * 1.4}-${r * 0.9} ${r * 1.6} ${r * 0.3} 0 ${r * 1.3}z" fill="url(#c-pink)"/>`;
+  const EMBLEMS = [
+    () => sun(50, 70, 12) + `<path d="M30 112q20-18 40 0" fill="none" stroke="${PINK2}" stroke-width="1.6"/>`,            // Fool
+    () => `<path d="M30 76c10-14 20-14 20 0s10 14 20 0-10-14-20 0-10 14-20 0z" fill="none" stroke="${GOLD}" stroke-width="2.4"/>` + sparkle(50, 100, 7),   // Magician: infinity
+    () => `<rect x="30" y="52" width="8" height="56" fill="#2e0f3b" stroke="${GOLD}"/><rect x="62" y="52" width="8" height="56" fill="#f6e7d0" stroke="${GOLD}"/>` + crescent(50, 78, 9),   // High Priestess
+    () => `<path d="M50 54c8 10 8 22 0 30c-8-8-8-20 0-30z" fill="${GOLD}"/><path d="M50 84c10 6 16 14 16 24H34c0-10 6-18 16-24z" fill="url(#c-pink)"/>` + sparkle(50, 46, 5),   // Empress
+    () => `<path d="M32 104V70l18-14 18 14v34z" fill="#2e0f3b" stroke="${GOLD}" stroke-width="1.8"/><path d="M40 70l10-8 10 8" fill="none" stroke="${GOLD}" stroke-width="1.6"/>` + sparkle(50, 86, 6),   // Emperor
+    () => `<path d="M42 60h16v40H42z" fill="none" stroke="${GOLD}" stroke-width="1.6"/><path d="M38 70h24M38 84h24" stroke="${GOLD}" stroke-width="1.6"/><circle cx="50" cy="52" r="5" fill="${GOLD}"/>`,   // Hierophant: keys/cross
+    () => heart(42, 68, 9) + heart(58, 68, 9) + sparkle(50, 98, 7, PINK2),   // Lovers
+    () => `<circle cx="50" cy="80" r="20" fill="none" stroke="${GOLD}" stroke-width="2.2"/>` + Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4; return `<line x1="50" y1="80" x2="${(50 + 20 * Math.cos(a)).toFixed(1)}" y2="${(80 + 20 * Math.sin(a)).toFixed(1)}" stroke="${GOLD2}" stroke-width="1.2"/>`; }).join(''),   // Chariot: wheel
+    () => `<path d="M30 92c0-18 10-30 20-30s20 12 20 30c-6-6-14-8-20-8s-14 2-20 8z" fill="url(#c-gold)"/><path d="M40 76q10 6 20 0" fill="none" stroke="#8a4a1a" stroke-width="1.2"/>` + heart(50, 104, 5),   // Strength
+    () => `<path d="M44 60h12l4 10H40z" fill="${GOLD}"/><rect x="42" y="70" width="16" height="22" rx="2" fill="#2e0f3b" stroke="${GOLD}"/>` + sparkle(50, 81, 6, '#fff3d1') + `<line x1="50" y1="92" x2="50" y2="112" stroke="${GOLD}" stroke-width="1.6"/>`,   // Hermit: lamp
+    () => `<circle cx="50" cy="80" r="22" fill="none" stroke="${GOLD}" stroke-width="2"/><circle cx="50" cy="80" r="12" fill="none" stroke="${PINK2}" stroke-width="1.4"/>` + Array.from({ length: 4 }, (_, i) => { const a = i * Math.PI / 2 + Math.PI / 4; return sparkle(+(50 + 22 * Math.cos(a)).toFixed(1), +(80 + 22 * Math.sin(a)).toFixed(1), 4); }).join(''),   // Wheel
+    () => `<line x1="50" y1="56" x2="50" y2="108" stroke="${GOLD}" stroke-width="2"/><line x1="30" y1="66" x2="70" y2="66" stroke="${GOLD}" stroke-width="2"/><path d="M24 86l6-20 6 20zM64 86l6-20 6 20z" fill="url(#c-gold)"/>`,   // Justice: scales
+    () => `<path d="M50 56v34" stroke="${GOLD}" stroke-width="1.6"/><path d="M50 90c-10 0-14 10-10 18c4-4 6-6 10-6s6 2 10 6c4-8 0-18-10-18z" fill="url(#c-pink)"/>` + sparkle(50, 52, 5),   // Hanged Man: pendulum
+    () => `<path d="M50 80c-14-18-30-10-24 4 4 10 20 8 24-4zM50 80c14-18 30-10 24 4-4 10-20 8-24-4z" fill="url(#c-pink)"/><path d="M50 72v24" stroke="${GOLD}" stroke-width="1.6"/>`,   // Death: butterfly of change
+    () => `<path d="M38 60h10v14H38zM52 86h10v14H52z" fill="none" stroke="${GOLD}" stroke-width="1.6"/><path d="M48 70q10 8 6 18" fill="none" stroke="${PINK2}" stroke-width="1.6"/>` + sparkle(50, 108, 5),   // Temperance: two cups
+    () => `<circle cx="40" cy="80" r="8" fill="none" stroke="${GOLD}" stroke-width="2"/><circle cx="54" cy="80" r="8" fill="none" stroke="${GOLD}" stroke-width="2"/><circle cx="68" cy="80" r="8" fill="none" stroke="${GOLD}" stroke-width="2"/>`,   // Devil: chain links
+    () => `<path d="M38 112V64l12-10 12 10v48z" fill="#2e0f3b" stroke="${GOLD}" stroke-width="1.6"/><path d="M58 50l-8 14h8l-10 16" fill="none" stroke="#ffd36b" stroke-width="2"/>`,   // Tower
+    () => sparkle(50, 72, 16, '#fff3d1') + sparkle(30, 100, 5) + sparkle(70, 100, 5) + sparkle(50, 108, 4, PINK2),   // Star
+    () => `<circle cx="50" cy="74" r="18" fill="url(#c-pink)"/>` + crescent(52, 74, 12, '#2e0f3b') + `<path d="M30 108q20-10 40 0" fill="none" stroke="${GOLD2}" stroke-width="1.4"/>`,   // Moon
+    () => sun(50, 78, 16),   // Sun
+    () => `<path d="M40 60l20-6v14l-20 6z" fill="url(#c-gold)"/><path d="M60 54l10-4v22l-10-4" fill="${GOLD}"/>` + sparkle(44, 98, 6, PINK2) + sparkle(62, 104, 4),   // Judgement: trumpet
+    () => `<ellipse cx="50" cy="80" rx="20" ry="28" fill="none" stroke="${GOLD}" stroke-width="2.4"/><ellipse cx="50" cy="80" rx="14" ry="22" fill="none" stroke="${PINK2}" stroke-width="1"/>` + sparkle(50, 80, 8, '#fff3d1'),   // World: wreath
+  ];
+  const cardDefs = () => `<defs><linearGradient id="c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a1a58"/><stop offset="1" stop-color="#1d0a27"/></linearGradient>
+    <radialGradient id="c-gold" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#fff3d1"/><stop offset="0.6" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD2}"/></radialGradient>
+    <linearGradient id="c-pink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb3e6"/><stop offset="1" stop-color="#d43ba8"/></linearGradient>
+    <radialGradient id="c-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${PINK}" stop-opacity="0.45"/><stop offset="1" stop-color="${PINK}" stop-opacity="0"/></radialGradient></defs>`;
+  const cardFrame = body => {
+    const uid = `c${drawings += 1}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 160" aria-hidden="true">${cardDefs()}<rect x="1" y="1" width="98" height="158" rx="8" fill="url(#c-bg)" stroke="${GOLD}" stroke-width="2"/><rect x="6" y="6" width="88" height="148" rx="5" fill="none" stroke="${GOLD2}" stroke-width="0.8"/>${body}</svg>`;
+    return svg.split('id="c-').join(`id="${uid}-`).split('url(#c-').join(`url(#${uid}-`);
+  };
+  function tarotBack() {
+    let b = `<circle cx="50" cy="80" r="34" fill="url(#c-glow)"/><circle cx="50" cy="80" r="26" fill="none" stroke="${GOLD}" stroke-width="1.2"/><circle cx="50" cy="80" r="18" fill="none" stroke="${GOLD2}" stroke-width="0.8"/>`;
+    b += crescent(46, 80, 9) + sparkle(58, 72, 4, '#fff3d1');
+    for (const [x, y] of [[20, 22], [80, 22], [20, 138], [80, 138]]) b += sparkle(x, y, 5);
+    for (let i = 0; i < 12; i += 1) { const a = i * Math.PI / 6; b += `<circle cx="${(50 + 32 * Math.cos(a)).toFixed(1)}" cy="${(80 + 32 * Math.sin(a)).toFixed(1)}" r="1.4" fill="${GOLD}"/>`; }
+    return cardFrame(b);
+  }
+  function tarotCard(index) {
+    const emblem = EMBLEMS[index] || EMBLEMS[0];
+    return cardFrame(`<circle cx="50" cy="80" r="30" fill="url(#c-glow)"/><text x="50" y="26" font-size="12" text-anchor="middle" fill="${GOLD}" font-family="Georgia, serif">${ROMAN[index] || ''}</text>${emblem()}`);
+  }
+  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, tarotBack, tarotCard };
 });
