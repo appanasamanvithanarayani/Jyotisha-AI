@@ -11,6 +11,7 @@ const names = require(path.join(root, 'panchang-names.js'));
 const chart = require(path.join(root, 'chart-ui.js'));
 const match = require(path.join(root, 'match-ui.js'));
 const nudges = require(path.join(root, 'nudges.js'));
+const art = require(path.join(root, 'art.js'));
 const day = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'day_panchang_bengaluru_2026-10-30.json'), 'utf8'));
 const month = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'month_calendar_bengaluru_2026-10.json'), 'utf8'));
 
@@ -74,7 +75,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -317,6 +318,9 @@ const syntheticBirth = {
   },
   details: null, resolved_birth: null
 };
+// Home's illustrated cards, in section order: Jathakam, Rashiphal | Kundli matching, Doshas | Festivals, Dasha.
+const homeCards = app => app.element('tool-grid').children.flatMap(section => section.children[1].children);
+const homeCard = (app, title) => homeCards(app).find(card => card.children[1].textContent === title);
 const birthRequests = app => app.requests.filter(r => r.url === '/api/birth-chart');
 
 test('saved birth details restore the chart on the next visit, so the chat does not ask again', async () => {
@@ -418,9 +422,13 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
   const app = boot({ storage, birth });
   await settle();
-  assert.equal(app.element('tool-grid').children.length, 5);
+  assert.equal(app.element('tool-grid').children.length, 3);                  // three sections
+  assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & match', 'Time & festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
+  assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
-  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Sade Sati: phase 2 of 3 running');
+  assert.equal(homeCard(app, 'Doshas').children[2].textContent, 'Sade Sati: phase 2 of 3 running');
   assert.equal(app.element('my-jathakam').children.length, 3);          // heading, Lagna/Rashi/Nakshatra/Dasha, View full Kundli
   // Typing a question on Home opens the chat and asks it.
   app.element('home-question').value = 'Will I get a job this year?';
@@ -434,7 +442,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   assert.ok(app.requests.filter(r => r.url === '/api/month-calendar').length >= 3);
   assert.ok(app.element('festival-list').children.length > 0);
   assert.equal(app.element('festivals-title').textContent, 'Upcoming festivals');
-  app.element('tool-grid').children[1].listeners.click();     // Doshas card opens the Kundli on the Doshas view
+  homeCard(app, 'Doshas').listeners.click();                  // Doshas card opens the Kundli on the Doshas view
   const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
   assert.equal(page('kundli').hidden, false);
   const cards = app.element('dosha-body').children;
@@ -454,7 +462,8 @@ test('without a Kundli, Home nudges the user to make one and the personal cards 
   // Festivals and the month calendar live in the Calendar tab.
   const calendarPage = app.element('top').children.find(item => item.id === 'page-calendar');
   assert.ok(calendarPage && calendarPage.children.length === 3);   // title, festivals, month calendar
-  assert.equal(app.element('tool-grid').children[1].children[2].textContent, 'Create your Kundli to see');
+  assert.equal(homeCard(app, 'Doshas').children[2].textContent, 'Create your Kundli to see');
+  assert.equal(app.element('greet-name').textContent, 'Namaste 🙏');            // no name given: a greeting instead
   assert.equal(app.element('home-today').hidden, true);
 });
 
@@ -781,6 +790,8 @@ test('first run like Palm AI: loading screen, a full-screen ad, language, city, 
   assert.equal(app.element('welcome-screen').hidden, true);                // Home
   assert.ok(calls.includes('showBanner'));
   assert.equal(storage.read().name, 'Samanvitha'); assert.equal(storage.read().dob, '1994-03-18');
+  assert.equal(app.element('greet-name').textContent, 'Samanvitha');        // Home greets by name
+  assert.match(app.element('greet-time').textContent, /^Good (morning|afternoon|evening|night)$/);
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1994-03-18', pob: 'Hyderabad, IN', tob: '07:45' });
   assert.ok(app.requests.some(r => r.url === '/api/birth-chart'));          // with a time, the Kundli is made right away
 });

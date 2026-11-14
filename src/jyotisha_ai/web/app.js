@@ -163,7 +163,10 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
-      tools: { festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
+      sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
+      aiEyebrow: 'AI astrologer', panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
+      tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
     },
     te: {
       views: { chart: 'చక్రం', planets: 'గ్రహాలు', dasha: 'దశ', doshas: 'దోషాలు', panchang: 'పంచాంగం' },
@@ -201,7 +204,10 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
-      tools: { festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
+      sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
+      aiEyebrow: 'AI జ్యోతిష్కుడు', panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
+      tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
     },
     hi: {
       views: { chart: 'चक्र', planets: 'ग्रह', dasha: 'दशा', doshas: 'दोष', panchang: 'पंचांग' },
@@ -239,7 +245,10 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
-      tools: { festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
+      sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
+      aiEyebrow: 'AI ज्योतिषी', panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
+      tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
     },
   };
   const loveText = () => RELATIONSHIP_COPY[state.lang] || RELATIONSHIP_COPY.en;
@@ -414,16 +423,50 @@
       }
     };
     const toFestivals = () => showPage('calendar');
+    const toPanchang = () => { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } };
     const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
+    const toJathakam = () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } };
+    // Big illustrated cards in sections, like a magazine: picture on top, name and a live line at the bottom.
+    const art = window.JyotishaArt || null;
+    const card = (key, title, sub, onClick, extra = {}) => {
+      const button = el('button', `art-card${extra.wide ? ' wide' : ''}`); button.type = 'button';
+      const picture = el('span', 'art-pic');
+      if (art && art[extra.art || key]) picture.innerHTML = art[extra.art || key](); else picture.textContent = extra.emoji || '✨';
+      button.append(picture, el('b', null, title), el('small', null, sub));
+      if (extra.badge) button.appendChild(el('span', 'art-badge', extra.badge));
+      button.addEventListener('click', onClick);
+      return button;
+    };
+    const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
+    const sections = text.sections || TOOLS_COPY.en.sections;
+    const jathakam = copy.jathakam || TOOLS_COPY.en.tools.jathakam;
+    const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
+    const todayTithi = state.day && state.day.tithi && state.day.tithi[0] ? names.tithiName(state.day.tithi[0].index, state.lang) : '';
     $('tool-grid').replaceChildren(
-      optionCard('💞', copy.match[0], copy.match[1], open('relationship')),
-      optionCard('🪐', copy.doshas[0], needs('doshas'), open('kundli', 'doshas')),
-      optionCard('🔮', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi')),
-      optionCard('⏳', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
-      optionCard('🎉', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals));
+      section(sections.chart, [
+        card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily })]),
+      section(sections.love, [
+        card('match', copy.match[0], copy.match[1], open('relationship')),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
+      section(sections.time, [
+        card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true }),
+        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
+        card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang)]));
+    renderGreeting();
     renderJathakamCard();
     renderHomeAi();
     renderNotify();
+  }
+  // Home greeting: "Good afternoon" and the user's name (or Namaste when we do not know it).
+  function renderGreeting() {
+    const text = toolText(), greet = text.greet || TOOLS_COPY.en.greet, hour = new Date().getHours();
+    const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
+    $('greet-time').textContent = greet[part];
+    $('greet-name').textContent = state.userName || greet.hello;
+    const art = window.JyotishaArt, box = $('ai-art');
+    if (art && box && !box.dataset.done) { box.innerHTML = art.orb(); box.dataset.done = '1'; }
+    $('ai-eyebrow').textContent = text.aiEyebrow || TOOLS_COPY.en.aiEyebrow;
   }
   // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
   function renderJathakamCard() {

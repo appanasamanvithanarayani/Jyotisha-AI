@@ -43,6 +43,16 @@
   <div id="theme-panel" class="theme-panel" role="dialog" aria-modal="false" aria-labelledby="theme-title" hidden></div>
   <main id="top">
   <section id="day-panchang" aria-labelledby="dp-title">
+    <div id="home-greet" class="home-greet"><small id="greet-time"></small><b id="greet-name"></b></div>
+    <div id="home-chat" class="card ai-card">
+      <div id="ai-art" class="ai-art" aria-hidden="true"></div><span id="ai-eyebrow" class="ai-eyebrow"></span><div class="ai-head"><span class="ai-orb" aria-hidden="true">✨</span><div><h2 data-i18n="aiChatTitle">Chat with AI about your life</h2><p class="section-intro" data-i18n="aiChatSub">Tap a question and get an answer from your own chart.</p></div></div>
+      <p id="home-today" class="ai-today" hidden></p>
+      <form id="home-ask" class="home-ask"><input id="home-question" type="text" maxlength="300" autocomplete="off" enterkeyhint="send"><button id="home-ask-send" type="submit" class="home-ask-send"></button></form>
+      <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button></div>
+    </div>
+    <div id="notify-card" class="notify-card" hidden></div>
+    <section id="my-jathakam" class="card jk-home" aria-live="polite"></section>
+    <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" class="sr-only" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
     <div class="hero-card">
       <div class="hero-top"><span id="dp-moon" class="moon-icon" aria-hidden="true">🌙</span><div><h2 id="dp-title" class="eyebrow" data-i18n="dpTitle">Daily Panchang</h2><p id="dp-date-title" class="hero-date"></p><p id="dp-subtitle" class="hero-sub"></p></div></div>
       <div id="dp-events" class="event-chips"></div>
@@ -55,15 +65,6 @@
       <div id="dp-sun-strip" class="sun-strip"></div>
       <div id="dp-key" class="key-chips"></div>
     </div>
-    <div id="home-chat" class="card ai-card">
-      <div class="ai-head"><span class="ai-orb" aria-hidden="true">✨</span><div><h2 data-i18n="aiChatTitle">Chat with AI about your life</h2><p class="section-intro" data-i18n="aiChatSub">Tap a question and get an answer from your own chart.</p></div></div>
-      <p id="home-today" class="ai-today" hidden></p>
-      <form id="home-ask" class="home-ask"><input id="home-question" type="text" maxlength="300" autocomplete="off" enterkeyhint="send"><button id="home-ask-send" type="submit" class="home-ask-send"></button></form>
-      <div class="ai-chips"><button type="button" class="ai-chip" data-i18n="aiQ1">How is my life going?</button><button type="button" class="ai-chip" data-i18n="aiQ2">Will my money situation improve?</button><button type="button" class="ai-chip" data-i18n="aiQ3">How is my love and marriage life?</button></div>
-    </div>
-    <div id="notify-card" class="notify-card" hidden></div>
-    <section id="my-jathakam" class="card jk-home" aria-live="polite"></section>
-    <section id="services" class="more-section" aria-labelledby="services-title"><h2 id="services-title" data-i18n="servicesTitle">More to explore</h2><div id="tool-grid" class="tool-grid"></div></section>
     <h2 id="detail-title" class="home-h"></h2>
     <div class="day-bar"><button id="dp-prev" type="button" data-i18n="previousDay">Previous day</button><button id="dp-today" type="button" data-i18n="today">Today</button><button id="dp-next" type="button" data-i18n="nextDay">Next day</button></div>
     <label class="date-pick"><span data-i18n="calendarDate">Calendar date</span><input id="dp-date" type="date" min="1970-01-01" max="2100-12-31"></label>
@@ -193,6 +194,7 @@
   <script src="/locales.js"></script>
   <script src="/chart-ui.js"></script>
   <script src="/match-ui.js"></script>
+  <script src="/art.js"></script>
   <script src="/nudges.js"></script>
   <script src="/calendar-ui.js"></script>
   <script src="/panchang-names.js"></script>

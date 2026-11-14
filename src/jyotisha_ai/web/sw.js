@@ -1,6 +1,6 @@
 /* Service worker: keeps the app shell available and shows a friendly page offline. API calls always go to the network. */
-const VERSION = 'jyotisha-v12';
-const SHELL = ['/', '/app.js', '/app.css', '/locales.js', '/chart-ui.js', '/match-ui.js', '/nudges.js', '/calendar-ui.js', '/panchang-names.js', '/manifest.webmanifest', '/icons/icon-192.png'];
+const VERSION = 'jyotisha-v13';
+const SHELL = ['/', '/app.js', '/app.css', '/locales.js', '/chart-ui.js', '/match-ui.js', '/nudges.js', '/art.js', '/calendar-ui.js', '/panchang-names.js', '/manifest.webmanifest', '/icons/icon-192.png'];
 const OFFLINE = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title>'
   + '<body style="font:16px system-ui;background:#150d2e;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;padding:24px">'
   + '<div><h1 style="font-size:1.4rem">You are offline</h1><p>Jyotirmaya AstroChat needs an internet connection to calculate. Please reconnect and try again.</p></div>';

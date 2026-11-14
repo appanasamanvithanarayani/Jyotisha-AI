@@ -922,3 +922,34 @@ main,.app-page,.card{min-width:0}
 .onboarding-step button:not(.onb-skip){background:linear-gradient(90deg,#ff5ec4,#c42aa6);color:#fff;box-shadow:0 0 0 1px rgba(255,140,214,.4),0 8px 24px rgba(255,94,196,.35)}
 .welcome-screen::after{bottom:-120px;width:210px;height:210px;opacity:.45}
 .splash-load,.onb-skip{position:relative;z-index:2}
+
+/* ---------- Home: greeting, AI hero card and illustrated cards in sections ---------- */
+.home-greet{text-align:center;margin:14px 0 10px}
+.home-greet small{display:block;font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.home-greet b{display:block;font-family:Georgia,'Noto Serif',serif;font-size:1.7rem;color:var(--heading);margin-top:2px}
+.ai-card{position:relative;overflow:hidden;padding-top:16px}
+.ai-art{position:absolute;inset-inline-end:-10px;top:-6px;width:150px;height:120px;opacity:.95;pointer-events:none;border-radius:0 0 0 40px;overflow:hidden;
+  -webkit-mask-image:radial-gradient(circle at 60% 45%,#000 45%,transparent 72%);mask-image:radial-gradient(circle at 60% 45%,#000 45%,transparent 72%)}
+.ai-art svg{width:100%;height:100%;display:block}
+.ai-eyebrow{display:block;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;position:relative}
+.ai-card .ai-head{position:relative;max-width:68%}
+.ai-card .ai-head .ai-orb{display:none}
+.ai-card .ai-head h2{font-family:Georgia,'Noto Serif',serif;font-size:1.4rem;line-height:1.2}
+.ai-card form,.ai-card .ai-chips,.ai-card .ai-today{position:relative}
+.art-section{margin:16px 0 4px}
+.art-h{margin:0 0 10px}
+.art-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.art-card{position:relative;display:block;aspect-ratio:1/1.05;border-radius:20px;overflow:hidden;padding:0;border:1px solid rgba(214,90,180,.45);background:#22102e;cursor:pointer;text-align:start;
+  box-shadow:0 10px 26px rgba(0,0,0,.35);transition:transform .15s}
+.art-card:active{transform:scale(.98)}
+.art-card.wide{grid-column:1/-1;aspect-ratio:2.1/1}
+.art-pic{position:absolute;inset:0;display:block;font-size:3rem;text-align:center;line-height:3}
+.art-pic svg{width:100%;height:100%;display:block}
+.art-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(18,6,26,.88) 100%);pointer-events:none}
+.art-card b,.art-card small{position:absolute;inset-inline-start:12px;inset-inline-end:10px;z-index:1;color:#fff}
+.art-card b{bottom:24px;font-size:1.05rem;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.art-card small{bottom:8px;font-size:.72rem;color:#ecd2ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.art-badge{position:absolute;inset-inline-start:12px;bottom:46px;z-index:1;padding:2px 9px;border-radius:999px;background:linear-gradient(90deg,#ff5ec4,#c42aa6);color:#fff;font-size:.68rem;font-weight:800}
+:root:not([data-skin="mystic"]) .art-card{border-color:var(--line)}
+#tool-grid.tool-grid{display:block;margin:0}
+@media (max-width:520px){#tool-grid.tool-grid{display:block}}
