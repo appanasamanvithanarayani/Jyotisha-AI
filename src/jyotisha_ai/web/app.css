@@ -1145,3 +1145,17 @@ body.menu-open{overflow:hidden}
 :root[data-mode="dark"] .rashi-planets.remedies li{background:rgba(232,176,75,.1);color:var(--ink)}
 :root[data-mode="dark"] .relationship-score strong{color:var(--heading)}
 :root[data-skin="mystic"] .k-table tbody tr:nth-child(even){background:rgba(214,90,180,.1)}
+/* ---------- Today strip (top of Home): date, weekday, year, tithi and nakshatra; opens today's Panchang ---------- */
+.today-strip{display:flex;align-items:center;gap:12px;width:100%;margin:10px 0 4px;padding:10px 12px;border-radius:18px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;text-align:start;cursor:pointer}
+.today-strip[hidden]{display:none}
+.ts-date{flex:none;display:grid;place-items:center;width:52px;height:56px;border-radius:14px;background:linear-gradient(160deg,#ffb3e6,#d43ba8);color:#fff;line-height:1}
+.ts-date b{font:700 1.45rem Georgia,serif}
+.ts-date small{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.ts-main{flex:1;min-width:0;display:grid;gap:2px}
+.ts-main small{color:var(--muted);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.ts-main b{color:var(--heading);font-size:1rem}
+.ts-main span{color:var(--ink);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-go{flex:none;font-size:1.6rem;color:var(--gold2)}
+:root[data-skin="mystic"] .today-strip{background:linear-gradient(120deg,rgba(214,90,180,.16),rgba(230,194,122,.08));border-color:rgba(230,194,122,.35)}
+:root[data-skin="mystic"] .ts-main small{color:#e6c27a}
+#day-panchang .hero-card{scroll-margin-top:84px}

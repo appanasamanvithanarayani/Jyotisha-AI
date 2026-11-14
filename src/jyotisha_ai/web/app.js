@@ -1095,6 +1095,7 @@
     $('dp-note').textContent = t('dpNote');
     renderHome();
     renderTools();
+    renderTodayStrip();
     renderLookPanel();
     showKundliView(state.kundliView);
     renderRelationship();
@@ -1130,7 +1131,7 @@
   });
   async function runSplash() {
     const fill = $('splash-fill'), pct = $('splash-pct');
-    for (let n = 0; n <= 100; n += 4) {
+    for (let n = 0; n <= 100; n += 2) {          // about 3.5 seconds
       if (onboardingStep !== 'welcome' || state.onboarded) return;
       if (fill.style) fill.style.width = `${n}%`;
       pct.textContent = `${n}%`;
@@ -1139,6 +1140,30 @@
     await notifyAsking;          // let the notification prompt finish first
     await onboardingAd();
     if (onboardingStep === 'welcome' && !state.onboarded) showOnboardingStep('language');
+  }
+  // Each later opening of the Android app: the loading screen, then one full-screen ad, then Home. Only when switched
+  // on in the admin panel; the setting is remembered from the last start so the screen never flashes when it is off.
+  const LAUNCH_AD_KEY = 'jyotisha.launch-ad.v1';
+  const launchAdWanted = () => { try { return window.localStorage.getItem(LAUNCH_AD_KEY) === '1'; } catch (_error) { return false; } };
+  function rememberLaunchAd(config) {
+    try { window.localStorage.setItem(LAUNCH_AD_KEY, config && adUnitOk(config.launch_interstitial_id) ? '1' : '0'); } catch (_error) { /* optional */ }
+  }
+  async function launchSplash() {
+    if (!admobPlugin() || !launchAdWanted()) return;
+    appAds.launching = true;
+    showOnboardingStep('welcome');
+    $('welcome-next').hidden = true;
+    const fill = $('splash-fill'), pct = $('splash-pct');
+    for (let n = 0; n <= 100; n += 2) {          // about 2.5 seconds
+      if (fill.style) fill.style.width = `${n}%`;
+      pct.textContent = `${n}%`;
+      await wait(50);
+    }
+    try { await onboardingAd('launch_interstitial_id'); } finally {
+      appAds.launching = false; onboardingStep = '';
+      $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
+      if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }
+    }
   }
   $('language-next').addEventListener('click', () => {
     applyLanguage(choice.value);
@@ -1562,6 +1587,7 @@
     if (stepped && currentPage === before) { try { window.history.back(); } catch (_error) { /* optional */ } }   // nothing new opened
   }
   $('menu-btn').addEventListener('click', openMenu);
+  $('today-strip').addEventListener('click', openToday);
   $('side-close').addEventListener('click', closeMenu);
   $('side-scrim').addEventListener('click', closeMenu);
 
@@ -2184,6 +2210,7 @@
     const tithiName = index => names.tithiName(index, state.lang);
     const nakshatraName = index => names.nakshatraName(index, state.lang);
 
+    if (day.date === state.todayIso) { state.today = day; renderTodayStrip(); }
     $('dp-moon').textContent = moonEmoji(day.tithi[0].index);
     $('dp-date-title').textContent = calendarUI.formatDate(state.lang, date, 'full');
     $('dp-subtitle').textContent = `${names.pakshaName(day.paksha, state.lang)}, ${tithiName(day.tithi[0].index)}`;
@@ -2303,6 +2330,28 @@
     lines.push('', `— Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`);
     const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');
     try { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); } catch (_error) { /* no browser */ }
+  }
+  // A slim "today" card at the top of Home: date, weekday and year, and the tithi and nakshatra running now.
+  // A tap opens today's full Panchang below (like the Jathakam card opens the chart).
+  function renderTodayStrip() {
+    const box = $('today-strip'), day = state.today;
+    if (!box) return;
+    if (!day || !Array.isArray(day.tithi) || !day.tithi.length) { box.hidden = true; return; }
+    const iso = day.date, now = `${localIso(new Date())}T${new Date().toTimeString().slice(0, 5)}`;
+    const pick = items => (Array.isArray(items) && items.length ? items.find(item => item.starts_at <= now && now < item.ends_at) || items[0] : null);
+    const tithi = pick(day.tithi), star = pick(day.nakshatra), date = new Date(`${iso}T12:00:00Z`);
+    const dateBox = el('span', 'ts-date');
+    dateBox.append(el('b', null, String(date.getUTCDate())), el('small', null, calendarUI.monthName(state.lang, date.getUTCMonth(), 'short')));
+    const main = el('span', 'ts-main');
+    main.append(el('small', null, `${moonEmoji(tithi.index)} ${t('dpTitle')}`),
+      el('b', null, `${calendarUI.weekdayName(state.lang, date.getUTCDay())}, ${date.getUTCFullYear()}`),
+      el('span', null, [names.tithiName(tithi.index, state.lang), star ? names.nakshatraName(star.index, state.lang) : ''].filter(Boolean).join(' · ')));
+    box.replaceChildren(dateBox, main, el('span', 'ts-go', '›'));
+    box.hidden = false;
+  }
+  function openToday() {
+    if (state.todayIso && state.day && state.day.date !== state.todayIso) selectDate(state.todayIso);
+    toPanchang();
   }
   async function loadDay(iso, followToday = false) {
     const request = ++state.dayRequest, status = $('dp-status');
@@ -2806,10 +2855,10 @@
   }
   // A full-screen ad between the first-run steps (switched on in the admin panel). Never blocks the flow: if no ad
   // loads in a few seconds, or the plugin is missing, the steps simply go on.
-  async function onboardingAd() {
+  async function onboardingAd(unitKey = 'onboarding_interstitial_id') {
     if (!appAds.waiting && !appAds.config) await within(readinessSeen, 2500);
     const config = appAds.waiting || appAds.config, admob = admobPlugin();
-    if (!admob || !config || !adUnitOk(config.onboarding_interstitial_id)) return;
+    if (!admob || !config || !adUnitOk(config[unitKey])) return;
     try {
       await within(ensureAdmob(admob, config), 6000);
       let done;
@@ -2818,15 +2867,15 @@
       for (const name of ['interstitialAdDismissed', 'interstitialAdFailedToShow', 'interstitialAdFailedToLoad']) {
         try { handles.push(await admob.addListener(name, () => done())); } catch (_error) { /* older plugin */ }
       }
-      const loaded = await within(Promise.resolve(admob.prepareInterstitial({ adId: config.onboarding_interstitial_id, isTesting: config.testing === true })).then(() => true), 6000, false);
-      if (loaded) { await admob.showInterstitial(); await within(closed, 60000); }
+      const loaded = await within(Promise.resolve(admob.prepareInterstitial({ adId: config[unitKey], isTesting: config.testing === true })).then(() => true), 6000, false);
+      if (loaded) { await admob.showInterstitial(); appAds.lastInterstitial = Date.now(); await within(closed, 60000); }
       for (const handle of handles) { try { if (handle && handle.remove) await handle.remove(); } catch (_error) { /* gone */ } }
     } catch (_error) { /* no ad: carry on */ }
   }
   async function startAppAds(config) {
     const admob = admobPlugin();
     if (!admob || !adUnitOk(config.banner_id)) return;
-    if (!state.onboarded) { appAds.waiting = config; return; }   // the banner only after the welcome screens
+    if (!state.onboarded || appAds.launching) { appAds.waiting = config; return; }   // the banner only after the welcome / loading screens
     appAds.config = config; appAds.admob = admob;
     try {
       await ensureAdmob(admob, config);
@@ -3134,6 +3183,7 @@
     startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);
+    rememberLaunchAd(readiness.app_ads && readiness.app_ads.enabled === true ? readiness.app_ads : null);
     if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
     // Ads are off unless the server was configured with an AdSense publisher id.
     // AdSense is a website program: it is not loaded inside the installed app / Play Store wrapper (use AdMob for native apps).
@@ -3155,6 +3205,7 @@
     $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
     applyLanguage(saved.lang);
     startHome();
+    void launchSplash();
     if (saved.useLocation) void refreshCityFromLocation();
   } else { applyLanguage('en'); showOnboardingStep('welcome'); void runSplash(); }
   void restoreProfile();
