@@ -1398,7 +1398,7 @@ test('Home starts with today: date, weekday, year, tithi and nakshatra, and a ta
   await settle(); await settle();
   const strip = app.element('today-strip');
   assert.equal(strip.hidden, false);
-  assert.equal(strip.children[0].textContent, 'Friday, 30 October 2026');          // weekday, date and year
+  assert.equal(strip.children[0].textContent, '30 Oct | Daily Panchang · Friday, 2026');   // date | name · weekday, year
   assert.match(strip.children[1].textContent, / · .* ›$/);                        // tithi · nakshatra ›
   strip.listeners.click();
   assert.equal(app.element('top').children.find(item => item.id === 'page-home').hidden, false);
