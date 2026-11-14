@@ -1323,18 +1323,28 @@
   function rememberLaunchAd(config) {
     try { window.localStorage.setItem(LAUNCH_AD_KEY, config && adUnitOk(config.launch_interstitial_id) ? '1' : '0'); } catch (_error) { /* optional */ }
   }
+  const nativeApp = () => !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  // Each later opening of the Android app: the loading screen stays until today's Panchang is ready (at most ~6 s), so
+  // Home never opens with empty details; then one full-screen ad if switched on in the admin panel; then Home.
+  // With today's Panchang already saved on the phone (and no ad) Home opens straight away.
   async function launchSplash() {
-    if (!admobPlugin() || !launchAdWanted()) return;
+    const ad = !!admobPlugin() && launchAdWanted();
+    if (!nativeApp() || (!ad && state.day)) return;
     appAds.launching = true;
     showOnboardingStep('welcome');
     $('welcome-next').hidden = true;
-    const fill = $('splash-fill'), pct = $('splash-pct');
-    for (let n = 0; n <= 100; n += 2) {          // about 2.5 seconds
+    const fill = $('splash-fill'), pct = $('splash-pct'), started = Date.now();
+    let ready = false;
+    void within(dayReady, 6000).then(() => { ready = true; });
+    for (let n = 0; ;) {
       if (fill.style) fill.style.width = `${n}%`;
       pct.textContent = `${n}%`;
+      if (n >= 100) break;
       await wait(50);
+      if (!ready && Date.now() - started > 6500) ready = true;
+      n = ready ? Math.min(100, n + 10) : Math.min(90, n + 2);   // up to 90% while loading, then finishes quickly
     }
-    try { await onboardingAd('launch_interstitial_id'); } finally {
+    try { if (ad) await onboardingAd('launch_interstitial_id'); } finally {
       appAds.launching = false; onboardingStep = '';
       $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
       if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }
@@ -1393,6 +1403,17 @@
     } catch (_error) { /* offline or unavailable: the chat simply asks for the details again */ }
     finally { startupDone('profile'); }
   }
+  // Today's Panchang is kept on the phone: a later opening on the same day shows it at once (then quietly refreshes).
+  const TODAY_KEY = 'jyotisha.today.v1';
+  function cachedToday() {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(TODAY_KEY));
+      return saved && saved.city === state.city && saved.day && saved.day.date === localIso(new Date()) ? saved.day : null;
+    } catch (_error) { return null; }
+  }
+  function keepToday(day) { try { window.localStorage.setItem(TODAY_KEY, JSON.stringify({ city: state.city, day })); } catch (_error) { /* optional */ } }
+  let markDayReady = () => {};
+  const dayReady = new Promise(resolve => { markDayReady = resolve; });   // today's Panchang is on screen (or failed)
   function startHome() {
     const today = localIso(new Date());
     state.todayIso = today; state.selectedDate = today;
@@ -1400,8 +1421,14 @@
     state.month = null; state.day = null;
     showPage('home');
     renderHome();
+    const saved = cachedToday();
+    if (saved) {
+      state.day = saved;
+      try { $('dp-date').value = saved.date; renderDay(); } catch (error) { console.warn('saved panchang', error); }
+      markDayReady();
+    }
     void loadMonth();
-    void loadDay(today, true);
+    void loadDay(today, true, !!saved);
     void loadFestivals();
   }
 
@@ -2524,20 +2551,29 @@
     if (state.todayIso && state.day && state.day.date !== state.todayIso) selectDate(state.todayIso);
     toPanchang();
   }
-  async function loadDay(iso, followToday = false) {
+  async function loadDay(iso, followToday = false, quiet = false) {
     const request = ++state.dayRequest, status = $('dp-status');
-    if (!state.city) { status.textContent = t('selectCity'); return; }
-    status.textContent = t('dpLoading');
+    if (!state.city) { status.textContent = t('selectCity'); markDayReady(); return; }
+    if (!quiet) status.textContent = t('dpLoading');   // quiet: the saved Panchang is already showing
     try {
       const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city });
       if (request !== state.dayRequest) return;
-      if (!ok || !body || !body.day) { state.day = null; clearDay(); status.textContent = t('dpUnavailable'); return; }
+      if (!ok || !body || !body.day) {
+        markDayReady();
+        if (quiet && state.day) return;   // keep the saved one
+        state.day = null; clearDay(); status.textContent = t('dpUnavailable'); return;
+      }
       state.todayIso = body.day.today_local_date;
       if (followToday && body.day.today_local_date !== body.day.date) { selectDate(body.day.today_local_date); return; }
       state.day = body.day; status.textContent = '';
       $('dp-date').value = state.day.date;
       renderDay(); renderCalendar(); renderDayEvents();
-    } catch (_error) { if (request === state.dayRequest) { state.day = null; clearDay(); status.textContent = t('dpUnavailable'); } }
+      if (state.day.date === state.todayIso) keepToday(state.day);
+      markDayReady();
+    } catch (_error) {
+      markDayReady();
+      if (request === state.dayRequest && !(quiet && state.day)) { state.day = null; clearDay(); status.textContent = t('dpUnavailable'); }
+    }
   }
 
   /* --------------------------------------------------------- Home: calendar */
