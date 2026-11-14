@@ -780,19 +780,20 @@
     try {
       const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
       return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
-        evening: saved.evening !== false, muhurta: saved.muhurta !== false, shortcuts: saved.shortcuts !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' }; }
+        evening: saved.evening !== false, muhurta: saved.muhurta !== false, shortcuts: saved.shortcuts !== false, teasers: saved.teasers !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
+    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, shortcuts: true, teasers: true, eveningTime: '19:30' }; }
   }
   const notify = loadNotify();
   const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
-  let notifyBusy = false, notifyNote = '', notifyInfo = null;   // notifyInfo.blocked: allowed once, since turned off in phone settings
+  let notifyBusy = false, notifyAgain = false, notifyNote = '', notifyInfo = null;   // notifyInfo.blocked: allowed once, since turned off in phone settings
   async function scheduleNotifications() {
     const plugin = notifier();
-    if (!plugin || notifyBusy || !state.city) return;
+    if (!plugin || !state.city) return;
+    if (notifyBusy) { notifyAgain = true; return; }   // run once more when the current run ends
     notifyBusy = true;
     try {
       const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
-      const ours = (pending.notifications || []).filter(item => item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50).map(item => ({ id: item.id }));
+      const ours = (pending.notifications || []).filter(item => (item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50) || (item.id >= TEASE_FIRST_ID && item.id < TEASE_FIRST_ID + TEASE_MAX)).map(item => ({ id: item.id }));
       if (ours.length) await plugin.cancel({ notifications: ours });
       if (!notify.on) { notifyInfo = null; return; }
       const permission = await plugin.checkPermissions().catch(() => ({ display: 'granted' }));
@@ -835,11 +836,94 @@
       const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
       try { list.push(...eveningNotifications(now, days)); } catch (error) { console.warn('evening notifications', error); }
+      try { list.push(...teaserNotifications(now)); } catch (error) { console.warn('reading reminders', error); }
       await plugin.schedule({ notifications: list });
       notifyInfo = null;
     } catch (error) {
       console.warn('notifications', error);
-    } finally { notifyBusy = false; refreshNotifySettings(); void syncShortcuts(); }
+    } finally {
+      notifyBusy = false; refreshNotifySettings(); void syncShortcuts();
+      if (notifyAgain) { notifyAgain = false; void scheduleNotifications(); }
+    }
+  }
+  /* ---- Reading reminders: short, tempting (but true) notifications every hour or so in the day, each opening a feature.
+     How often and between which hours comes from the admin panel; the user can switch them off under 🎨. ---- */
+  const TEASE_FIRST_ID = 7300, TEASE_MAX = 190, TEASE_DAYS = 7, TEASE_KEY = 'jyotisha.teasers.v1';
+  const TEASER_COPY = {
+    en: { toggle: 'Reading reminders (every few hours)', items: {
+      palm: ['✋ Your palm is waiting to be read', 'Your heart, head and life lines have a story. Scan your palm and see it in seconds.'],
+      tarot: ['🃏 Your cards are shuffled', 'Three cards are waiting for your question about love, career or money. Pick yours now.'],
+      rashi: ['🔮 {sign}: today’s reading is ready', 'Your luck, colour and best time for today. Tap to see what the day holds.'],
+      rashiAny: ['🔮 Today’s Rashiphal is ready', 'Find your rashi and see what today holds for you.'],
+      kundli: ['📜 Your Jathakam is ready', 'Your chart, dasha and doshas are waiting. See what this period means for you.'],
+      kundliNew: ['📜 Your Jathakam is 30 seconds away', 'Add your birth time and see your Lagna, Rashi, Nakshatra and dasha.'],
+      moon: ['🌙 What does your Moon say about you?', 'Your Moon sign shows your feelings, love and nature. Tap to read it.'],
+      numbers: ['🔢 Your lucky numbers are ready', 'Your Moolank, Bhagyank, lucky days and colours, from your birth date.'],
+      chat: ['💬 Ask Jyotirmaya anything', 'Career, marriage or money: get an answer from your own chart.'],
+      match: ['💞 Is your match written in the stars?', 'Check Guna Milan out of 36 in under a minute.'] } },
+    te: { toggle: 'రీడింగ్ రిమైండర్లు (ప్రతి కొన్ని గంటలకు)', items: {
+      palm: ['✋ మీ హస్త రేఖలు మీ కోసం ఎదురుచూస్తున్నాయి', 'మీ హృదయ, మస్తిష్క, జీవన రేఖలు ఏం చెబుతున్నాయో చూడండి. అరచేతిని స్కాన్ చేయండి.'],
+      tarot: ['🃏 మీ కార్డులు సిద్ధంగా ఉన్నాయి', 'ప్రేమ, ఉద్యోగం, డబ్బు: మీ ప్రశ్నకు మూడు కార్డులు ఎదురుచూస్తున్నాయి. ఇప్పుడే ఎంచుకోండి.'],
+      rashi: ['🔮 {sign}: ఈ రోజు ఫలితం సిద్ధం', 'ఈ రోజు మీ అదృష్టం, రంగు, మంచి సమయం. రోజు ఎలా ఉందో చూడండి.'],
+      rashiAny: ['🔮 ఈ రోజు రాశి ఫలాలు సిద్ధం', 'మీ రాశి ఎంచుకుని ఈ రోజు మీకు ఎలా ఉందో చూడండి.'],
+      kundli: ['📜 మీ జాతకం సిద్ధంగా ఉంది', 'మీ చక్రం, దశ, దోషాలు మీ కోసం ఎదురుచూస్తున్నాయి. ఈ కాలం మీకు ఏం చెబుతుందో చూడండి.'],
+      kundliNew: ['📜 మీ జాతకం 30 సెకన్ల దూరంలో', 'పుట్టిన సమయం ఇచ్చి మీ లగ్నం, రాశి, నక్షత్రం, దశ చూడండి.'],
+      moon: ['🌙 మీ చంద్ర రాశి మీ గురించి ఏం చెబుతోంది?', 'మీ భావాలు, ప్రేమ, స్వభావం మీ చంద్ర రాశిలో ఉన్నాయి. చదవండి.'],
+      numbers: ['🔢 మీ అదృష్ట సంఖ్యలు సిద్ధం', 'మీ మూలాంకం, భాగ్యాంకం, అదృష్ట రోజులు, రంగులు: మీ పుట్టిన తేదీ నుంచి.'],
+      chat: ['💬 జ్యోతిర్మయను ఏదైనా అడగండి', 'ఉద్యోగం, పెళ్లి, డబ్బు: మీ జాతకం ఆధారంగా సమాధానం పొందండి.'],
+      match: ['💞 మీ జంట నక్షత్రాల్లో రాసి ఉందా?', 'ఒక్క నిమిషంలో 36కి గుణ మేళనం చూడండి.'] } },
+    hi: { toggle: 'रीडिंग रिमाइंडर (हर कुछ घंटों में)', items: {
+      palm: ['✋ आपकी हथेली की रेखाएँ इंतज़ार कर रही हैं', 'आपकी हृदय, मस्तिष्क और जीवन रेखा क्या कहती है? हथेली स्कैन करें और देखें।'],
+      tarot: ['🃏 आपके कार्ड तैयार हैं', 'प्रेम, करियर या पैसा: आपके सवाल के लिए तीन कार्ड इंतज़ार कर रहे हैं। अभी चुनें।'],
+      rashi: ['🔮 {sign}: आज का राशिफल तैयार है', 'आज आपका भाग्य, रंग और शुभ समय। देखें आज का दिन कैसा है।'],
+      rashiAny: ['🔮 आज का राशिफल तैयार है', 'अपनी राशि चुनें और देखें आज आपके लिए क्या है।'],
+      kundli: ['📜 आपकी कुंडली तैयार है', 'आपका चार्ट, दशा और दोष इंतज़ार कर रहे हैं। देखें यह समय आपके लिए क्या कहता है।'],
+      kundliNew: ['📜 आपकी कुंडली बस 30 सेकंड दूर', 'जन्म समय डालें और अपना लग्न, राशि, नक्षत्र और दशा देखें।'],
+      moon: ['🌙 आपकी चंद्र राशि आपके बारे में क्या कहती है?', 'आपकी भावनाएँ, प्रेम और स्वभाव चंद्र राशि में छिपे हैं। पढ़ें।'],
+      numbers: ['🔢 आपके शुभ अंक तैयार हैं', 'आपका मूलांक, भाग्यांक, शुभ दिन और रंग: आपकी जन्म तिथि से।'],
+      chat: ['💬 ज्योतिर्मय से कुछ भी पूछें', 'करियर, शादी या पैसा: अपनी कुंडली से जवाब पाएँ।'],
+      match: ['💞 क्या आपकी जोड़ी सितारों में लिखी है?', 'एक मिनट में 36 में से गुण मिलान देखें।'] } },
+  };
+  const teaserCopy = () => TEASER_COPY[state.lang] || TEASER_COPY.en;
+  // The server's setting, remembered so the first scheduling after a start already has it.
+  function loadTeaserConfig() { try { const value = JSON.parse(window.localStorage.getItem(TEASE_KEY)); return value && value.every_hours ? value : null; } catch (_error) { return null; } }
+  let teaserConfig = loadTeaserConfig();
+  function setTeaserConfig(value) {
+    const next = value && Number.isInteger(value.every_hours) && value.every_hours > 0 ? { every_hours: value.every_hours, from: value.from, to: value.to } : null;
+    if (JSON.stringify(next) === JSON.stringify(teaserConfig)) return;
+    teaserConfig = next;
+    try { window.localStorage.setItem(TEASE_KEY, JSON.stringify(next)); } catch (_error) { /* optional */ }
+    void scheduleNotifications();
+  }
+  // Which reminders fit this user: true ones only ("ready" only when it really is).
+  function teaserChoices() {
+    const items = teaserCopy().items, moon = ownMoon(), choices = [];
+    choices.push(moon ? { page: 'rashi', text: items.rashi.map(line => fill(line, { sign: signName(moon.sign) })) } : { page: 'rashi', text: items.rashiAny });
+    choices.push({ page: 'palm', text: items.palm });
+    choices.push(state.chart ? { page: 'kundli', text: items.kundli } : { page: 'kundli', text: items.kundliNew });
+    choices.push({ page: 'tarot', text: items.tarot });
+    if (numberDob()) choices.push({ page: 'numbers', text: items.numbers });
+    choices.push({ page: 'moon', text: items.moon });
+    choices.push({ page: 'chat', text: items.chat });
+    choices.push({ page: 'relationship', text: items.match });
+    return choices;
+  }
+  function teaserNotifications(now) {
+    const config = teaserConfig;
+    if (!notify.teasers || !config) return [];
+    const choices = teaserChoices(), list = [];
+    const near = (at, time) => { const [h, m] = time.split(':').map(Number); return Math.abs(at.getHours() * 60 + at.getMinutes() - (h * 60 + m)) < 30; };
+    let turn = now.getDate() % choices.length;   // a different first reminder each day
+    for (let offset = 0; offset < TEASE_DAYS && list.length < TEASE_MAX; offset += 1) {
+      for (let hour = config.from; hour <= config.to && list.length < TEASE_MAX; hour += config.every_hours) {
+        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, 0, 0);
+        if (at <= now || near(at, notify.time) || (notify.evening && near(at, notify.eveningTime))) continue;
+        const choice = choices[turn % choices.length]; turn += 1;
+        list.push({ id: TEASE_FIRST_ID + list.length, title: choice.text[0], body: choice.text[1], largeBody: choice.text[1],
+          schedule: { at, allowWhileIdle: true }, extra: { page: choice.page } });
+      }
+    }
+    return list;
   }
   /* ---- The pinned "Shortcuts" notification (Android app): four buttons that open Palm, Rashiphal, Tarot and Match ---- */
   const shortcutsPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Shortcuts) || null;
@@ -918,7 +1002,13 @@
       const shortcutsLabel = el('span'); shortcutsLabel.append(shortcutsBox, document.createTextNode(` ${(toolText().shortcuts || TOOLS_COPY.en.shortcuts).toggle}`));
       shortcuts.appendChild(shortcutsLabel);
     }
+    const teasers = el('label', 'notify-time');
+    const teasersBox = el('input'); teasersBox.type = 'checkbox'; teasersBox.checked = notify.teasers !== false; teasersBox.style.width = 'auto';
+    teasersBox.addEventListener('change', () => { notify.teasers = teasersBox.checked; saveNotify(); void scheduleNotifications(); });
+    const teasersLabel = el('span'); teasersLabel.append(teasersBox, document.createTextNode(` ${teaserCopy().toggle}`));
+    teasers.appendChild(teasersLabel);
     if (notify.on) wrap.append(evening, muhurta);
+    if (notify.on && teaserConfig) wrap.append(teasers);
     if (notify.on && shortcutsPlugin()) wrap.append(shortcuts);
     if (notify.on && notifyInfo && notifyInfo.blocked) wrap.appendChild(el('p', 'notify-next', copy.denied));   // only a problem is shown
     if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
@@ -1036,7 +1126,9 @@
   }
   function openFromNotification(extra) {
     const page = extra && typeof extra.page === 'string' && Object.hasOwn(pages, extra.page) ? extra.page : 'home';
-    showPage(page);
+    // Features with their own start screen are opened the way their Home card opens them.
+    const openers = { palm: openPalm, tarot: openTarot, moon: openMoonSign, numbers: openNumerology, kundli: openJathakam, relationship: () => openTool('relationship') };
+    if (openers[page]) openers[page](); else showPage(page);
     const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
     if (!question) return;
     showPage('chat');
@@ -3179,6 +3271,7 @@
     startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);
+    setTeaserConfig(readiness.teasers);
     rememberLaunchAd(readiness.app_ads && readiness.app_ads.enabled === true ? readiness.app_ads : null);
     if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
     // Ads are off unless the server was configured with an AdSense publisher id.

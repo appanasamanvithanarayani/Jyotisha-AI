@@ -64,7 +64,7 @@ function boot(setup = {}) {
   const fetch = async (url, options) => {
     requests.push({ url, body: options && options.body ? JSON.parse(options.body) : null });
     const reply = body => ({ ok: true, json: async () => body });
-    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null });
+    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null, teasers: setup.teasers || null });
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
@@ -667,7 +667,7 @@ test('daily notifications: the Android app asks for permission at the start, onc
   assert.match(scheduled.find(item => item.id === 7107).title, /week ahead/);   // then a reminder to open the app
   assert.ok(evening.length >= 6 && new Set(evening.map(item => item.title)).size === evening.length);   // a different question each evening
   assert.ok(evening.every(item => item.schedule.at.getHours() === 19 && item.schedule.at.getMinutes() === 30));
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' });
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, shortcuts: true, teasers: true, eveningTime: '19:30' });
   // Tapping an evening question opens Jyotirmaya AstroChat and asks it.
   const question = evening.find(item => item.extra.ask);
   app.context.__tap({ notification: { extra: question.extra } });
@@ -1434,4 +1434,33 @@ test('when switched on, each later opening of the app shows the loading screen, 
   await settle();
   assert.equal(fresh.element('welcome-screen').hidden, true);                    // not shown when the last start had it off
   assert.ok(later);
+});
+
+test('reading reminders: every hour in the day, a different true teaser each time, and a tap opens that feature', async () => {
+  const calls = { schedule: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') LocalNotifications.tap = fn; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 9, to: 21 } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
+  assert.ok(teasers.length >= 60 && teasers.length <= 91, String(teasers.length));      // about 13 a day for a week
+  assert.ok(teasers.every(item => item.schedule.at.getMinutes() === 0 && item.schedule.at.getHours() >= 9 && item.schedule.at.getHours() <= 21));
+  assert.ok(teasers.every((item, i) => i === 0 || item.title !== teasers[i - 1].title));  // never the same one twice in a row
+  assert.ok(teasers.some(item => item.title === '📜 Your Jathakam is 30 seconds away'));  // no chart yet: it does not say "ready"
+  assert.ok(!teasers.some(item => item.title === '📜 Your Jathakam is ready'));
+  const palm = teasers.find(item => item.extra.page === 'palm');
+  LocalNotifications.tap({ notification: { extra: palm.extra } });
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  // Switched off in the app: none are scheduled.
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, teasers: false }));
+  calls.schedule.length = 0;
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 9, to: 21 } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  assert.ok(calls.schedule.length && !calls.schedule.at(-1).some(item => item.id >= 7300 && item.id < 7490));
 });
