@@ -13,6 +13,13 @@
       "review": "source"
     },
     "ui": {
+      "aligning": "Aligning your stars…",
+      "mayContainAds": "This may contain ads",
+      "aboutYou": "Tell us about you",
+      "aboutYouIntro": "For your personal readings.",
+      "yourName": "Your name",
+      "tobOptional": "Time of birth (optional)",
+      "skip": "Skip for now",
       "welcome": "Welcome to Jyotirmaya",
       "welcomeIntro": "Explore your calendar and chart, one step at a time.",
       "getStarted": "Get started",

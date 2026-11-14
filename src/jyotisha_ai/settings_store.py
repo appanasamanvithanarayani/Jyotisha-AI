@@ -49,6 +49,7 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_ADMOB_REWARDED_ID", "Android app ads", "Rewarded ad unit ID", "From AdMob. Leave empty to use Google's test rewarded ad.", "pattern", "", pattern=UNIT_ID, example="ca-app-pub-1234567890123456/1234567890"),
     Setting("JYOTISHA_CHAT_FREE_QUESTIONS", "Android app ads", "Free AI questions per day", "Per phone, before an ad is needed.", "int", "10", minimum=1, maximum=100),
     Setting("JYOTISHA_CHAT_BONUS_QUESTIONS", "Android app ads", "Extra questions per ad watched", "", "int", "5", minimum=1, maximum=100),
+    Setting("JYOTISHA_ONBOARDING_ADS", "Android app ads", "Full-screen ads in the welcome steps", "One full-screen ad after the opening screen and one after the name and birth-date step (first start only).", "bool", "1"),
     Setting("JYOTISHA_INTERSTITIAL", "Android app ads", "Occasional full-screen ad between screens", "At most one per few screen switches, never in the first minute.", "bool", "0"),
     Setting("JYOTISHA_ADMOB_INTERSTITIAL_ID", "Android app ads", "Interstitial ad unit ID", "From AdMob. Leave empty to use Google's test interstitial.", "pattern", "", pattern=UNIT_ID, example="ca-app-pub-1234567890123456/1234567890"),
     # ---- Ads on the website

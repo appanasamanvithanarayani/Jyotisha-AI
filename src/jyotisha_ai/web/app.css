@@ -825,3 +825,100 @@ main,.app-page,.card{min-width:0}
 .brand-mark,.welcome-orb{background:#1d1150;overflow:hidden;padding:0}
 .brand-mark img,.welcome-orb img{width:100%;height:100%;display:block;border-radius:inherit}
 .welcome-orb{border-radius:28px;box-shadow:0 0 0 6px rgba(242,193,78,.18),0 0 50px rgba(242,193,78,.45)}
+
+/* ================= Mystic look (default): deep plum, pink glow, gold ornaments ================= */
+:root[data-skin="mystic"]{color-scheme:dark;
+  --surface:#22102e;--heading:#fbeefa;--ink:#f1e4f0;--muted:#c3a7c6;--line:#4a2650;--cream:#2b1438;--cream2:#331a40;--card:#22102e;
+  --page-a:#12061a;--page-b:#1d0a27;--nav-bg:rgba(30,12,40,.96);--nav-line:#5a2c5e;--nav-shadow:0 10px 30px rgba(0,0,0,.55);
+  --gold:#e6c27a;--gold2:#c99a52;--orn:#b98a5c;
+  --accent-a:#ff5ec4;--accent-b:#c42aa6;--accent-text:#fff;--accent-soft:#3a1640}
+:root[data-skin="mystic"] body{color:var(--ink);
+  background:radial-gradient(700px 520px at 50% -120px,rgba(214,70,170,.32),transparent 70%),
+    radial-gradient(520px 420px at 110% 40%,rgba(120,40,140,.30),transparent 70%),
+    linear-gradient(180deg,#160820 0%,#1d0a27 45%,#12061a 100%) fixed}
+:root[data-skin="mystic"] .sky i{background:#fff;opacity:.5}
+/* Gold ornamental frame around the whole screen, with flourishes in the corners. */
+:root[data-skin="mystic"] body::after{content:"";position:fixed;inset:6px;border:1px solid rgba(201,154,82,.45);border-radius:18px;pointer-events:none;z-index:60;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><path d='M2 40C2 18 18 2 40 2' fill='none' stroke='%23c99a52' stroke-width='1.6'/><path d='M8 34C10 20 20 10 34 8' fill='none' stroke='%23c99a52' stroke-width='1'/><circle cx='12' cy='12' r='3' fill='%23e6c27a'/><path d='M4 52c8-2 12-8 14-16M52 4c-2 8-8 12-16 14' fill='none' stroke='%23c99a52' stroke-width='1'/></svg>") top left/54px 54px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g transform='translate(60 0) scale(-1 1)'><path d='M2 40C2 18 18 2 40 2' fill='none' stroke='%23c99a52' stroke-width='1.6'/><path d='M8 34C10 20 20 10 34 8' fill='none' stroke='%23c99a52' stroke-width='1'/><circle cx='12' cy='12' r='3' fill='%23e6c27a'/><path d='M4 52c8-2 12-8 14-16M52 4c-2 8-8 12-16 14' fill='none' stroke='%23c99a52' stroke-width='1'/></g></svg>") top right/54px 54px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z' fill='%23e6c27a'/></svg>") top center/14px 14px no-repeat}
+:root[data-skin="mystic"] .masthead{background:rgba(22,8,32,.92);border-bottom:1px solid rgba(201,154,82,.30);box-shadow:0 6px 22px rgba(0,0,0,.45)}
+:root[data-skin="mystic"] .brand span,:root[data-skin="mystic"] .brand{color:#fbeefa}
+:root[data-skin="mystic"] .brand-accent{background:linear-gradient(90deg,#ff8ad6,#e6c27a);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-skin="mystic"] .theme-btn,:root[data-skin="mystic"] .language-switch{background:#2b1438;border-color:#5a2c5e;color:var(--ink)}
+:root[data-skin="mystic"] .language-switch option{background:#2b1438;color:var(--ink)}
+:root[data-skin="mystic"] .lang-wrap::after{color:#ff8ad6}
+:root[data-skin="mystic"] .card,:root[data-skin="mystic"] .option-card,:root[data-skin="mystic"] .more-section details,:root[data-skin="mystic"] .fest-row,
+:root[data-skin="mystic"] .dosha-card,:root[data-skin="mystic"] .manglik-row,:root[data-skin="mystic"] .rashi-card,:root[data-skin="mystic"] .theme-panel{
+  background:linear-gradient(165deg,rgba(52,20,66,.92),rgba(30,11,42,.94));border:1px solid rgba(214,90,180,.35);color:var(--ink);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+:root[data-skin="mystic"] input,:root[data-skin="mystic"] select,:root[data-skin="mystic"] textarea{background:#2b1438;color:var(--ink);border-color:#5a2c5e}
+:root[data-skin="mystic"] h1,:root[data-skin="mystic"] h2,:root[data-skin="mystic"] h3,:root[data-skin="mystic"] .page-title{color:var(--heading);font-family:Georgia,'Noto Serif','Times New Roman',serif;letter-spacing:.2px}
+:root[data-skin="mystic"] .eyebrow,:root[data-skin="mystic"] .home-h{color:#f2d6f0;letter-spacing:.18em;text-transform:uppercase;font-size:.78rem}
+:root[data-skin="mystic"] .home-h::before,:root[data-skin="mystic"] .more-section h2::before{width:8px;height:8px;border-radius:2px;transform:rotate(45deg);background:#ff5ec4}
+:root[data-skin="mystic"] .home-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,154,82,.5),transparent)}
+/* Today's Panchang, the AI card and the Jathakam card: deep glowing panels instead of pastel. */
+:root[data-skin="mystic"] .hero-card{background:radial-gradient(320px 220px at 100% 0,rgba(255,94,196,.28),transparent 70%),linear-gradient(165deg,#3a1648,#1f0b2b);border:1px solid rgba(214,90,180,.4);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+:root[data-skin="mystic"] .hero-card::before{color:rgba(230,194,122,.08)}
+:root[data-skin="mystic"] .hero-card .eyebrow{color:#ff9ad8}:root[data-skin="mystic"] .hero-card .hero-sub{color:#e6c27a}
+:root[data-skin="mystic"] .hero-card .hero-date,:root[data-skin="mystic"] .hero-card .hero-place{color:#fbeefa}
+:root[data-skin="mystic"] .hero-card .sun-tile,:root[data-skin="mystic"] .hero-card .key-chip,:root[data-skin="mystic"] .hero-card .moon-icon,
+:root[data-skin="mystic"] .hero-card .chip-btn,:root[data-skin="mystic"] .hero-card .city-panel{background:rgba(43,20,56,.85);border-color:#5a2c5e;color:var(--ink);box-shadow:none}
+:root[data-skin="mystic"] .hero-card .sun-tile small,:root[data-skin="mystic"] .hero-card .key-chip small{color:#ff9ad8}
+:root[data-skin="mystic"] .hero-card .chip-btn{color:#ffb3e3}
+:root[data-skin="mystic"] .ai-card{background:radial-gradient(260px 200px at 100% 0,rgba(255,94,196,.35),transparent 70%),linear-gradient(160deg,#4a1a58,#2a0f36);border:1px solid rgba(214,90,180,.45)}
+:root[data-skin="mystic"] .ai-head h2{color:#fff}:root[data-skin="mystic"] .ai-head .section-intro{color:#e3c3e6}
+:root[data-skin="mystic"] .ai-chip,:root[data-skin="mystic"] .ai-today{background:rgba(255,255,255,.06);color:#f6e3f4;border-color:rgba(214,90,180,.35)}
+:root[data-skin="mystic"] .ai-today b{color:#ff9ad8}
+:root[data-skin="mystic"] .jk-home{background:radial-gradient(240px 180px at 100% 0,rgba(230,194,122,.18),transparent 70%),linear-gradient(165deg,#34143f,#1f0b2b);border:1px solid rgba(201,154,82,.4)}
+:root[data-skin="mystic"] .jk-head h2{color:#fbeefa}:root[data-skin="mystic"] .jk-head p{color:#d6b6d8}
+:root[data-skin="mystic"] .jk-stat,:root[data-skin="mystic"] .jk-icon{background:rgba(43,20,56,.85);border-color:#5a2c5e}
+:root[data-skin="mystic"] .jk-stat small{color:#e6c27a}
+/* Primary buttons: the glowing pink pill. */
+:root[data-skin="mystic"] .btn,:root[data-skin="mystic"] button[type="submit"],:root[data-skin="mystic"] .onboarding-step button,:root[data-skin="mystic"] .ai-cta,
+:root[data-skin="mystic"] .rashi-ask,:root[data-skin="mystic"] .theme-done{background:linear-gradient(90deg,#ff5ec4,#c42aa6);color:#fff;border:0;box-shadow:0 0 0 1px rgba(255,140,214,.4),0 8px 24px rgba(255,94,196,.35)}
+:root[data-skin="mystic"] .bottom-nav{background:var(--nav-bg);border-color:var(--nav-line)}
+:root[data-skin="mystic"] .bottom-nav a{color:#c3a7c6}
+:root[data-skin="mystic"] .bottom-nav a.active{color:#fff;background:linear-gradient(135deg,#ff5ec4,#c42aa6);box-shadow:0 4px 16px rgba(255,94,196,.45)}
+:root[data-skin="mystic"] .chat-log{background:rgba(20,8,28,.7);border-color:#4a2650}
+:root[data-skin="mystic"] .chat-message.assistant{background:#2a1236;color:var(--ink);border:1px solid rgba(214,90,180,.35)}
+:root[data-skin="mystic"] .chat-message.user{background:linear-gradient(135deg,#ff5ec4,#c42aa6);color:#fff}
+:root[data-skin="mystic"] .prompt{background:#2a1236;color:var(--ink);border-color:#5a2c5e}
+:root[data-skin="mystic"] .fest-date{background:#2b1438;border-color:#5a2c5e;color:var(--ink)}
+:root[data-skin="mystic"] .fest-date small{color:#ff9ad8}
+:root[data-skin="mystic"] .calendar-day{background:#26102f;border-color:#40204a;color:var(--ink)}
+:root[data-skin="mystic"] .calendar-day.selected,:root[data-skin="mystic"] .calendar-day.selected[data-imp]{background:linear-gradient(145deg,#ff5ec4,#c42aa6);color:#fff}
+:root[data-skin="mystic"] .month-controls button,:root[data-skin="mystic"] .day-bar button{background:#2b1438;border-color:#5a2c5e;color:#ff9ad8}
+:root[data-skin="mystic"] .rashi-tile{background:#26102f;border-color:#4a2650;color:var(--ink)}
+:root[data-skin="mystic"] .rashi-tile.on{border-color:#ff5ec4;box-shadow:0 0 0 2px rgba(255,94,196,.35),0 0 24px rgba(255,94,196,.3)}
+:root[data-skin="mystic"] .rashi-reading{background:linear-gradient(165deg,#34143f,#1f0b2b);border-color:rgba(214,90,180,.4)}
+:root[data-skin="mystic"] .lucky-chip,:root[data-skin="mystic"] .transit-card,:root[data-skin="mystic"] .rashi-jump{background:#2a1236;border-color:#5a2c5e;color:var(--ink)}
+:root[data-skin="mystic"] .d1-cell{background:#26102f;border-color:#40204a}
+:root[data-skin="mystic"] .d1-center{background:#2f1336;border-color:#6a3a5e}
+:root[data-skin="mystic"] .d1-sign,:root[data-skin="mystic"] .d1-center strong{color:#e6c27a}
+:root[data-skin="mystic"] .chart-frame{background:#1d0a27;border-color:#4a2650}
+:root[data-skin="mystic"] .seg button.on{background:linear-gradient(135deg,#ff5ec4,#c42aa6);color:#fff}
+
+/* ---------- First run: loading screen, the name + birth-date step (all looks) ---------- */
+.welcome-screen{background:radial-gradient(520px 380px at 50% 8%,rgba(214,70,170,.35),transparent 70%),radial-gradient(600px 300px at 50% 100%,rgba(255,120,190,.22),transparent 70%),
+  linear-gradient(180deg,#2a0d33 0%,#1d0a27 55%,#12061a 100%)}
+.welcome-screen::after{content:"";position:absolute;left:50%;bottom:-40px;width:260px;height:260px;transform:translateX(-50%);pointer-events:none;opacity:.9;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><radialGradient id='m' cx='.4' cy='.4' r='.7'><stop offset='0' stop-color='%23fff6e0'/><stop offset='1' stop-color='%23e6c27a'/></radialGradient></defs><path d='M130 30a76 76 0 1 0 0 140a62 62 0 1 1 0-140z' fill='url(%23m)' opacity='.95'/><g fill='none' stroke='%23c99a52' stroke-width='1.4' opacity='.8'><path d='M70 60c10 6 14 14 14 24M60 90c12 2 18 8 22 18M66 124c10-2 18 2 24 10'/></g><g fill='%23ff8ad6'><circle cx='40' cy='170' r='9'/><circle cx='164' cy='176' r='8'/></g></svg>") center/contain no-repeat}
+.welcome-screen{position:relative;overflow:hidden}
+.welcome-screen>*{position:relative;z-index:1}
+.splash-step{display:flex;flex-direction:column;align-items:center;min-height:52vh;justify-content:flex-start}
+.splash-step h1{font-family:Georgia,'Noto Serif',serif;font-size:2rem;margin-top:4px}
+.splash-tag{color:#f0d9ee;margin:0 0 18px}
+.splash-load{width:100%;max-width:420px;margin-top:auto;padding-top:28px}
+.splash-row{display:flex;justify-content:space-between;font-size:.9rem;color:#f0d9ee;margin-bottom:8px}
+.splash-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+.splash-bar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#ff5ec4,#c42aa6);box-shadow:0 0 12px rgba(255,94,196,.7);transition:width .07s linear}
+.splash-ads{display:block;margin-top:10px;color:#cdb2cf;font-size:.78rem}
+.profile-intro{color:#e3c8e6;margin:0 0 6px}
+.onb-label{display:block;text-align:start;margin:12px 0 6px;color:#dccffb;font-weight:700}
+#step-profile input{width:100%}
+#step-profile #welcome-name{margin-top:10px}
+.onb-skip{display:block;margin:10px auto 0;background:none!important;box-shadow:none!important;color:#f0c8ea!important;font-weight:700;min-height:0!important}
+.onboarding-step button:not(.onb-skip){background:linear-gradient(90deg,#ff5ec4,#c42aa6);color:#fff;box-shadow:0 0 0 1px rgba(255,140,214,.4),0 8px 24px rgba(255,94,196,.35)}
+.welcome-screen::after{bottom:-120px;width:210px;height:210px;opacity:.45}
+.splash-load,.onb-skip{position:relative;z-index:2}

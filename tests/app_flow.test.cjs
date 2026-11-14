@@ -87,8 +87,9 @@ async function enter(app, language) {
   app.element('welcome-next').listeners.click();
   app.element('language-next').listeners.click();
   app.element('welcome-city').value = 'Bengaluru, IN';
-  app.element('welcome-form').listeners.submit({ preventDefault() {} });
-  await settle();
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });   // city -> the name and birth-date step
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
 }
 
 test('after onboarding Home shows the month calendar and the full day Panchang in the chosen language', async () => {
@@ -273,7 +274,9 @@ test('location is read only on request or when the browser already granted it, a
   assert.equal(place.calls, 1);
   assert.equal(app.element('welcome-city').value, 'Mysuru, IN');
   await new Promise(resolve => setTimeout(resolve, 800));                 // the city came from the location: it goes on by itself
-  await settle();
+  assert.equal(app.element('step-profile').hidden, false);                // to the name and birth-date step
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
   assert.deepEqual(storage.read(), { lang: 'en', city: 'Mysuru, IN', useLocation: true });
   assert.equal(app.element('welcome-screen').hidden, true);
 
@@ -455,24 +458,27 @@ test('without a Kundli, Home nudges the user to make one and the personal cards 
   assert.equal(app.element('home-today').hidden, true);
 });
 
-test('appearance: light by default; dark mode and an accent colour can be chosen and are remembered', async () => {
+test('appearance: the mystic plum look by default; light/dark and an accent colour can be chosen and are remembered', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   const app = boot({ storage });
   await settle();
   const root = app.context.document.documentElement;
-  assert.equal(root.getAttribute('data-mode'), 'light');
-  assert.equal(root.getAttribute('data-accent'), 'saffron');
+  assert.equal(root.getAttribute('data-skin'), 'mystic');               // the default for everyone
+  assert.equal(root.getAttribute('data-mode'), 'dark');
   app.element('theme-panel').hidden = true;           // as in the page markup
   app.element('theme-btn').listeners.click();
   const panel = app.element('theme-panel');
   assert.equal(panel.hidden, false);
-  const [title, , modes, , swatches] = panel.children;
+  const [title, , modes] = panel.children;
   assert.match(title.textContent, /Appearance/);
-  modes.children[1].listeners.click();                 // Dark
-  assert.equal(root.getAttribute('data-mode'), 'dark');
-  app.element('theme-panel').children[4].children[2].listeners.click();   // Rose
+  assert.deepEqual(modes.children.map(b => b.textContent), ['🔮 Mystic', '☀️ Light', '🌙 Dark', '📱 Auto']);
+  modes.children[2].listeners.click();                 // Dark
+  assert.equal(root.getAttribute('data-mode'), 'dark'); assert.equal(root.getAttribute('data-skin'), 'plain');
+  app.element('theme-panel').children[4].children[2].listeners.click();   // Rose (colours show outside the mystic look)
   assert.equal(root.getAttribute('data-accent'), 'rose');
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v1')), { mode: 'dark', accent: 'rose' });
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.appearance.v2')), { mode: 'dark', accent: 'rose' });
+  app.element('theme-panel').children[2].children[1].listeners.click();   // Light
+  assert.equal(root.getAttribute('data-mode'), 'light');
 });
 
 test('daily notifications: the Android app asks for permission at the start, once, then schedules a week of morning notifications', async () => {
@@ -744,6 +750,41 @@ function fakeAdMob() {
   } };
 }
 
+test('first run like Palm AI: loading screen, a full-screen ad, language, city, name + birth date, another ad, then Home', async () => {
+  const calls = [];
+  const listeners = {};
+  const AdMob = {
+    initialize: async () => calls.push('initialize'), requestConsentInfo: async () => ({}), showConsentForm: async () => {},
+    addListener: async (name, fn) => { (listeners[name] = listeners[name] || []).push(fn); return { remove: async () => { listeners[name] = (listeners[name] || []).filter(f => f !== fn); } }; },
+    prepareInterstitial: async options => calls.push(['prepare', options.adId]),
+    showInterstitial: async () => { calls.push('showInterstitial'); setTimeout(() => (listeners.interstitialAdDismissed || []).forEach(fn => fn()), 5); },
+    showBanner: async () => calls.push('showBanner'),
+  };
+  const storage = memoryStorage();
+  const app = boot({ storage, capacitor: { Plugins: { AdMob } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', onboarding_interstitial_id: 'ca-app-pub-3940256099942544/1033173712', testing: true } });
+  assert.equal(app.element('step-welcome').hidden, false);                 // the loading screen
+  await new Promise(resolve => setTimeout(resolve, 2400));                 // it fills up and goes on by itself
+  await settle();
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, 1);     // ad no. 1
+  assert.equal(app.element('step-language').hidden, false);
+  app.element('language-next').listeners.click();
+  app.element('welcome-city').value = 'Hyderabad, IN';
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  assert.equal(app.element('step-profile').hidden, false);
+  app.element('welcome-name').value = 'Samanvitha';
+  app.element('welcome-dob').value = '1994-03-18';
+  app.element('welcome-tob').value = '07:45';
+  app.element('profile-next').listeners.click();
+  await new Promise(resolve => setTimeout(resolve, 60)); await settle();
+  assert.equal(calls.filter(c => c === 'showInterstitial').length, 2);     // ad no. 2
+  assert.equal(app.element('welcome-screen').hidden, true);                // Home
+  assert.ok(calls.includes('showBanner'));
+  assert.equal(storage.read().name, 'Samanvitha'); assert.equal(storage.read().dob, '1994-03-18');
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1994-03-18', pob: 'Hyderabad, IN', tob: '07:45' });
+  assert.ok(app.requests.some(r => r.url === '/api/birth-chart'));          // with a time, the Kundli is made right away
+});
+
 test('no ad on the welcome screens: the banner starts only after the first-run steps are done', async () => {
   const ads = fakeAdMob();
   const app = boot({ storage: memoryStorage(), capacitor: { Plugins: { AdMob: ads.plugin } },
@@ -754,7 +795,8 @@ test('no ad on the welcome screens: the banner starts only after the first-run s
   app.element('language-next').listeners.click();
   app.element('welcome-city').value = 'Hyderabad, IN';
   app.element('welcome-form').listeners.submit({ preventDefault() {} });
-  await settle();
+  app.element('profile-skip').listeners.click();
+  await settle(); await settle();
   assert.ok(ads.calls.some(call => call[0] === 'showBanner'));                    // then the app shows it
 });
 
