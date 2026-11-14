@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, push, settings_store as store
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, moon_sign, push, settings_store as store
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -582,6 +582,21 @@ def nudges_status(payload: object) -> dict:
     return {"status": "ok", "batches": daily_nudges.batches(first, days, language)}
 
 
+def moon_sign_status(payload: object) -> dict:
+    """The Moon Sign page's five sections for one sign (1..12) and language: shared by everyone, no personal data."""
+    if not isinstance(payload, dict):
+        raise ValueError("JSON object required")
+    language, sign = payload.get("language"), payload.get("sign")
+    if language not in assistant.LANGUAGES:
+        raise ValueError("unsupported language")
+    if not isinstance(sign, int) or isinstance(sign, bool) or not 1 <= sign <= 12:
+        raise ValueError("sign must be 1..12")
+    if not moon_sign.enabled():
+        return {"status": "off", "readings": None}
+    found = moon_sign.sections_for(sign, language)
+    return {"status": "ok" if found else "unavailable", "readings": found}
+
+
 def rashiphal_status(payload: object) -> dict:
     """The AI-written daily Rashiphal paragraphs for one date and language (shared by everyone; no personal data)."""
     if not isinstance(payload, dict):
@@ -995,7 +1010,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/moon-sign") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1041,6 +1056,8 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = nudges_status(payload)
             elif path == "/api/rashiphal":
                 result = rashiphal_status(payload)
+            elif path == "/api/moon-sign":
+                result = moon_sign_status(payload)
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:

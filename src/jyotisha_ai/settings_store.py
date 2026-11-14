@@ -60,6 +60,7 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_ASSISTANT_MODEL", "AI chat", "Claude model", "Used only when the provider is Anthropic.", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", example="claude-haiku-5-5"),
     Setting("JYOTISHA_ASK_DAILY_LIMIT", "AI chat", "Daily AI questions, whole site", "Hard cap on AI questions per day across everyone. Protects your bill.", "int", "1000", minimum=0, maximum=1000000),
     Setting("JYOTISHA_AI_NUDGES", "AI chat", "AI-written daily notifications", "The AI writes fresh notification text every day for each language. Off uses the built-in messages only.", "bool", "1"),
+    Setting("JYOTISHA_AI_MOON_SIGN", "AI chat", "AI-written Moon Sign page", "The AI writes the Moon Sign page (5 sections) once per sign and language; it is kept and shared. Off shows a short built-in description.", "bool", "1"),
     Setting("JYOTISHA_AI_RASHIPHAL", "AI chat", "AI-written daily Rashiphal", "The AI writes each day’s Rashiphal paragraph for the 12 signs (per language), based on the day’s planet positions. Off shows the built-in reading.", "bool", "1"),
     Setting("JYOTISHA_NUDGE_MODEL", "AI chat", "Notification model", "Model that writes the daily notifications (for the provider above). Empty uses the same model as the chat; a small, cheap model is enough.", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", example="gemini-3.5-flash-lite"),
     Setting("JYOTISHA_ASK_PER_VISITOR_DAY", "AI chat", "Daily AI questions per visitor", "Per network address, per day.", "int", "60", minimum=1, maximum=10000),

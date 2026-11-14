@@ -972,3 +972,31 @@ main,.app-page,.card{min-width:0}
 :root[data-skin="mystic"] .prompts .prompt{background:linear-gradient(165deg,#2e1238,#1f0b2b);border:1px solid rgba(214,90,180,.4);color:var(--ink)}
 :root[data-skin="mystic"] .prompts .prompt-main{background:linear-gradient(165deg,#ff5ec4,#c42aa6);color:#fff}
 #chat-send{border-radius:999px}
+
+/* ---------- Moon Sign page ---------- */
+.moon-page{padding:6px 0 20px;text-align:center}
+.moon-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 2px 0}
+.moon-title{margin:0;font-family:Georgia,'Noto Serif',serif;font-size:1.35rem;color:var(--heading)}
+.moon-tools{display:flex;gap:6px}
+.moon-tools .chip-btn{text-decoration:none}
+.moon-art{width:min(300px,82%);aspect-ratio:1/1;margin:6px auto 0;border-radius:50%;overflow:hidden;
+  -webkit-mask-image:radial-gradient(circle,#000 56%,transparent 71%);mask-image:radial-gradient(circle,#000 56%,transparent 71%)}
+.moon-art svg{width:100%;height:100%;display:block;transform:scale(1.35)}
+.moon-sign{margin:2px 0 4px;font-family:Georgia,'Noto Serif',serif;font-size:1.7rem;color:var(--heading);letter-spacing:.04em}
+.moon-star{margin:0 0 6px;color:var(--muted);font-size:.9rem}
+.moon-approx{margin:0 auto 8px;max-width:420px;font-size:.8rem;color:#ffb3e3}
+.moon-need{margin:10px auto;max-width:420px;color:var(--ink)}
+.moon-add{margin:4px auto 10px;display:inline-flex}
+.moon-sec{display:grid;grid-template-columns:44px 1fr;gap:4px 12px;text-align:start;margin:12px 0;padding:14px;border-radius:20px;
+  background:linear-gradient(165deg,rgba(52,20,66,.92),rgba(30,11,42,.94));border:1px solid rgba(214,90,180,.35);box-shadow:0 10px 26px rgba(0,0,0,.3)}
+.moon-sec .moon-icon{grid-row:1/3;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:1.3rem;background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(255,140,214,.4)}
+.moon-sec h4{margin:2px 0 0;font-size:1rem;color:var(--heading)}
+.moon-sec p{margin:0;line-height:1.6;color:var(--ink)}
+.moon-sec.loading p{opacity:.6;font-style:italic}
+:root:not([data-skin="mystic"]) .moon-sec{background:var(--surface);border-color:var(--line)}
+.moon-pick-h{margin:22px 2px 10px;justify-content:flex-start}
+.moon-pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.moon-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:700}
+.moon-tile span{font-size:1.5rem}.moon-tile small{font-size:.72rem}
+.moon-tile i{font-style:normal;font-size:.6rem;color:#ffb3e3}
+.moon-tile.on{border-color:#ff5ec4;box-shadow:0 0 0 2px rgba(255,94,196,.35),0 0 18px rgba(255,94,196,.3)}

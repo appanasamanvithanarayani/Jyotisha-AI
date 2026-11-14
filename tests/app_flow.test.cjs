@@ -67,6 +67,7 @@ function boot(setup = {}) {
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
+    if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -355,6 +356,52 @@ test('Rashiphal before a sign is picked shows only the symbol grid and a hint, n
   assert.equal(app.element('rashi-reading').children[0].className, 'rashi-hint');
 });
 
+test('Moon Sign page: your Vedic Moon sign and nakshatra, five AI sections, share, and any sign to explore', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const sections = { emotional: 'Calm and steady feelings.', love: 'Loyal in love.', career: 'Patient at work.', wellbeing: 'A morning walk.', remedy: 'Light a lamp on Fridays.' };
+  const app = boot({ storage, birth: syntheticBirth, moonSign: { status: 'ok', readings: sections } });
+  await settle(); await settle();
+  const card = homeCard(app, 'Moon sign');
+  assert.match(card.children[2].textContent, /^Taurus · /);                  // the chart's Moon is in Vrishabha
+  card.listeners.click();
+  await settle(); await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-moon').hidden, false);
+  const page = app.element('moonsign').children;
+  assert.ok(page[1].innerHTML.startsWith('<svg'));                             // the big moon
+  assert.equal(page[2].textContent, '✦ Taurus ✦');
+  assert.match(page[3].textContent, /^Nakshatra: /);
+  const secs = page.filter(item => item.className === 'moon-sec');
+  assert.deepEqual(secs.map(sec => sec.children[1].textContent), ['Emotional nature', 'Love & family', 'Work & money', 'Wellbeing', 'Simple remedy']);
+  assert.equal(secs[4].children[2].textContent, 'Light a lamp on Fridays.');
+  assert.ok(app.requests.some(r => r.url === '/api/moon-sign' && r.body.sign === 2 && r.body.language === 'en'));
+  const pick = page.find(item => item.className === 'moon-pick').children;
+  assert.equal(pick.length, 12); assert.match(pick[1].children[2].textContent, /Yours/);
+  pick[5].listeners.click();                                                  // explore Virgo
+  await settle();
+  assert.equal(app.element('moonsign').children[2].textContent, '✦ Virgo ✦');
+  assert.ok(app.requests.some(r => r.url === '/api/moon-sign' && r.body.sign === 6));
+});
+
+test('Moon Sign without a Kundli: only a birth date gives an approximate sign; nothing gives a prompt; AI off shows the built-in line', async () => {
+  const none = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  homeCard(none, 'Moon sign').listeners.click();
+  await settle();
+  assert.match(none.element('moonsign').children[2].textContent, /Add your date of birth/);
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false, dob: '1995-08-15' }), birth: syntheticBirth });
+  await settle();
+  homeCard(app, 'Moon sign').listeners.click();
+  await settle(); await settle();
+  const page = app.element('moonsign').children;
+  assert.equal(page[2].textContent, '✦ Taurus ✦');
+  assert.match(page.find(item => item.className === 'moon-approx').textContent, /Approximate/);
+  assert.ok(app.requests.some(r => r.url === '/api/birth-chart' && r.body.tob === '12:00' && r.body.dob === '1995-08-15'));
+  const secs = page.filter(item => item.className === 'moon-sec');
+  assert.equal(secs.length, 1);                                               // AI off: just the built-in description
+  assert.match(secs[0].children[2].textContent, /Steady and loyal/);
+});
+
 test('without saved details nothing is calculated, and corrupt saved details are ignored', async () => {
   for (const raw of [null, '{"dob":"15-08-1995","pob":"x","tob":"6:30"}', 'not json']) {
     const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
@@ -424,7 +471,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 3);                  // three sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.

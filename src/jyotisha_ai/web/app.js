@@ -48,7 +48,7 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -59,6 +59,7 @@
   pages.relationship.appendChild($('relationship'));
   pages.chat.appendChild($('chat'));
   pages.rashi.appendChild($('rashi'));
+  pages.moon.appendChild($('moonsign'));
   function showPage(name) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
@@ -163,6 +164,16 @@
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
+      moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
+        approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
+        pick: 'Explore any sign', loading: 'Reading the moon…', share: 'Share', report: 'Report', yours: 'Yours',
+        sections: { emotional: 'Emotional nature', love: 'Love & family', career: 'Work & money', wellbeing: 'Wellbeing', remedy: 'Simple remedy' },
+        nature: ['Bold and quick to act, you feel things honestly and need room to be yourself.', 'Steady and loyal, you love comfort and beauty and stay calm under pressure.',
+          'Curious and quick-minded, you love conversation and need variety to feel alive.', 'Caring and sensitive, family means everything to you and your intuition is strong.',
+          'Warm-hearted and generous, you shine when you lead and when your effort is seen.', 'Thoughtful and careful, you love to help and find calm in order and small routines.',
+          'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
+          'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
+          'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
       sections: { chart: 'Your chart', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
@@ -204,6 +215,16 @@
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
+      moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
+        approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
+        pick: 'ఏ రాశినైనా చూడండి', loading: 'చంద్రుడిని చదువుతున్నాం…', share: 'షేర్', report: 'రిపోర్ట్', yours: 'మీది',
+        sections: { emotional: 'భావోద్వేగ స్వభావం', love: 'ప్రేమ & కుటుంబం', career: 'ఉద్యోగం & డబ్బు', wellbeing: 'ఆరోగ్యం & ప్రశాంతత', remedy: 'సులభ పరిహారం' },
+        nature: ['ధైర్యంగా, వేగంగా ముందడుగు వేస్తారు; మనసులో ఉన్నది నిజాయితీగా చెప్తారు, స్వేచ్ఛ కావాలి.', 'స్థిరంగా, నమ్మకంగా ఉంటారు; సౌకర్యం, అందం ఇష్టం, ఒత్తిడిలోనూ ప్రశాంతంగా ఉంటారు.',
+          'ఆసక్తి, చురుకైన బుద్ధి; మాట్లాడటం ఇష్టం, కొత్తదనం కావాలి.', 'ప్రేమగా, సున్నితంగా ఉంటారు; కుటుంబమే సర్వస్వం, అంతర్ దృష్టి బలంగా ఉంటుంది.',
+          'మంచి మనసు, దాతృత్వం; నాయకత్వంలో, మీ కృషి గుర్తింపు పొందినప్పుడు వెలుగుతారు.', 'ఆలోచనాపరులు, జాగ్రత్తపరులు; సహాయం చేయడం ఇష్టం, క్రమశిక్షణలో ప్రశాంతత పొందుతారు.',
+          'సౌమ్యంగా, న్యాయంగా ఉంటారు; సామరస్యం కోరుకుంటారు, మంచి సాంగత్యంలో ఆనందంగా ఉంటారు.', 'లోతైన భావాలు, గోప్యత; గాఢంగా ప్రేమిస్తారు, విధేయులు, సంకల్ప బలం ఎక్కువ.',
+          'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
+          'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
       sections: { chart: 'మీ జాతకం', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
@@ -245,6 +266,16 @@
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
+      moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
+        approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
+        pick: 'कोई भी राशि देखें', loading: 'चंद्रमा पढ़ रहे हैं…', share: 'शेयर', report: 'रिपोर्ट', yours: 'आपकी',
+        sections: { emotional: 'भावनात्मक स्वभाव', love: 'प्रेम और परिवार', career: 'काम और पैसा', wellbeing: 'सेहत और सुकून', remedy: 'सरल उपाय' },
+        nature: ['साहसी और तुरंत कदम उठाने वाले; मन की बात ईमानदारी से कहते हैं, आज़ादी चाहिए।', 'स्थिर और वफ़ादार; आराम और सुंदरता पसंद, दबाव में भी शांत।',
+          'जिज्ञासु और तेज़ दिमाग; बातचीत पसंद, नयापन चाहिए।', 'देखभाल करने वाले और संवेदनशील; परिवार सब कुछ है, अंतर्ज्ञान मज़बूत।',
+          'उदार और गर्मजोशी भरे; नेतृत्व में और मेहनत की पहचान मिलने पर चमकते हैं।', 'विचारशील और सावधान; मदद करना पसंद, व्यवस्था में सुकून पाते हैं।',
+          'सौम्य और न्यायप्रिय; सामंजस्य चाहते हैं, अच्छे साथ में सबसे खुश।', 'गहरे और निजी; गहराई से प्रेम करते हैं, वफ़ादार, इच्छाशक्ति प्रबल।',
+          'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
+          'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
       sections: { chart: 'आपकी कुंडली', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
@@ -445,7 +476,8 @@
     $('tool-grid').replaceChildren(
       section(sections.chart, [
         card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
-        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily })]),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
+        card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
       section(sections.love, [
         card('match', copy.match[0], copy.match[1], open('relationship')),
         card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
@@ -935,6 +967,7 @@
     renderLookPanel();
     showKundliView(state.kundliView);
     renderRelationship();
+    if (pages.moon && !pages.moon.hidden) renderMoonSign();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1215,6 +1248,96 @@
     card.appendChild(list);
     card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
     return head;
+  }
+  /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
+  state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
+  const MOON_SECTIONS = [['emotional', '🌸'], ['love', '💞'], ['career', '💼'], ['wellbeing', '🌿'], ['remedy', '🪔']];
+  const moonCopy = () => toolText().moon || TOOLS_COPY.en.moon;
+  function ownMoon() {
+    if (state.chart) {
+      const birth = state.chart.panchanga_at_birth || {};
+      return { sign: state.chart.positions.Moon.rashi_index, star: birth.nakshatra_index, pada: birth.nakshatra_pada, approx: false };
+    }
+    return state.moonApprox;
+  }
+  // Only a birth date (no time): the Moon at noon that day, marked as approximate (it can change sign within the day).
+  async function loadApproxMoon() {
+    if (state.chart || state.moonApprox || state.moonApproxBusy || !state.userDob || !state.city) return;
+    state.moonApproxBusy = true;
+    try {
+      const { ok, body } = await post('/api/birth-chart', { dob: state.userDob, pob: state.city, tob: '12:00' });
+      if (ok && body && body.chart) state.moonApprox = { sign: body.chart.positions.Moon.rashi_index, approx: true };
+    } catch (_error) { /* offline: ask for details instead */ }
+    state.moonApproxBusy = false;
+    if (!pages.moon.hidden) renderMoonSign();
+  }
+  async function loadMoonText(sign) {
+    const key = `${sign}|${state.lang}`;
+    if (key in state.moonText) return;
+    state.moonText[key] = null;   // loading
+    try {
+      const { ok, body } = await post('/api/moon-sign', { sign, language: state.lang });
+      state.moonText[key] = ok && body && body.readings ? body.readings : false;
+    } catch (_error) { state.moonText[key] = false; }
+    if (!pages.moon.hidden) renderMoonSign();
+  }
+  function openMoonSign() { state.moonPick = 0; showPage('moon'); renderMoonSign(); }
+  function renderMoonSign() {
+    const copy = moonCopy(), box = $('moonsign'), own = ownMoon();
+    if (!own) void loadApproxMoon();
+    const sign = state.moonPick || (own ? own.sign : 0);
+    box.replaceChildren();
+    const head = el('div', 'moon-head');
+    head.appendChild(el('h2', 'moon-title', copy.title));
+    box.appendChild(head);
+    const art = el('div', 'moon-art');
+    if (window.JyotishaArt) art.innerHTML = window.JyotishaArt.moon();
+    box.appendChild(art);
+    if (!sign) {
+      box.appendChild(el('p', 'moon-need', copy.need));
+      const add = el('button', 'moon-add', `${copy.add} ›`); add.type = 'button';
+      add.addEventListener('click', () => { showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } });
+      box.appendChild(add);
+    } else {
+      box.appendChild(el('h3', 'moon-sign', `✦ ${signName(sign)} ✦`));
+      if (own && sign === own.sign) {
+        if (own.star) box.appendChild(el('p', 'moon-star', `${copy.nakshatra}: ${names.nakshatraName(own.star, state.lang)}${own.pada ? ` · ${copy.pada} ${own.pada}` : ''}`));
+        if (own.approx) box.appendChild(el('p', 'moon-approx', copy.approx));
+      }
+      const key = `${sign}|${state.lang}`;
+      if (!(key in state.moonText)) void loadMoonText(sign);
+      const text = state.moonText[key];
+      const lines = [];
+      for (const [name, icon] of MOON_SECTIONS) {
+        const body = text ? text[name] : (name === 'emotional' ? copy.nature[sign - 1] : '');
+        if (!body && text !== null) continue;
+        const card = el('section', `moon-sec${text === null && name !== 'emotional' ? ' loading' : ''}`);
+        card.append(el('span', 'moon-icon', icon), el('h4', null, copy.sections[name]), el('p', null, body || copy.loading));
+        box.appendChild(card);
+        if (body) lines.push(`${icon} ${copy.sections[name]}\n${body}`);
+      }
+      const tools = el('div', 'moon-tools');
+      const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
+      share.addEventListener('click', () => { void shareText(`🌙 ${copy.title}: ${signName(sign)}`, lines.join('\n\n')); });
+      tools.appendChild(share);
+      if (state.contactEmail) {
+        const report = el('a', 'chip-btn', `⚑ ${copy.report}`);
+        report.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent(`Report: Moon sign ${sign} (${state.lang})`)}`;
+        tools.appendChild(report);
+      }
+      head.appendChild(tools);
+    }
+    // Explore any sign: twelve small tiles.
+    box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
+    const grid = el('div', 'moon-pick');
+    for (let n = 1; n <= 12; n += 1) {
+      const tile = el('button', `moon-tile${n === sign ? ' on' : ''}`); tile.type = 'button';
+      tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
+      if (own && n === own.sign) tile.appendChild(el('i', null, `★ ${copy.yours}`));
+      tile.addEventListener('click', () => { state.moonPick = n; renderMoonSign(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+      grid.appendChild(tile);
+    }
+    box.appendChild(grid);
   }
   /* ---- Rashiphal: pick your sign, read today's paragraph, share or ask the AI ---- */
   const RASHI_KEY = 'jyotisha.rashi.v1';

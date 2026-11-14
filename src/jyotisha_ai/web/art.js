@@ -20,7 +20,14 @@
     return out;
   };
   const sparkle = (x, y, size, fill = GOLD) => `<path d="M${x} ${y - size}C${x + size * 0.15} ${y - size * 0.15} ${x + size * 0.15} ${y - size * 0.15} ${x + size} ${y}C${x + size * 0.15} ${y + size * 0.15} ${x + size * 0.15} ${y + size * 0.15} ${x} ${y + size}C${x - size * 0.15} ${y + size * 0.15} ${x - size * 0.15} ${y + size * 0.15} ${x - size} ${y}C${x - size * 0.15} ${y - size * 0.15} ${x - size * 0.15} ${y - size * 0.15} ${x} ${y - size}Z" fill="${fill}"/>`;
-  const frame = (id, body, seed, vb = '0 0 160 120') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs(id)}<rect width="100%" height="100%" fill="url(#${id}-sky)"/>${stars(seed)}${body}</svg>`;
+  // Every drawing gets its own gradient ids: the same picture can be on the page twice (a Home card and a feature
+  // page), and a second copy must not borrow gradients from a hidden first one (they would not paint).
+  let drawings = 0;
+  const frame = (id, body, seed, vb = '0 0 160 120') => {
+    const uid = `${id}${drawings += 1}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs(id)}<rect width="100%" height="100%" fill="url(#${id}-sky)"/>${stars(seed)}${body}</svg>`;
+    return svg.split(`id="${id}-`).join(`id="${uid}-`).split(`url(#${id}-`).join(`url(#${uid}-`);
+  };
   const clouds = id => `<g fill="#7a2a7e" opacity="0.55"><ellipse cx="20" cy="118" rx="44" ry="14"/><ellipse cx="140" cy="120" rx="50" ry="15"/></g><g fill="#a03c8a" opacity="0.35"><ellipse cx="80" cy="124" rx="60" ry="12"/></g>`;
 
   // South Indian chart: a 4x4 square with the middle open, planets glowing in a few houses.
