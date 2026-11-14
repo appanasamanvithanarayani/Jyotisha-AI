@@ -64,7 +64,7 @@ function boot(setup = {}) {
   const fetch = async (url, options) => {
     requests.push({ url, body: options && options.body ? JSON.parse(options.body) : null });
     const reply = body => ({ ok: true, json: async () => body });
-    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null });
+    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null, teasers: setup.teasers || null });
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
@@ -667,7 +667,7 @@ test('daily notifications: the Android app asks for permission at the start, onc
   assert.match(scheduled.find(item => item.id === 7107).title, /week ahead/);   // then a reminder to open the app
   assert.ok(evening.length >= 6 && new Set(evening.map(item => item.title)).size === evening.length);   // a different question each evening
   assert.ok(evening.every(item => item.schedule.at.getHours() === 19 && item.schedule.at.getMinutes() === 30));
-  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, shortcuts: true, eveningTime: '19:30' });
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.notify.v1')), { on: true, asked: true, time: '07:00', evening: true, muhurta: true, shortcuts: true, teasers: true, eveningTime: '19:30' });
   // Tapping an evening question opens Jyotirmaya AstroChat and asks it.
   const question = evening.find(item => item.extra.ask);
   app.context.__tap({ notification: { extra: question.extra } });
@@ -1434,4 +1434,106 @@ test('when switched on, each later opening of the app shows the loading screen, 
   await settle();
   assert.equal(fresh.element('welcome-screen').hidden, true);                    // not shown when the last start had it off
   assert.ok(later);
+});
+
+test('reading reminders: every hour in the day, a different true teaser each time, and a tap opens that feature', async () => {
+  const calls = { schedule: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') LocalNotifications.tap = fn; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  const app = boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 9, to: 21 } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
+  assert.ok(teasers.length >= 78 && teasers.length <= 91, String(teasers.length));      // 13 a day (9 to 21) for a week
+  assert.ok(teasers.every(item => item.schedule.at.getMinutes() === 0 && item.schedule.at.getHours() >= 9 && item.schedule.at.getHours() <= 21));
+  assert.ok(teasers.every((item, i) => i === 0 || item.title !== teasers[i - 1].title));  // never the same one twice in a row
+  assert.ok(teasers.some(item => item.title === '📜 Your Jathakam is 30 seconds away'));  // no chart yet: it does not say "ready"
+  assert.ok(!teasers.some(item => item.title === '📜 Your Jathakam is ready'));
+  const palm = teasers.find(item => item.extra.page === 'palm');
+  LocalNotifications.tap({ notification: { extra: palm.extra } });
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  // Switched off in the app: none are scheduled.
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true, teasers: false }));
+  calls.schedule.length = 0;
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 9, to: 21 } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  assert.ok(calls.schedule.length && !calls.schedule.at(-1).some(item => item.id >= 7300 && item.id < 7490));
+});
+
+test('reading reminders use the AI-written lines of each day when there are some, mixed with the built-in ones', async () => {
+  const calls = { schedule: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); }, addListener: () => {},
+  };
+  const iso = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const batches = {};
+  for (let offset = 0; offset < 7; offset += 1) {
+    batches[iso(offset)] = { questions: [], dasha: [], sign: [], good: [], bad: [], teasers: {
+      palm: [{ t: '✋ Your palm has a secret', b: 'One tap to find out 🤫' }],
+      tarot: [{ t: '🃏 Dare to pick three?', b: 'The cards know something about love.' }],
+      kundli: [{ t: '📜 Your chart has news', b: 'This one is about your dasha.' }] } };
+  }
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' },
+    teasers: { every_hours: 1, from: 9, to: 21 }, nudges: { status: 'ok', batches } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
+  const titles = teasers.map(item => item.title);
+  assert.ok(titles.includes('✋ Your palm has a secret') && titles.includes('✋ Your palm is waiting to be read'));   // AI and built-in mixed
+  assert.ok(titles.includes('🃏 Dare to pick three?'));
+  assert.ok(!titles.includes('📜 Your chart has news'));        // no chart yet: the AI's Jathakam line is not used
+});
+
+test('timing alerts: Vijaya starts, Rahu Kalam is over, Yamagandam and Varjyam start, and the user’s own rashi good time / Ashtama Chandra, 5 AM to 9 PM', async () => {
+  const calls = { schedule: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); },
+    addListener: (name, fn) => { if (name === 'localNotificationActionPerformed') LocalNotifications.tap = fn; },
+  };
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  const T = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const mine = syntheticBirth.chart.positions.Moon.rashi_index, other = (mine % 12) + 1;
+  const dayExtra = {
+    timings: { abhijit: [`${T}T11:40`, `${T}T12:27`], rahu_kalam: [`${T}T10:30`, `${T}T12:00`], yamaganda: [`${T}T15:00`, `${T}T16:30`],
+      vijaya_muhurta: [`${T}T14:00`, `${T}T14:48`], brahma_muhurta: [`${T}T04:30`, `${T}T05:18`] },
+    varjyam: [{ nakshatra_index: 1, starts_at: `${T}T18:00`, ends_at: `${T}T19:30` }, { nakshatra_index: 2, starts_at: `${T}T22:00`, ends_at: `${T}T23:30` }],
+    moon_rashi: [
+      { index: 1, starts_at: `${T}T00:00`, ends_at: `${T}T03:00`, good_chandrabalam_rashis: [other], ashtama_chandra_rashi: other },
+      { index: 2, starts_at: `${T}T03:00`, ends_at: `${T}T13:00`, good_chandrabalam_rashis: [mine], ashtama_chandra_rashi: other },   // starts at night
+      { index: 3, starts_at: `${T}T13:00`, ends_at: `${T}T23:59`, good_chandrabalam_rashis: [other], ashtama_chandra_rashi: mine } ],
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  boot({ storage, birth: syntheticBirth, dayExtra, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 5, to: 21 } });
+  for (let i = 0; i < 8; i += 1) await settle();
+  const all = calls.schedule.at(-1);
+  const alerts = all.filter(item => item.id >= 7200 && item.id < 7300);
+  const at = title => alerts.filter(item => item.title === title).map(item => `${item.schedule.at.getHours()}:${String(item.schedule.at.getMinutes()).padStart(2, '0')}`);
+  assert.deepEqual([...at('🏆 Vijaya muhurta has started')], ['14:00']);
+  assert.deepEqual([...at('✅ Rahu Kalam is over')], ['12:00']);
+  assert.deepEqual([...at('⚠️ Yamagandam has started')], ['15:00']);
+  assert.deepEqual([...at('⛔ Varjyam has started')], ['18:00']);                       // the 22:00 one is after 9 PM
+  const good = alerts.filter(item => /your good time starts now/.test(item.title));
+  assert.equal(good.length, 1);
+  assert.equal(good[0].schedule.at.getHours(), 5);                                       // began at 3 AM: told at 5 AM
+  assert.match(good[0].body, /Chandrabalam is strong for you till/);
+  const care = alerts.filter(item => /go slow till/.test(item.title));
+  assert.equal(care.length, 1); assert.equal(care[0].schedule.at.getHours(), 13); assert.equal(care[0].extra.page, 'rashi');
+  assert.ok(alerts.every(item => item.schedule.at.getHours() >= 5 && item.schedule.at.getHours() * 60 + item.schedule.at.getMinutes() <= 21 * 60));
+  // The hourly reminders do not pause for them: every hour from 5 AM to 9 PM tomorrow has one.
+  const teasers = all.filter(item => item.id >= 7300 && item.id < 7490 && item.schedule.at.getDate() === d.getDate());
+  assert.equal(JSON.stringify(teasers.map(item => item.schedule.at.getHours())), JSON.stringify([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]));
+  // A tap on a timing alert opens today's Panchang.
+  LocalNotifications.tap({ notification: { extra: { page: 'panchang' } } });
 });

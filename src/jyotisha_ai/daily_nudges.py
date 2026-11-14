@@ -17,6 +17,11 @@ from jyotisha_ai import assistant, settings_store as store
 COUNTS = {"questions": 10, "dasha": 2, "sign": 2, "good": 3, "bad": 3}   # what we ask for each day
 MINIMUM = {"questions": 3, "good": 1, "bad": 1}                            # below this the batch is not used
 MAX_TITLE, MAX_BODY, MAX_ASK = 70, 170, 220
+# Short "reading reminder" teasers, a few per app feature; optional (the phone has built-in ones).
+TEASER_FEATURES = ("palm", "tarot", "rashi", "kundli", "numbers", "moon", "chat", "match")
+TEASER_EACH = 3
+# A teaser must not say a reading is already done/ready, except the ones that always are (Rashiphal, lucky numbers).
+READY = re.compile(r"\bready\b|\bdone\b|\bcompleted?\b|సిద్ధం|సిద్ధంగా|రెడీ|तैयार|रेडी", re.IGNORECASE)
 DAILY_GENERATION_CAP = 60
 RETRY_AFTER_FAILURE = 3600.0
 PAGES = ("chat", "kundli", "relationship", "rashi", "calendar", "home")
@@ -49,6 +54,14 @@ PROMPT = (
     "{{end}} where its end time goes. Urge doing important work now.\n"
     '- "bad": {bad} item(s) announcing that Rahu Kalam has just started; body MUST contain the exact text {{end}}. Urge pausing '
     "important work until then.\n"
+    '- "teasers": an object with exactly the keys palm, tarot, rashi, kundli, numbers, moon, chat, match; each a list of '
+    "{each} short reminders {{\"t\": title, \"b\": body}} that tempt the user to open that feature of the app: palm = the AI reads "
+    "their palm from a photo; tarot = pick three tarot cards for a question about love, career or money; rashi = today's "
+    "Rashiphal for their Moon sign (the title MUST contain the exact text {{sign}}); kundli = their birth chart (Jathakam) with "
+    "dasha and doshas; numbers = numerology from the birth date (Moolank, Bhagyank, lucky numbers and days); moon = what their "
+    "Moon sign says about their nature and love; chat = ask the AI astrologer any question; match = Kundli matching (Guna Milan "
+    "out of 36). Make them curious, fun and different in style (questions, playful dares, little secrets). Never say that a "
+    "reading is already done or ready, except for rashi and numbers; prefer words like waiting, one tap away, find out.\n"
     "Titles under 45 characters, bodies under 110, asks under 150. Every item in {language}."
 )
 
@@ -129,11 +142,36 @@ def validate(raw: object, report: list | None = None) -> dict | None:
             if cleaned["t"] not in {other["t"] for other in kept}:
                 kept.append(cleaned)
         batch[key] = kept[:COUNTS[key]]
+    batch["teasers"] = _teasers(raw.get("teasers"), report)
     short = [f"{key} {len(batch[key])}/{count}" for key, count in MINIMUM.items() if len(batch[key]) < count]
     if short:
         report.insert(0, "too few usable lines: " + ", ".join(short))
         return None
     return batch
+
+
+def _teasers(raw: object, report: list) -> dict:
+    """The reading-reminder teasers that follow the rules, per feature (a feature may end up empty)."""
+    kept: dict = {}
+    for feature in TEASER_FEATURES:
+        items = raw.get(feature) if isinstance(raw, dict) else None
+        good = []
+        for item in items if isinstance(items, list) else []:
+            allowed = {"sign"} if feature == "rashi" else set()
+            title, why_t = _check(item.get("t") if isinstance(item, dict) else None, MAX_TITLE, allowed)
+            body, why_b = _check(item.get("b") if isinstance(item, dict) else None, MAX_BODY, allowed)
+            why = why_t or why_b
+            if not why and feature == "rashi" and "{sign}" not in title:
+                why = "no {sign} in title"
+            if not why and feature not in ("rashi", "numbers") and READY.search(f"{title} {body}"):
+                why = "says it is ready"
+            if why:
+                report.append(f"teasers.{feature}: {why}")
+                continue
+            if title not in {other["t"] for other in good}:
+                good.append({"t": title, "b": body})
+        kept[feature] = good[:TEASER_EACH]
+    return kept
 
 
 def _parse(text: str | None) -> object:
@@ -186,7 +224,7 @@ def generate(day: date, language: str, force: bool = False) -> dict | None:
             return None
         name = assistant.LANGUAGES[language]
         prompt = PROMPT.format(weekday=day.strftime("%A"), month=day.strftime("%B"), recent=json.dumps(_recent_titles(day, language), ensure_ascii=False),
-                               language=name, **COUNTS)
+                               language=name, each=TEASER_EACH, **COUNTS)
         model = store.value("JYOTISHA_NUDGE_MODEL").strip() or None   # empty: the same model as the chat
         # Room for the reply (and any "thinking" newer models do first); only the tokens actually used are paid for.
         text = assistant.complete(SYSTEM.format(language=name), prompt, json_output=True, max_tokens=8192, model=model)
@@ -220,7 +258,7 @@ def generate(day: date, language: str, force: bool = False) -> dict | None:
 def cached(day: date, language: str) -> dict | None:
     try:
         data = json.loads(_path(day, language).read_text(encoding="utf-8"))
-        return {key: data.get(key, []) for key in COUNTS}
+        return {**{key: data.get(key, []) for key in COUNTS}, "teasers": data.get("teasers") or {}}
     except (OSError, ValueError, AttributeError):
         return None
 

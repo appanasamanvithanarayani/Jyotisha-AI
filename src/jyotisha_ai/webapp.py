@@ -127,6 +127,19 @@ TEST_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"
 TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
 
 
+def _teasers() -> dict | None:
+    """Hourly 'reading reminder' notifications scheduled on the phone: how often and between which hours (None = off)."""
+    def hour(name: str, default: int, low: int, high: int) -> int:
+        raw = store.value(name, str(default))
+        return int(raw) if raw.isdigit() and low <= int(raw) <= high else default
+
+    every = hour("JYOTISHA_TEASER_HOURS", 1, 0, 12)
+    start, end = hour("JYOTISHA_TEASER_FROM", 5, 0, 23), hour("JYOTISHA_TEASER_TO", 21, 0, 23)
+    if not every or end < start:
+        return None
+    return {"every_hours": every, "from": start, "to": end}
+
+
 def _app_ads() -> dict | None:
     """Settings for the banner shown by the native Android app (AdMob), or None while it is switched off (the default).
 
@@ -1008,6 +1021,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness["adsense_client"] = _adsense_client() or None
             readiness["app_ads"] = _app_ads()
             readiness["notice"] = _notice()
+            readiness["teasers"] = _teasers()
             contact = store.value("JYOTISHA_CONTACT")
             readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)

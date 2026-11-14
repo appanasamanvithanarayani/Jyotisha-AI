@@ -974,3 +974,15 @@ def test_the_ad_when_the_app_opens_is_off_until_switched_on(local_server, monkey
     assert "launch_interstitial_id" not in config()
     monkeypatch.setenv("JYOTISHA_LAUNCH_AD", "1")
     assert config()["launch_interstitial_id"] == "ca-app-pub-3940256099942544/1033173712"
+
+
+def test_reading_reminders_are_hourly_by_default_and_can_be_switched_off(local_server, monkeypatch):
+    for name in ("JYOTISHA_TEASER_HOURS", "JYOTISHA_TEASER_FROM", "JYOTISHA_TEASER_TO"):
+        monkeypatch.delenv(name, raising=False)
+    teasers = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["teasers"]
+    assert teasers() == {"every_hours": 1, "from": 5, "to": 21}
+    monkeypatch.setenv("JYOTISHA_TEASER_HOURS", "3")
+    monkeypatch.setenv("JYOTISHA_TEASER_FROM", "10")
+    assert teasers() == {"every_hours": 3, "from": 10, "to": 21}
+    monkeypatch.setenv("JYOTISHA_TEASER_HOURS", "0")
+    assert teasers() is None
