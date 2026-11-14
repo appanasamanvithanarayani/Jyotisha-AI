@@ -753,12 +753,12 @@ main,.app-page,.card{min-width:0}
 .day-cards-hint{margin:0 0 8px;text-align:end;font-size:.74rem;color:var(--muted)}
 .day-cards-hint:empty{display:none}
 @media (min-width:900px){.day-card{flex-basis:calc(50% - 6px)}.day-cards-hint{display:none}}
-.wa-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:fit-content;max-width:100%;margin:10px auto 16px;min-height:48px;padding:10px 24px 10px 12px;border-radius:999px;border:0;font-weight:800;font-size:.95rem;letter-spacing:.01em;
-  background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 8px 22px rgba(18,140,126,.35);cursor:pointer}
+.wa-btn{display:grid;place-items:center;width:48px;height:48px;min-height:0;margin:8px 4px 12px auto;padding:0;border-radius:50%;border:0;
+  background:linear-gradient(135deg,#25d366,#128c7e);box-shadow:0 6px 16px rgba(18,140,126,.35);cursor:pointer}
 .wa-btn[hidden]{display:none}
-.wa-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18)}
-.wa-icon svg{width:22px;height:22px;display:block}
-.wa-btn:active{transform:scale(.98)}
+.wa-icon{display:grid;place-items:center}
+.wa-icon svg{width:28px;height:28px;display:block}
+.wa-btn:active{transform:scale(.94)}
 .dp-full{margin-top:6px}
 .dp-full>summary{font-weight:800;padding:10px 0}
 :root[data-mode="dark"] .day-card{background:var(--surface);border-color:var(--line);box-shadow:none}
@@ -808,7 +808,7 @@ main,.app-page,.card{min-width:0}
 .rashi-jump{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--heading);font-size:.82rem;font-weight:600;white-space:nowrap;cursor:pointer}
 .rashi-jump:active{transform:scale(.97)}
 .rashi-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.rashi-actions .wa-btn{margin:0}
+.rashi-actions .wa-btn{margin:0;align-self:flex-end}
 .rashi-ask{min-height:46px;border-radius:14px;border:0;font-weight:800;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:var(--accent-text)}
 .rashi-card h4{scroll-margin-top:72px}
 .rashi-details-head{margin:16px 0 0;font-size:.9rem;color:var(--muted)}
