@@ -1131,3 +1131,17 @@ body.menu-open{overflow:hidden}
 .num-lucky span{color:var(--muted)}
 .num-note{color:var(--muted);font-size:.82rem;text-align:center}
 :root[data-skin="mystic"] .num-sec,:root[data-skin="mystic"] .num-lucky,:root[data-skin="mystic"] .num-tile{background:rgba(255,255,255,.04);border-color:rgba(214,90,180,.3)}
+/* Dark looks: light-theme backgrounds that were left behind (striped table rows, the current dasha row, opened
+   folds, the festival list, the 8 kootas). Light text sat on cream/white there and could not be read. */
+:root[data-mode="dark"] .k-table tr:nth-child(even) td{background:rgba(255,255,255,.05)}
+:root[data-mode="dark"] .k-table tr.current td{background:rgba(232,176,75,.22);color:var(--heading)}
+:root[data-mode="dark"] details.fold{background:rgba(255,255,255,.03)}
+:root[data-mode="dark"] details.fold>summary,:root[data-mode="dark"] .sub-h{color:var(--heading)}
+:root[data-mode="dark"] .event-row{background:var(--cream);color:var(--ink);box-shadow:none}
+:root[data-mode="dark"] .event-row:hover{background:var(--cream2)}
+:root[data-mode="dark"] .koota-list li{color:var(--ink)}
+:root[data-mode="dark"] .koota-list li.zero b{color:#ff8a80}
+:root[data-mode="dark"] .dosha-flag{background:rgba(255,157,77,.14);color:#ffc999}
+:root[data-mode="dark"] .rashi-planets.remedies li{background:rgba(232,176,75,.1);color:var(--ink)}
+:root[data-mode="dark"] .relationship-score strong{color:var(--heading)}
+:root[data-skin="mystic"] .k-table tbody tr:nth-child(even){background:rgba(214,90,180,.1)}
