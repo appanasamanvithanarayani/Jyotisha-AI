@@ -767,7 +767,7 @@
     done.addEventListener('click', () => { panel.hidden = true; });
     panel.append(title, el('span', 'label', copy.mode), modes);
     if (look.mode !== 'mystic') panel.append(el('span', 'label', copy.colour), swatches);   // the mystic look has its own colours
-    const notifyBox = notifySettings(); if (notifyBox) panel.appendChild(notifyBox);
+    // Notifications work on their own; their schedule is not shown to users.
     panel.appendChild(done);
   }
   $('theme-btn').addEventListener('click', () => { const panel = $('theme-panel'); renderLookPanel(); panel.hidden = !panel.hidden; });
@@ -2182,7 +2182,7 @@
     const actions = el('div', 'rashi-actions');
     const askButton = el('button', 'rashi-ask', `✨ ${copy.ask}`); askButton.type = 'button';
     askButton.addEventListener('click', askAboutDay);
-    const share = el('button', 'wa-btn', `🟢 ${copy.share}`); share.type = 'button';
+    const share = waLabel(el('button', 'wa-btn'), copy.share); share.type = 'button';
     share.addEventListener('click', () => {
       const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\n— Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`;
       try { window.open(`https://wa.me/?text=${encodeURIComponent(message.replace(/[\u2066-\u2069]/g, ''))}`, '_blank'); } catch (_error) { /* no browser */ }
@@ -2480,7 +2480,7 @@
     host.replaceChildren(good, panchang, muhurtas, bad);
     $('day-cards-hint').textContent = copy.swipe;
     $('dp-full-title').textContent = copy.full;
-    const share = $('share-day'); share.hidden = false; share.textContent = `🟢 ${copy.share}`;
+    const share = $('share-day'); share.hidden = false; waLabel(share, copy.share);
     share.onclick = () => shareDayOnWhatsApp(day);
   }
   function shareDayOnWhatsApp(day) {
@@ -3257,6 +3257,14 @@
       area.remove();
       return done === true;
     } catch (_error) { return false; }
+  }
+  // A WhatsApp share button: a small round green icon.
+  const WA_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2a9.8 9.8 0 0 0-8.4 14.8L2.2 21.8l4.9-1.3A9.8 9.8 0 1 0 12 2.2z" fill="#fff"/><path d="M8.7 7.1c.2-.5.5-.5.8-.5h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.2.2-.2.4-.1.6.5.8 1.1 1.6 1.9 2.1.5.4.9.6 1.2.7.2.1.4 0 .5-.2l.7-.8c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.4.4 0 .3 0 1.1-.5 1.6-.6.6-1.5.9-2.3.7-1.7-.3-3.3-1.2-4.6-2.5-1.1-1.1-2.1-2.6-2.4-4.1-.2-.9.1-1.8.6-2.4z" fill="#1fb855"/></svg>';
+  function waLabel(button, text) {   // just the round icon; the text is for screen readers and the long-press tooltip
+    const icon = el('span', 'wa-icon'); icon.innerHTML = WA_ICON;
+    button.replaceChildren(icon);
+    button.setAttribute('aria-label', text); button.title = text;
+    return button;
   }
   async function shareText(title, text) {
     const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\n— Jyotirmaya AstroChat · ${window.location && window.location.origin ? window.location.origin : ''}`;

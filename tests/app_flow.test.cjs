@@ -727,8 +727,7 @@ test('notifications: a broken message never stops the rest, and settings do not 
   assert.ok(scheduled.some(item => item.id >= 7120 && item.id < 7127));                     // and the evenings
   app.element('theme-panel').hidden = true;
   app.element('theme-btn').listeners.click();
-  const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
-  assert.ok(!settings.children.some(item => item.className === 'notify-next'));   // nothing about what is scheduled
+  assert.ok(!app.element('theme-panel').children.some(item => item.className === 'notify-settings'));   // nothing about what is scheduled
 });
 
 test('the pinned Shortcuts notification: shown in the user\'s language when notifications are on, buttons open the screens, and it can be switched off', async () => {
@@ -758,16 +757,10 @@ test('the pinned Shortcuts notification: shown in the user\'s language when noti
   tap({ page: 'match' });
   await new Promise(resolve => setTimeout(resolve, 350));
   assert.equal(page('relationship').hidden, false);
-  // the toggle in the notification settings switches it off
+  // The Appearance panel does not show notification settings.
   app.element('theme-panel').hidden = true;
   app.element('theme-btn').listeners.click();
-  const settings = app.element('theme-panel').children.find(item => item.className === 'notify-settings');
-  const toggle = settings.children.at(-1).children[0].children[0];
-  assert.equal(toggle.checked, true);
-  toggle.checked = false; toggle.listeners.change();
-  await settle();
-  assert.equal(calls.at(-1)[0], 'hide');
-  assert.equal(JSON.parse(storage.getItem('jyotisha.notify.v1')).shortcuts, false);
+  assert.ok(!app.element('theme-panel').children.some(item => item.className === 'notify-settings'));
 });
 
 test('evening notifications are unique: a week has no repeats, reopening keeps the plan, recent ones are skipped', async () => {
