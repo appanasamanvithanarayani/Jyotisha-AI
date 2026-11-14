@@ -62,8 +62,23 @@
   pages.moon.appendChild($('moonsign'));
   pages.tarot.appendChild($('tarot'));
   pages.palm.appendChild($('palmread'));
-  function showPage(name) {
+  // Each page change is a step in the WebView's history, so the phone's Back button returns to the previous screen
+  // (Capacitor goes back while there is history and only closes the app from the first screen).
+  let currentPage = null;
+  function remember(page, replace) {
+    try {
+      if (!window.history || typeof window.history.pushState !== 'function') return;
+      if (replace) window.history.replaceState({ page }, '', `#${page}`); else window.history.pushState({ page }, '', `#${page}`);
+    } catch (_error) { /* history is optional */ }
+  }
+  if (typeof window.addEventListener === 'function') window.addEventListener('popstate', event => {
+    const page = event && event.state && event.state.page;
+    showPage(Object.hasOwn(pages, page) ? page : 'home', { back: true });
+  });
+  function showPage(name, how = {}) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
+    if (!how.back && chosen !== currentPage) remember(chosen, currentPage === null);
+    currentPage = chosen;
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
     document.querySelectorAll('.bottom-nav a').forEach(link => {
       const active = link.getAttribute('href') === `#${chosen}`;
@@ -72,7 +87,7 @@
     });
     if (document.body && document.body.classList) document.body.classList.toggle('page-chat', chosen === 'chat');
     window.scrollTo(0, 0);
-    maybeInterstitial();
+    if (!how.back) maybeInterstitial();   // no full-screen ad when going back
   }
   document.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', event => {
     const target = link.getAttribute('href').slice(1);
@@ -503,7 +518,7 @@
     const toFestivals = () => showPage('calendar');
     const toPanchang = () => { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } };
     const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
-    const toJathakam = () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } };
+    // No Jathakam card here: the "My Jathakam" card above the sections already opens it (it was shown twice).
     // Big illustrated cards in sections, like a magazine: picture on top, name and a live line at the bottom.
     const art = window.JyotishaArt || null;
     const card = (key, title, sub, onClick, extra = {}) => {
@@ -517,12 +532,10 @@
     };
     const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
     const sections = text.sections || TOOLS_COPY.en.sections;
-    const jathakam = copy.jathakam || TOOLS_COPY.en.tools.jathakam;
     const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
     const todayTithi = state.day && state.day.tithi && state.day.tithi[0] ? names.tithiName(state.day.tithi[0].index, state.lang) : '';
     $('tool-grid').replaceChildren(
       section(sections.chart, [
-        card('kundli', jathakam[0], state.chart ? jathakam[1] : text.needKundli, toJathakam),
         card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
       section(sections.palm || TOOLS_COPY.en.sections.palm, [

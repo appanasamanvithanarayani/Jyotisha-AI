@@ -1061,3 +1061,24 @@ main,.app-page,.card{min-width:0}
 .palm-sec.summary{border-color:rgba(230,194,122,.55)}
 :root:not([data-skin="mystic"]) .palm-sec,:root:not([data-skin="mystic"]) .palm-hand{background:var(--surface);border-color:var(--line)}
 .reward-btn{margin-top:16px}
+
+/* ---------- Compact Home: each section is one swipe row of shorter cards (all visible side by side on wide screens) ---------- */
+.art-section{margin:12px 0 2px}
+.art-h{margin:0 0 8px}
+.art-grid{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.art-grid::-webkit-scrollbar{display:none}
+.art-card,.art-card.wide{flex:0 0 40%;aspect-ratio:auto;height:150px;scroll-snap-align:start;grid-column:auto}
+.art-card.wide{flex-basis:56%}
+.art-card b{bottom:22px;font-size:.95rem}
+.art-card small{font-size:.68rem}
+.art-badge{bottom:42px}
+@media (min-width:560px){
+  .art-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));overflow:visible}
+  .art-card,.art-card.wide{height:170px}
+}
+.ai-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-top:12px;padding-bottom:2px}
+.ai-chips::-webkit-scrollbar{display:none}
+.ai-chip{flex:0 0 auto;white-space:nowrap}
+/* Dark looks: the remedies and sub-headings had light-theme colours (cream boxes, navy headings), so the text vanished. */
+:root[data-mode="dark"] .rashi-card h4,:root[data-mode="dark"] .jathakam h4{color:var(--heading)}
+:root[data-mode="dark"] .rashi-planets.remedies li{background:rgba(232,176,75,.1);color:var(--ink)}

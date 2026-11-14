@@ -78,7 +78,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, scrollTo() {}, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -575,7 +575,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm & tarot', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
@@ -1292,4 +1292,23 @@ test('the PDF button shows only the text to print and opens the print dialog (na
   web.element('pdf-rashi').listeners.click();
   await new Promise(resolve => setTimeout(resolve, 500));
   assert.equal(browserPrints, 1);
+});
+
+test('the phone Back button returns to the previous screen instead of closing the app', async () => {
+  const stack = [];
+  const history = { pushState(state) { stack.push(state); }, replaceState(state) { stack[Math.max(stack.length - 1, 0)] = state; } };
+  const windowEvents = {};
+  const app = boot({ history, windowEvents });
+  await enter(app, 'en');
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`);
+  assert.equal(stack.length, 1);
+  assert.equal(stack[0].page, 'home');
+  homeCard(app, 'Tarot').listeners.click();
+  assert.equal(page('tarot').hidden, false);
+  assert.equal(stack.at(-1).page, 'tarot');
+  const pushed = stack.length;
+  windowEvents.popstate({ state: { page: 'home' } });       // the phone's Back button
+  assert.equal(page('home').hidden, false);
+  assert.equal(page('tarot').hidden, true);
+  assert.equal(stack.length, pushed);                         // going back does not add a new step
 });
