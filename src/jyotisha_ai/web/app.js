@@ -575,7 +575,8 @@
     $('tool-grid').replaceChildren(
       section(sections.chart, [
         card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
-        card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign, { wide: true })]),
+        card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign),
+        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'))]),
       section(sections.palm || TOOLS_COPY.en.sections.palm, [
         card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
         card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
@@ -584,9 +585,9 @@
         card('match', copy.match[0], copy.match[1], open('relationship')),
         card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
       section(sections.time, [
-        card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true }),
-        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha')),
-        card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang)]));
+        // Today's Panchang first, so it is seen without swiping.
+        card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang),
+        card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true })]));
     renderGreeting();
     renderJathakamCard();
     renderHomeAi();

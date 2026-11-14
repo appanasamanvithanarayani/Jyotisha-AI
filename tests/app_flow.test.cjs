@@ -576,7 +576,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm, tarot & numbers', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Festivals', 'Dasha periods', 'Today’s Panchang']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Today’s Panchang', 'Festivals']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
