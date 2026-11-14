@@ -898,20 +898,29 @@
   // Which reminders fit this user: true ones only ("ready" only when it really is).
   function teaserChoices() {
     const items = teaserCopy().items, moon = ownMoon(), choices = [];
-    choices.push(moon ? { page: 'rashi', text: items.rashi.map(line => fill(line, { sign: signName(moon.sign) })) } : { page: 'rashi', text: items.rashiAny });
-    choices.push({ page: 'palm', text: items.palm });
-    choices.push(state.chart ? { page: 'kundli', text: items.kundli } : { page: 'kundli', text: items.kundliNew });
-    choices.push({ page: 'tarot', text: items.tarot });
-    if (numberDob()) choices.push({ page: 'numbers', text: items.numbers });
-    choices.push({ page: 'moon', text: items.moon });
-    choices.push({ page: 'chat', text: items.chat });
-    choices.push({ page: 'relationship', text: items.match });
+    const sign = moon ? signName(moon.sign) : '';
+    choices.push(moon ? { key: 'rashi', page: 'rashi', sign, text: items.rashi.map(line => fill(line, { sign })) } : { key: 'rashiAny', page: 'rashi', text: items.rashiAny });
+    choices.push({ key: 'palm', page: 'palm', text: items.palm });
+    choices.push(state.chart ? { key: 'kundli', page: 'kundli', text: items.kundli } : { key: 'kundliNew', page: 'kundli', text: items.kundliNew });
+    choices.push({ key: 'tarot', page: 'tarot', text: items.tarot });
+    if (numberDob()) choices.push({ key: 'numbers', page: 'numbers', text: items.numbers });
+    choices.push({ key: 'moon', page: 'moon', text: items.moon });
+    choices.push({ key: 'chat', page: 'chat', text: items.chat });
+    choices.push({ key: 'match', page: 'relationship', text: items.match });
     return choices;
+  }
+  // The day's AI-written lines for a feature (fresh wording every day), plus the built-in line. "kundliNew" and
+  // "rashiAny" have no AI lines: the AI's Jathakam/Rashiphal lines assume a chart / a known sign.
+  function teaserOptions(choice, iso) {
+    const ai = aiBatches[iso] && aiBatches[iso].teasers && aiBatches[iso].teasers[choice.key];
+    const fresh = Array.isArray(ai) ? ai.filter(item => item && typeof item.t === 'string' && typeof item.b === 'string')
+      .map(item => [fill(item.t, { sign: choice.sign || '' }), fill(item.b, { sign: choice.sign || '' })]) : [];
+    return [...fresh, choice.text];
   }
   function teaserNotifications(now) {
     const config = teaserConfig;
     if (!notify.teasers || !config) return [];
-    const choices = teaserChoices(), list = [];
+    const choices = teaserChoices(), list = [], used = {};
     const near = (at, time) => { const [h, m] = time.split(':').map(Number); return Math.abs(at.getHours() * 60 + at.getMinutes() - (h * 60 + m)) < 30; };
     let turn = now.getDate() % choices.length;   // a different first reminder each day
     for (let offset = 0; offset < TEASE_DAYS && list.length < TEASE_MAX; offset += 1) {
@@ -919,7 +928,10 @@
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, 0, 0);
         if (at <= now || near(at, notify.time) || (notify.evening && near(at, notify.eveningTime))) continue;
         const choice = choices[turn % choices.length]; turn += 1;
-        list.push({ id: TEASE_FIRST_ID + list.length, title: choice.text[0], body: choice.text[1], largeBody: choice.text[1],
+        const options = teaserOptions(choice, localIso(at));
+        const [title, body] = options[(used[choice.key] = (used[choice.key] || 0) + 1) % options.length];
+        const text = body.replace(/[⁦-⁩]/g, '');
+        list.push({ id: TEASE_FIRST_ID + list.length, title: title.replace(/[⁦-⁩]/g, ''), body: text, largeBody: text,
           schedule: { at, allowWhileIdle: true }, extra: { page: choice.page } });
       }
     }

@@ -167,3 +167,22 @@ def test_rahu_kalam_lines_may_talk_about_payments_and_put_the_time_in_the_title(
     raw["bad"] = [{"t": "Pay now to fix it", "b": "till {end}"}]
     report = []
     assert daily_nudges.validate(raw, report) is None and "banned word" in " ".join(report)
+
+
+def test_reading_reminder_teasers_are_checked_per_feature():
+    raw = good_batch()
+    raw["teasers"] = {
+        "palm": [{"t": "✋ Your palm has a secret", "b": "One tap to find out 🤫"},
+                 {"t": "✋ Your palm reading is ready", "b": "Open it now"},                 # not true: dropped
+                 {"t": "✋ మీ అరచేయి రీడింగ్ సిద్ధం", "b": "చూడండి"}],                    # "ready" in Telugu: dropped
+        "rashi": [{"t": "🔮 {sign}, today is ready for you", "b": "See your luck ✨"},     # ready is fine for Rashiphal
+                  {"t": "🔮 Today looks bright", "b": "Tap to see"}],                      # no {sign}: dropped
+        "numbers": [{"t": "🔢 Lucky numbers ready", "b": "Your Moolank says hi"}],
+        "tarot": "not a list",
+    }
+    batch = daily_nudges.validate(raw)
+    teasers = batch["teasers"]
+    assert [item["t"] for item in teasers["palm"]] == ["✋ Your palm has a secret"]
+    assert [item["t"] for item in teasers["rashi"]] == ["🔮 {sign}, today is ready for you"]
+    assert len(teasers["numbers"]) == 1 and teasers["tarot"] == [] and teasers["match"] == []
+    assert daily_nudges.validate(good_batch())["teasers"] == {feature: [] for feature in daily_nudges.TEASER_FEATURES}   # optional

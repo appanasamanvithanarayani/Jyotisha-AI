@@ -1464,3 +1464,30 @@ test('reading reminders: every hour in the day, a different true teaser each tim
   for (let i = 0; i < 6; i += 1) await settle();
   assert.ok(calls.schedule.length && !calls.schedule.at(-1).some(item => item.id >= 7300 && item.id < 7490));
 });
+
+test('reading reminders use the AI-written lines of each day when there are some, mixed with the built-in ones', async () => {
+  const calls = { schedule: [] };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); }, addListener: () => {},
+  };
+  const iso = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const batches = {};
+  for (let offset = 0; offset < 7; offset += 1) {
+    batches[iso(offset)] = { questions: [], dasha: [], sign: [], good: [], bad: [], teasers: {
+      palm: [{ t: '✋ Your palm has a secret', b: 'One tap to find out 🤫' }],
+      tarot: [{ t: '🃏 Dare to pick three?', b: 'The cards know something about love.' }],
+      kundli: [{ t: '📜 Your chart has news', b: 'This one is about your dasha.' }] } };
+  }
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' },
+    teasers: { every_hours: 1, from: 9, to: 21 }, nudges: { status: 'ok', batches } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
+  const titles = teasers.map(item => item.title);
+  assert.ok(titles.includes('✋ Your palm has a secret') && titles.includes('✋ Your palm is waiting to be read'));   // AI and built-in mixed
+  assert.ok(titles.includes('🃏 Dare to pick three?'));
+  assert.ok(!titles.includes('📜 Your chart has news'));        // no chart yet: the AI's Jathakam line is not used
+});
