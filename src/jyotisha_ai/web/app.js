@@ -112,7 +112,7 @@
     en: {
       nav: 'Love', eyebrow: 'Relationships', title: 'Love & Kundli matching', intro: 'Choose what you want to see.',
       optMatch: 'Kundli matching', optMatchSub: 'Guna Milan score out of 36', optReading: 'My love reading', optReadingSub: 'What your chart says about love and marriage',
-      who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Two other people', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
+      who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
       score: 'Guna Milan', excellent: 'Excellent match', good: 'Good match', average: 'Average match — acceptable in most traditions', low: 'Low match — usually not recommended',
@@ -127,7 +127,7 @@
     te: {
       nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
       optMatch: 'జాతక పొంతన', optMatchSub: 'గుణ మేళనం — 36కి స్కోరు', optReading: 'నా ప్రేమ ఫలితం', optReadingSub: 'ప్రేమ, వివాహం గురించి మీ జాతకం ఏమంటుంది',
-      who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇద్దరు ఇతరులు', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
+      who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇతరులను చూడండి', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
       score: 'గుణ మేళనం', excellent: 'అత్యుత్తమ పొంతన', good: 'మంచి పొంతన', average: 'సాధారణ పొంతన — చాలా సంప్రదాయాలలో ఆమోదయోగ్యం', low: 'తక్కువ పొంతన — సాధారణంగా సిఫార్సు చేయరు',
@@ -142,7 +142,7 @@
     hi: {
       nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
       optMatch: 'कुंडली मिलान', optMatchSub: 'गुण मिलान — 36 में से अंक', optReading: 'मेरा प्रेम फल', optReadingSub: 'प्रेम और विवाह पर आपकी कुंडली क्या कहती है',
-      who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दो अन्य लोग', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
+      who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दूसरों को देखें', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
       score: 'गुण मिलान', excellent: 'उत्तम मिलान', good: 'अच्छा मिलान', average: 'सामान्य मिलान — अधिकांश परंपराओं में स्वीकार्य', low: 'कम मिलान — आमतौर पर अनुशंसित नहीं',
