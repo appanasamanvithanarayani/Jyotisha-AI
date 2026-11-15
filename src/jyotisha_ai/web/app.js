@@ -440,8 +440,21 @@
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
     },
   };
-  const loveText = () => RELATIONSHIP_COPY[state.lang] || RELATIONSHIP_COPY.en;
-  const toolText = () => TOOLS_COPY[state.lang] || TOOLS_COPY.en;
+  // Newer screens keep their words in texts/<code>.js ({love, tools, teaser, more, facts}). A language without its own words
+  // borrows its closest relative's (Hindi for the Devanagari languages), then English.
+  const TEXT_FALLBACK = { mr: 'hi', ne: 'hi', sa: 'hi', kok: 'hi', mai: 'hi', as: 'bn' };
+  function copyFor(table, section) {
+    const extra = (typeof window !== 'undefined' && window.JyotishaTexts) || {};
+    let code = state.lang;
+    for (let hop = 0; hop < 3 && code; hop += 1) {
+      if (table[code]) return table[code];
+      if (extra[code] && extra[code][section]) return extra[code][section];
+      code = TEXT_FALLBACK[code] || 'en';
+    }
+    return table.en;
+  }
+  const loveText = () => copyFor(RELATIONSHIP_COPY, 'love');
+  const toolText = () => copyFor(TOOLS_COPY, 'tools');
   const fill = (text, values) => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
   // "2028-02" -> "February 2028" in the chosen language; null (beyond the scanned years) -> "—".
   const monthText = value => (typeof value === 'string' && /^\d{4}-\d{2}$/.test(value)
@@ -992,7 +1005,7 @@
       chat: ['💬 ज्योतिर्मय से कुछ भी पूछें', 'करियर, शादी या पैसा: अपनी कुंडली से जवाब पाएँ।'],
       match: ['💞 क्या आपकी जोड़ी सितारों में लिखी है?', 'एक मिनट में 36 में से गुण मिलान देखें।'] } },
   };
-  const teaserCopy = () => TEASER_COPY[state.lang] || TEASER_COPY.en;
+  const teaserCopy = () => copyFor(TEASER_COPY, 'teaser');
   // The server's setting, remembered so the first scheduling after a start already has it.
   function loadTeaserConfig() { try { const value = JSON.parse(window.localStorage.getItem(TEASE_KEY)); return value && value.every_hours ? value : null; } catch (_error) { return null; } }
   let teaserConfig = loadTeaserConfig();
@@ -1189,7 +1202,7 @@
   // seen: start times already used (a Moon-sign period shows up in two days' data), and the running count of ids.
   function moreAlerts(day, iso, now, seen) {
     if (!notify.muhurta || !day) return [];
-    const copy = MORE_COPY[state.lang] || MORE_COPY.en, result = [];
+    const copy = copyFor(MORE_COPY, 'more'), result = [];
     const clean = text => text.replace(/[⁦-⁩]/g, '');
     // Only between ALERT_FROM and ALERT_TO o'clock. A rashi period that began in the night is told at ALERT_FROM.
     const add = (key, startText, endText, page, values = {}, moveFromNight = false) => {
@@ -2062,7 +2075,7 @@
     te: ['వైదిక జ్యోతిష్యంలో చంద్రుడు సంచరించే 27 నక్షత్రాలు ఉన్నాయి.', 'తిథి అంటే చాంద్రమాన దినం: ఒక చాంద్రమాసంలో 30 తిథులు ఉంటాయి.', 'చంద్రుడు ఒక్కో రాశిలో సుమారు 2¼ రోజులు ఉంటాడు.', '“పంచాంగం” అంటే ఐదు అంగాలు: తిథి, వారం, నక్షత్రం, యోగం, కరణం.', 'అభిజిత్ ముహూర్తం మధ్యాహ్నం వేళ ఉండే శుభ సమయం.', 'హస్త సాముద్రికం హృదయ, మస్తిష్క, జీవన, భాగ్య రేఖలను చదువుతుంది.', 'మీ జన్మ రాశి (చంద్ర రాశి) చాలా భారతీయ జాతకాలకు ఆధారం.', 'రాహుకాలం రోజూ సుమారు 90 నిమిషాలు, వారాన్ని బట్టి మారుతుంది.'],
     hi: ['वैदिक ज्योतिष में चंद्रमा 27 नक्षत्रों से होकर गुज़रता है।', 'तिथि चंद्र दिवस है: एक चंद्र मास में 30 तिथियाँ होती हैं।', 'चंद्रमा हर राशि में लगभग 2¼ दिन रहता है।', '“पंचांग” का अर्थ है पाँच अंग: तिथि, वार, नक्षत्र, योग और करण।', 'अभिजित मुहूर्त दोपहर के आसपास का शुभ समय है।', 'हस्त रेखा शास्त्र हृदय, मस्तिष्क, जीवन और भाग्य रेखा पढ़ता है।', 'आपकी जन्म राशि (चंद्र राशि) अधिकतर भारतीय कुंडलियों का आधार है।', 'राहुकाल रोज़ लगभग 90 मिनट का होता है और वार के अनुसार बदलता है।'],
   };
-  const funFacts = () => FUN_FACTS[state.lang] || FUN_FACTS.en;
+  const funFacts = () => copyFor(FUN_FACTS, 'facts');
   // The loading screen: a glowing orb, the label, a bar that creeps towards 90% (it ends by itself), and a fun fact.
   function loader(label) {
     const wrap = el('div', 'loader');
