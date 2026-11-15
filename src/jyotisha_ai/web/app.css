@@ -1342,3 +1342,9 @@ body.page-feature .masthead{display:none}
 .chat-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;flex:0 0 auto}
 .chat-chips::-webkit-scrollbar{display:none}
 .chat-chip{flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1px solid rgba(var(--mg-rgb),.55);background:rgba(var(--mg-rgb),.1);color:var(--heading);font:inherit;font-size:.84rem;font-weight:700;white-space:nowrap;cursor:pointer}
+
+/* A tab that plays an ad first carries the small video icon. */
+.tabs-line button.locked::before{content:"";width:16px;height:13px;margin-inline-end:6px;border-radius:4px;display:inline-block;vertical-align:-2px;background:currentColor;opacity:.85;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat;
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat}
+.lg-unlock-note{margin:-4px 0 8px;font-size:.78rem;color:var(--muted)}

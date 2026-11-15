@@ -45,6 +45,7 @@
 
   // Native-app ad state (stays empty in a browser); declared early because switching screens can ask it for an interstitial.
   const appAds = { config: null, admob: null, freeUntil: 0, switches: 0, lastInterstitial: 0, started: Date.now() };
+  const bannerHold = new Set();   // reasons the bottom banner is hidden for right now ('chat', 'camera')
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   // Feature pages show their own header (back, title, home, share) instead of the app bar.
@@ -198,6 +199,7 @@
         balance: ['Yesterday’s balance', 'Today’s balance', 'Tomorrow’s balance', 'This month’s balance', 'This year’s balance'],
         areas: { love: 'Love', family: 'Family', marriage: 'Marriage', career: 'Career', wealth: 'Wealth', health: 'Health' }, byArea: 'By area', supported: 'Supported by {planets}',
         yourSign: 'Your sign', change: 'Change', pick: 'Check another sign', pickFirst: 'Pick your sign to see your balance.', loading: 'Working out your balance…', failed: 'Could not load right now. Please try again.',
+        unlock: 'Tabs with the video icon open after one short ad, for this sign for the rest of the day.',
         note: 'Worked out from planet transits counted from the Moon sign. Guidance for reflection, not a prediction.',
         text: { love: ['Go gently. Listen more and avoid hasty words.', 'A steady stretch. Small, thoughtful gestures matter most.', 'Warmth comes easily. A good time to share your feelings.'],
           family: ['Misunderstandings can arise. Stay calm and give people space.', 'Ordinary and calm. Keep your routines and be patient.', 'Home feels supportive. Time with family refreshes you.'],
@@ -289,6 +291,7 @@
         balance: ['నిన్నటి సమతుల్యం', 'నేటి సమతుల్యం', 'రేపటి సమతుల్యం', 'ఈ నెల సమతుల్యం', 'ఈ సంవత్సర సమతుల్యం'],
         areas: { love: 'ప్రేమ', family: 'కుటుంబం', marriage: 'వివాహం', career: 'ఉద్యోగం', wealth: 'ధనం', health: 'ఆరోగ్యం' }, byArea: 'అంశాల వారీగా', supported: '{planets} అనుకూలం',
         yourSign: 'మీ రాశి', change: 'మార్చండి', pick: 'మరో రాశి చూడండి', pickFirst: 'మీ సమతుల్యం చూడటానికి మీ రాశిని ఎంచుకోండి.', loading: 'మీ సమతుల్యం లెక్కిస్తున్నాం…', failed: 'ఇప్పుడు లోడ్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.',
+        unlock: 'వీడియో గుర్తు ఉన్న ట్యాబ్‌లు ఒక చిన్న ప్రకటన తర్వాత, ఈ రాశికి ఈ రోజంతా తెరుచుకుంటాయి.',
         note: 'చంద్ర రాశి నుంచి గ్రహ సంచారాల ఆధారంగా లెక్కించినది. ఆలోచనకు మార్గదర్శనం మాత్రమే, జోస్యం కాదు.',
         text: { love: ['నిదానంగా ఉండండి. ఎక్కువ వినండి, తొందరపడి మాట్లాడకండి.', 'నిలకడగా ఉంటుంది. చిన్న చిన్న శ్రద్ధలే ముఖ్యం.', 'ప్రేమ భావాలు సులభంగా పంచుకోగలరు. మనసులో మాట చెప్పడానికి మంచి సమయం.'],
           family: ['అపార్థాలు రావచ్చు. ప్రశాంతంగా ఉండి ఇతరులకు చోటివ్వండి.', 'సాధారణంగా, ప్రశాంతంగా ఉంటుంది. ఓపికగా దినచర్య పాటించండి.', 'ఇంట్లో సహకారం బాగుంటుంది. కుటుంబంతో గడపడం ఉత్సాహాన్నిస్తుంది.'],
@@ -380,6 +383,7 @@
         balance: ['बीते कल का संतुलन', 'आज का संतुलन', 'आने वाले कल का संतुलन', 'इस माह का संतुलन', 'इस वर्ष का संतुलन'],
         areas: { love: 'प्रेम', family: 'परिवार', marriage: 'विवाह', career: 'करियर', wealth: 'धन', health: 'स्वास्थ्य' }, byArea: 'क्षेत्र के अनुसार', supported: '{planets} का साथ',
         yourSign: 'आपकी राशि', change: 'बदलें', pick: 'दूसरी राशि देखें', pickFirst: 'अपना संतुलन देखने के लिए अपनी राशि चुनें।', loading: 'आपका संतुलन निकाल रहे हैं…', failed: 'अभी लोड नहीं हो सका। कृपया फिर कोशिश करें।',
+        unlock: 'वीडियो आइकन वाले टैब एक छोटे विज्ञापन के बाद, इस राशि के लिए आज पूरे दिन खुल जाते हैं।',
         note: 'चंद्र राशि से ग्रहों के गोचर के आधार पर निकाला गया। चिंतन के लिए मार्गदर्शन है, भविष्यवाणी नहीं।',
         text: { love: ['धीरे चलें। ज़्यादा सुनें, जल्दबाज़ी में न बोलें।', 'स्थिर दौर। छोटी-छोटी परवाह सबसे ज़रूरी।', 'भावनाएँ सहज बाँट पाएँगे। मन की बात कहने का अच्छा समय।'],
           family: ['गलतफ़हमी हो सकती है। शांत रहें और दूसरों को जगह दें।', 'सामान्य और शांत। धैर्य से दिनचर्या निभाएँ।', 'घर में सहयोग रहेगा। परिवार के साथ समय तरोताज़ा करेगा।'],
@@ -1865,7 +1869,7 @@
     const bar = el('div', 'cam-bar'); bar.append(gallery, shutter, el('span'));
     overlay.append(video, handOutline(), hint, close, bar);
     let warned = false;
-    const stop = () => { try { stream.getTracks().forEach(track => track.stop()); } catch (_error) { /* gone */ } try { overlay.remove(); } catch (_error) { /* gone */ } };
+    const stop = () => { try { stream.getTracks().forEach(track => track.stop()); } catch (_error) { /* gone */ } try { overlay.remove(); } catch (_error) { /* gone */ } setBannerHidden('camera', false); };
     close.addEventListener('click', stop);
     gallery.addEventListener('click', () => { stop(); const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
       input.addEventListener('change', async () => { const file = input.files && input.files[0]; if (file) { try { await handlePalmPhoto(await shrinkPhoto(file)); } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); } } });
@@ -1879,6 +1883,7 @@
       stop();
       await handlePalmPhoto(photo);
     });
+    setBannerHidden('camera', true);
     document.body.appendChild(overlay);
     try { await video.play(); } catch (_error) { /* shown anyway */ }
   }
@@ -2134,13 +2139,14 @@
     const dobInput = el('input'); dobInput.type = 'date'; dobInput.id = 'num-dob'; dobInput.max = '2100-12-31'; dobInput.value = dob;
     const nameInput = el('input'); nameInput.type = 'text'; nameInput.id = 'num-name'; nameInput.maxLength = 60; nameInput.autocomplete = 'name'; nameInput.value = name;
     const field = (label, input) => { const box = el('label', 'num-field'); box.append(el('span', null, label), input); return box; };
-    const go = el('button', 'palm-scan', `🔢 ${copy.show}`); go.type = 'submit';
+    const go = el('button', `palm-scan${rewardedFor('numbers') ? ' reward-btn' : ''}`, `🔢 ${copy.show}`); go.type = 'submit';
     form.append(field(copy.dob, dobInput), field(copy.name, nameInput), go);
     if (numState.error) form.appendChild(el('p', 'num-error', numState.error));
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
       const tool = window.JyotishaNumerology;
       if (!tool || !tool.parse(dobInput.value)) { numState.error = copy.bad; renderNumerology(); return; }
+      if (rewardedFor('numbers') && !(await watchForResult())) return;
       Object.assign(numState, { dob: dobInput.value, name: nameInput.value.trim().slice(0, 60), editing: false, error: '' });
       renderNumerology();
       renderTools();
@@ -2210,6 +2216,19 @@
   const LG_ICONS = { love: '💗', family: '🏡', marriage: '💍', career: '💼', wealth: '🪙', health: '🌿' };
   const LG_TABS = ['yesterday', 'today', 'tomorrow', 'month', 'year'];
   const lg = { sign: 0, tab: 'today', picking: false, cache: {}, busy: '', failed: false };
+  // One rewarded ad opens all tabs of a sign for the rest of the day (Today stays free); remembered on the phone.
+  const LG_UNLOCK_KEY = 'jyotisha.lg-unlock.v1';
+  function lgUnlocked(sign) {
+    try { const saved = JSON.parse(window.localStorage.getItem(LG_UNLOCK_KEY)); return !!(saved && saved.day === localIso(new Date()) && Array.isArray(saved.signs) && saved.signs.includes(sign)); } catch (_error) { return false; }
+  }
+  function lgUnlock(sign) {
+    try {
+      const today = localIso(new Date()), saved = JSON.parse(window.localStorage.getItem(LG_UNLOCK_KEY));
+      const signs = saved && saved.day === today && Array.isArray(saved.signs) ? saved.signs : [];
+      window.localStorage.setItem(LG_UNLOCK_KEY, JSON.stringify({ day: today, signs: [...signs, sign] }));
+    } catch (_error) { /* optional */ }
+  }
+  const lgLocked = tab => tab !== 'today' && rewardedFor('lifeguide') && !lgUnlocked(lg.sign);
   function openLifeGuide() {
     lg.tab = 'today'; lg.failed = false; lg.picking = false;
     if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
@@ -2249,12 +2268,17 @@
     if (lg.sign) {
       const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
       LG_TABS.forEach((tab, i) => {
-        const button = el('button', tab === lg.tab ? 'on' : '', copy.tabs[i]); button.type = 'button';
+        const locked = lgLocked(tab);
+        const button = el('button', `${tab === lg.tab ? 'on' : ''}${locked ? ' locked' : ''}`.trim(), copy.tabs[i]); button.type = 'button';
         button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', tab === lg.tab ? 'true' : 'false');
-        button.addEventListener('click', () => { lg.tab = tab; renderLifeGuide(); });
+        button.addEventListener('click', async () => {
+          if (lgLocked(tab)) { if (!(await watchForResult())) return; lgUnlock(lg.sign); }   // the video icon on the tab says an ad comes first
+          lg.tab = tab; renderLifeGuide();
+        });
         tabs.appendChild(button);
       });
       box.appendChild(tabs);
+      if (LG_TABS.some(lgLocked)) box.appendChild(el('p', 'lg-unlock-note', copy.unlock));
       if (!data) {
         if (lg.failed) {
           box.appendChild(el('p', 'palm-wait', copy.failed));
@@ -2595,7 +2619,10 @@
       const tile = el('button', `moon-tile${n === sign ? ' on' : ''}`); tile.type = 'button';
       tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
       if (own && n === own.sign) tile.appendChild(el('i', null, `★ ${copy.yours}`));
-      tile.addEventListener('click', () => { state.moonPick = n; renderMoonSign(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+      tile.addEventListener('click', async () => {
+        if (rewardedFor('moon') && !(own && n === own.sign) && !(await watchForResult())) return;   // your own sign stays free
+        state.moonPick = n; renderMoonSign(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ }
+      });
       grid.appendChild(tile);
     }
     box.appendChild(grid);
@@ -3468,21 +3495,22 @@
     return facts;
   }
   // Native Android app only: a Google AdMob banner is drawn by the app below the page. The server switches it on and off.
-  // The bottom banner is hidden on the Ask page (like Palm AI keeps its chat clean) and shown on the other screens.
-  function syncBanner(page) {
-    const admob = appAds.admob;
-    if (!admob || !appAds.config) return;
-    const hide = page === 'chat';
-    if (hide === !!appAds.bannerHidden) return;
-    appAds.bannerHidden = hide;
+  // The bottom banner is hidden on the Ask page (like Palm AI keeps its chat clean) and while the camera is open (the
+  // banner is a native view that would cover the shutter); it is shown on the other screens.
+  function setBannerHidden(reason, on) {
+    const had = bannerHold.size > 0;
+    if (on) bannerHold.add(reason); else bannerHold.delete(reason);
+    const hide = bannerHold.size > 0, admob = appAds.admob;
+    if (hide === had || !admob || !appAds.config) return;
     try {
       if (hide) { void Promise.resolve(admob.hideBanner && admob.hideBanner()).catch(() => {}); document.documentElement.style.setProperty('--ad-height', '0px'); }
       else { void Promise.resolve(admob.resumeBanner && admob.resumeBanner()).catch(() => {}); setAdHeight(appAds.height || 0); }
     } catch (_error) { /* optional */ }
   }
+  function syncBanner(page) { setBannerHidden('chat', page === 'chat'); }
   function setAdHeight(pixels) {
     const height = Number.isFinite(pixels) && pixels > 0 ? Math.min(Math.round(pixels), 200) : 0;
-    if (!appAds.bannerHidden) appAds.height = height;
+    if (!bannerHold.size) appAds.height = height;
     document.documentElement.style.setProperty('--ad-height', `${height}px`);
   }
   const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
@@ -3507,7 +3535,8 @@
     return new Promise(resolve => {
       let earned = false, settled = false;
       const handles = [];
-      const finish = result => { if (settled) return; settled = true; handles.forEach(h => { try { h.remove(); } catch (_error) { /* gone */ } }); resolve(result); };
+      const finish = result => { if (settled) return; settled = true; if (earned) appAds.lastInterstitial = Date.now();   // no interstitial right after a rewarded ad
+        handles.forEach(h => { try { h.remove(); } catch (_error) { /* gone */ } }); resolve(result); };
       const listen = (name, handler) => { try { const h = admob.addListener(name, handler); if (h && h.then) h.then(x => handles.push(x)); else if (h) handles.push(h); } catch (_error) { /* optional */ } };
       listen('onRewardedVideoAdReward', () => { earned = true; if (startsFreeWindow) appAds.freeUntil = Date.now() + (config.rewarded_free_minutes || 10) * 60000; });
       listen('onRewardedVideoAdDismissed', () => finish(earned));
