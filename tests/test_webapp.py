@@ -777,6 +777,7 @@ def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(l
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT", "JYOTISHA_ADMOB_INTERSTITIAL_ID"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("JYOTISHA_ONBOARDING_ADS", "0")      # the welcome-step ads have their own test below
+    monkeypatch.setenv("JYOTISHA_ONBOARDING_BANNER", "0")   # so has the ad box on the welcome steps
     for feature in ("TAROT", "PALM", "RASHIPHAL"):
         monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")    # the result ads have their own test below
     readiness = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
@@ -986,3 +987,12 @@ def test_reading_reminders_are_hourly_by_default_and_can_be_switched_off(local_s
     assert teasers() == {"every_hours": 3, "from": 10, "to": 21}
     monkeypatch.setenv("JYOTISHA_TEASER_HOURS", "0")
     assert teasers() is None
+
+
+def test_the_ad_box_on_the_welcome_steps_is_on_by_default(local_server, monkeypatch):
+    monkeypatch.delenv("JYOTISHA_ONBOARDING_BANNER", raising=False)
+    monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
+    config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
+    assert config()["onboarding_banner"] is True
+    monkeypatch.setenv("JYOTISHA_ONBOARDING_BANNER", "0")
+    assert "onboarding_banner" not in config()

@@ -775,7 +775,7 @@
   applyLook();
 
   /* ---- Daily notifications (Android app only): scheduled on the phone, no server or account needed ---- */
-  const NOTIFY_KEY = 'jyotisha.notify.v1', NOTIFY_FIRST_ID = 7100, NOTIFY_DAYS = 7;
+  const NOTIFY_KEY = 'jyotisha.notify.v1', NOTIFY_FIRST_ID = 7100, NOTIFY_DAYS = 7, NOTIFY_ACTION = 'JYOTI_OPEN';
   const notifier = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.LocalNotifications ? cap.Plugins.LocalNotifications : null; };
   function loadNotify() {
     try {
@@ -839,6 +839,10 @@
       list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
       try { list.push(...eveningNotifications(now, days)); } catch (error) { console.warn('evening notifications', error); }
       try { list.push(...teaserNotifications(now)); } catch (error) { console.warn('reading reminders', error); }
+      // A button under each reading reminder and timing alert (like "Reveal it"), opening the same screen as a tap.
+      const button = { en: 'See now', te: 'ఇప్పుడే చూడండి', hi: 'अभी देखें' }[state.lang] || 'See now';
+      try { if (plugin.registerActionTypes) await plugin.registerActionTypes({ types: [{ id: NOTIFY_ACTION, actions: [{ id: 'open', title: button, foreground: true }] }] }); } catch (_error) { /* older plugin: no button */ }
+      for (const item of list) if (item.extra && item.extra.page && item.extra.page !== 'home') item.actionTypeId = NOTIFY_ACTION;
       await plugin.schedule({ notifications: list });
       notifyInfo = null;
     } catch (error) {
@@ -1257,6 +1261,25 @@
     const full = el('option'); full.value = item.code; full.textContent = item.code === 'en' ? item.native : `${item.native} · ${item.english}`; choice.appendChild(full);
     const short = el('option'); short.value = item.code; short.textContent = item.native; switcher.appendChild(short);
   }
+  // First start: the languages as a list of cards (native name, English name, a ✓) instead of a dropdown.
+  const firstLetter = text => {
+    try { if (typeof Intl.Segmenter === 'function') { const first = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)[Symbol.iterator]().next(); if (!first.done) return first.value.segment; } } catch (_error) { /* fall back */ }
+    return Array.from(text)[0] || '';
+  };
+  function renderLanguageList() {
+    const box = $('language-list');
+    if (!box) return;
+    box.replaceChildren(...calendarUI.LANGUAGES.map(item => {
+      const on = item.code === state.lang;
+      const row = el('button', `lang-item${on ? ' on' : ''}`); row.type = 'button';
+      row.setAttribute('role', 'radio'); row.setAttribute('aria-checked', on ? 'true' : 'false');
+      const text = el('span', 'lang-text');
+      text.append(el('b', null, item.native), el('small', null, item.english.toLowerCase() === item.native.toLowerCase() ? '' : item.english));
+      row.append(el('span', 'lang-badge', firstLetter(item.native)), text, el('span', 'lang-check', on ? '✓' : ''));
+      row.addEventListener('click', () => { applyLanguage(item.code); });
+      return row;
+    }));
+  }
   function applyLanguage(value) {
     state.lang = calendarUI.language(value);
     document.documentElement.lang = state.lang;
@@ -1271,6 +1294,8 @@
     renderHome();
     renderTools();
     renderTodayStrip();
+    renderLanguageList();
+    renderWheels();
     renderLookPanel();
     showKundliView(state.kundliView);
     renderRelationship();
@@ -1290,9 +1315,11 @@
   let onboardingStep = 'welcome';
   function showOnboardingStep(step) {
     onboardingStep = step;
+    void onboardingBanner(step === 'language' || step === 'profile');
     document.body.classList.add('onboarding-active');
     $('welcome-screen').hidden = false;
     for (const name of ['welcome', 'language', 'location', 'profile']) $(`step-${name}`).hidden = name !== step;
+    if (step === 'profile') renderWheels();   // drawn while visible, so each wheel can scroll to its value
   }
   $('welcome-next').addEventListener('click', () => showOnboardingStep('language'));
   // First start: a short loading screen ("Aligning your stars…"); the phone's notification prompt appears meanwhile
@@ -1474,6 +1501,76 @@
   }
   // Name and birth date (time optional): the name personalises greetings; with a time the Kundli is made straight away.
   let profileBusy = false;
+  /* ---- Scroll wheels for the date and time of birth (like a phone's own pickers). They fill the hidden inputs only
+     once the user has turned them, so an untouched wheel never saves a made-up birth date. ---- */
+  const WHEEL_ROW = 44;
+  function wheel(values, index, onPick) {
+    const box = el('div', 'wheel');
+    const list = el('div', 'wheel-list');
+    values.forEach((value, i) => {
+      const item = el('div', `wheel-item${i === index ? ' on' : ''}`, value);
+      item.addEventListener('click', () => { list.scrollTop = i * WHEEL_ROW; settle(i); });
+      list.appendChild(item);
+    });
+    let timer = null, current = index;
+    const settle = i => {
+      if (i === current) return;
+      current = i;
+      Array.from(list.children).forEach((item, n) => { item.className = `wheel-item${n === i ? ' on' : ''}`; });
+      onPick(i);
+    };
+    list.addEventListener('scroll', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => settle(Math.max(0, Math.min(values.length - 1, Math.round((list.scrollTop || 0) / WHEEL_ROW)))), 90);
+    });
+    box.appendChild(list);
+    setTimeout(() => { list.scrollTop = index * WHEEL_ROW; }, 0);
+    return box;
+  }
+  const pad2 = n => String(n).padStart(2, '0');
+  const wheelState = { y: 2000, m: 1, d: 1, hh: 12, mm: 0, dobTouched: false, tobTouched: false };
+  function renderWheels() {
+    const dobBox = $('dob-wheels'), tobBox = $('tob-wheels');
+    if (!dobBox || !tobBox) return;
+    const thisYear = new Date().getFullYear(), years = [];
+    for (let y = 1930; y <= thisYear; y += 1) years.push(y);
+    const days = new Date(Date.UTC(wheelState.y, wheelState.m, 0)).getUTCDate();
+    if (wheelState.d > days) wheelState.d = days;
+    const writeDob = () => { wheelState.dobTouched = true; $('welcome-dob').value = `${wheelState.y}-${pad2(wheelState.m)}-${pad2(wheelState.d)}`; };
+    const writeTob = () => { wheelState.tobTouched = true; $('welcome-tob').value = `${pad2(wheelState.hh)}:${pad2(wheelState.mm)}`; };
+    dobBox.replaceChildren(
+      wheel(Array.from({ length: days }, (_, i) => pad2(i + 1)), wheelState.d - 1, i => { wheelState.d = i + 1; writeDob(); }),
+      wheel(Array.from({ length: 12 }, (_, i) => calendarUI.monthName(state.lang, i)), wheelState.m - 1, i => { wheelState.m = i + 1; writeDob(); renderWheels(); }),
+      wheel(years.map(String), years.indexOf(wheelState.y), i => { wheelState.y = years[i]; writeDob(); renderWheels(); }));
+    const colon = el('span', 'wheel-colon', ':');
+    tobBox.replaceChildren(
+      wheel(Array.from({ length: 24 }, (_, i) => pad2(i)), wheelState.hh, i => { wheelState.hh = i; writeTob(); }),
+      colon,
+      wheel(Array.from({ length: 60 }, (_, i) => pad2(i)), wheelState.mm, i => { wheelState.mm = i; writeTob(); }));
+  }
+
+  /* ---- An ad box (300 x 250) under the language and birth-date steps, in the Android app (admin switch). ---- */
+  let onbBannerOn = false;
+  async function onboardingBanner(show) {
+    const admob = admobPlugin(), config = appAds.waiting || appAds.config;
+    const root = document.documentElement;
+    if (!show) {
+      if (!onbBannerOn) return;
+      onbBannerOn = false;
+      try { root.style.setProperty('--onb-ad', '0px'); } catch (_error) { /* optional */ }
+      try { await admob.removeBanner(); } catch (_error) { /* gone */ }
+      return;
+    }
+    if (onbBannerOn || state.onboarded || !admob || !config || config.onboarding_banner !== true || !adUnitOk(config.banner_id)) return;
+    onbBannerOn = true;
+    try {
+      await within(ensureAdmob(admob, config), 6000);
+      if (!onbBannerOn) return;
+      await admob.showBanner({ adId: config.banner_id, adSize: 'MEDIUM_RECTANGLE', position: 'BOTTOM_CENTER', margin: 8, isTesting: config.testing === true });
+      if (!onbBannerOn) { try { await admob.removeBanner(); } catch (_error) { /* gone */ } return; }   // the step was left meanwhile
+      try { root.style.setProperty('--onb-ad', '270px'); } catch (_error) { /* optional */ }
+    } catch (_error) { onbBannerOn = false; }
+  }
   async function finishProfile(skip = false) {
     if (profileBusy) return;
     profileBusy = true;
@@ -1482,6 +1579,7 @@
     state.userName = name;
     state.userDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : '';
     if (state.userDob && /^\d{2}:\d{2}$/.test(tob)) saveProfile({ dob: state.userDob, pob: $('welcome-city').value.trim(), tob });
+    await onboardingBanner(false);
     await onboardingAd();
     finishWelcome();
     profileBusy = false;
@@ -1491,6 +1589,7 @@
   $('profile-next').addEventListener('click', () => { void finishProfile(); });
   $('profile-skip').addEventListener('click', () => { void finishProfile(true); });
   function finishWelcome() {
+    if (onbBannerOn) void onboardingBanner(false);
     if (!$('welcome-city').value.trim()) return;
     applyLanguage(choice.value);
     state.city = $('welcome-city').value.trim();

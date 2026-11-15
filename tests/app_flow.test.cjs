@@ -1555,3 +1555,66 @@ test('opening the app: the loading screen stays until today’s Panchang is read
   const other = boot({ storage, capacitor: native });
   assert.notEqual(other.element('dp-date').value, today);
 });
+
+test('first start: language cards with a tick, birth-date wheels that only count once turned, and an ad box on those steps', async () => {
+  const calls = [];
+  const AdMob = {
+    initialize: async () => calls.push('initialize'), requestConsentInfo: async () => ({}), showConsentForm: async () => {},
+    addListener: async () => ({ remove: async () => {} }),
+    showBanner: async options => calls.push(['showBanner', options.adSize]), removeBanner: async () => calls.push('removeBanner'),
+    prepareInterstitial: async () => {}, showInterstitial: async () => {},
+  };
+  const storage = memoryStorage();
+  const app = boot({ storage, capacitor: { Plugins: { AdMob } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', onboarding_banner: true, testing: true } });
+  await settle();
+  app.element('welcome-next').listeners.click();
+  await settle(); await settle();
+  // Language: a card per language; tapping one selects it and switches the screen's language.
+  const cards = app.element('language-list').children;
+  assert.ok(cards.length >= 3);
+  assert.equal(cards[0].children[1].children[0].textContent, 'English');
+  const telugu = cards.find(card => card.children[1].children[1].textContent === 'Telugu');
+  telugu.listeners.click();
+  assert.equal(app.element('language-choice').value, 'te');
+  const again = app.element('language-list').children.find(card => card.children[1].children[1].textContent === 'Telugu');
+  assert.equal(again.getAttribute('aria-checked'), 'true'); assert.equal(again.children[2].textContent, '✓');
+  assert.ok(calls.some(c => Array.isArray(c) && c[1] === 'MEDIUM_RECTANGLE'));      // the ad box under the list
+  app.element('language-next').listeners.click();
+  app.element('welcome-city').value = 'Hyderabad, IN';
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  await settle();
+  // Birth date: untouched wheels give no date; turning them fills it in.
+  const dob = app.element('dob-wheels').children, tob = app.element('tob-wheels').children;
+  assert.equal(dob.length, 3); assert.equal(tob.length, 3);                       // day, month, year · hour : minute
+  assert.ok(!app.element('welcome-dob').value);
+  const pick = (wheelBox, text) => wheelBox.children[0].children.find(item => item.textContent === text).listeners.click();
+  pick(dob[0], '15'); pick(dob[2], '1995');
+  assert.equal(app.element('welcome-dob').value, '1995-01-15');
+  assert.ok(!app.element('welcome-tob').value);                                    // birth time stays optional
+  pick(tob[0], '06'); pick(tob[2], '30');
+  assert.equal(app.element('welcome-tob').value, '06:30');
+  app.element('profile-next').listeners.click();
+  await new Promise(resolve => setTimeout(resolve, 60)); await settle(); await settle();
+  const removed = calls.indexOf('removeBanner'), adaptive = calls.findIndex(c => Array.isArray(c) && c[1] === 'ADAPTIVE_BANNER');
+  assert.ok(removed >= 0 && adaptive > removed);                                    // the ad box goes before the usual banner
+  assert.equal(storage.read().dob, '1995-01-15');
+});
+
+test('notifications that open a screen get a button that opens it too', async () => {
+  const calls = { schedule: [], types: null };
+  const LocalNotifications = {
+    checkPermissions: async () => ({ display: 'granted' }), requestPermissions: async () => ({ display: 'granted' }),
+    getPending: async () => ({ notifications: [] }), cancel: async () => {},
+    registerActionTypes: async ({ types }) => { calls.types = types; },
+    schedule: async ({ notifications }) => { calls.schedule.push(notifications); }, addListener: () => {},
+  };
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.notify.v1', JSON.stringify({ on: true, asked: true }));
+  boot({ storage, capacitor: { Plugins: { LocalNotifications }, getPlatform: () => 'android' }, teasers: { every_hours: 1, from: 5, to: 21 } });
+  for (let i = 0; i < 6; i += 1) await settle();
+  assert.equal(calls.types[0].id, 'JYOTI_OPEN');
+  assert.equal(calls.types[0].actions[0].title, 'ఇప్పుడే చూడండి');
+  const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
+  assert.ok(teasers.length && teasers.every(item => item.actionTypeId === 'JYOTI_OPEN'));
+});

@@ -176,6 +176,8 @@ def _app_ads() -> dict | None:
 
         config["chat_free_questions"] = count("JYOTISHA_CHAT_FREE_QUESTIONS", 10)
         config["chat_bonus_questions"] = count("JYOTISHA_CHAT_BONUS_QUESTIONS", 5)
+    if store.value("JYOTISHA_ONBOARDING_BANNER", "1") == "1":
+        config["onboarding_banner"] = True
     if store.value("JYOTISHA_LAUNCH_AD", "0") == "1":
         config["launch_interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
     if store.value("JYOTISHA_ONBOARDING_ADS", "1") == "1":
