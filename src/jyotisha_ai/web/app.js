@@ -199,6 +199,8 @@
         balance: ['Yesterday’s balance', 'Today’s balance', 'Tomorrow’s balance', 'This month’s balance', 'This year’s balance'],
         areas: { love: 'Love', family: 'Family', marriage: 'Marriage', career: 'Career', wealth: 'Wealth', health: 'Health' }, byArea: 'By area', supported: 'Supported by {planets}',
         yourSign: 'Your sign', change: 'Change', pick: 'Check another sign', pickFirst: 'Pick your sign to see your balance.', loading: 'Working out your balance…', failed: 'Could not load right now. Please try again.',
+        personal: 'Personal to your chart: birth star {star}', dashaLine: 'dasha {lords}', general: 'General for this sign. Create your Kundli for a Life Guide that is personal to you.', tara: 'Your star today: {tara}',
+        taraNames: ['Janma', 'Sampat', 'Vipat', 'Kshema', 'Pratyak', 'Sadhana', 'Naidhana', 'Mitra', 'Parama Mitra'], taraEffect: ['needs care', 'neutral', 'supportive'],
         unlock: 'Tabs with the video icon open after one short ad, for this sign for the rest of the day.',
         note: 'Worked out from planet transits counted from the Moon sign. Guidance for reflection, not a prediction.',
         text: { love: ['Go gently. Listen more and avoid hasty words.', 'A steady stretch. Small, thoughtful gestures matter most.', 'Warmth comes easily. A good time to share your feelings.'],
@@ -291,6 +293,8 @@
         balance: ['నిన్నటి సమతుల్యం', 'నేటి సమతుల్యం', 'రేపటి సమతుల్యం', 'ఈ నెల సమతుల్యం', 'ఈ సంవత్సర సమతుల్యం'],
         areas: { love: 'ప్రేమ', family: 'కుటుంబం', marriage: 'వివాహం', career: 'ఉద్యోగం', wealth: 'ధనం', health: 'ఆరోగ్యం' }, byArea: 'అంశాల వారీగా', supported: '{planets} అనుకూలం',
         yourSign: 'మీ రాశి', change: 'మార్చండి', pick: 'మరో రాశి చూడండి', pickFirst: 'మీ సమతుల్యం చూడటానికి మీ రాశిని ఎంచుకోండి.', loading: 'మీ సమతుల్యం లెక్కిస్తున్నాం…', failed: 'ఇప్పుడు లోడ్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.',
+        personal: 'మీ జాతకానికి ప్రత్యేకం: జన్మ నక్షత్రం {star}', dashaLine: 'దశ {lords}', general: 'ఈ రాశికి సాధారణ ఫలితం. మీకు ప్రత్యేకమైన లైఫ్ గైడ్ కోసం మీ జాతకం సృష్టించండి.', tara: 'ఈ రోజు మీ తార: {tara}',
+        taraNames: ['జన్మ', 'సంపత్', 'విపత్', 'క్షేమ', 'ప్రత్యక్', 'సాధన', 'నైధన', 'మిత్ర', 'పరమ మిత్ర'], taraEffect: ['జాగ్రత్త', 'సాధారణం', 'అనుకూలం'],
         unlock: 'వీడియో గుర్తు ఉన్న ట్యాబ్‌లు ఒక చిన్న ప్రకటన తర్వాత, ఈ రాశికి ఈ రోజంతా తెరుచుకుంటాయి.',
         note: 'చంద్ర రాశి నుంచి గ్రహ సంచారాల ఆధారంగా లెక్కించినది. ఆలోచనకు మార్గదర్శనం మాత్రమే, జోస్యం కాదు.',
         text: { love: ['నిదానంగా ఉండండి. ఎక్కువ వినండి, తొందరపడి మాట్లాడకండి.', 'నిలకడగా ఉంటుంది. చిన్న చిన్న శ్రద్ధలే ముఖ్యం.', 'ప్రేమ భావాలు సులభంగా పంచుకోగలరు. మనసులో మాట చెప్పడానికి మంచి సమయం.'],
@@ -383,6 +387,8 @@
         balance: ['बीते कल का संतुलन', 'आज का संतुलन', 'आने वाले कल का संतुलन', 'इस माह का संतुलन', 'इस वर्ष का संतुलन'],
         areas: { love: 'प्रेम', family: 'परिवार', marriage: 'विवाह', career: 'करियर', wealth: 'धन', health: 'स्वास्थ्य' }, byArea: 'क्षेत्र के अनुसार', supported: '{planets} का साथ',
         yourSign: 'आपकी राशि', change: 'बदलें', pick: 'दूसरी राशि देखें', pickFirst: 'अपना संतुलन देखने के लिए अपनी राशि चुनें।', loading: 'आपका संतुलन निकाल रहे हैं…', failed: 'अभी लोड नहीं हो सका। कृपया फिर कोशिश करें।',
+        personal: 'आपकी कुंडली के अनुसार: जन्म नक्षत्र {star}', dashaLine: 'दशा {lords}', general: 'इस राशि के लिए सामान्य। अपने लिए ख़ास लाइफ़ गाइड के लिए अपनी कुंडली बनाएँ।', tara: 'आज आपकी तारा: {tara}',
+        taraNames: ['जन्म', 'संपत्', 'विपत्', 'क्षेम', 'प्रत्यक्', 'साधना', 'नैधन', 'मित्र', 'परम मित्र'], taraEffect: ['सावधानी', 'सामान्य', 'अनुकूल'],
         unlock: 'वीडियो आइकन वाले टैब एक छोटे विज्ञापन के बाद, इस राशि के लिए आज पूरे दिन खुल जाते हैं।',
         note: 'चंद्र राशि से ग्रहों के गोचर के आधार पर निकाला गया। चिंतन के लिए मार्गदर्शन है, भविष्यवाणी नहीं।',
         text: { love: ['धीरे चलें। ज़्यादा सुनें, जल्दबाज़ी में न बोलें।', 'स्थिर दौर। छोटी-छोटी परवाह सबसे ज़रूरी।', 'भावनाएँ सहज बाँट पाएँगे। मन की बात कहने का अच्छा समय।'],
@@ -1369,7 +1375,7 @@
     if (pages.tarot && !pages.tarot.hidden) renderTarot();
     if (pages.palm && !pages.palm.hidden) renderPalm();
     if (pages.numbers && !pages.numbers.hidden) renderNumerology();
-    if (pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
+    if (pages.lifeguide && !pages.lifeguide.hidden) { renderLifeGuide(); void loadLifeGuideText(); }
     if (pages.signmatch && !pages.signmatch.hidden) renderSignMatch();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
@@ -2215,7 +2221,7 @@
   const LG_AREAS = ['love', 'family', 'marriage', 'career', 'wealth', 'health'];
   const LG_ICONS = { love: '💗', family: '🏡', marriage: '💍', career: '💼', wealth: '🪙', health: '🌿' };
   const LG_TABS = ['yesterday', 'today', 'tomorrow', 'month', 'year'];
-  const lg = { sign: 0, tab: 'today', picking: false, cache: {}, busy: '', failed: false };
+  const lg = { sign: 0, tab: 'today', picking: false, cache: {}, info: {}, text: {}, busy: '', failed: false };
   // One rewarded ad opens all tabs of a sign for the rest of the day (Today stays free); remembered on the phone.
   const LG_UNLOCK_KEY = 'jyotisha.lg-unlock.v1';
   function lgUnlocked(sign) {
@@ -2234,18 +2240,46 @@
     if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
     showPage('lifeguide'); renderLifeGuide();
     void loadLifeGuide();
+    void loadLifeGuideText();
   }
+  // With the user's own chart and their own Moon sign, the Life Guide is personal: the birth star and the running dasha
+  // lords (and the natal house of each) are sent, never the birth date, time or place.
+  function lgPersonal() {
+    const chart = state.chart;
+    if (!chart || !chart.positions || !chart.positions.Moon || lg.sign !== chart.positions.Moon.rashi_index) return null;
+    const star = chart.panchanga_at_birth && chart.panchanga_at_birth.nakshatra_index;
+    if (!Number.isInteger(star) || star < 1 || star > 27) return null;
+    const dasha = state.details && state.details.dasha, planets = (state.details && state.details.planets) || {}, lords = [];
+    if (dasha && dasha.current_mahadasha) lords.push(dasha.current_mahadasha);
+    const sub = dasha && (dasha.antardasha || []).find(item => item.current);
+    if (sub) lords.push(sub.lord);
+    return { nakshatra: star, dasha: lords.filter(lord => planets[lord] && Number.isInteger(planets[lord].whole_sign_bhava)).map(lord => ({ lord, house: planets[lord].whole_sign_bhava })) };
+  }
+  const lgKey = () => { const personal = lgPersonal(); return `${lg.sign}:${state.todayIso || localIso(new Date())}:${personal ? personal.nakshatra : 0}`; };
   async function loadLifeGuide() {
-    const sign = lg.sign, day = state.todayIso || localIso(new Date()), key = `${sign}:${day}`;
+    const sign = lg.sign, day = state.todayIso || localIso(new Date()), key = lgKey(), personal = lgPersonal();
     if (!sign || lg.cache[key] || lg.busy === key) return;
     lg.busy = key; lg.failed = false; renderLifeGuide();
     try {
-      const { ok, body } = await post('/api/life-guide', { sign, date: day });
-      if (ok && body && body.reading) lg.cache[key] = body.reading; else lg.failed = true;
+      const { ok, body } = await post('/api/life-guide', personal ? { sign, date: day, personal } : { sign, date: day });
+      if (ok && body && body.reading) { lg.cache[key] = body.reading; lg.info[key] = body.personal || null; } else lg.failed = true;
     } catch (_error) { lg.failed = true; }
     lg.busy = '';
     if (pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
   }
+  // The AI-written wording of the day (four sentences per area and band, once a day per language, shared by everyone).
+  // Until it arrives, or if the AI is off, the built-in sentences are shown.
+  async function loadLifeGuideText() {
+    const day = state.todayIso || localIso(new Date()), key = `${state.lang}:${day}`;
+    if (lg.text[key] !== undefined) return;
+    lg.text[key] = null;
+    try {
+      const { ok, body } = await post('/api/life-guide-text', { language: state.lang, date: day });
+      lg.text[key] = ok && body && body.variants ? body.variants : null;
+    } catch (_error) { lg.text[key] = null; }
+    if (lg.text[key] && pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
+  }
+  const lgWords = () => lg.text[`${state.lang}:${state.todayIso || localIso(new Date())}`] || null;
   const lgBand = score => (score >= 7 ? 2 : score >= 5 ? 1 : 0);
   function renderLifeGuide() { renderLifeGuideBody(); decorate($('lifeguide'), lgCopy().title); }
   function renderLifeGuideBody() {
@@ -2253,7 +2287,7 @@
     box.replaceChildren();
     const hero = el('div', 'lg-hero'); if (art && art.lifeguide) hero.innerHTML = art.lifeguide();
     box.appendChild(hero);
-    const day = state.todayIso || localIso(new Date()), data = lg.sign ? lg.cache[`${lg.sign}:${day}`] : null;
+    const key = lgKey(), data = lg.sign ? lg.cache[key] : null, personal = lgPersonal(), info = lg.info[key], words = lgWords();
     // Which sign: the user's own Moon sign, or any sign chosen below.
     if (lg.sign) {
       const row = el('div', 'lg-sign');
@@ -2262,6 +2296,15 @@
       change.addEventListener('click', () => { lg.picking = !lg.picking; renderLifeGuide(); });
       row.appendChild(change);
       box.appendChild(row);
+      if (personal) {
+        const lords = personal.dasha.map(item => bodyName(item.lord)).join(' – ');
+        box.appendChild(el('p', 'lg-personal', `✨ ${fill(copy.personal, { star: names.nakshatraName(personal.nakshatra, state.lang) })}${lords ? ` · ${fill(copy.dashaLine, { lords })}` : ''}`));
+        if (info && info.tara && lg.tab === 'today') {
+          box.appendChild(el('p', 'lg-personal lg-tara', `${fill(copy.tara, { tara: copy.taraNames[info.tara - 1] })}: ${copy.taraEffect[info.shift + 1]}`));
+        }
+      } else {
+        box.appendChild(el('p', 'lg-personal lg-general', copy.general));
+      }
     } else {
       box.appendChild(el('p', 'tarot-ask', copy.pickFirst));
     }
@@ -2304,7 +2347,10 @@
           const item = el('section', `lg-aspect lg-${area}`);
           const head = el('div', 'lg-aspect-head');
           head.append(el('span', 'lg-ico', LG_ICONS[area]), el('h4', null, copy.areas[area]), el('span', 'lg-score', String(score)));
-          item.append(head, el('p', null, copy.text[area][lgBand(score)]));
+          // The day, the tab, the area and the user's own star pick which of the day's wordings to show.
+          const pool = words && words[area] && words[area][['low', 'mid', 'high'][lgBand(score)]];
+          const line = pool && pool.length ? pool[(dayNumberOf(new Date()) + LG_AREAS.indexOf(area) + LG_TABS.indexOf(lg.tab) * 2 + (personal ? personal.nakshatra : 0)) % pool.length] : copy.text[area][lgBand(score)];
+          item.append(head, el('p', null, line));
           if (support && support.length) item.appendChild(el('small', null, fill(copy.supported, { planets: support.map(bodyName).join(', ') })));
           box.appendChild(item);
         }

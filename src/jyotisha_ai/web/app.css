@@ -1348,3 +1348,6 @@ body.page-feature .masthead{display:none}
   -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat;
   mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat}
 .lg-unlock-note{margin:-4px 0 8px;font-size:.78rem;color:var(--muted)}
+
+.lg-personal{margin:2px 0 8px;font-size:.85rem;color:var(--muted);line-height:1.45}
+.lg-personal.lg-tara{margin-top:-4px;color:var(--heading);font-weight:650}

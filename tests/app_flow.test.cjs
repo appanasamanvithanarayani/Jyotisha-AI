@@ -69,7 +69,8 @@ function boot(setup = {}) {
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
-    if (url === '/api/life-guide') { setup.lifeGuideCalls = (setup.lifeGuideCalls || 0) + 1; return reply(setup.lifeGuide ? { status: 'ok', reading: setup.lifeGuide } : { status: 'ok' }); }
+    if (url === '/api/life-guide-text') return reply(setup.lifeGuideText ? { status: 'ok', variants: setup.lifeGuideText } : { status: 'off', variants: null });
+    if (url === '/api/life-guide') { setup.lifeGuideCalls = (setup.lifeGuideCalls || 0) + 1; return reply(setup.lifeGuide ? { status: 'ok', reading: setup.lifeGuide, ...(setup.lifeGuidePersonal && JSON.parse(options.body).personal ? { personal: setup.lifeGuidePersonal } : {}) } : { status: 'ok' }); }
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
@@ -1947,4 +1948,64 @@ test('the banner is also hidden while the palm camera is open (it would cover th
   assert.deepEqual(hidden, ['hide']);                                                // the shutter is not covered by the banner
   app.context.document.body.children.find(item => item.className === 'cam').children[3].listeners.click();   // close
   assert.deepEqual(hidden, ['hide', 'resume']);
+});
+
+test('Life Guide is personal to your own chart (birth star and running dasha), and general for any other sign', async () => {
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: [] }]));
+  const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
+  const planets = Object.fromEntries(['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'].map((name, n) => [name, { whole_sign_bhava: n + 1 }]));
+  const birth = { ...syntheticBirth, details: { dasha: { current_mahadasha: 'Venus', antardasha: [{ lord: 'Moon', current: false }, { lord: 'Saturn', current: true }] }, planets } };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth, lifeGuide, lifeGuidePersonal: { tara: 2, shift: 1 } });
+  await settle(); await settle();
+  homeCard(app, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const sent = app.requests.filter(r => r.url === '/api/life-guide').at(-1).body;
+  assert.equal(sent.sign, 2);
+  assert.equal(JSON.stringify(sent.personal), JSON.stringify({ nakshatra: 17, dasha: [{ lord: 'Venus', house: 6 }, { lord: 'Saturn', house: 7 }] }));   // only chart numbers
+  assert.ok(!JSON.stringify(sent).includes('1995') && !JSON.stringify(sent).includes('Hyderabad'));                                                    // never the birth details
+  const lines = () => app.element('lifeguide').children.filter(item => /^lg-personal/.test(item.className)).map(item => item.textContent);
+  assert.equal(lines()[0], '✨ Personal to your chart: birth star Anuradha · dasha Venus – Saturn');
+  assert.equal(lines()[1], 'Your star today: Sampat: supportive');
+  // Another sign is general: nothing personal is sent, and the page says so
+  const page = () => app.element('lifeguide').children;
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();
+  page().find(item => item.className === 'moon-pick').children[5].listeners.click();
+  await settle();
+  assert.equal(app.requests.filter(r => r.url === '/api/life-guide').at(-1).body.personal, undefined);
+  assert.match(lines()[0], /^General for this sign/);
+  // Back to your own sign: the personal answer was kept, no new request
+  const before = app.requests.filter(r => r.url === '/api/life-guide').length;
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();
+  page().find(item => item.className === 'moon-pick').children[1].listeners.click();
+  await settle();
+  assert.equal(app.requests.filter(r => r.url === '/api/life-guide').length, before);
+  assert.match(lines()[0], /^✨ Personal to your chart/);
+});
+
+test('Life Guide wording: the AI’s sentences of the day are used (varying by area, tab and your star), the built-in ones until then or when the AI is off', async () => {
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: [] }]));
+  const lifeGuide = { yesterday: period([8, 8, 8, 8, 8, 8]), today: period([8, 8, 8, 8, 8, 8]), tomorrow: period([8, 8, 8, 8, 8, 8]), month: period([8, 8, 8, 8, 8, 8]), year: period([8, 8, 8, 8, 8, 8]) };
+  const lifeGuideText = Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map(area => [area, { low: ['L1', 'L2'], mid: ['M1', 'M2'], high: [`${area} high one`, `${area} high two`, `${area} high three`] }]));
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, lifeGuide, lifeGuideText });
+  await settle(); await settle();
+  homeCard(app, 'Life Guide').listeners.click();
+  await settle(); await settle(); await settle();
+  const lines = () => app.element('lifeguide').children.filter(item => /^lg-aspect/.test(item.className)).map(item => item.children[1].textContent);
+  assert.ok(lines().every(line => /high (one|two|three)$/.test(line)), lines().join(' | '));          // the AI's sentences, all from the "high" band
+  assert.equal(new Set(lines()).size > 1, true);                                                          // the areas do not all read alike
+  const today = lines();
+  app.element('lifeguide').children.find(item => item.className === 'tabs-line').children[3].listeners.click();   // This month
+  assert.notEqual(lines().join('|'), today.join('|'));                                                    // another tab reads differently
+  assert.equal(app.requests.filter(r => r.url === '/api/life-guide-text').length, 1);                     // fetched once for the day
+  // The AI is off: the built-in sentences
+  const plain = boot({ storage, birth: syntheticBirth, lifeGuide });
+  await settle(); await settle();
+  homeCard(plain, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const builtIn = plain.element('lifeguide').children.filter(item => /^lg-aspect/.test(item.className)).map(item => item.children[1].textContent);
+  assert.equal(builtIn[0], 'Warmth comes easily. A good time to share your feelings.');
 });
