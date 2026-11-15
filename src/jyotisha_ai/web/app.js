@@ -10,7 +10,7 @@
   const state = {
     lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
     view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
-    chart: null, details: null, resolved: null, partnerChart: null, partnerDetails: null, showLoveReading: false, loveMode: null, myRole: 'groom', kundliView: 'chart', festivals: null, festivalsAll: false, kundli: { style: 'south', division: 'd1' },
+    chart: null, details: null, resolved: null, partnerChart: null, partnerDetails: null, firstChart: null, firstDetails: null, matchWho: 'me', showLoveReading: false, loveMode: null, myRole: 'groom', kundliView: 'chart', festivals: null, festivalsAll: false, kundli: { style: 'south', division: 'd1' },
   };
   const t = key => calendarUI.tr(state.lang, key);
   const bodyName = name => chartUI.bodyName(name, state.lang);
@@ -112,7 +112,7 @@
     en: {
       nav: 'Love', eyebrow: 'Relationships', title: 'Love & Kundli matching', intro: 'Choose what you want to see.',
       optMatch: 'Kundli matching', optMatchSub: 'Guna Milan score out of 36', optReading: 'My love reading', optReadingSub: 'What your chart says about love and marriage',
-      compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
+      who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Two other people', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
       score: 'Guna Milan', excellent: 'Excellent match', good: 'Good match', average: 'Average match — acceptable in most traditions', low: 'Low match — usually not recommended',
@@ -127,7 +127,7 @@
     te: {
       nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
       optMatch: 'జాతక పొంతన', optMatchSub: 'గుణ మేళనం — 36కి స్కోరు', optReading: 'నా ప్రేమ ఫలితం', optReadingSub: 'ప్రేమ, వివాహం గురించి మీ జాతకం ఏమంటుంది',
-      compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
+      who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇద్దరు ఇతరులు', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
       score: 'గుణ మేళనం', excellent: 'అత్యుత్తమ పొంతన', good: 'మంచి పొంతన', average: 'సాధారణ పొంతన — చాలా సంప్రదాయాలలో ఆమోదయోగ్యం', low: 'తక్కువ పొంతన — సాధారణంగా సిఫార్సు చేయరు',
@@ -142,7 +142,7 @@
     hi: {
       nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
       optMatch: 'कुंडली मिलान', optMatchSub: 'गुण मिलान — 36 में से अंक', optReading: 'मेरा प्रेम फल', optReadingSub: 'प्रेम और विवाह पर आपकी कुंडली क्या कहती है',
-      compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
+      who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दो अन्य लोग', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
       score: 'गुण मिलान', excellent: 'उत्तम मिलान', good: 'अच्छा मिलान', average: 'सामान्य मिलान — अधिकांश परंपराओं में स्वीकार्य', low: 'कम मिलान — आमतौर पर अनुशंसित नहीं',
@@ -469,8 +469,23 @@
     if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => {
       button.textContent = copy[button.dataset.role]; button.classList.toggle('on', button.dataset.role === state.myRole);
     });
+    const others = state.matchWho === 'others';
+    $('match-who-label').textContent = copy.who;
+    $('match-who').replaceChildren(...['me', 'others'].map(who => {
+      const button = el('button', who === state.matchWho ? 'on' : '', who === 'me' ? copy.whoMe : copy.whoOthers);
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        state.matchWho = who;
+        state.partnerChart = null; state.partnerDetails = null; state.firstChart = null; state.firstDetails = null;
+        $('relationship-status').textContent = ''; renderRelationship();
+      });
+      return button;
+    }));
+    $('first-block').hidden = !others; $('role-row').hidden = others;
+    $('first-title').textContent = copy.boyTitle; $('second-title').textContent = copy.girlTitle;
+    $('relationship-compare-title').hidden = others;
     $('relationship-reading').disabled = !state.chart;
-    if (!state.chart && mode) $('relationship-status').textContent = copy.needChart;
+    if (!state.chart && mode && !(mode === 'match' && others)) $('relationship-status').textContent = copy.needChart;
     const reading = $('relationship-reading-result'); reading.replaceChildren();
     if (mode === 'reading' && !state.chart) reading.appendChild(el('p', 'muted-note', copy.needChart));
     if (state.chart && state.showLoveReading) {
@@ -480,10 +495,11 @@
       } catch (_error) { reading.appendChild(el('p', null, copy.error)); }
     }
     const result = $('relationship-result'); result.replaceChildren();
-    if (!state.chart || !state.partnerChart) return;
+    const first = others ? state.firstChart : state.chart, firstInfo = others ? state.firstDetails : state.details;
+    if (mode !== 'match' || !first || !state.partnerChart) return;
     try {
-      const mine = state.chart.positions.Moon.sidereal_longitude, theirs = state.partnerChart.positions.Moon.sidereal_longitude;
-      const match = state.myRole === 'bride' ? matchUI.gunaMilan(theirs, mine) : matchUI.gunaMilan(mine, theirs);
+      const mine = first.positions.Moon.sidereal_longitude, theirs = state.partnerChart.positions.Moon.sidereal_longitude;
+      const match = others || state.myRole !== 'bride' ? matchUI.gunaMilan(mine, theirs) : matchUI.gunaMilan(theirs, mine);
       const score = el('div', `relationship-score match-${match.verdict}`);
       score.append(el('span', null, copy.score), el('strong', null, `${match.total} / ${match.max}`));
       const bar = el('progress'); bar.max = match.max; bar.value = match.total;
@@ -492,10 +508,10 @@
       result.appendChild(score);
       for (const [flag, key] of [[match.nadiDosha, 'nadiDosha'], [match.bhakootDosha, 'bhakootDosha']]) if (flag) result.appendChild(el('p', 'dosha-flag', copy[key]));
       const kuja = details => details && details.doshas && details.doshas.kuja ? details.doshas.kuja.present : null;
-      const me = kuja(state.details), them = kuja(state.partnerDetails);
+      const me = kuja(firstInfo), them = kuja(state.partnerDetails);
       if (me !== null && them !== null) {
         const box = el('div', 'manglik-row');
-        box.append(el('b', null, copy.manglik), el('span', null, `${copy.you}: ${me ? copy.yes : copy.no} · ${copy.partner}: ${them ? copy.yes : copy.no}`));
+        box.append(el('b', null, copy.manglik), el('span', null, `${others ? copy.boy : copy.you}: ${me ? copy.yes : copy.no} · ${others ? copy.girl : copy.partner}: ${them ? copy.yes : copy.no}`));
         if (me && them) box.appendChild(el('small', null, copy.manglikBoth)); else if (me || them) box.appendChild(el('small', null, copy.manglikOne));
         result.appendChild(box);
       }
@@ -514,23 +530,37 @@
   if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
     state.myRole = button.dataset.role; renderRelationship();
   }));
+  const usableChart = body => body && body.chart && body.chart.positions && body.chart.positions.Moon;
   $('relationship-form').addEventListener('submit', async event => {
     event.preventDefault();
-    const copy = loveText();
-    if (!state.chart) { $('relationship-status').textContent = copy.needChart; return; }
+    const copy = loveText(), others = state.matchWho === 'others';
+    if (!others && !state.chart) { $('relationship-status').textContent = copy.needChart; return; }
     const input = { dob: $('partner-dob').value, pob: $('partner-pob').value.trim(), tob: $('partner-tob').value };
+    const firstInput = { dob: $('first-dob').value, pob: $('first-pob').value.trim(), tob: $('first-tob').value };
+    if (others && !(firstInput.dob && firstInput.pob && firstInput.tob)) { $('relationship-status').textContent = copy.needBoth; return; }
     const ownChart = state.chart;
-    state.partnerChart = null; state.partnerDetails = null; $('relationship-result').replaceChildren();
+    state.partnerChart = null; state.partnerDetails = null; state.firstChart = null; state.firstDetails = null; $('relationship-result').replaceChildren();
     $('relationship-status').textContent = copy.calculating;
     $('relationship-submit').disabled = true;
+    let step = 'second';
     try {
+      if (others) {
+        step = 'first';
+        const boy = await post('/api/birth-chart', firstInput);
+        if (!boy.ok || !usableChart(boy.body)) throw new Error('First chart unavailable');
+        state.firstChart = boy.body.chart; state.firstDetails = boy.body.details || null;
+        step = 'second';
+      }
       const { ok, body } = await post('/api/birth-chart', input);
       if (state.chart !== ownChart) return;
-      if (!ok || !body || !body.chart || !body.chart.positions || !body.chart.positions.Moon) throw new Error('Second chart unavailable');
+      if (!ok || !usableChart(body)) throw new Error('Second chart unavailable');
       state.partnerChart = body.chart; state.partnerDetails = body.details || null;
       $('relationship-status').textContent = '';
       renderRelationship();
-    } catch (_error) { if (state.chart === ownChart) $('relationship-status').textContent = copy.failed; }
+    } catch (_error) {
+      state.firstChart = null; state.firstDetails = null;
+      if (state.chart === ownChart) $('relationship-status').textContent = step === 'first' ? copy.failedFirst : copy.failed;
+    }
     finally { $('relationship-submit').disabled = false; }
   });
 
@@ -3732,7 +3762,8 @@
   function startIntake() { intake.step = 'dob'; intake.dob = ''; intake.pob = ''; intake.tob = ''; intake.pending = null; resetChat(t('chatAskDob')); }
   function applyChart(body, inputs) {
     state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
-    state.partnerChart = null; state.partnerDetails = null; state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
+    if (state.matchWho !== 'others') { state.partnerChart = null; state.partnerDetails = null; }
+    state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
     try {
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
@@ -4046,7 +4077,8 @@
     forgetProfile();
     state.chart = null; state.details = null; state.resolved = null;
     state.partnerChart = null; state.partnerDetails = null; state.showLoveReading = false;
-    for (const id of ['partner-dob', 'partner-pob', 'partner-tob']) $(id).value = '';
+    for (const id of ['partner-dob', 'partner-pob', 'partner-tob', 'first-dob', 'first-pob', 'first-tob']) $(id).value = '';
+    state.firstChart = null; state.firstDetails = null;
     $('relationship-status').textContent = ''; renderRelationship();
     $('chart').hidden = true;
     renderTools();

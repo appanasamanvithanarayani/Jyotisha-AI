@@ -100,7 +100,15 @@
     <div id="love-options" class="option-grid" role="group"></div>
     <div id="love-match" class="love-view" hidden>
       <h3 id="relationship-compare-title" class="sub-h"></h3>
-      <div class="role-row"><span id="partner-role-label"></span><div id="partner-role" class="seg" role="group"><button type="button" data-role="groom"></button><button type="button" data-role="bride"></button></div></div>
+      <div class="role-row"><span id="match-who-label"></span><div id="match-who" class="seg" role="group"></div></div>
+      <div id="first-block" hidden>
+        <h4 id="first-title" class="sub-h"></h4>
+        <label><span data-i18n="dob">Date of birth</span><input id="first-dob" name="first-dob" type="date" min="1900-01-01" max="2100-12-31"></label>
+        <label><span data-i18n="pob">Place of birth</span><input id="first-pob" name="first-pob" type="text" list="place-suggestions" maxlength="200" autocomplete="off"></label>
+        <label><span data-i18n="tob">Local time of birth</span><input id="first-tob" name="first-tob" type="time" step="60"></label>
+        <h4 id="second-title" class="sub-h"></h4>
+      </div>
+      <div class="role-row" id="role-row"><span id="partner-role-label"></span><div id="partner-role" class="seg" role="group"><button type="button" data-role="groom"></button><button type="button" data-role="bride"></button></div></div>
       <form id="relationship-form">
         <label><span data-i18n="dob">Date of birth</span><input id="partner-dob" name="partner-dob" type="date" min="1900-01-01" max="2100-12-31" required></label>
         <label><span data-i18n="pob">Place of birth</span><input id="partner-pob" name="partner-pob" type="text" list="place-suggestions" maxlength="200" autocomplete="off" required></label>
