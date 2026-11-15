@@ -34,6 +34,7 @@ class Element {
   append(...items) { this.children.push(...items); }
   appendChild(item) { this.children.push(item); return item; }
   replaceChildren(...items) { this.children = items; }
+  removeChild(item) { this.children = this.children.filter(child => child !== item); return item; }
   addEventListener(name, fn) { this.listeners[name] = fn; }
   setAttribute(name, value) { this.attributes[name] = value; }
   getAttribute(name) { return this.attributes[name] || ''; }
@@ -68,6 +69,7 @@ function boot(setup = {}) {
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
+    if (url === '/api/life-guide') { setup.lifeGuideCalls = (setup.lifeGuideCalls || 0) + 1; return reply(setup.lifeGuide ? { status: 'ok', reading: setup.lifeGuide } : { status: 'ok' }); }
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
@@ -396,9 +398,19 @@ test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrun
   const request = app.requests.find(r => r.url === '/api/palm');
   assert.equal(request.body.hand, 'left'); assert.equal(request.body.language, 'en');
   assert.equal(request.body.image, 'data:image/jpeg;base64,SMALLPHOTO');            // shrunk on the phone before sending
-  const secs = app.element('palmread').children.filter(item => /^palm-sec/.test(item.className));
-  assert.deepEqual(secs.map(sec => sec.children[0].textContent), ['❤️ Heart line', '🧠 Head line', '🌱 Life line', '⭐ Fate line', '✨ Your palm says']);
-  assert.equal(secs[4].children[1].textContent, 'Summary text.');
+  // The result has tabs: Palm (life line + overview), Love (heart line), Career (head and fate lines); the Palm tab shows first.
+  const result = app.element('palmread').children;
+  const tabs = result.find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.textContent)), '["Palm","Love","Career"]');
+  const panels = result.filter(item => item.className === 'palm-panel');
+  assert.equal(JSON.stringify(panels.map(panel => panel.hidden)), '[false,true,true]');
+  const secs = panels.flatMap(panel => panel.children);
+  assert.deepEqual(secs.map(sec => sec.children[0].textContent), ['🌱 Life line', '✨ Your palm says', '❤️ Heart line', '🧠 Head line', '⭐ Fate line']);
+  assert.equal(secs[1].children[1].textContent, 'Summary text.');
+  tabs.children[1].listeners.click();                                              // Love
+  assert.equal(JSON.stringify(panels.map(panel => panel.hidden)), '[true,false,true]');
+  assert.equal(tabs.children[1].className, 'on');
+  assert.ok(result.some(item => item.className === 'palm-preview'));               // the user's own photo, from memory
 });
 
 test('Palm reading: a photo without a clear palm asks for another one', async () => {
@@ -578,7 +590,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm, tarot & numbers', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Today’s Panchang', 'Festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Life Guide', 'Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Sign match', 'Doshas', 'Today’s Panchang', 'Festivals']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
@@ -852,7 +864,8 @@ test('tapping a notification that opens the app asks its question once the Kundl
   assert.equal(page('chat').hidden, false);
   const texts = app.element('chat-log').children.map(item => item.textContent);
   assert.ok(texts.includes('Will my plans work out?'), texts.join(' | '));
-  assert.equal(texts.at(-1), 'AI answer');                                        // the AI's reply, not the offline answer
+  assert.equal(texts.filter(text => text === 'AI answer').length, 1);              // the AI's reply, not the offline answer
+  assert.equal(app.element('chat-log').children.at(-1).className, 'chat-chips');   // with the chips under it
   const asked = app.requests.filter(r => r.url === '/api/ask');
   assert.equal(asked.length, 1);
   assert.equal(asked[0].body.question, 'Will my plans work out?');
@@ -1368,7 +1381,7 @@ test('the side menu lists every feature, opens one, and Back closes the menu fir
   assert.equal(app.element('side-menu').hidden, false);
   assert.equal(stack.length, 2);                                        // home + the open menu
   const labels = items().map(item => item.children[1].textContent);
-  for (const label of ['Home', 'Ask AI', 'Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Festivals', 'Today’s Panchang', 'Appearance']) {
+  for (const label of ['Home', 'Ask AI', 'Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Sign match', 'Doshas', 'Festivals', 'Today’s Panchang', 'Appearance']) {
     assert.ok(labels.includes(label), label);
   }
   assert.equal(items()[0].className, 'side-item on');                  // Home is the current page
@@ -1683,4 +1696,255 @@ test('the bottom banner is hidden on the Ask page and comes back on the other sc
   app.element('menu-btn').listeners.click();
   app.element('side-list').children.find(item => item.children[1].textContent === 'Home').listeners.click();
   assert.deepEqual(calls, ['show', 'hide', 'resume']);
+});
+
+test('Life Guide: tabs, six balance bars and the by-area list from the server’s scores, for your Moon sign or any sign', async () => {
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: i === 0 ? ['Venus', 'Moon'] : [] }]));
+  const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), birth: syntheticBirth, lifeGuide });
+  await settle();
+  assert.equal(homeCards(app)[0].children[1].textContent, 'Life Guide');
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const own = boot({ storage, birth: syntheticBirth, lifeGuide });
+  await settle(); await settle();
+  homeCard(own, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const page = () => own.element('lifeguide').children;
+  assert.equal(page()[0].className, 'page-head');
+  assert.match(page().find(item => item.className === 'lg-sign').children[0].textContent, /Your sign: Taurus/);   // the chart's Moon is in Vrishabha
+  const tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.textContent)), '["Yesterday","Today","Tomorrow","This month","This year"]');
+  assert.equal(tabs.children[1].className, 'on');                                  // Today
+  const bars = () => page().find(item => item.className === 'lg-bars').children;
+  assert.equal(JSON.stringify(bars().map(col => col.children[0].textContent)), '["8/10","6/10","4/10","7/10","5/10","3/10"]');
+  assert.equal(JSON.stringify(bars().map(col => col.children[2].textContent)), '["Love","Family","Marriage","Career","Wealth","Health"]');
+  assert.equal(bars()[0].children[1].children[0].style.height, '80%');             // the bar is 8 tenths full
+  const aspects = page().filter(item => /^lg-aspect/.test(item.className));
+  assert.equal(aspects.length, 6);
+  assert.equal(aspects[0].children[1].textContent, 'Warmth comes easily. A good time to share your feelings.');   // 8: high band
+  assert.equal(aspects[2].children[1].textContent, 'Patience helps. Postpone big decisions and avoid arguments.');   // 4: low band
+  assert.equal(aspects[0].children[2].textContent, 'Supported by Venus, Moon');
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').length, 1);
+  assert.equal(own.requests.find(r => r.url === '/api/life-guide').body.sign, 2);
+  tabs.children[4].listeners.click();                                              // This year
+  assert.equal(page().find(item => item.className === 'lg-bars').children[0].children[0].textContent, '9/10');
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').length, 1);   // all tabs came with one request
+  // Another sign: the tiles under the page
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();   // Change
+  const tiles = page().find(item => item.className === 'moon-pick').children;
+  assert.equal(tiles.length, 12);
+  tiles[5].listeners.click();                                                      // Virgo
+  await settle();
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').at(-1).body.sign, 6);
+  // Without a chart or a birth date: pick a sign first, nothing is requested
+  const none = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), lifeGuide });
+  await settle();
+  homeCard(none, 'Life Guide').listeners.click();
+  await settle();
+  assert.match(none.element('lifeguide').children.find(item => item.className === 'tarot-ask').textContent, /Pick your sign/);
+  assert.equal(none.requests.filter(r => r.url === '/api/life-guide').length, 0);
+});
+
+test('Sign match: two circles, a sign grid, the button stays grey until both signs are chosen, then the 12-point result', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  homeCard(app, 'Sign match').listeners.click();
+  const page = () => app.element('signmatch').children;
+  assert.equal(page()[0].className, 'page-head');
+  const circles = () => page().find(item => item.className === 'sm-slots').children;
+  assert.equal(circles()[0].children[1].textContent, 'Choose a sign');
+  const see = () => page().find(item => /palm-scan/.test(item.className));
+  assert.equal(see().disabled, true); assert.match(see().className, /is-off/);               // grey: nothing chosen
+  const tiles = () => page().find(item => item.className === 'moon-pick').children;
+  tiles()[0].listeners.click();                                                                // Aries as "You"
+  assert.equal(circles()[0].children[1].textContent, 'Aries');
+  assert.match(circles()[2].className, /on/);                                                  // on to the partner circle
+  assert.equal(see().disabled, true);
+  tiles()[7].listeners.click();                                                                // Scorpio as the partner
+  assert.equal(see().disabled, false);
+  see().listeners.click();
+  await settle();
+  const result = page().find(item => item.className === 'sm-result');
+  assert.equal(result.children[0].textContent, '42%');                                         // Mars lords both (5/5), but 6/8 apart (0/7)
+  assert.equal(result.children[1].textContent, 'Average match');
+  assert.equal(result.children[3].children[1].textContent, '5 / 5');
+  assert.equal(result.children[4].children[1].textContent, '0 / 7');
+  assert.match(result.children[5].textContent, /Bhakoot dosha/);
+  page().find(item => /chip-btn/.test(item.className) && /36-point/.test(item.textContent)).listeners.click();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-relationship').hidden, false);
+});
+
+test('Palm camera inside the app: a hand outline, a shutter, one warning when too dark, then the photo is read; gallery and close work', async () => {
+  const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.' };
+  let stopped = 0, brightness = 200;
+  const stream = { getTracks: () => [{ stop() { stopped += 1; } }] };
+  const navigator = { mediaDevices: { getUserMedia: async constraints => { navigator.asked = constraints; return stream; } } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading }, navigator });
+  await settle();
+  const realCreate = app.context.document.createElement;
+  app.context.document.createElement = tag => {
+    const node = realCreate(tag);
+    if (tag === 'canvas') {
+      node.getContext = () => ({ drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(32 * 32 * 4).fill(brightness) }) });
+      node.toDataURL = () => 'data:image/jpeg;base64,CAMPHOTO';
+    }
+    return node;
+  };
+  homeCard(app, 'Palm reading').listeners.click();
+  const scan = () => app.element('palmread').children.find(item => /palm-scan/.test(item.className));
+  await scan().listeners.click();
+  await settle();
+  assert.equal(navigator.asked.video.facingMode.ideal, 'environment'); assert.equal(navigator.asked.audio, false);
+  const overlay = app.context.document.body.children.find(item => item.className === 'cam');
+  assert.ok(overlay);
+  const [video, outline, hint, close, bar] = overlay.children;
+  assert.equal(hint.textContent, 'Place your open palm inside the outline');
+  assert.equal(outline.tag, 'svg');
+  assert.equal(video.muted, true);
+  // too dark: one warning, the overlay stays; the second press goes ahead
+  brightness = 10;
+  await bar.children[1].listeners.click();
+  assert.match(hint.textContent, /Too dark/); assert.equal(stopped, 0);
+  await bar.children[1].listeners.click();
+  await settle(); await settle();
+  assert.equal(stopped, 1);                                                          // the camera is released
+  const request = app.requests.find(r => r.url === '/api/palm');
+  assert.equal(request.body.image, 'data:image/jpeg;base64,CAMPHOTO'); assert.equal(request.body.hand, 'right');
+  assert.ok(app.element('palmread').children.some(item => item.className === 'palm-preview'));
+  // closing releases the camera without reading anything
+  app.requests.length = 0;
+  homeCard(app, 'Palm reading').listeners.click();
+  await scan().listeners.click(); await settle();
+  const second = app.context.document.body.children.filter(item => item.className === 'cam').at(-1);
+  second.children[3].listeners.click();
+  assert.equal(stopped, 2); assert.ok(!app.requests.some(r => r.url === '/api/palm'));
+  // no camera permission: the phone's camera app is used instead
+  navigator.mediaDevices.getUserMedia = async () => { throw new Error('denied'); };
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  await scan().listeners.click(); await settle();
+  assert.equal(inputs.length, 1); assert.equal(inputs[0].getAttribute('capture'), 'environment');
+});
+
+test('chat answers get a read-aloud button and a row of chips into the other features, replaced by each new answer', async () => {
+  const spoken = [];
+  class Utterance { constructor(text) { this.text = text; } }
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true });
+  app.context.window.speechSynthesis = { speaking: false, speak(item) { spoken.push(item); }, cancel() { spoken.push('cancel'); } };
+  app.context.window.SpeechSynthesisUtterance = Utterance;
+  await settle();
+  app.element('home-question').value = 'Will my plans work out?';
+  app.element('home-ask').listeners.submit({ preventDefault() {} });
+  await settle(); await settle();
+  const log = () => app.element('chat-log').children;
+  const answer = log().find(item => item.className === 'chat-message assistant' && /AI answer/.test(item.textContent));
+  assert.ok(answer);
+  const listen = answer.children.find(item => item.className === 'ai-bar').children.find(item => item.className === 'ai-listen');
+  listen.listeners.click();
+  assert.equal(spoken[0].text, 'AI answer'); assert.equal(spoken[0].lang, 'te-IN');   // in the language of the app
+  const chips = log().at(-1);
+  assert.equal(chips.className, 'chat-chips');
+  assert.equal(chips.children.length, 4);
+  assert.equal(chips.children[0].textContent, '✋ నా అరచేతి రేఖలు');
+  chips.children[0].listeners.click();                                                // opens the palm page
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  // A new question removes the old chips; the next answer gets a different set.
+  app.element('chat-question').value = 'And my health?';
+  app.element('chat-form').listeners.submit({ preventDefault() {} });
+  await settle(); await settle();
+  assert.equal(log().filter(item => item.className === 'chat-chips').length, 1);
+  assert.notEqual(log().at(-1).children[0].textContent, chips.children[0].textContent);
+});
+
+test('Life Guide: Today is free; the other tabs carry a video icon and open after one rewarded ad for that sign for the day', async () => {
+  const ad = fakeRewardedAdMob();
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: [] }]));
+  const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, lifeGuide, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: { ...resultsConfig, rewarded: { lifeguide: true } } });
+  await settle(); await settle();
+  homeCard(app, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const page = () => app.element('lifeguide').children;
+  let tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.className)), '["locked","on","locked","locked","locked"]');   // Today free, the others carry the video icon
+  assert.ok(page().some(item => item.className === 'lg-unlock-note'));
+  tabs.children[4].listeners.click();                                              // This year: an ad first
+  await settle();
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 1);
+  assert.equal(page().find(item => item.className === 'tabs-line').children[1].className, 'on');   // still Today until the ad is earned
+  await earnReward(ad);
+  tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(tabs.children[4].className, 'on');                                  // the year tab is open now
+  assert.ok(tabs.children.every(tab => !/locked/.test(tab.className)));           // and so are the others (one ad per sign per day)
+  assert.ok(!page().some(item => item.className === 'lg-unlock-note'));
+  tabs.children[0].listeners.click();                                              // Yesterday: no second ad
+  await settle();
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 1);
+  assert.ok(JSON.parse(storage.getItem('jyotisha.lg-unlock.v1')).signs.includes(2));   // remembered for the day
+  // Another sign is locked again.
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();
+  page().find(item => item.className === 'moon-pick').children[5].listeners.click();
+  await settle();
+  assert.match(page().find(item => item.className === 'tabs-line').children[3].className, /locked/);
+});
+
+test('Sign match, Moon sign and Numerology: rewarded ads when switched on; your own Moon sign stays free', async () => {
+  const ad = fakeRewardedAdMob();
+  const config = { ...resultsConfig, rewarded: { signmatch: true, moon: true, numbers: true } };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false, name: 'Sam', dob: '1995-08-15' });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: config, moonSign: { status: 'ok', readings: {} } });
+  await settle(); await settle();
+  const shown = () => ad.calls.filter(c => c[0] === 'showRewardVideoAd').length;
+  // Sign match: the button plays an ad first (and carries the video icon)
+  homeCard(app, 'Sign match').listeners.click();
+  const tiles = () => app.element('signmatch').children.find(item => item.className === 'moon-pick').children;
+  tiles()[0].listeners.click(); tiles()[7].listeners.click();
+  const see = () => app.element('signmatch').children.find(item => /palm-scan/.test(item.className));
+  assert.match(see().className, /reward-btn/);
+  see().listeners.click(); await settle();
+  assert.equal(shown(), 1);
+  assert.ok(!app.element('signmatch').children.some(item => item.className === 'sm-result'));   // not yet
+  await earnReward(ad);
+  assert.ok(app.element('signmatch').children.some(item => item.className === 'sm-result'));
+  // Moon sign: another sign asks for an ad, your own does not
+  homeCard(app, 'Moon sign').listeners.click();
+  await settle(); await settle();
+  const moonTiles = () => app.element('moonsign').children.find(item => item.className === 'moon-pick').children;
+  moonTiles()[1].listeners.click(); await settle();                                // Taurus is the chart's own Moon sign: free
+  assert.equal(shown(), 1);
+  moonTiles()[5].listeners.click(); await settle();                                // Virgo: an ad
+  assert.equal(shown(), 2);
+  await earnReward(ad);
+  // Numerology: the form asks for an ad, the saved date of birth does not
+  homeCard(app, 'Numerology').listeners.click();
+  assert.ok(app.element('numerology').children.some(item => item.className === 'num-tiles'));   // shown from the saved date, no ad
+  assert.equal(shown(), 2);
+  app.element('numerology').children.find(item => item.className === 'num-who').children[1].listeners.click();   // Change
+  const form = app.element('numerology').children.find(item => item.className === 'num-form');
+  form.children[0].children[1].value = '2000-01-29';
+  assert.match(form.children[2].className, /reward-btn/);
+  form.listeners.submit({ preventDefault() {} }); await settle();
+  assert.equal(shown(), 3);
+});
+
+test('the banner is also hidden while the palm camera is open (it would cover the shutter) and comes back when it closes', async () => {
+  const hidden = [];
+  const AdMob = { initialize: async () => {}, requestConsentInfo: async () => ({}), showConsentForm: async () => {}, addListener: () => {},
+    showBanner: async () => {}, hideBanner: async () => hidden.push('hide'), resumeBanner: async () => hidden.push('resume') };
+  const stream = { getTracks: () => [{ stop() {} }] };
+  const navigator = { mediaDevices: { getUserMedia: async () => stream } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), navigator, capacitor: { Plugins: { AdMob } }, appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();
+  homeCard(app, 'Palm reading').listeners.click();
+  await app.element('palmread').children.find(item => /palm-scan/.test(item.className)).listeners.click();
+  await settle();
+  assert.deepEqual(hidden, ['hide']);                                                // the shutter is not covered by the banner
+  app.context.document.body.children.find(item => item.className === 'cam').children[3].listeners.click();   // close
+  assert.deepEqual(hidden, ['hide', 'resume']);
 });

@@ -150,6 +150,25 @@
     n += sparkle(34, 34, 6) + sparkle(128, 30, 5, PINK2) + sparkle(130, 92, 4);
     return frame('n', n + clouds('n'), 53);
   }
+  // Two zodiac circles joined by a heart: the sign match.
+  function signmatch() {
+    let g = `<circle cx="80" cy="60" r="52" fill="url(#m-glow)"/>`;
+    for (const [x, glyph] of [[44, '\u2648'], [116, '\u2653']]) {
+      g += `<circle cx="${x}" cy="60" r="25" fill="#2e0f3b" stroke="${GOLD}" stroke-width="2"/><circle cx="${x}" cy="60" r="19" fill="none" stroke="${GOLD2}" stroke-width="0.8"/>`;
+      g += `<text x="${x}" y="69" font-size="26" text-anchor="middle" fill="${GOLD}" font-family="serif">${glyph}</text>`;
+    }
+    g += heart(80, 52, 8) + `<path d="M70 70q10 8 20 0" fill="none" stroke="${PINK2}" stroke-width="1.6"/>` + sparkle(80, 22, 5) + sparkle(28, 98, 4, PINK2) + sparkle(134, 98, 4);
+    return frame('m', g + clouds('m'), 61);
+  }
+  // A winding path towards a rising sun between hills: the Life Guide.
+  function lifeguide() {
+    let g = `<circle cx="80" cy="58" r="52" fill="url(#l-glow)"/><circle cx="80" cy="62" r="17" fill="url(#l-gold)"/>`;
+    for (let i = 0; i < 14; i += 1) { const a = Math.PI + i * Math.PI / 13; g += `<line x1="${(80 + 22 * Math.cos(a)).toFixed(1)}" y1="${(62 + 22 * Math.sin(a)).toFixed(1)}" x2="${(80 + 31 * Math.cos(a)).toFixed(1)}" y2="${(62 + 31 * Math.sin(a)).toFixed(1)}" stroke="${GOLD}" stroke-width="1.5"/>`; }
+    g += `<path d="M0 84q30-18 62-4t98-8v48H0z" fill="#3a1450"/><path d="M0 96q40-16 80-6t80-6v36H0z" fill="#2b0f3d"/>`;
+    g += `<path d="M62 120C70 108 96 106 92 98s-24-6-18-14 14-4 6-12" fill="none" stroke="${GOLD}" stroke-width="3" stroke-linecap="round" opacity="0.85"/>`;
+    g += sparkle(28, 30, 6) + sparkle(134, 26, 5, PINK2) + sparkle(130, 64, 4);
+    return frame('l', g, 59);
+  }
   // ---- Tarot cards (portrait 100 x 160): a patterned back, and a face per Major Arcana card with its own emblem ----
   const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
   const sun = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#c-gold)"/>` + Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<line x1="${(x + (r + 3) * Math.cos(a)).toFixed(1)}" y1="${(y + (r + 3) * Math.sin(a)).toFixed(1)}" x2="${(x + (r + 8) * Math.cos(a)).toFixed(1)}" y2="${(y + (r + 8) * Math.sin(a)).toFixed(1)}" stroke="${GOLD}" stroke-width="1.6"/>`; }).join('');
@@ -199,5 +218,5 @@
     const emblem = EMBLEMS[index] || EMBLEMS[0];
     return cardFrame(`<circle cx="50" cy="80" r="30" fill="url(#c-glow)"/><text x="50" y="26" font-size="12" text-anchor="middle" fill="${GOLD}" font-family="Georgia, serif">${ROMAN[index] || ''}</text>${emblem()}`);
   }
-  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, numerology, tarotBack, tarotCard };
+  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, numerology, lifeguide, signmatch, tarotBack, tarotCard };
 });

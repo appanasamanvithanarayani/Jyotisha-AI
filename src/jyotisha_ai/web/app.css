@@ -1272,3 +1272,79 @@ body.page-feature .masthead{display:none}
 .tabs-line::-webkit-scrollbar{display:none}
 .tabs-line button{flex:1 0 auto;min-height:40px;padding:8px 14px;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
 .tabs-line button.on{color:var(--heading);border-bottom-color:var(--mg-a)}
+
+/* ---------- Life Guide: balance bars and the by-area list ---------- */
+.lg-hero{height:150px;border-radius:20px;overflow:hidden;margin:2px 0 10px;border:1px solid var(--line)}
+.lg-hero svg{width:100%;height:100%;display:block}
+.lg-sign{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 4px}
+.lg-sign-name{font-weight:700;color:var(--heading)}
+.lg-balance-h{margin:14px 0 8px}
+.lg-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:14px 8px 10px;border-radius:18px;border:1px solid var(--line);background:var(--cream)}
+:root[data-skin="mystic"] .lg-bars{background:rgba(255,255,255,.04);border-color:rgba(214,90,180,.3)}
+.lg-col{display:grid;justify-items:center;gap:6px}
+.lg-col b{font-size:.78rem;color:var(--ink)}
+.lg-col small{font-size:.7rem;color:var(--muted);text-align:center}
+.lg-track{position:relative;width:26px;height:120px;border-radius:99px;background:rgba(128,128,128,.22);overflow:hidden}
+.lg-track i{position:absolute;inset-inline:0;bottom:0;display:block;border-radius:99px;transition:height .5s ease}
+.lg-love{--lg:linear-gradient(180deg,#ff8fc8,#d43b8a)}
+.lg-family{--lg:linear-gradient(180deg,#ffc27a,#e3893a)}
+.lg-marriage{--lg:linear-gradient(180deg,#c3a2ff,#7b52d6)}
+.lg-career{--lg:linear-gradient(180deg,#8cc4ff,#3f84e0)}
+.lg-wealth{--lg:linear-gradient(180deg,#ffe87a,#d9b21f)}
+.lg-health{--lg:linear-gradient(180deg,#8ff0c4,#1fae7a)}
+.lg-track i{background:var(--lg)}
+.lg-aspect{padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--cream);margin-bottom:10px}
+:root[data-skin="mystic"] .lg-aspect{background:rgba(255,255,255,.04);border-color:rgba(214,90,180,.3)}
+.lg-aspect-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.lg-aspect-head h4{margin:0;flex:1;font-size:1rem;color:var(--heading)}
+.lg-ico{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--lg);font-size:1rem}
+.lg-score{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border-radius:99px;font-weight:800;font-size:.85rem;color:#fff;background:var(--lg)}
+.lg-aspect p{margin:0 0 4px;line-height:1.5}
+.lg-aspect small{color:var(--muted)}
+
+/* ---------- Sign match ---------- */
+.sm-slots{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;padding:14px 10px;margin:4px 0 8px;border-radius:20px;border:1px solid var(--line);background:var(--cream)}
+:root[data-skin="mystic"] .sm-slots{background:linear-gradient(120deg,rgba(var(--mg-rgb),.2),rgba(255,255,255,.04));border-color:rgba(214,90,180,.4)}
+.sm-slot{display:grid;justify-items:center;gap:3px;padding:6px 4px;border:0;border-radius:16px;background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.sm-slot.on{background:rgba(var(--mg-rgb),.16);box-shadow:0 0 0 1px rgba(var(--mg-rgb),.55)}
+.sm-circle{display:grid;place-items:center;width:62px;height:62px;border-radius:50%;border:2px dashed rgba(var(--mg-rgb),.6);font-size:1.7rem;color:var(--heading)}
+.sm-slot b{font-size:.95rem;color:var(--heading)}
+.sm-slot small{color:var(--muted);font-size:.72rem}
+.sm-heart{font-size:1.5rem}
+.sm-result{padding:16px;margin:12px 0 8px;border-radius:20px;border:1px solid var(--line);background:var(--cream);text-align:center}
+:root[data-skin="mystic"] .sm-result{background:rgba(255,255,255,.05);border-color:rgba(214,90,180,.4)}
+.sm-percent{display:inline-grid;place-items:center;width:92px;height:92px;border-radius:50%;font:700 1.9rem Georgia,serif;color:#fff3d1;background:radial-gradient(circle at 40% 35%,var(--mg-soft),var(--mg-b) 72%);box-shadow:0 0 0 3px #e6c27a,0 0 24px rgba(var(--mg-rgb),.45);margin-bottom:8px}
+.sm-result h4{margin:4px 0;font-size:1.15rem;color:var(--heading)}
+.sm-result p{margin:4px 0;line-height:1.5}
+.sm-row{display:flex;justify-content:space-between;gap:10px;padding:8px 4px;border-top:1px dashed var(--line);text-align:start}
+.sm-row span{color:var(--muted)}
+
+/* ---------- Palm: result tabs and photo, in-app camera ---------- */
+.palm-panel[hidden]{display:none}
+.palm-preview{display:block;width:100%;max-height:230px;object-fit:cover;border-radius:18px;border:1px solid var(--line);margin:4px 0 10px}
+.cam{position:fixed!important;inset:0;z-index:200!important;background:#000;display:grid;place-items:center}
+.cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam-outline{position:relative;width:min(78vw,420px);height:min(62vh,560px);opacity:.95;filter:drop-shadow(0 0 6px rgba(0,0,0,.55));pointer-events:none}
+.cam-hint{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:62px;right:14px;padding:9px 14px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:.9rem;font-weight:650;text-align:center;backdrop-filter:blur(6px)}
+.cam-hint.warn{background:rgba(214,60,60,.88)}
+.cam-btn{position:absolute;width:46px;height:46px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:1.2rem;display:grid;place-items:center;padding:0;cursor:pointer}
+.cam-btn svg{width:26px;height:26px;display:block}
+.cam-close{top:calc(10px + env(safe-area-inset-top,0px));left:12px}
+.cam-bar{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;padding:20px 24px calc(28px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(0,0,0,.6),transparent)}
+.cam-bar .cam-gallery{position:static;justify-self:start}
+.cam-shutter{width:74px;height:74px;border-radius:50%;border:4px solid #fff;background:transparent;display:grid;place-items:center;padding:0;cursor:pointer}
+.cam-shutter i{display:block;width:54px;height:54px;border-radius:50%;background:#fff}
+.cam-shutter:active i{transform:scale(.92)}
+
+/* ---------- Chat: read aloud and chips into the other features ---------- */
+.ai-listen{display:inline-grid;place-items:center;width:32px;height:32px;margin-inline-end:6px;border:0;border-radius:50%;background:rgba(var(--mg-rgb),.16);color:var(--heading);padding:0;cursor:pointer}
+.ai-listen svg{width:18px;height:18px;display:block}
+.chat-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;flex:0 0 auto}
+.chat-chips::-webkit-scrollbar{display:none}
+.chat-chip{flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1px solid rgba(var(--mg-rgb),.55);background:rgba(var(--mg-rgb),.1);color:var(--heading);font:inherit;font-size:.84rem;font-weight:700;white-space:nowrap;cursor:pointer}
+
+/* A tab that plays an ad first carries the small video icon. */
+.tabs-line button.locked::before{content:"";width:16px;height:13px;margin-inline-end:6px;border-radius:4px;display:inline-block;vertical-align:-2px;background:currentColor;opacity:.85;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat;
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat}
+.lg-unlock-note{margin:-4px 0 8px;font-size:.78rem;color:var(--muted)}
