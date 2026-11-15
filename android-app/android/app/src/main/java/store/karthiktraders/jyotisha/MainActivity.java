@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(PdfPrintPlugin.class);    // plugins must be registered before super.onCreate
         registerPlugin(ShortcutsPlugin.class);
+        registerPlugin(SystemBarsPlugin.class);   // status / navigation bar colours follow the app's look
         super.onCreate(savedInstanceState);
         ShortcutsPlugin.handleIntent(getIntent());   // the app was opened from a Shortcuts button
         // The phone's Back button goes back through the app's screens (the page records each one in the WebView's

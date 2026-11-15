@@ -739,7 +739,13 @@
       root.setAttribute('data-accent', mystic ? 'mystic' : look.accent);
       root.setAttribute('data-skin', mystic ? 'mystic' : 'plain');
     }
-    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', mystic ? '#1a0b24' : dark ? '#1c1f25' : '#fff7e8'); } catch (_error) { /* optional */ }
+    const barColor = mystic ? '#1a0b24' : dark ? '#1c1f25' : '#fff7e8';
+    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', barColor); } catch (_error) { /* optional */ }
+    // In the Android app the phone's status and navigation bars take the same colour (light icons on dark bars).
+    try {
+      const bars = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SystemBars;
+      if (bars && bars.set) void Promise.resolve(bars.set({ color: barColor, light: !dark })).catch(() => {});
+    } catch (_error) { /* older app: bars keep the built-in colour */ }
     try { window.localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (_error) { /* not remembered */ }
   }
   function renderLookPanel() {
