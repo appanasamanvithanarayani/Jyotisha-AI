@@ -68,6 +68,7 @@ function boot(setup = {}) {
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
+    if (url === '/api/life-guide') { setup.lifeGuideCalls = (setup.lifeGuideCalls || 0) + 1; return reply(setup.lifeGuide ? { status: 'ok', reading: setup.lifeGuide } : { status: 'ok' }); }
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
@@ -578,7 +579,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm, tarot & numbers', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Today’s Panchang', 'Festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Life Guide', 'Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Today’s Panchang', 'Festivals']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
@@ -1683,4 +1684,52 @@ test('the bottom banner is hidden on the Ask page and comes back on the other sc
   app.element('menu-btn').listeners.click();
   app.element('side-list').children.find(item => item.children[1].textContent === 'Home').listeners.click();
   assert.deepEqual(calls, ['show', 'hide', 'resume']);
+});
+
+test('Life Guide: tabs, six balance bars and the by-area list from the server’s scores, for your Moon sign or any sign', async () => {
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: i === 0 ? ['Venus', 'Moon'] : [] }]));
+  const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), birth: syntheticBirth, lifeGuide });
+  await settle();
+  assert.equal(homeCards(app)[0].children[1].textContent, 'Life Guide');
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const own = boot({ storage, birth: syntheticBirth, lifeGuide });
+  await settle(); await settle();
+  homeCard(own, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const page = () => own.element('lifeguide').children;
+  assert.equal(page()[0].className, 'page-head');
+  assert.match(page().find(item => item.className === 'lg-sign').children[0].textContent, /Your sign: Taurus/);   // the chart's Moon is in Vrishabha
+  const tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.textContent)), '["Yesterday","Today","Tomorrow","This month","This year"]');
+  assert.equal(tabs.children[1].className, 'on');                                  // Today
+  const bars = () => page().find(item => item.className === 'lg-bars').children;
+  assert.equal(JSON.stringify(bars().map(col => col.children[0].textContent)), '["8/10","6/10","4/10","7/10","5/10","3/10"]');
+  assert.equal(JSON.stringify(bars().map(col => col.children[2].textContent)), '["Love","Family","Marriage","Career","Wealth","Health"]');
+  assert.equal(bars()[0].children[1].children[0].style.height, '80%');             // the bar is 8 tenths full
+  const aspects = page().filter(item => /^lg-aspect/.test(item.className));
+  assert.equal(aspects.length, 6);
+  assert.equal(aspects[0].children[1].textContent, 'Warmth comes easily. A good time to share your feelings.');   // 8: high band
+  assert.equal(aspects[2].children[1].textContent, 'Patience helps. Postpone big decisions and avoid arguments.');   // 4: low band
+  assert.equal(aspects[0].children[2].textContent, 'Supported by Venus, Moon');
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').length, 1);
+  assert.equal(own.requests.find(r => r.url === '/api/life-guide').body.sign, 2);
+  tabs.children[4].listeners.click();                                              // This year
+  assert.equal(page().find(item => item.className === 'lg-bars').children[0].children[0].textContent, '9/10');
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').length, 1);   // all tabs came with one request
+  // Another sign: the tiles under the page
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();   // Change
+  const tiles = page().find(item => item.className === 'moon-pick').children;
+  assert.equal(tiles.length, 12);
+  tiles[5].listeners.click();                                                      // Virgo
+  await settle();
+  assert.equal(own.requests.filter(r => r.url === '/api/life-guide').at(-1).body.sign, 6);
+  // Without a chart or a birth date: pick a sign first, nothing is requested
+  const none = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), lifeGuide });
+  await settle();
+  homeCard(none, 'Life Guide').listeners.click();
+  await settle();
+  assert.match(none.element('lifeguide').children.find(item => item.className === 'tarot-ask').textContent, /Pick your sign/);
+  assert.equal(none.requests.filter(r => r.url === '/api/life-guide').length, 0);
 });

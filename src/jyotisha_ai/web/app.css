@@ -1272,3 +1272,32 @@ body.page-feature .masthead{display:none}
 .tabs-line::-webkit-scrollbar{display:none}
 .tabs-line button{flex:1 0 auto;min-height:40px;padding:8px 14px;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
 .tabs-line button.on{color:var(--heading);border-bottom-color:var(--mg-a)}
+
+/* ---------- Life Guide: balance bars and the by-area list ---------- */
+.lg-hero{height:150px;border-radius:20px;overflow:hidden;margin:2px 0 10px;border:1px solid var(--line)}
+.lg-hero svg{width:100%;height:100%;display:block}
+.lg-sign{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 4px}
+.lg-sign-name{font-weight:700;color:var(--heading)}
+.lg-balance-h{margin:14px 0 8px}
+.lg-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:14px 8px 10px;border-radius:18px;border:1px solid var(--line);background:var(--cream)}
+:root[data-skin="mystic"] .lg-bars{background:rgba(255,255,255,.04);border-color:rgba(214,90,180,.3)}
+.lg-col{display:grid;justify-items:center;gap:6px}
+.lg-col b{font-size:.78rem;color:var(--ink)}
+.lg-col small{font-size:.7rem;color:var(--muted);text-align:center}
+.lg-track{position:relative;width:26px;height:120px;border-radius:99px;background:rgba(128,128,128,.22);overflow:hidden}
+.lg-track i{position:absolute;inset-inline:0;bottom:0;display:block;border-radius:99px;transition:height .5s ease}
+.lg-love{--lg:linear-gradient(180deg,#ff8fc8,#d43b8a)}
+.lg-family{--lg:linear-gradient(180deg,#ffc27a,#e3893a)}
+.lg-marriage{--lg:linear-gradient(180deg,#c3a2ff,#7b52d6)}
+.lg-career{--lg:linear-gradient(180deg,#8cc4ff,#3f84e0)}
+.lg-wealth{--lg:linear-gradient(180deg,#ffe87a,#d9b21f)}
+.lg-health{--lg:linear-gradient(180deg,#8ff0c4,#1fae7a)}
+.lg-track i{background:var(--lg)}
+.lg-aspect{padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--cream);margin-bottom:10px}
+:root[data-skin="mystic"] .lg-aspect{background:rgba(255,255,255,.04);border-color:rgba(214,90,180,.3)}
+.lg-aspect-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.lg-aspect-head h4{margin:0;flex:1;font-size:1rem;color:var(--heading)}
+.lg-ico{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--lg);font-size:1rem}
+.lg-score{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border-radius:99px;font-weight:800;font-size:.85rem;color:#fff;background:var(--lg)}
+.lg-aspect p{margin:0 0 4px;line-height:1.5}
+.lg-aspect small{color:var(--muted)}
