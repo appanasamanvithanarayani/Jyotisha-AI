@@ -992,6 +992,10 @@ class LocalHandler(BaseHTTPRequestHandler):
             folder = files("jyotisha_ai.web").joinpath("locales")
             parts = sorted((item for item in folder.iterdir() if item.name.endswith(".js")), key=lambda item: (item.name != "en.js", item.name))
             self._send(200, b"\n".join(item.read_bytes() for item in parts), "application/javascript; charset=utf-8")
+        elif path == "/texts.js":
+            folder = files("jyotisha_ai.web").joinpath("texts")
+            parts = sorted(item for item in folder.iterdir() if item.name.endswith(".js")) if folder.is_dir() else []
+            self._send(200, b"window.JyotishaTexts = window.JyotishaTexts || {};\n" + b"\n".join(item.read_bytes() for item in parts), "application/javascript; charset=utf-8")
         elif path in ("/app.js", "/app.css"):
             body = files("jyotisha_ai.web").joinpath(path[1:]).read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")

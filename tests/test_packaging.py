@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "jyotisha_ai" / "web"
-GENERATED = {"locales.js"}   # built by the server from locales/*.js, not a file of its own
+GENERATED = {"locales.js", "texts.js"}   # built by the server from locales/*.js, not a file of its own
 
 
 def packaged() -> list[str]:
