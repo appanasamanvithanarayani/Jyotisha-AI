@@ -70,7 +70,7 @@ function boot(setup = {}) {
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
-    if (url === '/api/palm') return reply(setup.palm || { status: 'off', reading: null });
+    if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -473,6 +473,8 @@ test('Moon Sign page: your Vedic Moon sign and nakshatra, five AI sections, shar
   await settle(); await settle();
   assert.equal(app.element('top').children.find(item => item.id === 'page-moon').hidden, false);
   const page = app.element('moonsign').children;
+  assert.equal(page[0].className, 'page-head');                                // back, title, home, share
+  assert.equal(page[0].children[1].textContent, 'Moon Sign');
   assert.ok(page[1].innerHTML.startsWith('<svg'));                             // the big moon
   assert.equal(page[2].textContent, '✦ Taurus ✦');
   assert.match(page[3].textContent, /^Nakshatra: /);
@@ -1630,4 +1632,55 @@ test('the phone’s status and navigation bars follow the app’s look in the An
   assert.deepEqual({ ...calls.at(-1) }, { color: '#fff7e8', light: true });           // cream, dark icons
   app.element('theme-panel').children[2].children[2].listeners.click();               // Dark
   assert.deepEqual({ ...calls.at(-1) }, { color: '#1c1f25', light: false });
+});
+
+test('feature pages get a header (back, title, home, share once there is a reading); the loader shows % and a fun fact; the menu can share and rate the app', async () => {
+  const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.' };
+  const history = { stack: ['home'], length: 2, pushState() {}, replaceState() {}, back() { this.went = true; } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading }, palmDelay: 60, history });
+  await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  let head = app.element('palmread').children[0];
+  assert.equal(head.className, 'page-head');
+  assert.equal(head.children[1].textContent, 'Palm Analysis');
+  assert.equal(head.children[2].children.length, 1);                                // only the home icon: nothing to share yet
+  head.children[0].listeners.click();                                              // back = the phone's back
+  assert.equal(history.went, true);
+  app.element('palmread').children.find(item => item.className === 'palm-hands').children[0].listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  const reading1 = inputs[0].listeners.change();
+  await new Promise(resolve => setTimeout(resolve, 25));
+  const loading = app.element('palmread').children.find(item => item.className === 'loader');   // while the AI reads
+  assert.ok(loading);
+  assert.equal(loading.children[2].children[1].textContent.slice(-1), '%');          // the % next to the bar
+  assert.ok(loading.children[3].children[1].textContent.length > 20);                 // a fun fact
+  await reading1; await settle(); await settle();
+  head = app.element('palmread').children[0];
+  assert.equal(head.children[2].children.length, 2);                                // home + share, now there is a reading
+  // the menu has Share app and Rate app
+  app.element('menu-btn').listeners.click();
+  const labels = app.element('side-list').children.map(item => item.children[1].textContent);
+  assert.ok(labels.includes('Share app') && labels.includes('Rate app'));
+});
+
+test('the bottom banner is hidden on the Ask page and comes back on the other screens', async () => {
+  const calls = [];
+  const AdMob = {
+    initialize: async () => {}, requestConsentInfo: async () => ({}), showConsentForm: async () => {},
+    addListener: () => {}, showBanner: async () => calls.push('show'), hideBanner: async () => calls.push('hide'), resumeBanner: async () => calls.push('resume'),
+  };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob } },
+    appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();
+  assert.deepEqual(calls, ['show']);
+  const link = href => app.context.document.querySelectorAll('.bottom-nav a').find(a => a.getAttribute('href') === href);
+  void link;                                                                       // the fake DOM has no nav links: use the menu
+  app.element('menu-btn').listeners.click();
+  app.element('side-list').children.find(item => item.children[1].textContent === 'Ask AI').listeners.click();
+  assert.deepEqual(calls, ['show', 'hide']);
+  app.element('menu-btn').listeners.click();
+  app.element('side-list').children.find(item => item.children[1].textContent === 'Home').listeners.click();
+  assert.deepEqual(calls, ['show', 'hide', 'resume']);
 });

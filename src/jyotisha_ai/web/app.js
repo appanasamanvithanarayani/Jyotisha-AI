@@ -47,6 +47,8 @@
   const appAds = { config: null, admob: null, freeUntil: 0, switches: 0, lastInterstitial: 0, started: Date.now() };
   /* ---------------------------------------------------------------- pages */
   const pages = {};
+  // Feature pages show their own header (back, title, home, share) instead of the app bar.
+  const FEATURE_PAGES = ['moon', 'tarot', 'palm', 'numbers'];
   const pageHost = $('top');
   for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm', 'numbers']) {
     const page = document.createElement('section');
@@ -91,6 +93,8 @@
       if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
     });
     if (document.body && document.body.classList) document.body.classList.toggle('page-chat', chosen === 'chat');
+    if (document.body && document.body.classList) document.body.classList.toggle('page-feature', FEATURE_PAGES.includes(chosen));
+    syncBanner(chosen);
     window.scrollTo(0, 0);
     if (!how.back) maybeInterstitial();   // no full-screen ad when going back
   }
@@ -196,7 +200,7 @@
         year: 'Your year {year}: number {n}', lucky: 'Lucky for you', luckyNumbers: 'Numbers', luckyDays: 'Days', luckyColours: 'Colours',
         askAi: 'Ask AI about my numbers', askQ: 'My numerology Moolank is {m} and Bhagyank is {b}. What do these numbers say about my career and relationships?', share: 'Share',
         note: 'Numerology is a traditional system for reflection, not a certainty.' },
-      menu: { title: 'Menu', open: 'Open menu', close: 'Close menu', home: 'Home', panchang: 'Today’s Panchang', appearance: 'Appearance', privacy: 'Privacy and terms' },
+      menu: { title: 'Menu', open: 'Open menu', close: 'Close menu', home: 'Home', panchang: 'Today’s Panchang', appearance: 'Appearance', privacy: 'Privacy and terms', back: 'Back', shareReading: 'Share', shareApp: 'Share app', rateApp: 'Rate app', funFact: 'FUN FACT', shareLine: 'Your Vedic astrologer in your pocket: Panchang, Kundli, Rashiphal, Palm and Tarot in your language.' },
       palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 · Pick a hand', left: 'Left palm', right: 'Right palm',
         tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
         scan: 'Scan', reading: 'Reading your palm…', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
@@ -271,7 +275,7 @@
         year: 'మీ {year} సంవత్సరం: సంఖ్య {n}', lucky: 'మీకు అదృష్టం', luckyNumbers: 'సంఖ్యలు', luckyDays: 'రోజులు', luckyColours: 'రంగులు',
         askAi: 'నా సంఖ్యల గురించి AIని అడగండి', askQ: 'నా మూలాంకం {m}, భాగ్యాంకం {b}. ఈ సంఖ్యలు నా ఉద్యోగం, బంధాల గురించి ఏం చెబుతున్నాయి?', share: 'షేర్ చేయండి',
         note: 'సంఖ్యా శాస్త్రం ఆలోచనకు ఒక సంప్రదాయ మార్గం మాత్రమే, ఖచ్చితమైనది కాదు.' },
-      menu: { title: 'మెనూ', open: 'మెనూ తెరవండి', close: 'మెనూ మూసివేయండి', home: 'హోమ్', panchang: 'నేటి పంచాంగం', appearance: 'రూపం', privacy: 'గోప్యత, నిబంధనలు' },
+      menu: { title: 'మెనూ', open: 'మెనూ తెరవండి', close: 'మెనూ మూసివేయండి', home: 'హోమ్', panchang: 'నేటి పంచాంగం', appearance: 'రూపం', privacy: 'గోప్యత, నిబంధనలు', back: 'వెనుకకు', shareReading: 'షేర్', shareApp: 'యాప్ షేర్ చేయండి', rateApp: 'యాప్‌కు రేటింగ్ ఇవ్వండి', funFact: 'తెలుసా?', shareLine: 'మీ జేబులో మీ వైదిక జ్యోతిష్కుడు: పంచాంగం, జాతకం, రాశి ఫలాలు, హస్త రేఖలు, టారో మీ భాషలో.' },
       palm: { card: ['హస్త రేఖలు', 'కెమెరాతో మీ అరచేతిని స్కాన్ చేయండి'], title: 'హస్త రేఖా విశ్లేషణ', step: 'దశ 1 · చేయి ఎంచుకోండి', left: 'ఎడమ అరచేయి', right: 'కుడి అరచేయి',
         tipsTitle: 'స్పష్టమైన స్కాన్ కోసం', tips: ['మంచి వెలుతురులో తీయండి', 'అరచేయి చదునుగా, వేళ్లు విడదీసి ఉంచండి', 'పూర్తి చేయి ఫ్రేమ్‌లో ఉండాలి'],
         scan: 'స్కాన్', reading: 'మీ అరచేతిని చదువుతున్నాం…', notPalm: 'అరచేయి స్పష్టంగా కనిపించలేదు. మంచి వెలుతురులో పూర్తి అరచేయి కనిపించేలా మళ్ళీ ప్రయత్నించండి.',
@@ -346,7 +350,7 @@
         year: 'आपका {year} साल: अंक {n}', lucky: 'आपके लिए शुभ', luckyNumbers: 'अंक', luckyDays: 'दिन', luckyColours: 'रंग',
         askAi: 'मेरे अंकों के बारे में AI से पूछें', askQ: 'मेरा मूलांक {m} और भाग्यांक {b} है। ये अंक मेरे करियर और रिश्तों के बारे में क्या कहते हैं?', share: 'शेयर करें',
         note: 'अंक ज्योतिष सोचने का एक पारंपरिक तरीका है, निश्चितता नहीं।' },
-      menu: { title: 'मेनू', open: 'मेनू खोलें', close: 'मेनू बंद करें', home: 'होम', panchang: 'आज का पंचांग', appearance: 'रूप', privacy: 'गोपनीयता और शर्तें' },
+      menu: { title: 'मेनू', open: 'मेनू खोलें', close: 'मेनू बंद करें', home: 'होम', panchang: 'आज का पंचांग', appearance: 'रूप', privacy: 'गोपनीयता और शर्तें', back: 'वापस', shareReading: 'शेयर', shareApp: 'ऐप शेयर करें', rateApp: 'ऐप को रेट करें', funFact: 'क्या आप जानते हैं?', shareLine: 'आपकी जेब में आपका वैदिक ज्योतिषी: पंचांग, कुंडली, राशिफल, हस्त रेखा और टैरो आपकी भाषा में।' },
       palm: { card: ['हस्त रेखा', 'कैमरे से अपनी हथेली स्कैन करें'], title: 'हस्त रेखा विश्लेषण', step: 'चरण 1 · हाथ चुनें', left: 'बाईं हथेली', right: 'दाईं हथेली',
         tipsTitle: 'साफ़ स्कैन के लिए', tips: ['अच्छी रोशनी में लें', 'हथेली सीधी, उँगलियाँ फैलाकर रखें', 'पूरा हाथ फ्रेम में रखें'],
         scan: 'स्कैन', reading: 'आपकी हथेली पढ़ रहे हैं…', notPalm: 'हथेली साफ़ नहीं दिखी। अच्छी रोशनी में पूरी हथेली दिखाते हुए फिर कोशिश करें।',
@@ -1763,9 +1767,10 @@
     });
     input.click();
   }
-  function renderPalm() {
+  function renderPalm() { renderPalmBody(); decorate($('palmread'), palmCopy().title); }
+  function renderPalmBody() {
     const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
-    box.replaceChildren(el('h2', 'palm-title', copy.title));
+    box.replaceChildren();
     if (palmState.step === 'pick') {
       box.appendChild(el('p', 'tarot-ask', copy.step));
       const hands = el('div', 'palm-hands');
@@ -1799,9 +1804,7 @@
       return;
     }
     if (palmState.step === 'reading') {
-      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
-      pic.appendChild(el('i', 'palm-beam'));
-      box.append(pic, el('p', 'palm-wait', copy.reading));
+      box.appendChild(loader(copy.reading));
       return;
     }
     const reading = palmState.reading, lines = [];
@@ -1831,6 +1834,79 @@
     actions.appendChild(again);
     box.appendChild(actions);
   }
+  /* ---- Shared screen pieces (Palm-AI style): a page header, and a loading screen with a % bar and a fun fact ---- */
+  const SVG_BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const SVG_HOME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  const SVG_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function goBack() {
+    try { if (window.history && typeof window.history.back === 'function' && window.history.length > 1) { window.history.back(); return; } } catch (_error) { /* fall through */ }
+    showPage('home');
+  }
+  const textOf = node => (node.textContent || '').trim() || (node.children ? Array.from(node.children).map(textOf).filter(Boolean).join('\n') : '');
+  // Text of every reading section on a page, for the share icon.
+  function pageShareText(box) {
+    const parts = [];
+    const walk = node => {
+      if (!node || !node.children) return;
+      for (const child of node.children) {
+        if (/(^| )(palm-sec|num-sec|tarot-sec|moon-sec|lg-aspect|lg-char)( |$)/.test(child.className || '')) parts.push(textOf(child));
+        else walk(child);
+      }
+    };
+    walk(box);
+    return parts.filter(Boolean).join('\n\n');
+  }
+  // [← back] [title] [🏠] [share]; the share icon only shows when there is a reading to share.
+  function pageHeader(title, box) {
+    const menu = toolText().menu || TOOLS_COPY.en.menu;
+    const head = el('div', 'page-head');
+    const back = el('button', 'ph-btn ph-back'); back.type = 'button'; back.innerHTML = SVG_BACK; back.setAttribute('aria-label', menu.back || 'Back');
+    back.addEventListener('click', goBack);
+    const right = el('span', 'ph-right');
+    const home = el('button', 'ph-btn'); home.type = 'button'; home.innerHTML = SVG_HOME; home.setAttribute('aria-label', menu.home);
+    home.addEventListener('click', () => showPage('home'));
+    right.appendChild(home);
+    const text = box ? pageShareText(box) : '';
+    if (text) {
+      const share = el('button', 'ph-btn'); share.type = 'button'; share.innerHTML = SVG_SHARE; share.setAttribute('aria-label', menu.shareReading || 'Share');
+      share.addEventListener('click', () => { void shareText(title, text); });
+      right.appendChild(share);
+    }
+    head.append(back, el('h2', 'ph-title', title), right);
+    return head;
+  }
+  // Put the header on top of a page that has just been drawn.
+  function decorate(box, title) { box.replaceChildren(pageHeader(title, box), ...Array.from(box.children)); }
+  // Fun facts shown while a reading is prepared (true, general Vedic facts).
+  const FUN_FACTS = {
+    en: ['Vedic astrology uses 27 nakshatras, the “lunar mansions” the Moon passes through.', 'A tithi is a lunar day: there are 30 in every lunar month.', 'The Moon stays about 2¼ days in each rashi.', '“Panchang” means five limbs: tithi, vara, nakshatra, yoga and karana.', 'Abhijit muhurta is the lucky window around midday.', 'Palmistry traditionally reads the heart, head, life and fate lines.', 'Your Moon sign (Janma Rashi) is the base of most Indian horoscopes.', 'Rahu Kalam lasts about 90 minutes each day and changes with the weekday.'],
+    te: ['వైదిక జ్యోతిష్యంలో చంద్రుడు సంచరించే 27 నక్షత్రాలు ఉన్నాయి.', 'తిథి అంటే చాంద్రమాన దినం: ఒక చాంద్రమాసంలో 30 తిథులు ఉంటాయి.', 'చంద్రుడు ఒక్కో రాశిలో సుమారు 2¼ రోజులు ఉంటాడు.', '“పంచాంగం” అంటే ఐదు అంగాలు: తిథి, వారం, నక్షత్రం, యోగం, కరణం.', 'అభిజిత్ ముహూర్తం మధ్యాహ్నం వేళ ఉండే శుభ సమయం.', 'హస్త సాముద్రికం హృదయ, మస్తిష్క, జీవన, భాగ్య రేఖలను చదువుతుంది.', 'మీ జన్మ రాశి (చంద్ర రాశి) చాలా భారతీయ జాతకాలకు ఆధారం.', 'రాహుకాలం రోజూ సుమారు 90 నిమిషాలు, వారాన్ని బట్టి మారుతుంది.'],
+    hi: ['वैदिक ज्योतिष में चंद्रमा 27 नक्षत्रों से होकर गुज़रता है।', 'तिथि चंद्र दिवस है: एक चंद्र मास में 30 तिथियाँ होती हैं।', 'चंद्रमा हर राशि में लगभग 2¼ दिन रहता है।', '“पंचांग” का अर्थ है पाँच अंग: तिथि, वार, नक्षत्र, योग और करण।', 'अभिजित मुहूर्त दोपहर के आसपास का शुभ समय है।', 'हस्त रेखा शास्त्र हृदय, मस्तिष्क, जीवन और भाग्य रेखा पढ़ता है।', 'आपकी जन्म राशि (चंद्र राशि) अधिकतर भारतीय कुंडलियों का आधार है।', 'राहुकाल रोज़ लगभग 90 मिनट का होता है और वार के अनुसार बदलता है।'],
+  };
+  const funFacts = () => FUN_FACTS[state.lang] || FUN_FACTS.en;
+  // The loading screen: a glowing orb, the label, a bar that creeps towards 90% (it ends by itself), and a fun fact.
+  function loader(label) {
+    const wrap = el('div', 'loader');
+    const orb = el('div', 'loader-orb'); if (window.JyotishaArt) orb.innerHTML = window.JyotishaArt.orb();
+    const bar = el('div', 'loader-bar'), fill = el('i'), pct = el('span', 'loader-pct', '0%');
+    bar.appendChild(fill);
+    const facts = funFacts(), start = Math.floor(Math.random() * facts.length);
+    const fact = el('div', 'loader-fact'); fact.append(el('small', null, (toolText().menu || TOOLS_COPY.en.menu).funFact || 'FUN FACT'), el('p', null, facts[start]));
+    wrap.append(orb, el('h3', 'loader-label', label), el('div', 'loader-row'), fact);
+    wrap.children[2].append(bar, pct);
+    let n = 0;
+    const tick = () => {
+      n += 1;
+      const value = Math.min(90, Math.round(90 * (1 - Math.exp(-n / 14))));
+      if (fill.style) fill.style.width = `${value}%`;
+      pct.textContent = `${value}%`;
+      if (n % 12 === 0) fact.children[1].textContent = facts[(start + n / 12) % facts.length];
+      if (n < 80) setTimeout(tick, 250);   // bounded: stops after about 20 seconds
+    };
+    setTimeout(tick, 250);
+    return wrap;
+  }
+
   /* ---- Side menu (☰): every feature in one list, opened from the header ---- */
   let menuHistory = false;   // the open menu added a history step (so the phone's Back closes it)
   function menuItems() {
@@ -1850,9 +1926,14 @@
       ['calendar', '🪔', copy.festivals[0], () => showPage('calendar')],
       ['panchang', '🌅', menu.panchang, toPanchang],
       ['look', '🎨', menu.appearance, () => { renderLookPanel(); $('theme-panel').hidden = false; }],
+      ['share', '📤', menu.shareApp || TOOLS_COPY.en.menu.shareApp, shareApp],
+      ['rate', '⭐', menu.rateApp || TOOLS_COPY.en.menu.rateApp, rateApp],
       ['privacy', '🔒', menu.privacy, () => { try { window.location.href = '/privacy'; } catch (_error) { /* optional */ } }],
     ];
   }
+  const PLAY_URL = 'https://play.google.com/store/apps/details?id=store.karthiktraders.jyotisha';
+  function shareApp() { void shareText('Jyotirmaya AstroChat', `${(toolText().menu || TOOLS_COPY.en.menu).shareLine || TOOLS_COPY.en.menu.shareLine}\n${PLAY_URL}`); }
+  function rateApp() { try { window.open(PLAY_URL, '_blank'); } catch (_error) { /* optional */ } }
   function renderMenu() {
     const menu = toolText().menu || TOOLS_COPY.en.menu;
     $('side-title').textContent = menu.title;
@@ -1926,10 +2007,11 @@
     });
     return form;
   }
-  function renderNumerology() {
+  function renderNumerology() { renderNumerologyBody(); decorate($('numerology'), numCopy().title); }
+  function renderNumerologyBody() {
     const copy = numCopy(), box = $('numerology'), art = window.JyotishaArt, tool = window.JyotishaNumerology;
     const hero = el('div', 'num-hero'); if (art && art.numerology) hero.innerHTML = art.numerology();
-    box.replaceChildren(hero, el('h2', 'palm-title', copy.title));
+    box.replaceChildren(hero);
     const dob = numberDob(), name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
     const result = tool && !numState.editing && dob ? tool.report(dob, name, state.lang, year) : null;
     if (!result) { box.append(el('p', 'tarot-ask', copy.intro), numberForm(copy, dob, name)); return; }
@@ -2029,9 +2111,10 @@
     } catch (_error) { tarot.reading = false; }
     if (tarot.step === 'result') renderTarot();
   }
-  function renderTarot() {
+  function renderTarot() { renderTarotBody(); decorate($('tarot'), tarotCopy().title); }
+  function renderTarotBody() {
     const copy = tarotCopy(), box = $('tarot'), art = window.JyotishaArt;
-    box.replaceChildren(el('h2', 'tarot-title', copy.title));
+    box.replaceChildren();
     if (tarot.step === 'topic') {
       box.appendChild(el('p', 'tarot-ask', copy.ask));
       const grid = el('div', 'tarot-topics');
@@ -2156,14 +2239,12 @@
     if (!pages.moon.hidden) renderMoonSign();
   }
   function openMoonSign() { state.moonPick = 0; showPage('moon'); renderMoonSign(); }
-  function renderMoonSign() {
+  function renderMoonSign() { renderMoonSignBody(); decorate($('moonsign'), moonCopy().title); }
+  function renderMoonSignBody() {
     const copy = moonCopy(), box = $('moonsign'), own = ownMoon();
     if (!own) void loadApproxMoon();
     const sign = state.moonPick || (own ? own.sign : 0);
     box.replaceChildren();
-    const head = el('div', 'moon-head');
-    head.appendChild(el('h2', 'moon-title', copy.title));
-    box.appendChild(head);
     const art = el('div', 'moon-art');
     if (window.JyotishaArt) art.innerHTML = window.JyotishaArt.moon();
     box.appendChild(art);
@@ -2190,16 +2271,14 @@
         box.appendChild(card);
         if (body) lines.push(`${icon} ${copy.sections[name]}\n${body}`);
       }
-      const tools = el('div', 'moon-tools');
-      const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
-      share.addEventListener('click', () => { void shareText(`🌙 ${copy.title}: ${signName(sign)}`, lines.join('\n\n')); });
-      tools.appendChild(share);
+      // Sharing is the share icon in the page header; only the report link stays here.
       if (state.contactEmail) {
+        const tools = el('div', 'moon-tools');
         const report = el('a', 'chip-btn', `⚑ ${copy.report}`);
         report.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent(`Report: Moon sign ${sign} (${state.lang})`)}`;
         tools.appendChild(report);
+        box.appendChild(tools);
       }
-      head.appendChild(tools);
     }
     // Explore any sign: twelve small tiles.
     box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
@@ -3081,8 +3160,21 @@
     return facts;
   }
   // Native Android app only: a Google AdMob banner is drawn by the app below the page. The server switches it on and off.
+  // The bottom banner is hidden on the Ask page (like Palm AI keeps its chat clean) and shown on the other screens.
+  function syncBanner(page) {
+    const admob = appAds.admob;
+    if (!admob || !appAds.config) return;
+    const hide = page === 'chat';
+    if (hide === !!appAds.bannerHidden) return;
+    appAds.bannerHidden = hide;
+    try {
+      if (hide) { void Promise.resolve(admob.hideBanner && admob.hideBanner()).catch(() => {}); document.documentElement.style.setProperty('--ad-height', '0px'); }
+      else { void Promise.resolve(admob.resumeBanner && admob.resumeBanner()).catch(() => {}); setAdHeight(appAds.height || 0); }
+    } catch (_error) { /* optional */ }
+  }
   function setAdHeight(pixels) {
     const height = Number.isFinite(pixels) && pixels > 0 ? Math.min(Math.round(pixels), 200) : 0;
+    if (!appAds.bannerHidden) appAds.height = height;
     document.documentElement.style.setProperty('--ad-height', `${height}px`);
   }
   const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
