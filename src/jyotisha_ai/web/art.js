@@ -150,6 +150,16 @@
     n += sparkle(34, 34, 6) + sparkle(128, 30, 5, PINK2) + sparkle(130, 92, 4);
     return frame('n', n + clouds('n'), 53);
   }
+  // Two zodiac circles joined by a heart: the sign match.
+  function signmatch() {
+    let g = `<circle cx="80" cy="60" r="52" fill="url(#m-glow)"/>`;
+    for (const [x, glyph] of [[44, '\u2648'], [116, '\u2653']]) {
+      g += `<circle cx="${x}" cy="60" r="25" fill="#2e0f3b" stroke="${GOLD}" stroke-width="2"/><circle cx="${x}" cy="60" r="19" fill="none" stroke="${GOLD2}" stroke-width="0.8"/>`;
+      g += `<text x="${x}" y="69" font-size="26" text-anchor="middle" fill="${GOLD}" font-family="serif">${glyph}</text>`;
+    }
+    g += heart(80, 52, 8) + `<path d="M70 70q10 8 20 0" fill="none" stroke="${PINK2}" stroke-width="1.6"/>` + sparkle(80, 22, 5) + sparkle(28, 98, 4, PINK2) + sparkle(134, 98, 4);
+    return frame('m', g + clouds('m'), 61);
+  }
   // A winding path towards a rising sun between hills: the Life Guide.
   function lifeguide() {
     let g = `<circle cx="80" cy="58" r="52" fill="url(#l-glow)"/><circle cx="80" cy="62" r="17" fill="url(#l-gold)"/>`;
@@ -208,5 +218,5 @@
     const emblem = EMBLEMS[index] || EMBLEMS[0];
     return cardFrame(`<circle cx="50" cy="80" r="30" fill="url(#c-glow)"/><text x="50" y="26" font-size="12" text-anchor="middle" fill="${GOLD}" font-family="Georgia, serif">${ROMAN[index] || ''}</text>${emblem()}`);
   }
-  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, numerology, lifeguide, tarotBack, tarotCard };
+  return { kundli, rashi, match, festivals, dasha, doshas, moon, tarot, palm, orb, panchang, numerology, lifeguide, signmatch, tarotBack, tarotCard };
 });

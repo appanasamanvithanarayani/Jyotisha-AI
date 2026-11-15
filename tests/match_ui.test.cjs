@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { gunaMilan, tables } = require('../src/jyotisha_ai/web/match-ui.js');
+const { gunaMilan, signMatch, tables } = require('../src/jyotisha_ai/web/match-ui.js');
 
 const NAK = 360 / 27;
 const mid = n => (n - 1) * NAK + NAK / 2;   // middle of Nakshatra n (1 = Ashwini)
@@ -38,4 +38,19 @@ test('known pairs: sworn-enemy Yoni, Bhakoot 6/8 and different Nadi', () => {
   // Ashwini (Adi) with Bharani (Madhya): different Nadi earns 8.
   assert.equal(gunaMilan(mid(1), mid(2)).kootas.find(k => k.key === 'nadi').points, 8);
   assert.throws(() => gunaMilan(NaN, 10));
+});
+
+test('sign-only match: Graha Maitri and Bhakoot from the two Moon signs, symmetric, 12 points', () => {
+  assert.deepEqual({ ...signMatch(1, 1) }, { total: 12, max: 12, percent: 100, verdict: 'excellent', maitri: 5, bhakoot: 7, bhakootDosha: false });
+  const aries_scorpio = signMatch(1, 8);                                // same lord (Mars), but 6/8 apart: Bhakoot dosha
+  assert.equal(aries_scorpio.maitri, 5); assert.equal(aries_scorpio.bhakoot, 0); assert.equal(aries_scorpio.bhakootDosha, true);
+  assert.equal(signMatch(1, 2).bhakootDosha, true);                      // 2/12 apart
+  assert.equal(signMatch(1, 5).bhakootDosha, true);                      // 5/9 apart
+  assert.equal(signMatch(1, 3).bhakoot, 7);                              // 3/11 apart: fine
+  for (let a = 1; a <= 12; a += 1) for (let b = 1; b <= 12; b += 1) {
+    const one = signMatch(a, b), two = signMatch(b, a);
+    assert.equal(one.total, two.total, `${a}/${b}`);                     // order does not matter
+    assert.ok(one.total >= 0 && one.total <= 12 && one.percent >= 0 && one.percent <= 100);
+  }
+  assert.throws(() => signMatch(0, 3)); assert.throws(() => signMatch(3, 13)); assert.throws(() => signMatch('x', 3));
 });

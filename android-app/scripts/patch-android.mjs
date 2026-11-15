@@ -14,7 +14,7 @@ const manifestPath = process.env.MANIFEST_PATH || join(root, 'android', 'app', '
 if (!existsSync(manifestPath)) throw new Error(`Run "npm run add-android" first; ${manifestPath} does not exist.`);
 
 let xml = readFileSync(manifestPath, 'utf8');
-const permissions = ['android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION', 'android.permission.INTERNET'];
+const permissions = ['android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION', 'android.permission.INTERNET', 'android.permission.CAMERA'];
 for (const name of permissions) {
   if (!xml.includes(`android:name="${name}"`)) xml = xml.replace(/<\/manifest>/, `    <uses-permission android:name="${name}" />\n</manifest>`);
 }
@@ -24,6 +24,8 @@ if (xml.includes('com.google.android.gms.ads.APPLICATION_ID')) {
 } else {
   xml = xml.replace(/<\/application>/, `        ${meta}\n    </application>`);
 }
+// The in-app palm camera works without a camera (it falls back to the camera app), so the hardware is optional.
+if (!xml.includes('android.hardware.camera')) xml = xml.replace(/<\/manifest>/, `    <uses-feature android:name="android.hardware.camera" android:required="false" />\n</manifest>`);
 // The palm reading opens the phone's camera app (ACTION_IMAGE_CAPTURE); Android 11+ needs it declared to find it.
 if (!xml.includes('android.media.action.IMAGE_CAPTURE')) {
   xml = xml.replace(/<\/manifest>/, `    <queries>\n        <intent>\n            <action android:name="android.media.action.IMAGE_CAPTURE" />\n        </intent>\n    </queries>\n</manifest>`);
