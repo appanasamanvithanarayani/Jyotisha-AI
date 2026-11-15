@@ -1858,3 +1858,93 @@ test('chat answers get a read-aloud button and a row of chips into the other fea
   assert.equal(log().filter(item => item.className === 'chat-chips').length, 1);
   assert.notEqual(log().at(-1).children[0].textContent, chips.children[0].textContent);
 });
+
+test('Life Guide: Today is free; the other tabs carry a video icon and open after one rewarded ad for that sign for the day', async () => {
+  const ad = fakeRewardedAdMob();
+  const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: [] }]));
+  const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, lifeGuide, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: { ...resultsConfig, rewarded: { lifeguide: true } } });
+  await settle(); await settle();
+  homeCard(app, 'Life Guide').listeners.click();
+  await settle(); await settle();
+  const page = () => app.element('lifeguide').children;
+  let tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.className)), '["locked","on","locked","locked","locked"]');   // Today free, the others carry the video icon
+  assert.ok(page().some(item => item.className === 'lg-unlock-note'));
+  tabs.children[4].listeners.click();                                              // This year: an ad first
+  await settle();
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 1);
+  assert.equal(page().find(item => item.className === 'tabs-line').children[1].className, 'on');   // still Today until the ad is earned
+  await earnReward(ad);
+  tabs = page().find(item => item.className === 'tabs-line');
+  assert.equal(tabs.children[4].className, 'on');                                  // the year tab is open now
+  assert.ok(tabs.children.every(tab => !/locked/.test(tab.className)));           // and so are the others (one ad per sign per day)
+  assert.ok(!page().some(item => item.className === 'lg-unlock-note'));
+  tabs.children[0].listeners.click();                                              // Yesterday: no second ad
+  await settle();
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 1);
+  assert.ok(JSON.parse(storage.getItem('jyotisha.lg-unlock.v1')).signs.includes(2));   // remembered for the day
+  // Another sign is locked again.
+  page().find(item => item.className === 'lg-sign').children[1].listeners.click();
+  page().find(item => item.className === 'moon-pick').children[5].listeners.click();
+  await settle();
+  assert.match(page().find(item => item.className === 'tabs-line').children[3].className, /locked/);
+});
+
+test('Sign match, Moon sign and Numerology: rewarded ads when switched on; your own Moon sign stays free', async () => {
+  const ad = fakeRewardedAdMob();
+  const config = { ...resultsConfig, rewarded: { signmatch: true, moon: true, numbers: true } };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false, name: 'Sam', dob: '1995-08-15' });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: config, moonSign: { status: 'ok', readings: {} } });
+  await settle(); await settle();
+  const shown = () => ad.calls.filter(c => c[0] === 'showRewardVideoAd').length;
+  // Sign match: the button plays an ad first (and carries the video icon)
+  homeCard(app, 'Sign match').listeners.click();
+  const tiles = () => app.element('signmatch').children.find(item => item.className === 'moon-pick').children;
+  tiles()[0].listeners.click(); tiles()[7].listeners.click();
+  const see = () => app.element('signmatch').children.find(item => /palm-scan/.test(item.className));
+  assert.match(see().className, /reward-btn/);
+  see().listeners.click(); await settle();
+  assert.equal(shown(), 1);
+  assert.ok(!app.element('signmatch').children.some(item => item.className === 'sm-result'));   // not yet
+  await earnReward(ad);
+  assert.ok(app.element('signmatch').children.some(item => item.className === 'sm-result'));
+  // Moon sign: another sign asks for an ad, your own does not
+  homeCard(app, 'Moon sign').listeners.click();
+  await settle(); await settle();
+  const moonTiles = () => app.element('moonsign').children.find(item => item.className === 'moon-pick').children;
+  moonTiles()[1].listeners.click(); await settle();                                // Taurus is the chart's own Moon sign: free
+  assert.equal(shown(), 1);
+  moonTiles()[5].listeners.click(); await settle();                                // Virgo: an ad
+  assert.equal(shown(), 2);
+  await earnReward(ad);
+  // Numerology: the form asks for an ad, the saved date of birth does not
+  homeCard(app, 'Numerology').listeners.click();
+  assert.ok(app.element('numerology').children.some(item => item.className === 'num-tiles'));   // shown from the saved date, no ad
+  assert.equal(shown(), 2);
+  app.element('numerology').children.find(item => item.className === 'num-who').children[1].listeners.click();   // Change
+  const form = app.element('numerology').children.find(item => item.className === 'num-form');
+  form.children[0].children[1].value = '2000-01-29';
+  assert.match(form.children[2].className, /reward-btn/);
+  form.listeners.submit({ preventDefault() {} }); await settle();
+  assert.equal(shown(), 3);
+});
+
+test('the banner is also hidden while the palm camera is open (it would cover the shutter) and comes back when it closes', async () => {
+  const hidden = [];
+  const AdMob = { initialize: async () => {}, requestConsentInfo: async () => ({}), showConsentForm: async () => {}, addListener: () => {},
+    showBanner: async () => {}, hideBanner: async () => hidden.push('hide'), resumeBanner: async () => hidden.push('resume') };
+  const stream = { getTracks: () => [{ stop() {} }] };
+  const navigator = { mediaDevices: { getUserMedia: async () => stream } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), navigator, capacitor: { Plugins: { AdMob } }, appAds: { enabled: true, banner_id: 'ca-app-pub-3940256099942544/6300978111', testing: true } });
+  await settle();
+  homeCard(app, 'Palm reading').listeners.click();
+  await app.element('palmread').children.find(item => /palm-scan/.test(item.className)).listeners.click();
+  await settle();
+  assert.deepEqual(hidden, ['hide']);                                                // the shutter is not covered by the banner
+  app.context.document.body.children.find(item => item.className === 'cam').children[3].listeners.click();   // close
+  assert.deepEqual(hidden, ['hide', 'resume']);
+});

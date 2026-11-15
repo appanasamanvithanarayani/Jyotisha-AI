@@ -160,7 +160,8 @@ def _app_ads() -> dict | None:
     rewarded_kundli = store.value("JYOTISHA_REWARDED_KUNDLI") == "1"
     rewarded_chat = store.value("JYOTISHA_REWARDED_CHAT") == "1"
     # "Watch an ad to see the reading" for Tarot and Palm (every reading) and Rashiphal (once a day), like Palm AI.
-    rewarded_results = {feature: store.value(f"JYOTISHA_REWARDED_{feature.upper()}", "1") == "1" for feature in ("tarot", "palm", "rashiphal")}
+    result_defaults = (("tarot", "1"), ("palm", "1"), ("rashiphal", "1"), ("lifeguide", "1"), ("signmatch", "1"), ("moon", "0"), ("numbers", "0"))
+    rewarded_results = {feature: store.value(f"JYOTISHA_REWARDED_{feature.upper()}", default) == "1" for feature, default in result_defaults}
     if any(rewarded_results.values()):
         config["rewarded"] = {feature: True for feature, on in rewarded_results.items() if on}
     if rewarded_kundli or rewarded_chat or any(rewarded_results.values()):
