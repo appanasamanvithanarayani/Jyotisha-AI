@@ -90,7 +90,20 @@
     };
   }
 
-  const api = { gunaMilan, tables: { YONI, VASHYA, GANA, YONI_OF, GANA_OF, NADI_OF } };
+  /** A quick match from the two Moon SIGNS only (1 = Aries .. 12 = Pisces): the two sign-based kootas, Graha Maitri (5)
+      and Bhakoot (7), 12 points in all. For the full 36 points the Nakshatras are needed (gunaMilan). */
+  function signMatch(first, second) {
+    const gs = first - 1, bs = second - 1;
+    if (!Number.isInteger(gs) || !Number.isInteger(bs) || gs < 0 || gs > 11 || bs < 0 || bs > 11) throw new Error('Moon signs 1 to 12 required');
+    const gLord = LORD[gs], bLord = LORD[bs];
+    const forward = ((gs - bs + 12) % 12) + 1, backward = ((bs - gs + 12) % 12) + 1;
+    const bhakootDosha = [[2, 12], [12, 2], [5, 9], [9, 5], [6, 8], [8, 6]].some(([a, b]) => a === forward && b === backward);
+    const maitri = gLord === bLord ? 5 : MAITRI[relation(gLord, bLord) + relation(bLord, gLord)];
+    const bhakoot = bhakootDosha ? 0 : 7, total = maitri + bhakoot;
+    return { total, max: 12, percent: Math.round(total * 100 / 12), verdict: total >= 10 ? 'excellent' : total >= 7 ? 'good' : total >= 5 ? 'average' : 'low', maitri, bhakoot, bhakootDosha };
+  }
+
+  const api = { gunaMilan, signMatch, tables: { YONI, VASHYA, GANA, YONI_OF, GANA_OF, NADI_OF } };
   root.matchUI = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

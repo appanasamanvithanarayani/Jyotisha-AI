@@ -34,6 +34,7 @@ class Element {
   append(...items) { this.children.push(...items); }
   appendChild(item) { this.children.push(item); return item; }
   replaceChildren(...items) { this.children = items; }
+  removeChild(item) { this.children = this.children.filter(child => child !== item); return item; }
   addEventListener(name, fn) { this.listeners[name] = fn; }
   setAttribute(name, value) { this.attributes[name] = value; }
   getAttribute(name) { return this.attributes[name] || ''; }
@@ -397,9 +398,19 @@ test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrun
   const request = app.requests.find(r => r.url === '/api/palm');
   assert.equal(request.body.hand, 'left'); assert.equal(request.body.language, 'en');
   assert.equal(request.body.image, 'data:image/jpeg;base64,SMALLPHOTO');            // shrunk on the phone before sending
-  const secs = app.element('palmread').children.filter(item => /^palm-sec/.test(item.className));
-  assert.deepEqual(secs.map(sec => sec.children[0].textContent), ['❤️ Heart line', '🧠 Head line', '🌱 Life line', '⭐ Fate line', '✨ Your palm says']);
-  assert.equal(secs[4].children[1].textContent, 'Summary text.');
+  // The result has tabs: Palm (life line + overview), Love (heart line), Career (head and fate lines); the Palm tab shows first.
+  const result = app.element('palmread').children;
+  const tabs = result.find(item => item.className === 'tabs-line');
+  assert.equal(JSON.stringify(tabs.children.map(tab => tab.textContent)), '["Palm","Love","Career"]');
+  const panels = result.filter(item => item.className === 'palm-panel');
+  assert.equal(JSON.stringify(panels.map(panel => panel.hidden)), '[false,true,true]');
+  const secs = panels.flatMap(panel => panel.children);
+  assert.deepEqual(secs.map(sec => sec.children[0].textContent), ['🌱 Life line', '✨ Your palm says', '❤️ Heart line', '🧠 Head line', '⭐ Fate line']);
+  assert.equal(secs[1].children[1].textContent, 'Summary text.');
+  tabs.children[1].listeners.click();                                              // Love
+  assert.equal(JSON.stringify(panels.map(panel => panel.hidden)), '[true,false,true]');
+  assert.equal(tabs.children[1].className, 'on');
+  assert.ok(result.some(item => item.className === 'palm-preview'));               // the user's own photo, from memory
 });
 
 test('Palm reading: a photo without a clear palm asks for another one', async () => {
@@ -579,7 +590,7 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   await settle();
   assert.equal(app.element('tool-grid').children.length, 4);                  // four sections
   assert.deepEqual(app.element('tool-grid').children.map(section => section.children[0].textContent), ['Your chart', 'Palm, tarot & numbers', 'Love & match', 'Time & festivals']);
-  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Life Guide', 'Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Today’s Panchang', 'Festivals']);
+  assert.deepEqual(homeCards(app).map(card => card.children[1].textContent), ['Life Guide', 'Rashiphal', 'Moon sign', 'Dasha periods', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Sign match', 'Doshas', 'Today’s Panchang', 'Festivals']);
   assert.ok(homeCards(app)[0].children[0].innerHTML.startsWith('<svg'));       // an illustration on each card
   assert.equal(homeCard(app, 'Rashiphal').children[3].textContent, 'Daily');
   // Cards show something about the user: the Doshas card says Sade Sati is running; with a chart there is no Kundli nudge.
@@ -853,7 +864,8 @@ test('tapping a notification that opens the app asks its question once the Kundl
   assert.equal(page('chat').hidden, false);
   const texts = app.element('chat-log').children.map(item => item.textContent);
   assert.ok(texts.includes('Will my plans work out?'), texts.join(' | '));
-  assert.equal(texts.at(-1), 'AI answer');                                        // the AI's reply, not the offline answer
+  assert.equal(texts.filter(text => text === 'AI answer').length, 1);              // the AI's reply, not the offline answer
+  assert.equal(app.element('chat-log').children.at(-1).className, 'chat-chips');   // with the chips under it
   const asked = app.requests.filter(r => r.url === '/api/ask');
   assert.equal(asked.length, 1);
   assert.equal(asked[0].body.question, 'Will my plans work out?');
@@ -1369,7 +1381,7 @@ test('the side menu lists every feature, opens one, and Back closes the menu fir
   assert.equal(app.element('side-menu').hidden, false);
   assert.equal(stack.length, 2);                                        // home + the open menu
   const labels = items().map(item => item.children[1].textContent);
-  for (const label of ['Home', 'Ask AI', 'Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Doshas', 'Festivals', 'Today’s Panchang', 'Appearance']) {
+  for (const label of ['Home', 'Ask AI', 'Jathakam', 'Rashiphal', 'Moon sign', 'Palm reading', 'Tarot', 'Numerology', 'Kundli matching', 'Sign match', 'Doshas', 'Festivals', 'Today’s Panchang', 'Appearance']) {
     assert.ok(labels.includes(label), label);
   }
   assert.equal(items()[0].className, 'side-item on');                  // Home is the current page
@@ -1732,4 +1744,117 @@ test('Life Guide: tabs, six balance bars and the by-area list from the server’
   await settle();
   assert.match(none.element('lifeguide').children.find(item => item.className === 'tarot-ask').textContent, /Pick your sign/);
   assert.equal(none.requests.filter(r => r.url === '/api/life-guide').length, 0);
+});
+
+test('Sign match: two circles, a sign grid, the button stays grey until both signs are chosen, then the 12-point result', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  homeCard(app, 'Sign match').listeners.click();
+  const page = () => app.element('signmatch').children;
+  assert.equal(page()[0].className, 'page-head');
+  const circles = () => page().find(item => item.className === 'sm-slots').children;
+  assert.equal(circles()[0].children[1].textContent, 'Choose a sign');
+  const see = () => page().find(item => /palm-scan/.test(item.className));
+  assert.equal(see().disabled, true); assert.match(see().className, /is-off/);               // grey: nothing chosen
+  const tiles = () => page().find(item => item.className === 'moon-pick').children;
+  tiles()[0].listeners.click();                                                                // Aries as "You"
+  assert.equal(circles()[0].children[1].textContent, 'Aries');
+  assert.match(circles()[2].className, /on/);                                                  // on to the partner circle
+  assert.equal(see().disabled, true);
+  tiles()[7].listeners.click();                                                                // Scorpio as the partner
+  assert.equal(see().disabled, false);
+  see().listeners.click();
+  await settle();
+  const result = page().find(item => item.className === 'sm-result');
+  assert.equal(result.children[0].textContent, '42%');                                         // Mars lords both (5/5), but 6/8 apart (0/7)
+  assert.equal(result.children[1].textContent, 'Average match');
+  assert.equal(result.children[3].children[1].textContent, '5 / 5');
+  assert.equal(result.children[4].children[1].textContent, '0 / 7');
+  assert.match(result.children[5].textContent, /Bhakoot dosha/);
+  page().find(item => /chip-btn/.test(item.className) && /36-point/.test(item.textContent)).listeners.click();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-relationship').hidden, false);
+});
+
+test('Palm camera inside the app: a hand outline, a shutter, one warning when too dark, then the photo is read; gallery and close work', async () => {
+  const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.' };
+  let stopped = 0, brightness = 200;
+  const stream = { getTracks: () => [{ stop() { stopped += 1; } }] };
+  const navigator = { mediaDevices: { getUserMedia: async constraints => { navigator.asked = constraints; return stream; } } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading }, navigator });
+  await settle();
+  const realCreate = app.context.document.createElement;
+  app.context.document.createElement = tag => {
+    const node = realCreate(tag);
+    if (tag === 'canvas') {
+      node.getContext = () => ({ drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(32 * 32 * 4).fill(brightness) }) });
+      node.toDataURL = () => 'data:image/jpeg;base64,CAMPHOTO';
+    }
+    return node;
+  };
+  homeCard(app, 'Palm reading').listeners.click();
+  const scan = () => app.element('palmread').children.find(item => /palm-scan/.test(item.className));
+  await scan().listeners.click();
+  await settle();
+  assert.equal(navigator.asked.video.facingMode.ideal, 'environment'); assert.equal(navigator.asked.audio, false);
+  const overlay = app.context.document.body.children.find(item => item.className === 'cam');
+  assert.ok(overlay);
+  const [video, outline, hint, close, bar] = overlay.children;
+  assert.equal(hint.textContent, 'Place your open palm inside the outline');
+  assert.equal(outline.tag, 'svg');
+  assert.equal(video.muted, true);
+  // too dark: one warning, the overlay stays; the second press goes ahead
+  brightness = 10;
+  await bar.children[1].listeners.click();
+  assert.match(hint.textContent, /Too dark/); assert.equal(stopped, 0);
+  await bar.children[1].listeners.click();
+  await settle(); await settle();
+  assert.equal(stopped, 1);                                                          // the camera is released
+  const request = app.requests.find(r => r.url === '/api/palm');
+  assert.equal(request.body.image, 'data:image/jpeg;base64,CAMPHOTO'); assert.equal(request.body.hand, 'right');
+  assert.ok(app.element('palmread').children.some(item => item.className === 'palm-preview'));
+  // closing releases the camera without reading anything
+  app.requests.length = 0;
+  homeCard(app, 'Palm reading').listeners.click();
+  await scan().listeners.click(); await settle();
+  const second = app.context.document.body.children.filter(item => item.className === 'cam').at(-1);
+  second.children[3].listeners.click();
+  assert.equal(stopped, 2); assert.ok(!app.requests.some(r => r.url === '/api/palm'));
+  // no camera permission: the phone's camera app is used instead
+  navigator.mediaDevices.getUserMedia = async () => { throw new Error('denied'); };
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  await scan().listeners.click(); await settle();
+  assert.equal(inputs.length, 1); assert.equal(inputs[0].getAttribute('capture'), 'environment');
+});
+
+test('chat answers get a read-aloud button and a row of chips into the other features, replaced by each new answer', async () => {
+  const spoken = [];
+  class Utterance { constructor(text) { this.text = text; } }
+  const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true });
+  app.context.window.speechSynthesis = { speaking: false, speak(item) { spoken.push(item); }, cancel() { spoken.push('cancel'); } };
+  app.context.window.SpeechSynthesisUtterance = Utterance;
+  await settle();
+  app.element('home-question').value = 'Will my plans work out?';
+  app.element('home-ask').listeners.submit({ preventDefault() {} });
+  await settle(); await settle();
+  const log = () => app.element('chat-log').children;
+  const answer = log().find(item => item.className === 'chat-message assistant' && /AI answer/.test(item.textContent));
+  assert.ok(answer);
+  const listen = answer.children.find(item => item.className === 'ai-bar').children.find(item => item.className === 'ai-listen');
+  listen.listeners.click();
+  assert.equal(spoken[0].text, 'AI answer'); assert.equal(spoken[0].lang, 'te-IN');   // in the language of the app
+  const chips = log().at(-1);
+  assert.equal(chips.className, 'chat-chips');
+  assert.equal(chips.children.length, 4);
+  assert.equal(chips.children[0].textContent, '✋ నా అరచేతి రేఖలు');
+  chips.children[0].listeners.click();                                                // opens the palm page
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  // A new question removes the old chips; the next answer gets a different set.
+  app.element('chat-question').value = 'And my health?';
+  app.element('chat-form').listeners.submit({ preventDefault() {} });
+  await settle(); await settle();
+  assert.equal(log().filter(item => item.className === 'chat-chips').length, 1);
+  assert.notEqual(log().at(-1).children[0].textContent, chips.children[0].textContent);
 });
