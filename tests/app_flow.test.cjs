@@ -545,6 +545,27 @@ test('the forget button removes the saved birth details and the chart', async ()
   assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
 });
 
+test('Kundli matching can compare two other people, without needing your own chart', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), birth: syntheticBirth });
+  await settle();
+  app.element('love-options').children[0].listeners.click();
+  assert.equal(app.element('first-block').hidden, true);
+  const who = app.element('match-who').children;
+  who[1].listeners.click();                                       // Two other people
+  assert.equal(app.element('first-block').hidden, false);
+  assert.equal(app.element('role-row').hidden, true);
+  assert.equal(app.element('relationship-status').textContent, '');   // no "create your own Kundli first"
+  app.element('partner-dob').value = '1998-10-23'; app.element('partner-pob').value = 'Bengaluru, IN'; app.element('partner-tob').value = '12:35';
+  await app.element('relationship-form').listeners.submit({ preventDefault() {} });
+  assert.match(app.element('relationship-status').textContent, /both/i);   // the boy's details are missing
+  app.element('first-dob').value = '1996-05-02'; app.element('first-pob').value = 'Hyderabad, IN'; app.element('first-tob').value = '06:10';
+  await app.element('relationship-form').listeners.submit({ preventDefault() {} });
+  const sent = birthRequests(app).map(item => item.body);
+  assert.deepEqual(sent.at(-2), { dob: '1996-05-02', pob: 'Hyderabad, IN', tob: '06:10' });
+  assert.deepEqual(sent.at(-1), { dob: '1998-10-23', pob: 'Bengaluru, IN', tob: '12:35' });
+  assert.match(app.element('relationship-result').children[0].children[1].textContent, /^\d+ \/ 36$/);
+});
+
 test('Love page offers two choices, then shows Guna Milan out of 36 without saving partner birth details', async () => {
   const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
