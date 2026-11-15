@@ -1618,3 +1618,16 @@ test('notifications that open a screen get a button that opens it too', async ()
   const teasers = calls.schedule.at(-1).filter(item => item.id >= 7300 && item.id < 7490);
   assert.ok(teasers.length && teasers.every(item => item.actionTypeId === 'JYOTI_OPEN'));
 });
+
+test('the phone’s status and navigation bars follow the app’s look in the Android app', async () => {
+  const calls = [];
+  const SystemBars = { set: async options => { calls.push(options); } };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { SystemBars } } });
+  await settle();
+  assert.deepEqual({ ...calls.at(-1) }, { color: '#1a0b24', light: false });          // the mystic plum, light icons
+  app.element('theme-btn').listeners.click();
+  app.element('theme-panel').children[2].children[1].listeners.click();               // Light
+  assert.deepEqual({ ...calls.at(-1) }, { color: '#fff7e8', light: true });           // cream, dark icons
+  app.element('theme-panel').children[2].children[2].listeners.click();               // Dark
+  assert.deepEqual({ ...calls.at(-1) }, { color: '#1c1f25', light: false });
+});
