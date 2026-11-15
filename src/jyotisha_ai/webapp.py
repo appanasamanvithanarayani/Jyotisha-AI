@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, moon_sign, palm, push, settings_store as store, tarot
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, moon_sign, palm, push, settings_store as store, tarot
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -1039,7 +1039,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/moon-sign", "/api/tarot", "/api/palm") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/moon-sign", "/api/tarot", "/api/palm") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1085,6 +1085,8 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = nudges_status(payload)
             elif path == "/api/rashiphal":
                 result = rashiphal_status(payload)
+            elif path == "/api/life-guide":
+                result = life_guide.status(payload)
             elif path == "/api/moon-sign":
                 result = moon_sign_status(payload)
             elif path == "/api/tarot":

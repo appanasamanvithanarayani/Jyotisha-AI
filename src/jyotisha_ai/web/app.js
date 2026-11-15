@@ -48,9 +48,9 @@
   /* ---------------------------------------------------------------- pages */
   const pages = {};
   // Feature pages show their own header (back, title, home, share) instead of the app bar.
-  const FEATURE_PAGES = ['moon', 'tarot', 'palm', 'numbers'];
+  const FEATURE_PAGES = ['moon', 'tarot', 'palm', 'numbers', 'lifeguide'];
   const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm', 'numbers']) {
+  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm', 'numbers', 'lifeguide']) {
     const page = document.createElement('section');
     page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
     pageHost.appendChild(page); pages[name] = page;
@@ -65,6 +65,7 @@
   pages.tarot.appendChild($('tarot'));
   pages.palm.appendChild($('palmread'));
   pages.numbers.appendChild($('numerology'));
+  pages.lifeguide.appendChild($('lifeguide'));
   // Each page change is a step in the WebView's history, so the phone's Back button returns to the previous screen
   // (Capacitor goes back while there is history and only closes the app from the first screen).
   let currentPage = null;
@@ -192,6 +193,17 @@
       detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
       festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivals…',
       shortcuts: { title: 'Your stars, one tap from here', text: 'Choose a reading to start.', labels: ['Palm', 'Rashiphal', 'Tarot', 'Match'], channel: 'Shortcuts', toggle: 'Shortcuts in the notification bar' },
+      lifeguide: { card: ['Life Guide', 'Your daily balance: love, work, money'], title: 'Life Guide', tabs: ['Yesterday', 'Today', 'Tomorrow', 'This month', 'This year'],
+        balance: ['Yesterday’s balance', 'Today’s balance', 'Tomorrow’s balance', 'This month’s balance', 'This year’s balance'],
+        areas: { love: 'Love', family: 'Family', marriage: 'Marriage', career: 'Career', wealth: 'Wealth', health: 'Health' }, byArea: 'By area', supported: 'Supported by {planets}',
+        yourSign: 'Your sign', change: 'Change', pick: 'Check another sign', pickFirst: 'Pick your sign to see your balance.', loading: 'Working out your balance…', failed: 'Could not load right now. Please try again.',
+        note: 'Worked out from planet transits counted from the Moon sign. Guidance for reflection, not a prediction.',
+        text: { love: ['Go gently. Listen more and avoid hasty words.', 'A steady stretch. Small, thoughtful gestures matter most.', 'Warmth comes easily. A good time to share your feelings.'],
+          family: ['Misunderstandings can arise. Stay calm and give people space.', 'Ordinary and calm. Keep your routines and be patient.', 'Home feels supportive. Time with family refreshes you.'],
+          marriage: ['Patience helps. Postpone big decisions and avoid arguments.', 'Steady. Shared routines keep things comfortable.', 'Understanding grows. A good time for honest, caring talk.'],
+          career: ['Slow and demanding. Plan carefully and avoid risky moves.', 'Progress is steady. Focus on one task at a time.', 'Work moves well. A good time to take initiative.'],
+          wealth: ['Be careful with spending. Avoid impulsive purchases or lending.', 'Balanced. Track your spending and stay practical.', 'Money matters look supportive. Good for planning and saving.'],
+          health: ['Take it easy. Rest well, drink water and avoid overdoing things.', 'Fine overall. Keep to regular meals and rest.', 'Energy is good. Keep up exercise and sleep.'] } },
       numerology: { card: ['Numerology', 'Your numbers from name & birth date'], title: 'Numerology', intro: 'Your Moolank, Bhagyank and name number, worked out from your date of birth and name.',
         dob: 'Date of birth', name: 'Name (in English letters)', show: 'Show my numbers', bad: 'Please enter a valid date of birth.', change: 'Change',
         moolank: ['Moolank', 'Birth number · how you are'], bhagyank: ['Bhagyank', 'Destiny number · where life leads'], nameNum: ['Name number', 'How others see you'],
@@ -267,6 +279,17 @@
       detailTitle: 'వివరమైన పంచాంగం', festTitle: 'రాబోయే పండుగలు', festToday: 'ఈ రోజు', festTomorrow: 'రేపు', festIn: '{n} రోజుల్లో',
       festMore: 'మరిన్ని పండుగలు చూపు', festLess: 'తక్కువ చూపు', festNone: 'రాబోయే కొన్ని నెలల్లో పండుగలు లేవు.', festLoading: 'పండుగలు లోడ్ అవుతున్నాయి…',
       shortcuts: { title: 'మీ నక్షత్రాలు, ఒక్క టచ్‌లో', text: 'ఒక రీడింగ్ ఎంచుకోండి.', labels: ['అరచేయి', 'రాశిఫలం', 'టారో', 'పొంతన'], channel: 'షార్ట్‌కట్‌లు', toggle: 'నోటిఫికేషన్ బార్‌లో షార్ట్‌కట్‌లు' },
+      lifeguide: { card: ['లైఫ్ గైడ్', 'మీ రోజువారీ సమతుల్యం: ప్రేమ, పని, డబ్బు'], title: 'లైఫ్ గైడ్', tabs: ['నిన్న', 'ఈ రోజు', 'రేపు', 'ఈ నెల', 'ఈ సంవత్సరం'],
+        balance: ['నిన్నటి సమతుల్యం', 'నేటి సమతుల్యం', 'రేపటి సమతుల్యం', 'ఈ నెల సమతుల్యం', 'ఈ సంవత్సర సమతుల్యం'],
+        areas: { love: 'ప్రేమ', family: 'కుటుంబం', marriage: 'వివాహం', career: 'ఉద్యోగం', wealth: 'ధనం', health: 'ఆరోగ్యం' }, byArea: 'అంశాల వారీగా', supported: '{planets} అనుకూలం',
+        yourSign: 'మీ రాశి', change: 'మార్చండి', pick: 'మరో రాశి చూడండి', pickFirst: 'మీ సమతుల్యం చూడటానికి మీ రాశిని ఎంచుకోండి.', loading: 'మీ సమతుల్యం లెక్కిస్తున్నాం…', failed: 'ఇప్పుడు లోడ్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.',
+        note: 'చంద్ర రాశి నుంచి గ్రహ సంచారాల ఆధారంగా లెక్కించినది. ఆలోచనకు మార్గదర్శనం మాత్రమే, జోస్యం కాదు.',
+        text: { love: ['నిదానంగా ఉండండి. ఎక్కువ వినండి, తొందరపడి మాట్లాడకండి.', 'నిలకడగా ఉంటుంది. చిన్న చిన్న శ్రద్ధలే ముఖ్యం.', 'ప్రేమ భావాలు సులభంగా పంచుకోగలరు. మనసులో మాట చెప్పడానికి మంచి సమయం.'],
+          family: ['అపార్థాలు రావచ్చు. ప్రశాంతంగా ఉండి ఇతరులకు చోటివ్వండి.', 'సాధారణంగా, ప్రశాంతంగా ఉంటుంది. ఓపికగా దినచర్య పాటించండి.', 'ఇంట్లో సహకారం బాగుంటుంది. కుటుంబంతో గడపడం ఉత్సాహాన్నిస్తుంది.'],
+          marriage: ['ఓపిక అవసరం. పెద్ద నిర్ణయాలు వాయిదా వేయండి, వాదనలు వద్దు.', 'నిలకడగా ఉంటుంది. కలిసి చేసే దినచర్యలు హాయినిస్తాయి.', 'అవగాహన పెరుగుతుంది. మనసు విప్పి మాట్లాడటానికి మంచి సమయం.'],
+          career: ['నిదానంగా, కష్టంగా ఉండవచ్చు. జాగ్రత్తగా ప్రణాళిక వేసుకోండి, రిస్క్ వద్దు.', 'పురోగతి నిలకడగా ఉంటుంది. ఒక పనిపై దృష్టి పెట్టండి.', 'పనులు బాగా సాగుతాయి. చొరవ తీసుకోవడానికి మంచి సమయం.'],
+          wealth: ['ఖర్చుల్లో జాగ్రత్త. తొందరపాటు కొనుగోళ్లు, అప్పులు ఇవ్వడం వద్దు.', 'సమతుల్యం. ఖర్చులు గమనించండి, ఆచరణాత్మకంగా ఉండండి.', 'ఆర్థిక విషయాలు అనుకూలం. ప్రణాళిక, పొదుపుకు మంచి సమయం.'],
+          health: ['తేలికగా తీసుకోండి. బాగా విశ్రాంతి, నీళ్లు తాగండి, అతిగా శ్రమించకండి.', 'మొత్తంగా బాగుంది. సమయానికి భోజనం, విశ్రాంతి పాటించండి.', 'శక్తి బాగుంది. వ్యాయామం, నిద్ర కొనసాగించండి.'] } },
       numerology: { card: ['సంఖ్యా శాస్త్రం', 'పేరు, పుట్టిన తేదీ నుంచి మీ సంఖ్యలు'], title: 'సంఖ్యా శాస్త్రం', intro: 'మీ పుట్టిన తేదీ, పేరు ఆధారంగా మీ మూలాంకం, భాగ్యాంకం, నామ సంఖ్య.',
         dob: 'పుట్టిన తేదీ', name: 'పేరు (ఇంగ్లీష్ అక్షరాల్లో)', show: 'నా సంఖ్యలు చూపించు', bad: 'దయచేసి సరైన పుట్టిన తేదీ ఇవ్వండి.', change: 'మార్చండి',
         moolank: ['మూలాంకం', 'జన్మ సంఖ్య · మీ స్వభావం'], bhagyank: ['భాగ్యాంకం', 'అదృష్ట సంఖ్య · జీవిత మార్గం'], nameNum: ['నామ సంఖ్య', 'ఇతరులు మిమ్మల్ని ఎలా చూస్తారు'],
@@ -342,6 +365,17 @@
       detailTitle: 'विस्तृत पंचांग', festTitle: 'आने वाले त्योहार', festToday: 'आज', festTomorrow: 'कल', festIn: '{n} दिन में',
       festMore: 'और त्योहार दिखाएँ', festLess: 'कम दिखाएँ', festNone: 'अगले कुछ महीनों में कोई त्योहार नहीं।', festLoading: 'त्योहार लोड हो रहे हैं…',
       shortcuts: { title: 'आपके सितारे, बस एक टैप पर', text: 'कोई रीडिंग चुनें।', labels: ['हथेली', 'राशिफल', 'टैरो', 'मिलान'], channel: 'शॉर्टकट', toggle: 'नोटिफ़िकेशन बार में शॉर्टकट' },
+      lifeguide: { card: ['लाइफ़ गाइड', 'आपका रोज़ का संतुलन: प्रेम, काम, धन'], title: 'लाइफ़ गाइड', tabs: ['बीता कल', 'आज', 'आने वाला कल', 'इस माह', 'इस वर्ष'],
+        balance: ['बीते कल का संतुलन', 'आज का संतुलन', 'आने वाले कल का संतुलन', 'इस माह का संतुलन', 'इस वर्ष का संतुलन'],
+        areas: { love: 'प्रेम', family: 'परिवार', marriage: 'विवाह', career: 'करियर', wealth: 'धन', health: 'स्वास्थ्य' }, byArea: 'क्षेत्र के अनुसार', supported: '{planets} का साथ',
+        yourSign: 'आपकी राशि', change: 'बदलें', pick: 'दूसरी राशि देखें', pickFirst: 'अपना संतुलन देखने के लिए अपनी राशि चुनें।', loading: 'आपका संतुलन निकाल रहे हैं…', failed: 'अभी लोड नहीं हो सका। कृपया फिर कोशिश करें।',
+        note: 'चंद्र राशि से ग्रहों के गोचर के आधार पर निकाला गया। चिंतन के लिए मार्गदर्शन है, भविष्यवाणी नहीं।',
+        text: { love: ['धीरे चलें। ज़्यादा सुनें, जल्दबाज़ी में न बोलें।', 'स्थिर दौर। छोटी-छोटी परवाह सबसे ज़रूरी।', 'भावनाएँ सहज बाँट पाएँगे। मन की बात कहने का अच्छा समय।'],
+          family: ['गलतफ़हमी हो सकती है। शांत रहें और दूसरों को जगह दें।', 'सामान्य और शांत। धैर्य से दिनचर्या निभाएँ।', 'घर में सहयोग रहेगा। परिवार के साथ समय तरोताज़ा करेगा।'],
+          marriage: ['धैर्य रखें। बड़े फ़ैसले टालें और बहस से बचें।', 'स्थिर। साथ की दिनचर्या सुकून देगी।', 'समझ बढ़ेगी। खुलकर, प्यार से बात करने का अच्छा समय।'],
+          career: ['धीमा और कठिन हो सकता है। सोच-समझकर योजना बनाएँ, जोखिम से बचें।', 'प्रगति स्थिर है। एक समय में एक काम पर ध्यान दें।', 'काम अच्छा चलेगा। पहल करने का अच्छा समय।'],
+          wealth: ['ख़र्च में सावधानी। जल्दबाज़ी की ख़रीद या उधार से बचें।', 'संतुलित। ख़र्च पर नज़र रखें और व्यावहारिक रहें।', 'पैसे के मामले अनुकूल। योजना और बचत का अच्छा समय।'],
+          health: ['आराम से चलें। अच्छा आराम करें, पानी पिएँ, अति न करें।', 'कुल मिलाकर ठीक। समय पर भोजन और आराम रखें।', 'ऊर्जा अच्छी है। व्यायाम और नींद बनाए रखें।'] } },
       numerology: { card: ['अंक ज्योतिष', 'नाम और जन्म तिथि से आपके अंक'], title: 'अंक ज्योतिष', intro: 'आपकी जन्म तिथि और नाम से आपका मूलांक, भाग्यांक और नामांक।',
         dob: 'जन्म तिथि', name: 'नाम (अंग्रेज़ी अक्षरों में)', show: 'मेरे अंक दिखाएँ', bad: 'कृपया सही जन्म तिथि डालें।', change: 'बदलें',
         moolank: ['मूलांक', 'जन्म अंक · आपका स्वभाव'], bhagyank: ['भाग्यांक', 'भाग्य अंक · जीवन की दिशा'], nameNum: ['नामांक', 'दूसरे आपको कैसे देखते हैं'],
@@ -578,6 +612,7 @@
     const todayTithi = state.day && state.day.tithi && state.day.tithi[0] ? names.tithiName(state.day.tithi[0].index, state.lang) : '';
     $('tool-grid').replaceChildren(
       section(sections.chart, [
+        card('lifeguide', lgCopy().card[0], lgCopy().card[1], openLifeGuide, { badge: text.daily || TOOLS_COPY.en.daily }),
         card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign),
         card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'))]),
@@ -1313,6 +1348,7 @@
     if (pages.tarot && !pages.tarot.hidden) renderTarot();
     if (pages.palm && !pages.palm.hidden) renderPalm();
     if (pages.numbers && !pages.numbers.hidden) renderNumerology();
+    if (pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
     if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
     saveSettings();
     void scheduleNotifications();   // notification text follows the language
@@ -1915,6 +1951,7 @@
       ['home', '🏠', menu.home, () => showPage('home')],
       ['chat', '💬', copy.chat[0], () => showPage('chat')],
       ['kundli', '📜', copy.jathakam[0], openJathakam],
+      ['lifeguide', '⚖️', lgCopy().card[0], openLifeGuide],
       ['rashi', '🔮', copy.rashi[0], () => showPage('rashi')],
       ['moon', '🌙', moonCopy().card[0], openMoonSign],
       ['palm', '✋', palmCopy().card[0], openPalm],
@@ -2063,6 +2100,104 @@
     actions.append(askAi, share);
     box.append(actions, el('p', 'num-note', copy.note));
   }
+  /* ---- Life Guide: six balance bars (Love, Family, Marriage, Career, Wealth, Health out of 10) for yesterday, today,
+     tomorrow, this month and this year, worked out on the server from planet transits and the lunar day (no AI). ---- */
+  const lgCopy = () => toolText().lifeguide || TOOLS_COPY.en.lifeguide;
+  const LG_AREAS = ['love', 'family', 'marriage', 'career', 'wealth', 'health'];
+  const LG_ICONS = { love: '💗', family: '🏡', marriage: '💍', career: '💼', wealth: '🪙', health: '🌿' };
+  const LG_TABS = ['yesterday', 'today', 'tomorrow', 'month', 'year'];
+  const lg = { sign: 0, tab: 'today', picking: false, cache: {}, busy: '', failed: false };
+  function openLifeGuide() {
+    lg.tab = 'today'; lg.failed = false; lg.picking = false;
+    if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
+    showPage('lifeguide'); renderLifeGuide();
+    void loadLifeGuide();
+  }
+  async function loadLifeGuide() {
+    const sign = lg.sign, day = state.todayIso || localIso(new Date()), key = `${sign}:${day}`;
+    if (!sign || lg.cache[key] || lg.busy === key) return;
+    lg.busy = key; lg.failed = false; renderLifeGuide();
+    try {
+      const { ok, body } = await post('/api/life-guide', { sign, date: day });
+      if (ok && body && body.reading) lg.cache[key] = body.reading; else lg.failed = true;
+    } catch (_error) { lg.failed = true; }
+    lg.busy = '';
+    if (pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
+  }
+  const lgBand = score => (score >= 7 ? 2 : score >= 5 ? 1 : 0);
+  function renderLifeGuide() { renderLifeGuideBody(); decorate($('lifeguide'), lgCopy().title); }
+  function renderLifeGuideBody() {
+    const copy = lgCopy(), box = $('lifeguide'), art = window.JyotishaArt;
+    box.replaceChildren();
+    const hero = el('div', 'lg-hero'); if (art && art.lifeguide) hero.innerHTML = art.lifeguide();
+    box.appendChild(hero);
+    const day = state.todayIso || localIso(new Date()), data = lg.sign ? lg.cache[`${lg.sign}:${day}`] : null;
+    // Which sign: the user's own Moon sign, or any sign chosen below.
+    if (lg.sign) {
+      const row = el('div', 'lg-sign');
+      row.append(el('span', 'lg-sign-name', `${RASHI_ICONS[lg.sign - 1]} ${copy.yourSign}: ${signName(lg.sign)}`));
+      const change = el('button', 'chip-btn', copy.change); change.type = 'button';
+      change.addEventListener('click', () => { lg.picking = !lg.picking; renderLifeGuide(); });
+      row.appendChild(change);
+      box.appendChild(row);
+    } else {
+      box.appendChild(el('p', 'tarot-ask', copy.pickFirst));
+    }
+    if (lg.sign) {
+      const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
+      LG_TABS.forEach((tab, i) => {
+        const button = el('button', tab === lg.tab ? 'on' : '', copy.tabs[i]); button.type = 'button';
+        button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', tab === lg.tab ? 'true' : 'false');
+        button.addEventListener('click', () => { lg.tab = tab; renderLifeGuide(); });
+        tabs.appendChild(button);
+      });
+      box.appendChild(tabs);
+      if (!data) {
+        if (lg.failed) {
+          box.appendChild(el('p', 'palm-wait', copy.failed));
+          const retry = el('button', 'chip-btn', '↻'); retry.type = 'button'; retry.addEventListener('click', () => { void loadLifeGuide(); });
+          box.appendChild(retry);
+        } else box.appendChild(loader(copy.loading));
+      } else {
+        const period = data[lg.tab];
+        box.appendChild(el('h4', 'home-h lg-balance-h', copy.balance[LG_TABS.indexOf(lg.tab)]));
+        const bars = el('div', 'lg-bars');
+        for (const area of LG_AREAS) {
+          const score = period[area].score;
+          const col = el('div', `lg-col lg-${area}`);
+          const track = el('div', 'lg-track'), fill = el('i'); if (fill.style) fill.style.height = `${score * 10}%`;
+          track.appendChild(fill);
+          col.append(el('b', null, `${score}/10`), track, el('small', null, copy.areas[area]));
+          bars.appendChild(col);
+        }
+        box.appendChild(bars);
+        box.appendChild(el('h4', 'home-h lg-balance-h', copy.byArea));
+        for (const area of LG_AREAS) {
+          const { score, support } = period[area];
+          const item = el('section', `lg-aspect lg-${area}`);
+          const head = el('div', 'lg-aspect-head');
+          head.append(el('span', 'lg-ico', LG_ICONS[area]), el('h4', null, copy.areas[area]), el('span', 'lg-score', String(score)));
+          item.append(head, el('p', null, copy.text[area][lgBand(score)]));
+          if (support && support.length) item.appendChild(el('small', null, fill(copy.supported, { planets: support.map(bodyName).join(', ') })));
+          box.appendChild(item);
+        }
+        box.appendChild(el('p', 'num-note', copy.note));
+      }
+    }
+    // Any sign: twelve small tiles (also how a visitor without a Kundli starts).
+    if (lg.picking || !lg.sign) {
+      box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
+      const grid = el('div', 'moon-pick');
+      for (let n = 1; n <= 12; n += 1) {
+        const tile = el('button', `moon-tile${n === lg.sign ? ' on' : ''}`); tile.type = 'button';
+        tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
+        tile.addEventListener('click', () => { lg.sign = n; lg.picking = false; renderLifeGuide(); void loadLifeGuide(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
+        grid.appendChild(tile);
+      }
+      box.appendChild(grid);
+    }
+  }
+
   /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
   // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.
   const TAROT = [

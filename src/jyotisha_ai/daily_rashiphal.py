@@ -65,11 +65,11 @@ def _path(day: date, language: str):
     return store.data_dir() / "rashiphal" / f"{day.isoformat()}-{language}.json"
 
 
-def transits(day: date) -> dict[str, int]:
-    """Sidereal sign (1..12) of the Moon and planets at 6:00 AM India time on ``day``; Rahu is the mean node."""
+def transits(day: date, hour: int = 6) -> dict[str, int]:
+    """Sidereal sign (1..12) of the Moon and planets at ``hour`` (default 6:00 AM) India time on ``day``; Rahu is the mean node."""
     from jyotisha_ai.kundli_details import mean_node_longitude
 
-    moment = datetime(day.year, day.month, day.day, 6, 0, tzinfo=IST).astimezone(timezone.utc)
+    moment = datetime(day.year, day.month, day.day, hour, 0, tzinfo=IST).astimezone(timezone.utc)
     when = astronomy.Time.Make(moment.year, moment.month, moment.day, moment.hour, moment.minute, 0)
     ayanamsha, _ = true_lahiri_for_utc(moment)
     signs = {name: int(_sidereal(getattr(astronomy.Body, name), when, ayanamsha) // 30.0) + 1
