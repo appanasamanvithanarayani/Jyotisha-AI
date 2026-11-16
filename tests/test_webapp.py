@@ -630,6 +630,32 @@ def test_assistant_continues_the_conversation_from_history(monkeypatch):
             assistant.ask_status({"question": "q", "language": "en", "facts": ["x"], "history": bad})
 
 
+def test_assistant_answers_in_the_app_language_script_even_when_the_user_types_roman_letters(monkeypatch):
+    import io
+    from jyotisha_ai import assistant
+
+    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    systems, answers = [], iter(["Vivaham gurinchi chala mandhi adugutharu", "మీ వివాహం వచ్చే ఏడాది రెండో అర్ధభాగంలో జరిగే అవకాశం ఉంది"])
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def fake_urlopen(request, timeout):
+        systems.append(json.loads(request.data)["system"])
+        return Reply(json.dumps({"content": [{"type": "text", "text": next(answers)}]}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
+    result = assistant.ask_status({"question": "Naku pelli epudu aitadi", "language": "te", "facts": ["Lagna: Leo"]})
+    assert assistant.in_language(result["answer"], "te")                      # the Roman-letter reply was retried
+    assert len(systems) == 2 and "not in Telugu script" in systems[1] and "not in Telugu script" not in systems[0]
+    assert "ALWAYS reply in Telugu" in systems[0] and "Tinglish" not in systems[0]
+
+
 def test_rate_limiter_blocks_over_the_limit_and_recovers_after_the_window():
     from jyotisha_ai.webapp import RateLimiter
 
