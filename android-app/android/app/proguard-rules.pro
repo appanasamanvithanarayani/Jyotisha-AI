@@ -19,3 +19,17 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ---- Jyotirmaya AstroChat ----
+# Capacitor finds its plugins and calls them from JavaScript by name, so their classes must keep their names.
+# (Capacitor's own library adds rules for plugin classes; these also cover the helper classes the plugins use.)
+-keep class com.getcapacitor.** { *; }
+-keep class com.capacitorjs.plugins.** { *; }
+-keep class com.getcapacitor.community.admob.** { *; }
+-keep class io.capawesome.capacitorjs.plugins.firebase.** { *; }
+-keep class store.karthiktraders.jyotisha.** { *; }
+-keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
+-dontwarn com.getcapacitor.**
+# Readable crash reports in Play Console.
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod
+-renamesourcefileattribute SourceFile
