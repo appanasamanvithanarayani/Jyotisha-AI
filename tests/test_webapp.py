@@ -663,8 +663,9 @@ def test_transit_facts_count_the_slow_planets_from_lagna_and_moon_and_reach_the_
 
     facts = ["Lagna: Leo", "Moon sign (Janma Rashi): Cancer"]
     lines = assistant.transit_facts(facts, date(2026, 11, 16))
-    assert [line.split(" in ")[0] for line in lines] == ["Transit now: Jupiter", "Transit now: Saturn", "Transit now: Rahu", "Transit now: Ketu"]
-    assert "Saturn in Pisces (house 8 from Lagna, house 9 from Moon)" in lines[1] and "Aries from about" in lines[1]
+    assert lines[0].startswith("Transit now (fast planets): Moon in ") and "Venus in " in lines[0]
+    assert [line.split(" in ")[0] for line in lines[1:]] == ["Transit now: Jupiter", "Transit now: Saturn", "Transit now: Rahu", "Transit now: Ketu"]
+    assert "Saturn in Pisces (house 8 from Lagna, house 9 from Moon)" in lines[2] and "Aries from about" in lines[2]
     assert assistant.transit_facts(["Lagna: unknown"]) == []
 
     monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "anthropic")
