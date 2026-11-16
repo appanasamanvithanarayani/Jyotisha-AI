@@ -3579,7 +3579,28 @@
       const sub = (d.dasha.antardasha || []).find(a => a.current);
       facts.push(`Current Vimshottari period: ${d.dasha.current_mahadasha} Mahadasha${sub ? `, ${sub.lord} Antardasha until ${sub.end}` : ''}`);
     }
-    facts.push(`Today's date: ${new Date().toISOString().slice(0, 10)}`);
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (d && d.planets) {
+      // All twelve houses with their lords, occupants and aspects, so the AI can read a question's own houses from the chart.
+      const lords = ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'];
+      const aspectsOf = { Mars: [4, 7, 8], Jupiter: [5, 7, 9], Saturn: [3, 7, 10], Sun: [7], Moon: [7], Mercury: [7], Venus: [7] };
+      const placed = Object.entries(d.planets), lagnaIndex = chart.ascendant.rashi_index;
+      for (let house = 1; house <= 12; house += 1) {
+        const rashi = (lagnaIndex + house - 2) % 12 + 1, lord = lords[rashi - 1], lordAt = d.planets[lord];
+        const inside = placed.filter(([, p]) => p.whole_sign_bhava === house).map(([name]) => name);
+        const seen = placed.filter(([name, p]) => (aspectsOf[name] || []).some(a => (p.whole_sign_bhava + a - 2) % 12 + 1 === house)).map(([name]) => name);
+        facts.push(`House ${house} (${sign(rashi)}): lord ${lord} sits in house ${lordAt ? lordAt.whole_sign_bhava + ' (' + sign(lordAt.rashi_index) + ')' : 'unknown'}${inside.length ? '; occupied by ' + inside.join(', ') : '; empty'}${seen.length ? '; aspected by ' + seen.join(', ') : ''}`);
+      }
+      const nav = d.navamsa;
+      if (nav && nav.positions) facts.push(`Navamsa (D9): Lagna ${sign(nav.lagna_rashi_index)}${['Venus', 'Jupiter', 'Moon', 'Saturn', 'Mars'].filter(n => nav.positions[n]).map(n => `, ${n} ${sign(nav.positions[n])}`).join('')}`);
+    }
+    if (d && d.dasha && d.dasha.mahadasha) {
+      const all = d.dasha.mahadasha, from = Math.max(all.findIndex(m => m.current), 0);
+      facts.push(`Mahadasha timeline (approximate dates): ${all.slice(from, from + 4).map(m => `${m.lord} ${m.start} to ${m.end}`).join('; ')}`);
+      const later = (d.dasha.antardasha || []).filter(a => a.end >= todayIso);
+      if (later.length) facts.push(`Antardashas in the current Mahadasha: ${later.map(a => `${a.lord} ${a.start} to ${a.end}`).join('; ')}`);
+    }
+    facts.push(`Today's date: ${todayIso}`);
     // Only calculated labels leave the browser; unreviewed life-area readings do not.
     return facts;
   }

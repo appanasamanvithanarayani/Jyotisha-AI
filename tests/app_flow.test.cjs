@@ -1971,6 +1971,25 @@ test('the banner is also hidden while the palm camera is open (it would cover th
   assert.deepEqual(hidden, ['hide', 'resume']);
 });
 
+test('the AI gets the whole chart to reason from: every house with its lord, the Navamsa and the dated dasha timeline', async () => {
+  const planets = Object.fromEntries(['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'].map((name, n) => [name, { rashi_index: n + 1, whole_sign_bhava: (n + 1 - 5 + 12) % 12 + 1 }]));
+  const dasha = { current_mahadasha: 'Venus', mahadasha: [{ lord: 'Venus', start: '2020-01-01', end: '2040-01-01', current: true }, { lord: 'Sun', start: '2040-01-01', end: '2046-01-01' }],
+    antardasha: [{ lord: 'Moon', start: '2025-01-01', end: '2026-01-01', current: false }, { lord: 'Mars', start: '2026-01-01', end: '2027-06-01', current: true }] };
+  const birth = { ...syntheticBirth, details: { planets, dasha, navamsa: { lagna_rashi_index: 3, positions: { Venus: 7, Jupiter: 9, Moon: 1, Saturn: 4, Mars: 2 } } } };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth, assistant: true });
+  await settle(); await settle();
+  await typeInChat(app, 'when will I get married');
+  const sent = app.requests.filter(r => r.url === '/api/ask').at(-1).body.facts;
+  assert.equal(sent.filter(fact => /^House \d+ \(/.test(fact)).length, 12, sent.join('\n'));
+  assert.ok(sent.some(fact => /^House 7 \(\w+\): lord \w+ sits in house \d+ \(\w+\)/.test(fact)));
+  assert.ok(sent.some(fact => /^Navamsa \(D9\): Lagna Gemini, Venus Libra/.test(fact)));
+  assert.ok(sent.some(fact => /^Mahadasha timeline.*Venus 2020-01-01 to 2040-01-01; Sun 2040/.test(fact)));
+  assert.ok(sent.some(fact => /^Antardashas in the current Mahadasha: .*Mars 2026-01-01 to 2027-06-01/.test(fact)));
+  assert.ok(sent.every(fact => fact.length <= 700) && sent.length <= 100);
+});
+
 test('Life Guide is personal to your own chart (birth star and running dasha), and general for any other sign', async () => {
   const period = scores => Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map((area, i) => [area, { score: scores[i], support: [] }]));
   const lifeGuide = { yesterday: period([5, 5, 5, 5, 5, 5]), today: period([8, 6, 4, 7, 5, 3]), tomorrow: period([6, 6, 6, 6, 6, 6]), month: period([4, 4, 4, 4, 4, 4]), year: period([9, 9, 9, 9, 9, 9]) };
