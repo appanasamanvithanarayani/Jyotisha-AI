@@ -656,6 +656,37 @@ def test_assistant_answers_in_the_app_language_script_even_when_the_user_types_r
     assert "ALWAYS reply in Telugu" in systems[0] and "Tinglish" not in systems[0]
 
 
+def test_transit_facts_count_the_slow_planets_from_lagna_and_moon_and_reach_the_prompt(monkeypatch):
+    import io
+    from datetime import date
+    from jyotisha_ai import assistant
+
+    facts = ["Lagna: Leo", "Moon sign (Janma Rashi): Cancer"]
+    lines = assistant.transit_facts(facts, date(2026, 11, 16))
+    assert [line.split(" in ")[0] for line in lines] == ["Transit now: Jupiter", "Transit now: Saturn", "Transit now: Rahu", "Transit now: Ketu"]
+    assert "Saturn in Pisces (house 8 from Lagna, house 9 from Moon)" in lines[1] and "Aries from about" in lines[1]
+    assert assistant.transit_facts(["Lagna: unknown"]) == []
+
+    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    seen = {}
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def fake_urlopen(request, timeout):
+        seen["system"] = json.loads(request.data)["system"]
+        return Reply(json.dumps({"content": [{"type": "text", "text": "ఇది ఒక సమాధానం"}]}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
+    assistant.ask_status({"question": "naku pelli epudu", "language": "te", "facts": facts})
+    assert "Transit now: Jupiter" in seen["system"] and "Lagna: Leo" in seen["system"]
+
+
 def test_rate_limiter_blocks_over_the_limit_and_recovers_after_the_window():
     from jyotisha_ai.webapp import RateLimiter
 
