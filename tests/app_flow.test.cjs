@@ -25,6 +25,24 @@ test('all six bottom tabs stay in one grid row', () => {
   assert.equal((html.match(/<a href="#(?:home|calendar|kundli|relationship|chat|rashi)"/g) || []).length, 6);
 });
 
+test("the Android app's hardware Back button (window.__jyotishaBack) steps back through visited screens, then exits from Home", async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  const page = name => app.element('top').children.find(item => item.id === `page-${name}`).hidden === false;
+  const back = () => app.context.window.__jyotishaBack();
+  assert.ok(page('home'));
+  assert.equal(back(), false);                 // already on Home: native should exit the app, not loop
+  homeCard(app, 'Palm reading').listeners.click();
+  assert.ok(page('palm'));
+  homeCard(app, 'Tarot').listeners.click();
+  assert.ok(page('tarot'));
+  assert.equal(back(), true);
+  assert.ok(page('palm'), 'Back goes to the screen actually visited before, not straight to Home');
+  assert.equal(back(), true);
+  assert.ok(page('home'));
+  assert.equal(back(), false);                 // back on Home with nothing left: exit again
+});
+
 class Element {
   constructor(tag = 'div') {
     this.tag = tag; this.hidden = false; this.disabled = false; this.value = ''; this.textContent = ''; this.className = '';

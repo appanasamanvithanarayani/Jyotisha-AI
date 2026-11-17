@@ -72,12 +72,22 @@
   // (Capacitor goes back while there is history and only closes the app from the first screen).
   let currentPage = null;
   let replaceNext = false;   // a page opened from the side menu takes the menu's history step
+  // The Android app's hardware Back button does not trust the WebView's own back/forward list (it can be unreliable
+  // with a pushState-only single-page app on some devices); instead MainActivity calls window.__jyotishaBack(), which
+  // pops this stack itself and is the only thing native Back relies on. The browser History API below is separate
+  // and still drives the phone's gesture-nav / a desktop browser's own Back button.
+  const navStack = [];
   function remember(page, replace) {
     try {
       if (!window.history || typeof window.history.pushState !== 'function') return;
       if (replace) window.history.replaceState({ page }, '', `#${page}`); else window.history.pushState({ page }, '', `#${page}`);
     } catch (_error) { /* history is optional */ }
   }
+  window.__jyotishaBack = function () {
+    if (!navStack.length) return false;
+    showPage(navStack[navStack.length - 1], { back: true });
+    return true;
+  };
   if (typeof window.addEventListener === 'function') window.addEventListener('popstate', event => {
     const page = event && event.state && event.state.page;
     hideMenu(); menuHistory = false;                 // Back closes the side menu first
@@ -86,7 +96,8 @@
   });
   function showPage(name, how = {}) {
     const chosen = Object.hasOwn(pages, name) ? name : 'home';
-    if (!how.back && chosen !== currentPage) remember(chosen, currentPage === null || replaceNext);
+    if (how.back) { if (navStack.length) navStack.pop(); }
+    else if (chosen !== currentPage) { if (currentPage !== null) navStack.push(currentPage); remember(chosen, currentPage === null || replaceNext); }
     currentPage = chosen;
     for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
     if (typeof hideMenu === 'function' && $('side-menu')) hideMenu();
