@@ -41,7 +41,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {   // Capacitor's BridgeActivity.onResume() is public; overriding it as protected fails to compile
         super.onResume();
         SystemBarsPlugin.hideStatusBar(getWindow());   // back from another app or the notification shade: hide it again
     }
