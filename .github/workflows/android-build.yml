@@ -59,6 +59,18 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      - name: Print the Meta (Facebook) key hash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          # Not a secret itself: this is the value Meta's Ads Manager / Events Manager asks for under
+          # Settings -> Android -> Key hashes, to recognise this release build as the real app.
+          HASH=$(keytool -exportcert -alias "$KEY_ALIAS" -keystore "$GITHUB_WORKSPACE/release.keystore" -storepass "$KEYSTORE_PASSWORD" | openssl sha1 -binary | openssl base64)
+          echo "Meta (Facebook) key hash for this release build: $HASH"
+          echo "### Meta (Facebook) key hash" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$HASH\`" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Add Firebase config (for messages sent from the admin panel)
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
