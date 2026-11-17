@@ -42,10 +42,27 @@ def test_photo_checks():
 
 def test_the_photo_goes_to_the_ai_and_the_reading_comes_back_in_the_language(ai, tmp_path):
     result = palm.reading(REQUEST)
-    assert result["status"] == "ok" and set(result["reading"]) == {"heart", "head", "life", "fate", "summary"}
+    assert result["status"] == "ok" and set(result["reading"]) == {"heart", "head", "life", "fate", "summary", "points"}
+    assert result["reading"]["points"] == {}   # GOOD has no points: no overlay, but the reading itself still works
     system, prompt, kwargs = ai[0]
     assert "Telugu" in system and "right palm" in system and kwargs["image"] == ("image/jpeg", PHOTO.split(",", 1)[1])
     assert "never about how long one lives" in prompt
+
+
+def test_line_points_are_kept_when_well_formed_and_dropped_line_by_line_otherwise(ai, monkeypatch):
+    points = {
+        "heart": [[0.2, 0.3], [0.5, 0.28], [0.8, 0.32]],              # good: kept
+        "head": [[0.2, 0.5]],                                          # too short (needs 2..8): dropped
+        "life": [[0.3, 0.9], [1.4, 0.5]],                               # out of 0..1 range: dropped
+        "fate": [[0.5, 0.2], [0.5, 0.6], [0.5, 1.0], [0.5, 1.0], [0.5, 1.0], [0.5, 1.0], [0.5, 1.0], [0.5, 1.0], [0.5, 1.0]],  # too many: dropped
+    }
+    monkeypatch.setattr(palm.assistant, "complete", lambda *a, **k: json.dumps({**GOOD, "points": points}))
+    result = palm.reading(REQUEST)
+    assert result["reading"]["points"] == {"heart": [[0.2, 0.3], [0.5, 0.28], [0.8, 0.32]]}
+    # a reply with no usable points, or a "points" that is not an object, never fails the reading itself
+    for bad_points in ("not an object", [1, 2], None):
+        monkeypatch.setattr(palm.assistant, "complete", lambda *a, **k: json.dumps({**GOOD, "points": bad_points}))
+        assert palm.reading(REQUEST)["reading"]["points"] == {}
 
 
 def test_not_a_palm_off_and_bad_replies(ai, monkeypatch):

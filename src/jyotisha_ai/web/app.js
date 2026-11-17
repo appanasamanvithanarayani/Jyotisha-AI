@@ -229,7 +229,8 @@
         off: 'Palm reading is switched off right now.', failed: 'Could not read the palm right now. Please try again in a little while.',
         cam: { hint: 'Place your open palm inside the outline', dark: 'Too dark. Move to brighter light and press again.', gallery: 'Choose a photo', close: 'Close', snap: 'Take photo' }, tabs: ['Palm', 'Love', 'Career'], lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
         ready: 'Your palm photo is ready.', see: '▶ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
-        askQ: 'My palm reading says: “{summary}” What should I focus on now?' },
+        askQ: 'My palm reading says: “{summary}” What should I focus on now?',
+        rekhaNote: 'These lines are the AI’s best guess from your photo, shown as a guide — not an exact trace.' },
       tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
         topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
@@ -323,7 +324,8 @@
         off: 'హస్త రేఖా పఠనం ప్రస్తుతం ఆపివేయబడింది.', failed: 'ఇప్పుడు చదవలేకపోయాం. కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.',
         cam: { hint: 'మీ తెరిచిన అరచేతిని అవుట్‌లైన్ లోపల ఉంచండి', dark: 'చాలా చీకటిగా ఉంది. ఎక్కువ వెలుతురులోకి వెళ్లి మళ్లీ నొక్కండి.', gallery: 'ఫోటో ఎంచుకోండి', close: 'మూసివేయండి', snap: 'ఫోటో తీయండి' }, tabs: ['హస్తం', 'ప్రేమ', 'ఉద్యోగం'], lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
         ready: 'మీ అరచేయి ఫోటో సిద్ధం.', see: '▶ నా రీడింగ్ చూడండి', again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
-        askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?' },
+        askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?',
+        rekhaNote: 'ఈ గీతలు మీ ఫోటో నుండి AI అంచనా వేసినవి, మార్గదర్శనం కోసం మాత్రమే — ఖచ్చితమైన రేఖలు కావు.' },
       tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
         topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
@@ -417,7 +419,8 @@
         off: 'हस्त रेखा पठन अभी बंद है।', failed: 'अभी पढ़ नहीं पाए। थोड़ी देर बाद फिर कोशिश करें।',
         cam: { hint: 'अपनी खुली हथेली को आउटलाइन के अंदर रखें', dark: 'बहुत अंधेरा है। तेज़ रोशनी में जाकर फिर दबाएँ।', gallery: 'फ़ोटो चुनें', close: 'बंद करें', snap: 'फ़ोटो लें' }, tabs: ['हथेली', 'प्रेम', 'करियर'], lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
         ready: 'आपकी हथेली की फ़ोटो तैयार है।', see: '▶ मेरी रीडिंग देखें', again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
-        askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?' },
+        askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?',
+        rekhaNote: 'ये रेखाएँ आपकी फोटो से AI के अनुमान पर आधारित हैं, केवल मार्गदर्शन के लिए — सटीक रेखाएँ नहीं।' },
       tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
         topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
@@ -1828,6 +1831,35 @@
   }
   /* ---- Palm reading: pick a hand, take a photo (the phone's camera), the AI reads the lines ---- */
   const palmCopy = () => toolText().palm || TOOLS_COPY.en.palm;
+  const REKHA_COLORS = { heart: '#ff5fc4', head: '#5fb4ff', life: '#5fe0a0', fate: '#ffd24a' };
+  // Draws the AI's line points (0..1 fractions of the photo) over the photo once its real size is known, so the
+  // traced lines land on the actual palm and not on the letterboxed edges of a differently shaped crop.
+  function drawRekhaOverlay(svg, points, width, height) {
+    svg.replaceChildren();
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    for (const line of ['life', 'fate', 'head', 'heart']) {   // draw order only; stable regardless of key order from the AI
+      const path = points[line];
+      if (!path || path.length < 2) continue;
+      const d = path.map((p, i) => `${i ? 'L' : 'M'}${(p[0] * width).toFixed(1)} ${(p[1] * height).toFixed(1)}`).join(' ');
+      svg.appendChild(svgEl('path', { d, class: `rekha-line rekha-${line}`, stroke: REKHA_COLORS[line], 'stroke-width': 3, 'pathLength': 1 }));
+    }
+  }
+  // The photo plus, when the AI traced any lines, a same-size SVG over it; 'contain' (not the plain preview's 'cover')
+  // so the overlay's 0..1 fractions always match the whole photo, with nothing cropped off before the lines are drawn.
+  function palmPhotoBox(src, points) {
+    const wrap = el('div', 'palm-photo');
+    const photo = el('img', 'palm-preview'); photo.src = src; photo.alt = '';
+    wrap.appendChild(photo);
+    const usable = points && Object.keys(points).some(line => points[line] && points[line].length >= 2);
+    if (usable) {
+      wrap.classList.add('has-rekha');
+      const svg = svgEl('svg', { class: 'rekha-overlay', viewBox: '0 0 1 1', preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true' });
+      const draw = () => drawRekhaOverlay(svg, points, photo.naturalWidth || 1, photo.naturalHeight || 1);
+      if (photo.complete && photo.naturalWidth) draw(); else photo.addEventListener('load', draw, { once: true });
+      wrap.appendChild(svg);
+    }
+    return { box: wrap, usable };
+  }
   const palmState = { hand: 'right', step: 'pick', reading: null, status: '', tab: 0, preview: null };
   function openPalm() { palmState.step = 'pick'; palmState.reading = null; palmState.status = ''; palmState.tab = 0; palmState.preview = null; showPage('palm'); renderPalm(); }
   // The photo is made smaller on the phone (longest side 1024 px, JPEG) before it is sent; it is never stored.
@@ -1982,7 +2014,20 @@
     } else {
       // The user's own photo (kept in memory only, never stored), then tabs: Palm (life line + overview), Love (heart line),
       // Career (head and fate lines). All three panels are in the page; only the chosen one is shown.
-      if (palmState.preview) { const photo = el('img', 'palm-preview'); photo.src = palmState.preview; photo.alt = ''; box.appendChild(photo); }
+      if (palmState.preview) {
+        const { box: photoBox, usable } = palmPhotoBox(palmState.preview, reading.points);
+        box.appendChild(photoBox);
+        if (usable) {
+          const legend = el('div', 'rekha-legend');
+          for (const key of ['heart', 'head', 'life', 'fate']) {
+            if (!reading.points[key] || reading.points[key].length < 2) continue;
+            const chip = el('span', 'rekha-chip'), dot = el('i'); dot.style.background = REKHA_COLORS[key];
+            chip.append(dot, document.createTextNode(copy.lines[key]));
+            legend.appendChild(chip);
+          }
+          box.append(legend, el('small', 'muted-note rekha-note', copy.rekhaNote || TOOLS_COPY.en.palm.rekhaNote));
+        }
+      }
       const tabNames = copy.tabs || TOOLS_COPY.en.palm.tabs;
       const groups = [['life', 'summary'], ['heart'], ['head', 'fate']];
       const icons = { heart: '❤️', head: '🧠', life: '🌱', fate: '⭐', summary: '✨' };

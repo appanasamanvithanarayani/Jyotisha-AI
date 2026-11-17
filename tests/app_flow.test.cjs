@@ -411,7 +411,31 @@ test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrun
   tabs.children[1].listeners.click();                                              // Love
   assert.equal(JSON.stringify(panels.map(panel => panel.hidden)), '[true,false,true]');
   assert.equal(tabs.children[1].className, 'on');
-  assert.ok(result.some(item => item.className === 'palm-preview'));               // the user's own photo, from memory
+  const photoBox = result.find(item => item.className === 'palm-photo');
+  assert.ok(photoBox && photoBox.children.some(item => item.className === 'palm-preview'));   // the user's own photo, from memory
+  assert.ok(!result.some(item => item.className === 'rekha-legend'), 'no overlay legend: this reading has no line points');
+});
+
+test('Palm reading: when the AI traces lines, they are drawn over the photo with a legend and an estimate note', async () => {
+  const points = { heart: [[0.2, 0.3], [0.5, 0.28], [0.8, 0.32]], life: [[0.3, 0.9], [0.4, 0.5]] };   // head and fate: not traced this time
+  const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.', points };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading } });
+  await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  const hands = app.element('palmread').children[2].children; hands[0].listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change();
+  await settle(); await settle();
+  const result = app.element('palmread').children;
+  const photoBox = result.find(item => item.className === 'palm-photo');
+  const svg = photoBox.children.find(item => item.tag === 'svg');
+  assert.equal(svg.attributes.class, 'rekha-overlay');
+  const legend = result.find(item => item.className === 'rekha-legend');
+  assert.deepEqual(legend.children.map(chip => chip.children[1].textContent), ['Heart line', 'Life line']);   // only the traced lines
+  const note = result.find(item => item.className === 'muted-note rekha-note');
+  assert.match(note.textContent, /AI.s best guess/);
 });
 
 test('Palm reading: a photo without a clear palm asks for another one', async () => {
@@ -1833,7 +1857,8 @@ test('Palm camera inside the app: a hand outline, a shutter, one warning when to
   assert.equal(stopped, 1);                                                          // the camera is released
   const request = app.requests.find(r => r.url === '/api/palm');
   assert.equal(request.body.image, 'data:image/jpeg;base64,CAMPHOTO'); assert.equal(request.body.hand, 'right');
-  assert.ok(app.element('palmread').children.some(item => item.className === 'palm-preview'));
+  const photoBox2 = app.element('palmread').children.find(item => item.className === 'palm-photo');
+  assert.ok(photoBox2 && photoBox2.children.some(item => item.className === 'palm-preview'));
   // closing releases the camera without reading anything
   app.requests.length = 0;
   homeCard(app, 'Palm reading').listeners.click();

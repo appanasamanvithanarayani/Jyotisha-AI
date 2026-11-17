@@ -30,6 +30,12 @@ PROMPT = (
     "{language}: \"heart\" (heart line: love and emotions), \"head\" (head line: thinking and decisions), \"life\" (life "
     "line: energy and vitality; never about how long one lives), \"fate\" (fate line: work and life path; if faint or "
     "absent, say so gently), \"summary\" (60 to 110 words: overall nature and one kind piece of advice). "
+    "Also add a \"points\" object with one key per line you can actually trace on THIS photo (\"heart\", \"head\", "
+    "\"life\", \"fate\"; leave out any line that is too faint or not visible, rather than guess blindly). Each value is "
+    "a list of 3 to 6 [x, y] pairs that trace that line's path across the palm in order from where it starts to where "
+    "it ends, as fractions of the photo (x: 0 at the photo's left edge to 1 at its right edge; y: 0 at the top to 1 at "
+    "the bottom). Give your honest best visual estimate of where that line runs in this exact photo; it will be drawn "
+    "over the photo as an approximate guide, not a certified trace, so only include a line you can really see. "
     "Write every value in {language}, in the {language} script; do not write the values in English."
 )
 # Sent on a second try when the first reply came back in English instead of the user's language.
@@ -66,8 +72,31 @@ def check_request(payload: object) -> tuple[str, str, str, str]:
     return hand, language, mime, data
 
 
+def _line_points(raw: dict) -> dict[str, list[list[float]]]:
+    """Up to 6 (x, y) fractions per line, each 0..1; a line that is missing or badly shaped is quietly left out, so a
+    drawing mistake never fails the whole reading (the text sections are what matters; the overlay is a bonus)."""
+    points = raw.get("points")
+    if not isinstance(points, dict):
+        return {}
+    cleaned: dict[str, list[list[float]]] = {}
+    for line in LINES:
+        path = points.get(line)
+        if not isinstance(path, list) or not 2 <= len(path) <= 8:
+            continue
+        good = []
+        for point in path:
+            if not (isinstance(point, list) and len(point) == 2 and all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 1 for v in point)):
+                good = None
+                break
+            good.append([round(float(point[0]), 4), round(float(point[1]), 4)])
+        if good:
+            cleaned[line] = good
+    return cleaned
+
+
 def validate(raw: object) -> dict | None:
-    """{'palm': False} when the AI saw no palm; the five sections when it did; None when the reply breaks the rules."""
+    """{'palm': False} when the AI saw no palm; the five sections (and any usable line points) when it did; None when
+    the reply breaks the rules."""
     if not isinstance(raw, dict) or not isinstance(raw.get("palm"), bool):
         return None
     if raw["palm"] is False:
@@ -81,6 +110,7 @@ def validate(raw: object) -> dict | None:
         if not MIN_CHARS <= len(text) <= MAX_CHARS or BANNED.search(text):
             return None
         reading[key] = text
+    reading["points"] = _line_points(raw)
     return reading
 
 
