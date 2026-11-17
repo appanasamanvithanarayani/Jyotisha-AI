@@ -2404,7 +2404,8 @@
         button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', tab === lg.tab ? 'true' : 'false');
         button.addEventListener('click', async () => {
           if (lgLocked(tab)) { if (!(await watchForResult())) return; lgUnlock(lg.sign); }   // the video icon on the tab says an ad comes first
-          lg.tab = tab; renderLifeGuide();
+          if (tab !== lg.tab) { lg.tab = tab; maybeLifeGuideInterstitial(); }
+          renderLifeGuide();
         });
         tabs.appendChild(button);
       });
@@ -3724,16 +3725,33 @@
     quota.bonus += config.chat_bonus_questions; quota.used += 1; writeQuota(quota);
     return true;
   }
-  // An occasional ad between screens: never in the first minute, at most one per few switches and per few minutes.
+  // Never in the app's first minute, and never twice within the admin panel's minimum gap (shared by both call
+  // sites below, so a screen-switch ad and a Life Guide-tab ad can never land back to back).
+  function interstitialGateOpen(config) {
+    const now = Date.now();
+    if (now - appAds.started < 60000 || now - appAds.lastInterstitial < (config.interstitial_gap_seconds || 180) * 1000) return false;
+    appAds.lastInterstitial = now;
+    return true;
+  }
+  function showInterstitialNow(config, admob) {
+    Promise.resolve(admob.prepareInterstitial({ adId: config.interstitial_id, isTesting: config.testing === true }))
+      .then(() => admob.showInterstitial()).catch(() => { /* no ad available: carry on */ });
+  }
+  // An occasional ad between screens: at most one per few switches (admin: "Screens between full-screen ads"; 1 = every one).
   function maybeInterstitial() {
     const { config, admob } = appAds;
     if (!config || !admob || !adUnitOk(config.interstitial_id)) return;
     appAds.switches += 1;
-    const now = Date.now();
-    if (now - appAds.started < 60000 || appAds.switches % (config.interstitial_every || 4) !== 0 || now - appAds.lastInterstitial < (config.interstitial_gap_seconds || 180) * 1000) return;
-    appAds.lastInterstitial = now;
-    Promise.resolve(admob.prepareInterstitial({ adId: config.interstitial_id, isTesting: config.testing === true }))
-      .then(() => admob.showInterstitial()).catch(() => { /* no ad available: carry on */ });
+    if (appAds.switches % (config.interstitial_every || 4) !== 0 || !interstitialGateOpen(config)) return;
+    showInterstitialNow(config, admob);
+  }
+  // Life Guide's own tabs (Yesterday / Today / Tomorrow / This month / This year): an ad on every switch to a new
+  // tab, when the admin panel's "Full-screen ad on every Life Guide tab switch" is on (separate from, and in
+  // addition to, the once-a-day rewarded unlock on a locked tab).
+  function maybeLifeGuideInterstitial() {
+    const { config, admob } = appAds;
+    if (!config || !admob || !config.lifeguide_interstitial || !adUnitOk(config.interstitial_id) || !interstitialGateOpen(config)) return;
+    showInterstitialNow(config, admob);
   }
   const admobPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) || null;
   // AdMob is started once (with the consent form where the law requires it), for the banner and the welcome-step ads.
