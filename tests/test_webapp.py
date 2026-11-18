@@ -905,6 +905,23 @@ def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_m
     assert result["interstitial_every"] == 4 and result["interstitial_gap_seconds"] == 180
     monkeypatch.setenv("JYOTISHA_ADMOB_REWARDED_ID", "bad")
     assert config()["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"       # a malformed unit falls back to the test unit
+    # How often is admin-configurable (1 = every screen switch); out-of-range values fall back to the defaults.
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL_EVERY", "1")
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL_GAP", "30")
+    assert config()["interstitial_every"] == 1 and config()["interstitial_gap_seconds"] == 30
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL_EVERY", "0")   # below the minimum of 1
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL_GAP", "1")     # below the minimum of 5
+    assert config()["interstitial_every"] == 4 and config()["interstitial_gap_seconds"] == 180
+    monkeypatch.delenv("JYOTISHA_INTERSTITIAL_EVERY"); monkeypatch.delenv("JYOTISHA_INTERSTITIAL_GAP")
+    monkeypatch.delenv("JYOTISHA_INTERSTITIAL")
+    # Life Guide's own tab switches: a separate full-screen-ad switch, independent of the screen-switch one above.
+    assert "interstitial_id" not in config() and "lifeguide_interstitial" not in config()
+    monkeypatch.setenv("JYOTISHA_LIFEGUIDE_INTERSTITIAL", "1")
+    result = config()
+    assert result["lifeguide_interstitial"] is True and result["interstitial_id"] == "ca-app-pub-3940256099942544/1033173712"
+    assert result["interstitial_gap_seconds"] == 180
+    monkeypatch.setenv("JYOTISHA_INTERSTITIAL_GAP", "45")
+    assert config()["interstitial_gap_seconds"] == 45   # the shared minimum-gap setting also covers this switch
 
 
 def test_chat_allowance_switch_sets_free_and_bonus_question_counts(local_server, monkeypatch):

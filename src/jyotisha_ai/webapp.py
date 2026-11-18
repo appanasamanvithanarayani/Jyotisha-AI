@@ -153,6 +153,10 @@ def _app_ads() -> dict | None:
         value = store.value(name)
         return value if re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", value) else test_unit
 
+    def bounded(name: str, default: int, low: int, high: int) -> int:
+        raw = store.value(name)
+        return int(raw) if raw.isdigit() and low <= int(raw) <= high else default
+
     banner = unit_id("JYOTISHA_ADMOB_BANNER_ID", TEST_BANNER_ID)
     own = banner != TEST_BANNER_ID
     config = {"enabled": True, "banner_id": banner, "testing": (not own) or store.value("JYOTISHA_ADMOB_TESTING") == "1"}
@@ -171,12 +175,8 @@ def _app_ads() -> dict | None:
         config["rewarded_free_minutes"] = 10
     if rewarded_chat:
         # Free AI questions per day, then a rewarded ad buys a few more; the rule-based answers stay free.
-        def count(name: str, default: int) -> int:
-            raw = store.value(name)
-            return int(raw) if raw.isdigit() and 1 <= int(raw) <= 100 else default
-
-        config["chat_free_questions"] = count("JYOTISHA_CHAT_FREE_QUESTIONS", 10)
-        config["chat_bonus_questions"] = count("JYOTISHA_CHAT_BONUS_QUESTIONS", 5)
+        config["chat_free_questions"] = bounded("JYOTISHA_CHAT_FREE_QUESTIONS", 10, 1, 100)
+        config["chat_bonus_questions"] = bounded("JYOTISHA_CHAT_BONUS_QUESTIONS", 5, 1, 100)
     if store.value("JYOTISHA_ONBOARDING_BANNER", "1") == "1":
         config["onboarding_banner"] = True
     if store.value("JYOTISHA_LAUNCH_AD", "0") == "1":
@@ -186,8 +186,14 @@ def _app_ads() -> dict | None:
         config["onboarding_interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
     if store.value("JYOTISHA_INTERSTITIAL") == "1":
         config["interstitial_id"] = unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
-        config["interstitial_every"] = 4          # at most one ad per this many screen switches
-        config["interstitial_gap_seconds"] = 180   # and never twice within this many seconds
+        config["interstitial_every"] = bounded("JYOTISHA_INTERSTITIAL_EVERY", 4, 1, 20)             # 1 = every single screen switch
+        config["interstitial_gap_seconds"] = bounded("JYOTISHA_INTERSTITIAL_GAP", 180, 5, 3600)     # a floor so two ads can never stack
+    if store.value("JYOTISHA_LIFEGUIDE_INTERSTITIAL") == "1":
+        # A full-screen ad every time the Life Guide's own tabs (Yesterday / Today / Tomorrow / This month / This
+        # year) are switched — separate from, and in addition to, the once-a-day rewarded unlock above.
+        config["interstitial_id"] = config.get("interstitial_id") or unit_id("JYOTISHA_ADMOB_INTERSTITIAL_ID", TEST_INTERSTITIAL_ID)
+        config["interstitial_gap_seconds"] = config.get("interstitial_gap_seconds") or bounded("JYOTISHA_INTERSTITIAL_GAP", 180, 5, 3600)
+        config["lifeguide_interstitial"] = True
     return config
 
 
