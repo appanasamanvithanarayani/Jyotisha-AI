@@ -1508,6 +1508,36 @@
       if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }
     }
   }
+  // Android app: if the Play Store has a newer versionCode than what is installed, show a small "update available"
+  // popup once the app is settled on Home. "Later" is remembered for this version so it does not nag on every open;
+  // a later update (a higher availableVersionCode) is asked about again.
+  const UPDATE_DISMISS_KEY = 'jyotisha.update-dismissed.v1';
+  function appUpdatePlugin() { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppUpdate) || null; }
+  async function maybeOfferUpdate() {
+    const plugin = appUpdatePlugin();
+    if (!nativeApp() || !plugin) return;
+    let info;
+    try { info = await plugin.getAppUpdateInfo(); } catch (_error) { return; }
+    if (!info || info.updateAvailability !== 2 || !info.availableVersionCode) return;
+    let dismissed = '';
+    try { dismissed = window.localStorage.getItem(UPDATE_DISMISS_KEY) || ''; } catch (_error) { /* optional */ }
+    if (dismissed === String(info.availableVersionCode)) return;
+    const copy = { title: t('updateAvailableTitle'), body: t('updateAvailableBody'), now: t('updateNow'), later: t('updateLater') };
+    const overlay = el('div', 'update-popup');
+    const card = el('div', 'update-popup-card');
+    const later = el('button', 'link-btn'); later.type = 'button'; later.textContent = copy.later;
+    const now = el('button', 'btn'); now.type = 'button'; now.textContent = copy.now;
+    const actions = el('div', 'update-popup-actions'); actions.append(later, now);
+    card.append(el('strong', 'update-popup-title', copy.title), el('p', 'update-popup-body', copy.body), actions);
+    overlay.appendChild(card);
+    const dismiss = () => { try { overlay.remove(); } catch (_error) { /* gone */ } };
+    later.addEventListener('click', () => {
+      try { window.localStorage.setItem(UPDATE_DISMISS_KEY, String(info.availableVersionCode)); } catch (_error) { /* optional */ }
+      dismiss();
+    });
+    now.addEventListener('click', () => { void plugin.openAppStore().catch(() => {}); dismiss(); });
+    document.body.appendChild(overlay);
+  }
   $('language-next').addEventListener('click', () => {
     applyLanguage(choice.value);
     if (state.onboarded) { $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active'); }
@@ -1732,6 +1762,7 @@
     startHome();
     if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }   // the banner only after the welcome steps
     void scheduleNotifications();   // now that the city is known
+    void wait(1500).then(maybeOfferUpdate);
   }
 
   /* ----------------------------------------------------- change city (Home) */
@@ -4159,7 +4190,7 @@
     $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
     applyLanguage(saved.lang);
     startHome();
-    void launchSplash();
+    void launchSplash().then(() => wait(1500)).then(maybeOfferUpdate);
     if (saved.useLocation) void refreshCityFromLocation();
   } else { applyLanguage('en'); showOnboardingStep('welcome'); void runSplash(); }
   void restoreProfile();

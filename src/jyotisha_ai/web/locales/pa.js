@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "ਤੁਹਾਡੇ ਤਾਰੇ ਮਿਲਾਏ ਜਾ ਰਹੇ ਹਨ…",
       "mayContainAds": "ਇਸ ਵਿੱਚ ਇਸ਼ਤਿਹਾਰ ਹੋ ਸਕਦੇ ਹਨ",
+      "updateAvailableTitle": "ਅੱਪਡੇਟ ਉਪਲਬਧ ਹੈ",
+      "updateAvailableBody": "ਜਯੋਤਿਰਮਯਾ ਦਾ ਨਵਾਂ ਵਰਜ਼ਨ ਤਿਆਰ ਹੈ, ਨਵੀਆਂ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਅਤੇ ਸੁਧਾਰਾਂ ਨਾਲ।",
+      "updateNow": "ਹੁਣੇ ਅੱਪਡੇਟ ਕਰੋ",
+      "updateLater": "ਬਾਅਦ ਵਿੱਚ",
       "aboutYou": "ਆਪਣੇ ਬਾਰੇ ਦੱਸੋ",
       "aboutYouIntro": "ਤੁਹਾਡੇ ਨਿੱਜੀ ਫਲ ਲਈ।",
       "yourName": "ਤੁਹਾਡਾ ਨਾਮ",

@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "तुमचे तारे जुळवत आहोत…",
       "mayContainAds": "यात जाहिराती असू शकतात",
+      "updateAvailableTitle": "अपडेट उपलब्ध आहे",
+      "updateAvailableBody": "ज्योतिर्मयाची नवीन आवृत्ती तयार आहे, नवीन वैशिष्ट्ये आणि सुधारणांसह.",
+      "updateNow": "आता अपडेट करा",
+      "updateLater": "नंतर",
       "aboutYou": "तुमच्याबद्दल सांगा",
       "aboutYouIntro": "तुमच्या वैयक्तिक फलांसाठी.",
       "yourName": "तुमचे नाव",

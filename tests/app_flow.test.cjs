@@ -43,6 +43,42 @@ test("the Android app's hardware Back button (window.__jyotishaBack) steps back 
   assert.equal(back(), false);                 // back on Home with nothing left: exit again
 });
 
+test('Android app: a newer Play Store version pops up an update card on Home, remembered as dismissed until a further update', async () => {
+  const opened = [];
+  const AppUpdate = {
+    getAppUpdateInfo: async () => ({ updateAvailability: 2, currentVersionCode: '10', availableVersionCode: '11' }),
+    openAppStore: async () => opened.push('store'),
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, capacitor: { Plugins: { AppUpdate }, isNativePlatform: () => true } });
+  await settle();
+  await new Promise(resolve => setTimeout(resolve, 3000)); await settle();
+  let popup = app.context.document.body.children.find(item => item.className === 'update-popup');
+  assert.ok(popup, 'the update card appears once Home has settled');
+  const [title, body, actions] = popup.children[0].children;
+  assert.equal(title.textContent, 'Update available');
+  assert.ok(body.textContent.length > 0);
+  const [later, now] = actions.children;
+  later.listeners.click();
+  assert.equal(storage.getItem('jyotisha.update-dismissed.v1'), '11');
+
+  // Dismissed: the same version does not pop up again on the next start.
+  const again = boot({ storage, capacitor: { Plugins: { AppUpdate }, isNativePlatform: () => true } });
+  await settle();
+  await new Promise(resolve => setTimeout(resolve, 3000)); await settle();
+  assert.ok(!again.context.document.body.children.some(item => item.className === 'update-popup'));
+
+  // A further update (a higher availableVersionCode) is asked about again, and "Update now" opens the store.
+  const Newer = { ...AppUpdate, getAppUpdateInfo: async () => ({ updateAvailability: 2, currentVersionCode: '10', availableVersionCode: '12' }) };
+  const fresh = boot({ storage, capacitor: { Plugins: { AppUpdate: Newer }, isNativePlatform: () => true } });
+  await settle();
+  await new Promise(resolve => setTimeout(resolve, 3000)); await settle();
+  popup = fresh.context.document.body.children.find(item => item.className === 'update-popup');
+  assert.ok(popup, 'a newer availableVersionCode pops up again even though an earlier one was dismissed');
+  popup.children[0].children[2].children[1].listeners.click();
+  assert.deepEqual(opened, ['store']);
+});
+
 class Element {
   constructor(tag = 'div') {
     this.tag = tag; this.hidden = false; this.disabled = false; this.value = ''; this.textContent = ''; this.className = '';
