@@ -17,16 +17,21 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         SystemBarsPlugin.hideStatusBar(getWindow());   // applied here too so it never flashes in before the first JS call
         ShortcutsPlugin.handleIntent(getIntent());   // the app was opened from a Shortcuts button
-        // The phone's Back button goes back through the app's screens (the page records each one in the WebView's
-        // history); only on the first screen does it close the app as usual.
+        // The phone's Back button goes back through the app's own screens; only on the first screen does it close
+        // the app. The page tracks its own navigation stack in JS (window.__jyotishaBack()) and is asked directly,
+        // rather than trusting the WebView's built-in back/forward list, which can behave unreliably with a
+        // pushState-only single-page app on some devices.
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 WebView web = getBridge() != null ? getBridge().getWebView() : null;
-                if (web != null && web.canGoBack()) {
-                    web.goBack();
-                    return;
-                }
+                if (web == null) { closeApp(); return; }
+                web.evaluateJavascript("(window.__jyotishaBack && window.__jyotishaBack()) ? 'true' : 'false'", value -> {
+                    if (!"\"true\"".equals(value)) closeApp();
+                });
+            }
+
+            private void closeApp() {
                 setEnabled(false);
                 getOnBackPressedDispatcher().onBackPressed();
                 setEnabled(true);
