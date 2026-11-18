@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "আপনার নক্ষত্র মেলানো হচ্ছে…",
       "mayContainAds": "এতে বিজ্ঞাপন থাকতে পারে",
+      "updateAvailableTitle": "আপডেট উপলব্ধ",
+      "updateAvailableBody": "জ্যোতির্মায়ার নতুন সংস্করণ প্রস্তুত, নতুন ফিচার ও সংশোধনী সহ।",
+      "updateNow": "এখনই আপডেট করুন",
+      "updateLater": "পরে",
       "aboutYou": "আপনার সম্পর্কে বলুন",
       "aboutYouIntro": "আপনার ব্যক্তিগত ফলের জন্য।",
       "yourName": "আপনার নাম",

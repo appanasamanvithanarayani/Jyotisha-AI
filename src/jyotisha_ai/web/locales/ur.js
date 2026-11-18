@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "آپ کے ستاروں کو ملایا جا رہا ہے…",
       "mayContainAds": "اس میں اشتہارات ہو سکتے ہیں",
+      "updateAvailableTitle": "اپ ڈیٹ دستیاب ہے",
+      "updateAvailableBody": "جیوتِرمیا کا نیا ورژن تیار ہے، نئی خصوصیات اور بہتریوں کے ساتھ۔",
+      "updateNow": "ابھی اپ ڈیٹ کریں",
+      "updateLater": "بعد میں",
       "aboutYou": "اپنے بارے میں بتائیں",
       "aboutYouIntro": "آپ کی ذاتی پیش گوئی کے لیے۔",
       "yourName": "آپ کا نام",

@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "Aligning your stars…",
       "mayContainAds": "This may contain ads",
+      "updateAvailableTitle": "Update available",
+      "updateAvailableBody": "A newer version of Jyotirmaya is ready, with the latest features and fixes.",
+      "updateNow": "Update now",
+      "updateLater": "Later",
       "aboutYou": "Tell us about you",
       "aboutYouIntro": "For your personal readings.",
       "yourName": "Your name",

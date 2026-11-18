@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "તમારા તારાઓ ગોઠવાઈ રહ્યા છે…",
       "mayContainAds": "આમાં જાહેરાતો હોઈ શકે છે",
+      "updateAvailableTitle": "અપડેટ ઉપલબ્ધ છે",
+      "updateAvailableBody": "જ્યોતિર્મયાનું નવું વર્ઝન તૈયાર છે, નવી સુવિધાઓ અને સુધારાઓ સાથે.",
+      "updateNow": "હવે અપડેટ કરો",
+      "updateLater": "પછી",
       "aboutYou": "તમારા વિશે કહો",
       "aboutYouIntro": "તમારા વ્યક્તિગત ફળ માટે.",
       "yourName": "તમારું નામ",

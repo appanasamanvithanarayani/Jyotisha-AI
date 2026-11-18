@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "अहाँक तारा मिलाओल जा रहल अछि…",
       "mayContainAds": "एहिमे विज्ञापन भ' सकैत अछि",
+      "updateAvailableTitle": "अपडेट उपलब्ध अछि",
+      "updateAvailableBody": "ज्योतिर्मयक नव संस्करण तैयार अछि, नव सुविधा आ सुधारक सङ।",
+      "updateNow": "एखन अपडेट करू",
+      "updateLater": "बाद मे",
       "aboutYou": "अपना बारेमे कहू",
       "aboutYouIntro": "अहाँक व्यक्तिगत फलक लेल।",
       "yourName": "अहाँक नाम",

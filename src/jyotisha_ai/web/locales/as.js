@@ -15,6 +15,10 @@
     "ui": {
       "aligning": "আপোনাৰ নক্ষত্ৰ মিলোৱা হৈছে…",
       "mayContainAds": "ইয়াত বিজ্ঞাপন থাকিব পাৰে",
+      "updateAvailableTitle": "আপডেট উপলব্ধ",
+      "updateAvailableBody": "জ্যোতির্মায়ার নতুন সংস্কৰণ সাজু, নতুন সুবিধা আৰু শুধৰণীৰ সৈতে।",
+      "updateNow": "এতিয়াই আপডেট কৰক",
+      "updateLater": "পিছত",
       "aboutYou": "আপোনাৰ বিষয়ে কওক",
       "aboutYouIntro": "আপোনাৰ ব্যক্তিগত ফলৰ বাবে।",
       "yourName": "আপোনাৰ নাম",
