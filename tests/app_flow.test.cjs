@@ -644,17 +644,18 @@ test('Kundli matching can compare two other people, without needing your own cha
   assert.match(app.element('relationship-result').children[0].children[1].textContent, /^\d+ \/ 36$/);
 });
 
-test('Love page offers two choices, then shows Guna Milan out of 36 without saving partner birth details', async () => {
+test('Love page offers three choices, then shows Guna Milan out of 36 without saving partner birth details', async () => {
   const storage = memoryStorage({ lang: 'te', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
   const app = boot({ storage, birth: syntheticBirth });
   await settle();
   assert.match(app.element('relationship-title').textContent, /ప్రేమ/);
-  // Nothing is shown until the user picks one of the two options.
+  // Nothing is shown until the user picks one of the three options.
   const options = app.element('love-options').children;
-  assert.equal(options.length, 2);
+  assert.equal(options.length, 3);
   assert.equal(app.element('love-match').hidden, true);
   assert.equal(app.element('love-reading').hidden, true);
+  assert.equal(app.element('love-traits').hidden, true);
   app.element('love-options').children[1].listeners.click();
   assert.equal(app.element('love-reading').hidden, false);
   assert.ok(app.element('relationship-reading-result').children.length > 0);
@@ -677,6 +678,27 @@ test('Love page offers two choices, then shows Guna Milan out of 36 without savi
   assert.equal(storage.getItem('jyotisha.partner.v1'), null);
   app.element('forget-profile').listeners.click();
   assert.equal(app.element('relationship-result').children.length, 0);
+});
+
+test('Love page: "Your ideal partner" reads relationship style from the 7th house and Venus, from your own chart alone', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth });
+  await settle();
+  const options = app.element('love-options').children;
+  assert.equal(options[2].children[1].textContent, 'Your ideal partner');
+  options[2].listeners.click();
+  assert.equal(app.element('love-traits').hidden, false);
+  assert.equal(app.element('love-match').hidden, true);
+  const lines = app.element('relationship-traits-result').children;
+  assert.match(lines[0].textContent, /not a prediction/);
+  assert.equal(lines[1].textContent, 'Your 7th house of partnerships falls in Aquarius (lord: Saturn), so you’re often drawn to someone independent, original and friendly.');
+  assert.equal(lines[2].textContent, 'Venus, the planet of love in your chart, sits in Virgo — affection tends to feel thoughtful, practical and detail-minded for you.');
+  // No chart yet: a prompt to make one first, same as the other two modes.
+  const empty = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  empty.element('love-options').children[2].listeners.click();
+  assert.match(empty.element('relationship-traits-result').children[0].textContent, /Create your own Kundli first/);
 });
 
 test('Home offers tool cards and the Kundli shows one view at a time, including doshas', async () => {
@@ -1084,7 +1106,11 @@ test('first run like Palm AI: loading screen, a full-screen ad, language, city, 
   app.element('welcome-dob').value = '1994-03-18';
   app.element('welcome-tob').value = '07:45';
   app.element('profile-next').listeners.click();
-  await new Promise(resolve => setTimeout(resolve, 60)); await settle();
+  await settle();
+  const building = app.context.document.body.children.find(item => item.className === 'chart-build');
+  assert.ok(building, 'the chart-building animation shows once date, time and place are in');
+  assert.equal(building.children[0].children[0].textContent, 'Placing your lights…');
+  await new Promise(resolve => setTimeout(resolve, 3500)); await settle();
   assert.equal(calls.filter(c => c === 'showInterstitial').length, 2);     // ad no. 2
   assert.equal(app.element('welcome-screen').hidden, true);                // Home
   assert.ok(calls.includes('showBanner'));
@@ -1094,6 +1120,49 @@ test('first run like Palm AI: loading screen, a full-screen ad, language, city, 
   assert.match(app.element('greet-time').textContent, /^Good (morning|afternoon|evening|night)$/);
   assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1994-03-18', pob: 'Hyderabad, IN', tob: '07:45' });
   assert.ok(app.requests.some(r => r.url === '/api/birth-chart'));          // with a time, the Kundli is made right away
+});
+
+test('onboarding: once birth date, time and place are in, the chart-building animation places each planet and ends on the real Sun sign', async () => {
+  const birth = {
+    chart: {
+      input: { birth_datetime: '2004-09-14T11:25:00+05:30' },
+      ascendant: { rashi_index: 3, sidereal_longitude: 70.1 },
+      positions: Object.fromEntries(['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu']
+        .map((name, n) => { const rashi = ((n + 7) % 12) + 1; return [name, { rashi_index: rashi, sidereal_longitude: 10 + n * 20, tropical_longitude: 34 + n * 20, whole_sign_bhava: (rashi - 3 + 12) % 12 + 1 }]; })),
+      panchanga_at_birth: { tithi_index: 3, nakshatra_index: 17, nakshatra_pada: 2, yoga_index: 4, karana_half_tithi_index: 5 },
+      vimshottari: { starting_lord: 'Saturn', balance_years_at_birth: 13.6 },
+    },
+    details: null, resolved_birth: null,
+  };
+  const app = boot({ storage: memoryStorage(), birth });
+  await settle();
+  app.element('welcome-next').listeners.click();
+  app.element('language-next').listeners.click();
+  app.element('welcome-city').value = 'Hyderabad, IN';
+  app.element('welcome-form').listeners.submit({ preventDefault() {} });
+  app.element('welcome-name').value = 'Krish';
+  app.element('welcome-dob').value = '2004-09-14';
+  app.element('welcome-tob').value = '11:25';
+  app.element('profile-next').listeners.click();
+  await settle();
+  const body = () => app.context.document.body.children.find(item => item.className === 'chart-build');
+  let overlay = body();
+  assert.ok(overlay, 'the wheel shows while the real chart is being calculated');
+  const [title, svg, recap, hint] = overlay.children[0].children;
+  assert.equal(title.textContent, 'Placing your lights…');
+  assert.equal(recap.textContent, '2004-09-14 · 11:25 · Hyderabad, IN');
+  assert.ok(hint.textContent.length > 0);
+  assert.equal(svg.children.filter(node => node.attributes.class === 'chart-build-sign').length, 12);   // all 12 signs on the wheel from the start
+  await new Promise(resolve => setTimeout(resolve, 1500)); await settle();
+  overlay = body();
+  assert.ok(overlay, 'still on screen while the planets settle one by one');
+  assert.ok(svg.children.some(node => node.attributes.class === 'chart-build-dot'), 'at least one planet has been placed by now');
+  await new Promise(resolve => setTimeout(resolve, 2500)); await settle();
+  assert.equal(svg.children.filter(node => node.attributes.class === 'chart-build-dot').length, 9);   // all nine planets placed
+  assert.match(title.textContent, / Sun$/);   // the reveal: "<Sign> Sun"
+  assert.equal(overlay.children[0].children.includes(hint), false, 'the loading hint is gone once the sign is revealed');
+  await new Promise(resolve => setTimeout(resolve, 1000)); await settle();
+  assert.equal(app.element('welcome-screen').hidden, true);   // onward to Home once the reveal has held for a moment
 });
 
 test('no ad on the welcome screens: the banner starts only after the first-run steps are done', async () => {
@@ -1710,7 +1779,7 @@ test('first start: language cards with a tick, birth-date wheels that only count
   pick(tob[0], '06'); pick(tob[2], '30');
   assert.equal(app.element('welcome-tob').value, '06:30');
   app.element('profile-next').listeners.click();
-  await new Promise(resolve => setTimeout(resolve, 60)); await settle(); await settle();
+  await new Promise(resolve => setTimeout(resolve, 3500)); await settle(); await settle();
   const removed = calls.indexOf('removeBanner'), adaptive = calls.findIndex(c => Array.isArray(c) && c[1] === 'ADAPTIVE_BANNER');
   assert.ok(removed >= 0 && adaptive > removed);                                    // the ad box goes before the usual banner
   assert.equal(storage.read().dob, '1995-01-15');

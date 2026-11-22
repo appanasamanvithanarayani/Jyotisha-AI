@@ -1124,7 +1124,33 @@
     const shared = rows.filter(row => row.shared).length;
     return { shared, total: rows.length, percentage: Math.round(shared / rows.length * 100), rows, method: 'exact-placement-overlap-v1' };
   }
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, signName, bodyName });
+  // A classical, descriptive read of relationship style from the 7th house (partnerships) and Venus (affection) —
+  // not a prediction or portrait of any specific person. RASHI_LORDS are the traditional sign rulers.
+  const RASHI_LORDS = Object.freeze(['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter']);
+  const SIGN_TRAIT_TEXT = Object.freeze({
+    en: ['bold, energetic and quick to act', 'steady, warm and dependable', 'curious, chatty and quick-witted', 'caring, intuitive and protective',
+      'warm, confident and generous', 'thoughtful, practical and detail-minded', 'charming, fair-minded and easy to talk to', 'intense, loyal and deeply passionate',
+      'free-spirited, honest and adventurous', 'grounded, ambitious and reliable', 'independent, original and friendly', 'gentle, imaginative and empathetic'],
+    te: ['ధైర్యంగా, ఉత్సాహంగా, వెంటనే చర్యకు దిగేవారు', 'స్థిరంగా, ఆప్యాయంగా, నమ్మదగినవారు', 'ఆసక్తిగా, మాటకారిగా, చురుకైన బుద్ధి గలవారు', 'శ్రద్ధగా, అంతర్దృష్టితో, రక్షణగా ఉండేవారు',
+      'ఆప్యాయంగా, ఆత్మవిశ్వాసంతో, ఉదారంగా ఉండేవారు', 'ఆలోచనాత్మకంగా, ఆచరణాత్మకంగా, వివరాలపై శ్రద్ధ గలవారు', 'ఆకర్షణీయంగా, న్యాయబద్ధంగా, మాట్లాడటానికి సులభంగా ఉండేవారు', 'తీవ్రంగా, నమ్మకంగా, లోతైన అనురాగం గలవారు',
+      'స్వేచ్ఛాభావంతో, నిజాయితీగా, సాహసోపేతంగా ఉండేవారు', 'నిలకడగా, ఆశయంతో, నమ్మదగినవారు', 'స్వతంత్రంగా, విభిన్నంగా, స్నేహపూర్వకంగా ఉండేవారు', 'సున్నితంగా, ఊహాశక్తితో, సహానుభూతి గలవారు'],
+    hi: ['साहसी, ऊर्जावान और फ़ौरन कदम उठाने वाले', 'स्थिर, स्नेही और भरोसेमंद', 'जिज्ञासु, बातूनी और तेज़ दिमाग़ वाले', 'देखभाल करने वाले, सहज-बोधी और सुरक्षात्मक',
+      'स्नेही, आत्मविश्वासी और उदार', 'विचारशील, व्यावहारिक और बारीकियों पर ध्यान देने वाले', 'आकर्षक, निष्पक्ष और जिनसे बात करना आसान हो', 'गहन, वफ़ादार और गहरे जज़्बाती',
+      'स्वच्छंद, ईमानदार और साहसिक', 'स्थिर, महत्वाकांक्षी और भरोसेमंद', 'स्वतंत्र, मौलिक और मिलनसार', 'कोमल, कल्पनाशील और सहानुभूतिपूर्ण'],
+  });
+  function partnerTraits(chart, language = 'en') {
+    if (!chart || !chart.ascendant || !isRashi(chart.ascendant.rashi_index) || !chart.positions || !chart.positions.Venus || !isRashi(chart.positions.Venus.rashi_index)) {
+      throw new Error('Calculated chart data is incomplete; no reading was made.');
+    }
+    const text = SIGN_TRAIT_TEXT[language] || SIGN_TRAIT_TEXT.en;
+    const house7Rashi = (chart.ascendant.rashi_index - 1 + 6) % 12 + 1;
+    const venusRashi = chart.positions.Venus.rashi_index;
+    return {
+      house7Sign: signName(house7Rashi, language), house7Lord: bodyName(RASHI_LORDS[house7Rashi - 1], language), house7Trait: text[house7Rashi - 1],
+      venusSign: signName(venusRashi, language), venusTrait: text[venusRashi - 1],
+    };
+  }
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

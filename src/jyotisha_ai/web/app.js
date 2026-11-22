@@ -123,6 +123,10 @@
     en: {
       nav: 'Love', eyebrow: 'Relationships', title: 'Love & Kundli matching', intro: 'Choose what you want to see.',
       optMatch: 'Kundli matching', optMatchSub: 'Guna Milan score out of 36', optReading: 'My love reading', optReadingSub: 'What your chart says about love and marriage',
+      optTraits: 'Your ideal partner', optTraitsSub: 'Relationship style from your 7th house and Venus',
+      traitsIntro: 'A classical reading of relationship style from your chart — not a prediction of any specific person.',
+      traitsHouse: 'Your 7th house of partnerships falls in {sign} (lord: {lord}), so you’re often drawn to someone {trait}.',
+      traitsVenus: 'Venus, the planet of love in your chart, sits in {sign} — affection tends to feel {trait} for you.',
       who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
@@ -138,6 +142,10 @@
     te: {
       nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
       optMatch: 'జాతక పొంతన', optMatchSub: 'గుణ మేళనం — 36కి స్కోరు', optReading: 'నా ప్రేమ ఫలితం', optReadingSub: 'ప్రేమ, వివాహం గురించి మీ జాతకం ఏమంటుంది',
+      optTraits: 'మీ ఆదర్శ భాగస్వామి', optTraitsSub: 'మీ 7వ ఇల్లు, శుక్రుడి ఆధారంగా సంబంధ శైలి',
+      traitsIntro: 'ఇది మీ జాతకం ఆధారంగా సంప్రదాయ సంబంధ-శైలి విశ్లేషణ — ఏ ఒక్క వ్యక్తి గురించో అంచనా కాదు.',
+      traitsHouse: 'మీ 7వ ఇల్లు (భాగస్వామ్యం) {sign}లో ఉంది (అధిపతి: {lord}), కాబట్టి మీరు తరచుగా {trait} వ్యక్తి వైపు ఆకర్షితులవుతారు.',
+      traitsVenus: 'మీ జాతకంలో ప్రేమకు కారకుడైన శుక్రుడు {sign}లో ఉన్నాడు — మీకు ఆప్యాయత {trait}గా అనిపిస్తుంది.',
       who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇతరులను చూడండి', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
@@ -153,6 +161,10 @@
     hi: {
       nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
       optMatch: 'कुंडली मिलान', optMatchSub: 'गुण मिलान — 36 में से अंक', optReading: 'मेरा प्रेम फल', optReadingSub: 'प्रेम और विवाह पर आपकी कुंडली क्या कहती है',
+      optTraits: 'आपका आदर्श साथी', optTraitsSub: 'आपके 7वें भाव और शुक्र से रिश्ते की शैली',
+      traitsIntro: 'यह आपकी कुंडली पर आधारित पारंपरिक संबंध-शैली है — किसी खास व्यक्ति की भविष्यवाणी नहीं।',
+      traitsHouse: 'आपका 7वां भाव (साझेदारी) {sign} में है (स्वामी: {lord}), इसलिए आप अक्सर ऐसे साथी की ओर आकर्षित होते हैं जो {trait} हो।',
+      traitsVenus: 'आपकी कुंडली में प्रेम के कारक शुक्र {sign} में हैं — आपके लिए स्नेह {trait} जैसा महसूस होता है।',
       who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दूसरों को देखें', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
@@ -490,9 +502,23 @@
     const mode = state.loveMode;
     $('love-options').replaceChildren(
       optionCard('💞', copy.optMatch, copy.optMatchSub, () => { state.loveMode = 'match'; renderRelationship(); }, mode === 'match'),
-      optionCard('💗', copy.optReading, copy.optReadingSub, () => { state.loveMode = 'reading'; state.showLoveReading = true; renderRelationship(); }, mode === 'reading'));
+      optionCard('💗', copy.optReading, copy.optReadingSub, () => { state.loveMode = 'reading'; state.showLoveReading = true; renderRelationship(); }, mode === 'reading'),
+      optionCard('✨', copy.optTraits, copy.optTraitsSub, () => { state.loveMode = 'traits'; renderRelationship(); }, mode === 'traits'));
     $('love-match').hidden = mode !== 'match';
     $('love-reading').hidden = mode !== 'reading';
+    $('love-traits').hidden = mode !== 'traits';
+    const traits = $('relationship-traits-result'); traits.replaceChildren();
+    if (mode === 'traits') {
+      if (!state.chart) traits.appendChild(el('p', 'muted-note', copy.needChart));
+      else {
+        try {
+          const read = chartUI.partnerTraits(state.chart, state.lang);
+          traits.append(el('p', 'muted-note', copy.traitsIntro),
+            el('p', null, fill(copy.traitsHouse, { sign: read.house7Sign, lord: read.house7Lord, trait: read.house7Trait })),
+            el('p', null, fill(copy.traitsVenus, { sign: read.venusSign, trait: read.venusTrait })));
+        } catch (_error) { traits.appendChild(el('p', null, copy.error)); }
+      }
+    }
     if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => {
       button.textContent = copy[button.dataset.role]; button.classList.toggle('on', button.dataset.role === state.myRole);
     });
@@ -1732,6 +1758,48 @@
       try { root.style.setProperty('--onb-ad', '270px'); } catch (_error) { /* optional */ }
     } catch (_error) { onbBannerOn = false; }
   }
+  // Onboarding: once date, time and place of birth are in, a short animated screen draws the chart being built
+  // (a wheel of the 12 signs, each planet settling into its real sign) while the real calculation runs on the server,
+  // ending on the Sun sign. Resolves to the same shape as post('/api/birth-chart', ...); never throws.
+  async function chartBuildOverlay(profile) {
+    const overlay = el('div', 'chart-build');
+    const card = el('div', 'chart-build-card');
+    const title = el('h3', 'chart-build-title', t('placingLights'));
+    const recap = el('p', 'chart-build-recap', [profile.dob, profile.tob, profile.pob].filter(Boolean).join(' · '));
+    const hint = el('p', 'chart-build-hint', t('chartBuildHint'));
+    const svg = svgEl('svg', { class: 'chart-build-wheel', viewBox: '0 0 200 200', 'aria-hidden': 'true' });
+    svg.append(svgEl('circle', { cx: 100, cy: 100, r: 90, class: 'chart-build-ring' }), svgEl('circle', { cx: 100, cy: 100, r: 62, class: 'chart-build-ring' }));
+    const angleOf = signIndex => (Math.PI / 180) * (-90 + signIndex * 30 + 15);
+    RASHI_GLYPHS.forEach((glyph, index) => {
+      const angle = angleOf(index);
+      svg.appendChild(svgEl('text', { x: 100 + 82 * Math.cos(angle), y: 100 + 82 * Math.sin(angle), class: 'chart-build-sign' })).textContent = glyph;
+    });
+    card.append(title, svg, recap, hint);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    const start = Date.now();
+    let result;
+    try { result = await post('/api/birth-chart', profile); } catch (_error) { result = { ok: false, body: null }; }
+    const elapsed = Date.now() - start;
+    if (elapsed < 900) await wait(900 - elapsed);   // the wheel is visible for a moment even when the server answers at once
+    if (result.ok && result.body && result.body.chart) {
+      const chart = result.body.chart;
+      for (const name of PLANET_ORDER) {
+        const position = chart.positions[name];
+        if (!position) continue;
+        const angle = angleOf(position.rashi_index - 1);   // rashi_index is 1-12 (Aries..Pisces); the wheel is drawn 0-11
+        const dot = svgEl('circle', { cx: 100 + 62 * Math.cos(angle), cy: 100 + 62 * Math.sin(angle), r: 6, class: 'chart-build-dot' });
+        dot.style.fill = PLANET_COLORS[name] || '#fff';
+        svg.appendChild(dot);
+        await wait(140);
+      }
+      title.textContent = `${signName(chart.positions.Sun.rashi_index)} ${bodyName('Sun')}`;
+      card.removeChild(hint);
+      await wait(900);
+    }
+    try { document.body.removeChild(overlay); } catch (_error) { /* gone */ }
+    return result;
+  }
   async function finishProfile(skip = false) {
     if (profileBusy) return;
     profileBusy = true;
@@ -1739,13 +1807,17 @@
     const dob = skip ? '' : $('welcome-dob').value, tob = skip ? '' : $('welcome-tob').value;
     state.userName = name;
     state.userDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : '';
-    if (state.userDob && /^\d{2}:\d{2}$/.test(tob)) saveProfile({ dob: state.userDob, pob: $('welcome-city').value.trim(), tob });
+    const pob = $('welcome-city').value.trim();
+    if (state.userDob && /^\d{2}:\d{2}$/.test(tob)) saveProfile({ dob: state.userDob, pob, tob });
     await onboardingBanner(false);
     await onboardingAd();
+    if (state.userDob && tob) {
+      const { ok, body } = await chartBuildOverlay({ dob: state.userDob, pob, tob });
+      if (ok && body && body.chart) { applyChart(body, { dob: state.userDob, pob, tob }); intake.step = null; resetChat(t('chartReady')); }
+    }
     finishWelcome();
     profileBusy = false;
-    if (state.userDob && tob) void restoreProfile();
-    else if (state.userDob) { try { document.querySelector('[name="dob"]').value = state.userDob; } catch (_error) { /* optional */ } }
+    if (state.userDob && !tob) { try { document.querySelector('[name="dob"]').value = state.userDob; } catch (_error) { /* optional */ } }
   }
   $('profile-next').addEventListener('click', () => { void finishProfile(); });
   $('profile-skip').addEventListener('click', () => { void finishProfile(true); });
