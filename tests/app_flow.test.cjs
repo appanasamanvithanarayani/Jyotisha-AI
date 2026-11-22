@@ -128,6 +128,7 @@ function boot(setup = {}) {
     if (url === '/api/moon-sign') return reply(setup.moonSign || { status: 'off', readings: null });
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
+    if (url === '/api/partner-portrait') { (setup.partnerPortraitRequests || (setup.partnerPortraitRequests = [])).push(JSON.parse(options.body)); return reply(setup.partnerPortrait || { status: 'off', image: null }); }
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -699,6 +700,49 @@ test('Love page: "Your ideal partner" reads relationship style from the 7th hous
   await settle();
   empty.element('love-options').children[2].listeners.click();
   assert.match(empty.element('relationship-traits-result').children[0].textContent, /Create your own Kundli first/);
+});
+
+test('"Your ideal partner": the illustration button sends only the two sign numbers, never free text, and shows the AI-illustration disclaimer', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const setup = { storage, birth: syntheticBirth, partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } };
+  const app = boot(setup);
+  await settle();
+  app.element('love-options').children[2].listeners.click();
+  const btn = app.element('relationship-traits-result').children.find(item => item.tag === 'button');
+  assert.equal(btn.textContent, '✨ See an illustrated impression');
+  assert.ok(!/reward-btn/.test(btn.className));                 // no AdMob configured: free, no ad
+  btn.listeners.click();
+  await settle();
+  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6 }]);   // sign numbers only
+  const img = app.element('relationship-traits-result').children.find(item => item.className === 'traits-portrait');
+  assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
+  assert.match(app.element('relationship-traits-result').children.at(-1).textContent, /not a real photo/);
+});
+
+test('"Your ideal partner" illustration: off by default shows a plain note; a rewarded ad is asked for when switched on', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const off = boot({ storage, birth: syntheticBirth });
+  await settle();
+  off.element('love-options').children[2].listeners.click();
+  off.element('relationship-traits-result').children.find(item => item.tag === 'button').listeners.click();
+  await settle();
+  assert.ok(off.element('relationship-traits-result').children.some(item => item.className === 'muted-note' && /not been turned on/.test(item.textContent)));
+
+  const ad = fakeRewardedAdMob();
+  const onStorage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  onStorage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const on = boot({ storage: onStorage, capacitor: { Plugins: { AdMob: ad.plugin } },
+    birth: syntheticBirth, appAds: { ...resultsConfig, rewarded: { ...resultsConfig.rewarded, partner: true } },
+    partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } });
+  await settle(); await settle();
+  on.element('love-options').children[2].listeners.click();
+  const btn = on.element('relationship-traits-result').children.find(item => item.tag === 'button');
+  assert.match(btn.className, /reward-btn/);
+  btn.listeners.click();
+  await earnReward(ad);
+  assert.ok(on.element('relationship-traits-result').children.some(item => item.className === 'traits-portrait'));
 });
 
 test('Home offers tool cards and the Kundli shows one view at a time, including doshas', async () => {

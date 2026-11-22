@@ -1146,8 +1146,8 @@
     const house7Rashi = (chart.ascendant.rashi_index - 1 + 6) % 12 + 1;
     const venusRashi = chart.positions.Venus.rashi_index;
     return {
-      house7Sign: signName(house7Rashi, language), house7Lord: bodyName(RASHI_LORDS[house7Rashi - 1], language), house7Trait: text[house7Rashi - 1],
-      venusSign: signName(venusRashi, language), venusTrait: text[venusRashi - 1],
+      house7Rashi, house7Sign: signName(house7Rashi, language), house7Lord: bodyName(RASHI_LORDS[house7Rashi - 1], language), house7Trait: text[house7Rashi - 1],
+      venusRashi, venusSign: signName(venusRashi, language), venusTrait: text[venusRashi - 1],
     };
   }
   const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
