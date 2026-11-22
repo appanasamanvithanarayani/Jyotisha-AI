@@ -375,16 +375,16 @@ body.page-chat #chat{height:calc(100dvh - 60px - 118px - var(--ad-height,0px))}
 .export-chat .chip-btn{width:auto;margin:0;padding:6px 11px;font-size:.78rem;min-height:0}
 body.page-chat #chat h2{padding-top:16px}
 
-.toast{position:fixed;z-index:60;left:50%;bottom:calc(112px + var(--ad-height,0px));transform:translateX(-50%);max-width:min(440px,calc(100% - 32px));padding:11px 16px;border-radius:14px;background:#2a1768;color:#fff;font-size:.9rem;text-align:center;box-shadow:0 10px 28px rgba(21,13,46,.4);animation:rise .25s ease both}
+.toast{position:fixed!important;z-index:60!important;left:50%;bottom:calc(112px + var(--ad-height,0px));transform:translateX(-50%);max-width:min(440px,calc(100% - 32px));padding:11px 16px;border-radius:14px;background:#2a1768;color:#fff;font-size:.9rem;text-align:center;box-shadow:0 10px 28px rgba(21,13,46,.4);animation:rise .25s ease both}
 
-.update-popup{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px;background:rgba(10,6,24,.6)}
+.update-popup{position:fixed!important;inset:0;z-index:90!important;display:grid;place-items:center;padding:20px;background:rgba(10,6,24,.6)}
 .update-popup-card{width:min(360px,100%);padding:22px 20px;border-radius:20px;background:var(--surface);color:var(--ink);box-shadow:0 20px 50px rgba(10,6,24,.5);animation:rise .25s ease both}
 .update-popup-title{display:block;font-size:1.05rem;margin-bottom:6px}
 .update-popup-body{margin:0 0 18px;font-size:.92rem;color:var(--muted);line-height:1.4}
 .update-popup-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .update-popup-actions .btn{flex:1}
 
-.chart-build{position:fixed;inset:0;z-index:110;display:grid;place-items:center;padding:20px;background:radial-gradient(520px 380px at 50% 30%,rgba(214,70,170,.35),transparent 70%),#150d2e}
+.chart-build{position:fixed!important;inset:0;z-index:110!important;display:grid;place-items:center;padding:20px;background:radial-gradient(520px 380px at 50% 30%,rgba(214,70,170,.35),transparent 70%),#150d2e}
 .chart-build-card{width:min(340px,100%);text-align:center;color:#fff}
 .chart-build-title{margin:0 0 14px;font-size:1.15rem;animation:pulse 1.8s ease-in-out infinite}
 .chart-build-wheel{width:min(280px,80vw);height:auto;margin:0 auto;display:block}
