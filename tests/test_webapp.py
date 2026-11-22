@@ -588,6 +588,41 @@ def test_assistant_requires_an_explicit_choice_when_both_provider_keys_exist(mon
     assert assistant.provider() == "gemini"
 
 
+def test_generate_image_is_gemini_only_and_parses_the_inline_image_data(monkeypatch):
+    import io
+    from jyotisha_ai import assistant
+
+    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+    assert assistant.generate_image("a prompt") is None
+    assert "Gemini" in assistant.LAST_ERROR["text"]
+
+    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    monkeypatch.setenv("JYOTISHA_GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+    seen = {}
+
+    def fake_urlopen(request, timeout):
+        seen["url"] = request.full_url
+        seen["key"] = request.get_header("X-goog-api-key")
+        seen["body"] = json.loads(request.data)
+        return io.BytesIO(json.dumps({"candidates": [{"content": {"parts": [
+            {"inlineData": {"mimeType": "image/png", "data": "ZmFrZQ=="}}]}}]}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
+    result = assistant.generate_image("draw a thing")
+    assert result == ("image/png", "ZmFrZQ==")
+    assert seen["url"] == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
+    assert seen["key"] == "test-gemini-key"
+    assert seen["body"]["contents"][0]["parts"][0]["text"] == "draw a thing"
+    assert seen["body"]["generationConfig"]["responseModalities"] == ["IMAGE"]
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", lambda *a, **k: io.BytesIO(b'{"candidates": [{"content": {"parts": [{"text": "no image"}]}}]}'))
+    assert assistant.generate_image("draw a thing") is None
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
+    assert assistant.generate_image("draw a thing") is None
+
+
 def test_gemini_key_and_provider_can_come_from_ignored_dotenv(tmp_path, monkeypatch):
     from jyotisha_ai import assistant
 
@@ -836,7 +871,7 @@ def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(l
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("JYOTISHA_ONBOARDING_ADS", "0")      # the welcome-step ads have their own test below
     monkeypatch.setenv("JYOTISHA_ONBOARDING_BANNER", "0")   # so has the ad box on the welcome steps
-    for feature in ("TAROT", "PALM", "RASHIPHAL", "LIFEGUIDE", "SIGNMATCH"):
+    for feature in ("TAROT", "PALM", "RASHIPHAL", "LIFEGUIDE", "SIGNMATCH", "PARTNER"):
         monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")    # the result ads have their own test below
     readiness = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     assert readiness() is None
@@ -870,15 +905,16 @@ def test_welcome_step_ads_are_on_by_default_and_can_be_switched_off(local_server
 def test_watch_an_ad_to_see_the_reading_is_on_for_tarot_palm_and_rashiphal_and_can_be_switched_off(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_TAROT", "JYOTISHA_REWARDED_PALM", "JYOTISHA_REWARDED_RASHIPHAL",
                  "JYOTISHA_REWARDED_LIFEGUIDE", "JYOTISHA_REWARDED_SIGNMATCH", "JYOTISHA_REWARDED_MOON", "JYOTISHA_REWARDED_NUMBERS",
-                 "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_ADMOB_REWARDED_ID"):
+                 "JYOTISHA_REWARDED_PARTNER", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_ADMOB_REWARDED_ID"):
         monkeypatch.delenv(name, raising=False)
     config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     assert config() is None                                                  # never without the app-ads master switch
     monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
-    assert config()["rewarded"] == {"tarot": True, "palm": True, "rashiphal": True, "lifeguide": True, "signmatch": True}   # Moon and Numerology are off until switched on
+    assert config()["rewarded"] == {"tarot": True, "palm": True, "rashiphal": True, "lifeguide": True, "signmatch": True, "partner": True}   # Moon and Numerology are off until switched on
     assert config()["rewarded_id"] == "ca-app-pub-3940256099942544/5224354917"   # Google's test unit until one is set
     monkeypatch.setenv("JYOTISHA_REWARDED_MOON", "1")
     monkeypatch.setenv("JYOTISHA_REWARDED_RASHIPHAL", "0")
+    monkeypatch.setenv("JYOTISHA_REWARDED_PARTNER", "0")
     assert config()["rewarded"] == {"tarot": True, "palm": True, "lifeguide": True, "signmatch": True, "moon": True}
     for feature in ("TAROT", "PALM", "LIFEGUIDE", "SIGNMATCH", "MOON"):
         monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")
@@ -888,7 +924,7 @@ def test_watch_an_ad_to_see_the_reading_is_on_for_tarot_palm_and_rashiphal_and_c
 def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_master_switch(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_ADMOB_REWARDED_ID", "JYOTISHA_INTERSTITIAL", "JYOTISHA_ADMOB_INTERSTITIAL_ID", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING"):
         monkeypatch.delenv(name, raising=False)
-    for name in ("JYOTISHA_REWARDED_TAROT", "JYOTISHA_REWARDED_PALM", "JYOTISHA_REWARDED_RASHIPHAL", "JYOTISHA_REWARDED_LIFEGUIDE", "JYOTISHA_REWARDED_SIGNMATCH", "JYOTISHA_ONBOARDING_ADS"):
+    for name in ("JYOTISHA_REWARDED_TAROT", "JYOTISHA_REWARDED_PALM", "JYOTISHA_REWARDED_RASHIPHAL", "JYOTISHA_REWARDED_LIFEGUIDE", "JYOTISHA_REWARDED_SIGNMATCH", "JYOTISHA_REWARDED_PARTNER", "JYOTISHA_ONBOARDING_ADS"):
         monkeypatch.setenv(name, "0")
     config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]
     monkeypatch.setenv("JYOTISHA_REWARDED_KUNDLI", "1")
@@ -910,7 +946,7 @@ def test_rewarded_and_interstitial_ads_are_separate_switches_under_the_app_ads_m
 def test_chat_allowance_switch_sets_free_and_bonus_question_counts(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_REWARDED_KUNDLI", "JYOTISHA_REWARDED_CHAT", "JYOTISHA_CHAT_FREE_QUESTIONS", "JYOTISHA_CHAT_BONUS_QUESTIONS", "JYOTISHA_ADMOB_REWARDED_ID"):
         monkeypatch.delenv(name, raising=False)
-    for feature in ("TAROT", "PALM", "RASHIPHAL", "LIFEGUIDE", "SIGNMATCH"):
+    for feature in ("TAROT", "PALM", "RASHIPHAL", "LIFEGUIDE", "SIGNMATCH", "PARTNER"):
         monkeypatch.setenv(f"JYOTISHA_REWARDED_{feature}", "0")         # the result ads have their own test
     monkeypatch.setenv("JYOTISHA_APP_ADS", "1")
     config = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["app_ads"]

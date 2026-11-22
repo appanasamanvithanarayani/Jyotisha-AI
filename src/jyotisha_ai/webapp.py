@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, push, settings_store as store, tarot
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, partner_portrait, push, settings_store as store, tarot
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -160,7 +160,7 @@ def _app_ads() -> dict | None:
     rewarded_kundli = store.value("JYOTISHA_REWARDED_KUNDLI") == "1"
     rewarded_chat = store.value("JYOTISHA_REWARDED_CHAT") == "1"
     # "Watch an ad to see the reading" for Tarot and Palm (every reading) and Rashiphal (once a day), like Palm AI.
-    result_defaults = (("tarot", "1"), ("palm", "1"), ("rashiphal", "1"), ("lifeguide", "1"), ("signmatch", "1"), ("moon", "0"), ("numbers", "0"))
+    result_defaults = (("tarot", "1"), ("palm", "1"), ("rashiphal", "1"), ("lifeguide", "1"), ("signmatch", "1"), ("moon", "0"), ("numbers", "0"), ("partner", "1"))
     rewarded_results = {feature: store.value(f"JYOTISHA_REWARDED_{feature.upper()}", default) == "1" for feature, default in result_defaults}
     if any(rewarded_results.values()):
         config["rewarded"] = {feature: True for feature, on in rewarded_results.items() if on}
@@ -744,6 +744,9 @@ class LocalHandler(BaseHTTPRequestHandler):
         if allowed and path == "/api/palm":
             # A photo read by the AI costs more: a few a day per visitor, on top of the shared AI allowance below.
             allowed = limiter.allow(f"palm-day:{who}", store.number("JYOTISHA_PALM_PER_VISITOR_DAY", 5), 86400.0)
+        if allowed and path == "/api/partner-portrait":
+            # Image generation costs more still: its own, smaller daily allowance per visitor.
+            allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 3), 86400.0)
         if allowed and path in ("/api/ask", "/api/tarot", "/api/palm"):   # AI calls share the same allowance
             today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
             # These three can be changed in the admin panel without restarting.
@@ -1044,7 +1047,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1100,12 +1103,14 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = tarot.reading(payload)
             elif path == "/api/palm":
                 result = palm.reading(payload)
+            elif path == "/api/partner-portrait":
+                result = partner_portrait.portrait(payload)
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
             self._json(400, {"error": str(exc)})
             return
-        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or "reading" in result or "variants" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
+        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or "reading" in result or "variants" in result or "image" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
 
 
 def serve_public(port: int | None = None) -> None:

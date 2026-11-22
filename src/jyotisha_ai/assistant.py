@@ -17,6 +17,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 MODEL = os.environ.get("JYOTISHA_ASSISTANT_MODEL", "claude-haiku-5-5")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
 DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
 MAX_QUESTION = 300
 MAX_FACTS = 100
 MAX_FACT_CHARS = 700
@@ -348,3 +349,52 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
             _fail("The reply was cut off (output limit reached)")
             return None
     return text.strip() or None
+
+
+def generate_image(prompt: str, timeout: float = 60.0) -> tuple[str, str] | None:
+    """One-shot image generation (Gemini only: Claude/Anthropic has no image generation). (mime type, base64 data) or
+    None, with the reason kept in LAST_ERROR."""
+    LAST_ERROR["text"] = ""
+    if provider() != "gemini":
+        _fail("Image generation needs the Gemini provider")
+        return None
+    model = _setting("JYOTISHA_GEMINI_IMAGE_MODEL") or DEFAULT_GEMINI_IMAGE_MODEL
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+        _fail(f"Invalid Gemini image model name {model!r}")
+        return None
+    body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": {"responseModalities": ["IMAGE"]}}
+    request = urllib.request.Request(f"{GEMINI_URL}{model}:generateContent", data=json.dumps(body).encode("utf-8"), method="POST",
+                                     headers={"content-type": "application/json", "x-goog-api-key": _setting("GEMINI_API_KEY")})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            reply = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            error = json.loads(exc.read()).get("error", {})
+            detail = error.get("message", "") if isinstance(error, dict) else str(error)
+        except (ValueError, OSError, AttributeError):
+            pass
+        _fail(f"gemini image model {model} answered HTTP {exc.code}: {detail}".strip())
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError) as exc:
+        _fail(f"Could not reach gemini: {type(exc).__name__}")
+        return None
+    if not isinstance(reply, dict):
+        _fail("Unexpected reply from the AI")
+        return None
+    candidates = reply.get("candidates") or []
+    first = candidates[0] if candidates and isinstance(candidates[0], dict) else {}
+    content = first.get("content")
+    parts = content.get("parts", []) if isinstance(content, dict) else []
+    for part in parts:
+        if not isinstance(part, dict):
+            continue
+        inline = part.get("inlineData") or part.get("inline_data")
+        if isinstance(inline, dict) and isinstance(inline.get("data"), str) and inline["data"]:
+            mime = inline.get("mimeType") or inline.get("mime_type") or "image/png"
+            return mime, inline["data"]
+    finish = first.get("finishReason", "")
+    block = (reply.get("promptFeedback") or {}).get("blockReason", "")
+    _fail(f"No image in the reply ({finish or block or 'no image part'})")
+    return None
