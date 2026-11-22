@@ -44,6 +44,17 @@ test('experimental chart overlap is symmetric, transparent, and rejects missing 
   assert.throws(() => ui.chartOverlap(null, chart), /Two calculated/);
 });
 
+test('partnerTraits reads a relationship style from the 7th house (and its lord) and Venus alone, never from two charts', () => {
+  const read = ui.partnerTraits(chart, 'en');
+  assert.equal(read.house7Sign, 'Cancer');
+  assert.equal(read.house7Lord, 'Moon');
+  assert.equal(read.house7Trait, 'caring, intuitive and protective');
+  assert.equal(read.venusSign, 'Libra');
+  assert.equal(read.venusTrait, 'charming, fair-minded and easy to talk to');
+  assert.throws(() => ui.partnerTraits({ ...chart, positions: { ...chart.positions, Venus: null } }), /incomplete/);
+  assert.throws(() => ui.partnerTraits(null), /incomplete/);
+});
+
 test('South Indian D1 layout contains twelve fixed, unique signs', () => {
   const cells = ui.buildSouthIndianChart(chart);
   assert.equal(cells.length, 12);

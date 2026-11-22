@@ -15,6 +15,8 @@
     "ui": {
       "aligning": "Aligning your stars…",
       "mayContainAds": "This may contain ads",
+      "placingLights": "Placing your lights…",
+      "chartBuildHint": "Reading your birth chart from your date, time and place of birth.",
       "updateAvailableTitle": "Update available",
       "updateAvailableBody": "A newer version of Jyotirmaya is ready, with the latest features and fixes.",
       "updateNow": "Update now",
