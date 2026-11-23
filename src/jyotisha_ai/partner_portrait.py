@@ -3,7 +3,8 @@ the chart's sign placements (never a photo, never a specific real person).
 
 The client sends only the two sign numbers (1-12, Aries..Pisces); this module looks up a fixed, canonical adjective
 phrase per sign and builds the image prompt itself, so no free text from the client ever reaches the AI prompt.
-Gemini only: Claude/Anthropic has no image generation.
+Uses whichever image provider is configured in assistant.image_provider() (Gemini or Flux via fal.ai) — set
+independently of the text-chat provider, since Claude/Anthropic has no image generation of its own.
 """
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ PROMPT = (
 
 
 def enabled() -> bool:
-    return store.value("JYOTISHA_AI_PARTNER_PORTRAIT", "0") == "1" and assistant.provider() == "gemini"
+    return store.value("JYOTISHA_AI_PARTNER_PORTRAIT", "0") == "1" and assistant.image_provider() is not None
 
 
 def check_request(payload: object) -> tuple[int, int]:

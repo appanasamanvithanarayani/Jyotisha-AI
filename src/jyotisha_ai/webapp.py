@@ -883,7 +883,7 @@ class LocalHandler(BaseHTTPRequestHandler):
                 self._json(429, {"error": "slow down"})
                 return
             if not partner_portrait.enabled():
-                self._json(200, {"ok": False, "detail": "Off: needs the Gemini provider and the 'AI ideal-partner illustration' setting both switched on"})
+                self._json(200, {"ok": False, "detail": "Off: needs an image provider (Gemini or fal.ai) with its API key set, and the 'AI ideal-partner illustration' setting switched on"})
                 return
             found = assistant.generate_image("A simple abstract pattern of soft pastel watercolour shapes, no text, no people.")
             self._json(200, {"ok": found is not None, "detail": "" if found is not None else (assistant.LAST_ERROR["text"] or "no image in the reply")})

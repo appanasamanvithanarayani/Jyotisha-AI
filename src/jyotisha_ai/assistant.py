@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -351,13 +352,36 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
     return text.strip() or None
 
 
+FAL_URL = "https://fal.run/"
+DEFAULT_FAL_MODEL = "fal-ai/flux/schnell"
+
+
+def image_provider() -> str | None:
+    """Which image-generation backend is configured (independent of the text-chat provider above): "gemini",
+    "fal" (Flux, via fal.ai), or None if neither has both a provider choice and its key set."""
+    selected = _setting("JYOTISHA_IMAGE_PROVIDER").strip().lower()
+    if selected == "fal" and _setting("FAL_API_KEY"):
+        return "fal"
+    if selected == "gemini" and _setting("GEMINI_API_KEY"):
+        return "gemini"
+    return None
+
+
 def generate_image(prompt: str, timeout: float = 60.0) -> tuple[str, str] | None:
-    """One-shot image generation (Gemini only: Claude/Anthropic has no image generation). (mime type, base64 data) or
+    """One-shot image generation with the configured image provider (Gemini or Flux via fal.ai; set independently of
+    the text-chat provider, since Claude/Anthropic has no image generation at all). (mime type, base64 data) or
     None, with the reason kept in LAST_ERROR."""
     LAST_ERROR["text"] = ""
-    if provider() != "gemini":
-        _fail("Image generation needs the Gemini provider")
+    selected = image_provider()
+    if selected is None:
+        _fail("No image provider is set up (choose one and add its API key)")
         return None
+    if selected == "fal":
+        return _generate_image_fal(prompt, timeout)
+    return _generate_image_gemini(prompt, timeout)
+
+
+def _generate_image_gemini(prompt: str, timeout: float) -> tuple[str, str] | None:
     model = _setting("JYOTISHA_GEMINI_IMAGE_MODEL") or DEFAULT_GEMINI_IMAGE_MODEL
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
         _fail(f"Invalid Gemini image model name {model!r}")
@@ -398,3 +422,41 @@ def generate_image(prompt: str, timeout: float = 60.0) -> tuple[str, str] | None
     block = (reply.get("promptFeedback") or {}).get("blockReason", "")
     _fail(f"No image in the reply ({finish or block or 'no image part'})")
     return None
+
+
+def _generate_image_fal(prompt: str, timeout: float) -> tuple[str, str] | None:
+    model = _setting("JYOTISHA_FAL_MODEL") or DEFAULT_FAL_MODEL
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}", model):
+        _fail(f"Invalid fal.ai model name {model!r}")
+        return None
+    body = json.dumps({"prompt": prompt, "num_images": 1}).encode("utf-8")
+    request = urllib.request.Request(f"{FAL_URL}{model}", data=body, method="POST",
+                                     headers={"content-type": "application/json", "authorization": f"Key {_setting('FAL_API_KEY')}"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            reply = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            error = json.loads(exc.read())
+            detail = error.get("detail", "") if isinstance(error, dict) else str(error)
+        except (ValueError, OSError, AttributeError):
+            pass
+        _fail(f"fal.ai model {model} answered HTTP {exc.code}: {detail}".strip())
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError) as exc:
+        _fail(f"Could not reach fal.ai: {type(exc).__name__}")
+        return None
+    images = reply.get("images") if isinstance(reply, dict) else None
+    url = images[0].get("url") if images and isinstance(images[0], dict) else None
+    if not isinstance(url, str) or not url.startswith("https://"):
+        _fail("No image in the reply from fal.ai")
+        return None
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as image_response:
+            data = image_response.read()
+            mime = image_response.headers.get_content_type() or "image/png"
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
+        _fail(f"Could not download the generated image from fal.ai: {type(exc).__name__}")
+        return None
+    return mime, base64.b64encode(data).decode("ascii")
