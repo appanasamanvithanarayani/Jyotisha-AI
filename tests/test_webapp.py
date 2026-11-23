@@ -588,17 +588,18 @@ def test_assistant_requires_an_explicit_choice_when_both_provider_keys_exist(mon
     assert assistant.provider() == "gemini"
 
 
-def test_generate_image_is_gemini_only_and_parses_the_inline_image_data(monkeypatch):
+def test_generate_image_needs_its_own_provider_and_key_independent_of_the_chat_provider(monkeypatch):
     import io
     from jyotisha_ai import assistant
 
+    monkeypatch.delenv("JYOTISHA_IMAGE_PROVIDER", raising=False)
     monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "anthropic")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")   # a Gemini key alone is not enough without the choice below
     assert assistant.generate_image("a prompt") is None
-    assert "Gemini" in assistant.LAST_ERROR["text"]
+    assert "No image provider" in assistant.LAST_ERROR["text"]
 
-    monkeypatch.setenv("JYOTISHA_ASSISTANT_PROVIDER", "gemini")
-    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    monkeypatch.setenv("JYOTISHA_IMAGE_PROVIDER", "gemini")
     monkeypatch.setenv("JYOTISHA_GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
     seen = {}
 
@@ -621,6 +622,45 @@ def test_generate_image_is_gemini_only_and_parses_the_inline_image_data(monkeypa
     assert assistant.generate_image("draw a thing") is None
     monkeypatch.setattr(assistant.urllib.request, "urlopen", lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
     assert assistant.generate_image("draw a thing") is None
+
+
+def test_generate_image_with_fal_flux_downloads_and_base64_encodes_the_result(monkeypatch):
+    import io
+    from jyotisha_ai import assistant
+
+    monkeypatch.setenv("JYOTISHA_IMAGE_PROVIDER", "fal")
+    monkeypatch.setenv("FAL_API_KEY", "test-fal-key")
+    seen = {}
+
+    def fake_urlopen(request, timeout):
+        if isinstance(request, str):   # the follow-up GET to download the image bytes
+            seen["image_url"] = request
+
+            class Headers:
+                def get_content_type(self):
+                    return "image/png"
+
+            response = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 20)
+            response.headers = Headers()
+            return response
+        seen["url"] = request.full_url
+        seen["auth"] = request.get_header("Authorization")
+        seen["body"] = json.loads(request.data)
+        return io.BytesIO(json.dumps({"images": [{"url": "https://fal.media/files/fake.png"}]}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
+    mime, data = assistant.generate_image("draw a thing")
+    assert mime == "image/png"
+    import base64
+    assert base64.b64decode(data).startswith(b"\x89PNG")
+    assert seen["url"] == "https://fal.run/fal-ai/flux/schnell"
+    assert seen["auth"] == "Key test-fal-key"
+    assert seen["body"]["prompt"] == "draw a thing"
+    assert seen["image_url"] == "https://fal.media/files/fake.png"
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", lambda *a, **k: io.BytesIO(b'{"images": []}'))
+    assert assistant.generate_image("draw a thing") is None
+    assert "No image" in assistant.LAST_ERROR["text"]
 
 
 def test_gemini_key_and_provider_can_come_from_ignored_dotenv(tmp_path, monkeypatch):
