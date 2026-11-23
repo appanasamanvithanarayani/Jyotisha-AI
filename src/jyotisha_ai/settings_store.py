@@ -86,6 +86,12 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_ASK_PER_VISITOR_MINUTE", "AI chat", "AI questions per visitor per minute", "Slows down automated use.", "int", "8", minimum=1, maximum=1000),
     Setting("GEMINI_API_KEY", "API keys", "Gemini API key", "Write-only: once saved it is shown only as the last four characters.", "secret"),
     Setting("ANTHROPIC_API_KEY", "API keys", "Anthropic (Claude) API key", "Write-only, like the Gemini key.", "secret"),
+    # ---- Payments (an alternative to watching an ad; off until a provider is chosen and its keys are set)
+    Setting("JYOTISHA_PAYMENTS_PROVIDER", "Payments", "Payment provider", "Lets users pay a small amount instead of watching an ad, for extra AI questions or a single reading unlock. Off (empty) until you add the keys below and choose a provider; no card or UPI details ever reach this server, only Razorpay's own signed confirmation.", "choice", "", choices=("", "razorpay")),
+    Setting("RAZORPAY_KEY_ID", "Payments", "Razorpay Key ID", "From your Razorpay dashboard (Settings -> API Keys). Safe to use in the app itself.", "pattern", "", pattern=r"rzp_(live|test)_[A-Za-z0-9]{10,}", example="rzp_live_abcdEFGH1234"),
+    Setting("RAZORPAY_KEY_SECRET", "Payments", "Razorpay Key Secret", "Write-only, like the AI provider keys. Never shown to users or sent to the browser.", "secret"),
+    Setting("JYOTISHA_PRICE_CHAT_BONUS_RS", "Payments", "Price: extra AI questions (Rs)", "Pay instead of watching an ad, for the same number of bonus questions set above.", "int", "9", minimum=1, maximum=999),
+    Setting("JYOTISHA_PRICE_UNLOCK_RS", "Payments", "Price: unlock one reading (Rs)", "Pay instead of watching an ad, for one Palm, Tarot, Life Guide, Sign match, Moon sign, Rashiphal or ideal-partner reading.", "int", "9", minimum=1, maximum=999),
     # ---- Messages to users
     Setting("JYOTISHA_ANNOUNCEMENT", "Announcement", "Announcement text", "Shown as a banner at the top of the app and website. Empty hides it.", "text", "", maxlen=300),
     Setting("JYOTISHA_ANNOUNCEMENT_LINK", "Announcement", "Announcement link (optional)", "Must start with https://", "pattern", "", pattern=r"https://[^\s<>\"']{3,300}", example="https://example.com/news"),

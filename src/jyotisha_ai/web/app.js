@@ -8,7 +8,7 @@
   const matchUI = window.matchUI;
 
   const state = {
-    lang: 'en', city: '', onboarded: false, assistant: false, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
+    lang: 'en', city: '', onboarded: false, assistant: false, payments: null, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
     view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
     chart: null, details: null, resolved: null, partnerChart: null, partnerDetails: null, firstChart: null, firstDetails: null, matchWho: 'me', showLoveReading: false, loveMode: null, myRole: 'groom', kundliView: 'chart', festivals: null, festivalsAll: false, kundli: { style: 'south', division: 'd1' },
     partnerPortrait: { status: 'idle', image: null },
@@ -1482,6 +1482,7 @@
     document.querySelectorAll('.place-options').forEach(node => node.setAttribute('aria-label', t('matchingCitiesAria')));
     $('chat-question').placeholder = t('questionPlaceholder');
     $('dp-note').textContent = t('dpNote');
+    try { document.documentElement.style.setProperty('--free-label', JSON.stringify(t('freeBadge'))); } catch (_error) { /* optional */ }
     renderHome();
     renderTools();
     renderTodayStrip();
@@ -3822,7 +3823,7 @@
   // "▶ See my reading": a rewarded ad before a Tarot or palm reading, and once a day before the Rashiphal (like Palm AI).
   // Only in the Android app with ads on and the feature switched on in the admin panel; elsewhere results are free.
   const rewardedFor = feature => { const { config, admob } = appAds; return !!(config && admob && config.rewarded && config.rewarded[feature] === true && adUnitOk(config.rewarded_id)); };
-  const watchForResult = () => watchRewardedAd('', false, false);   // the ▶ button itself is the user's choice: no extra prompt
+  const watchForResult = () => unlockGate('unlock', '', false, false);   // the ▶ button itself is the user's choice: no extra prompt, unless paying is also offered
   const RASHI_UNLOCK_KEY = 'jyotisha.rashi-unlock.v1';
   const rashiUnlocked = () => { try { return window.localStorage.getItem(RASHI_UNLOCK_KEY) === localIso(new Date()); } catch (_error) { return false; } };
   // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
@@ -3830,7 +3831,70 @@
   function rewardedGate() {
     const { config } = appAds;
     if (!config || config.rewarded_kundli !== true || Date.now() < appAds.freeUntil) return Promise.resolve(true);
-    return watchRewardedAd(t('watchAdPrompt'), true);
+    return unlockGate('unlock', t('watchAdPrompt'), true);
+  }
+  // Pay a small amount instead of watching an ad (off unless the admin configures Razorpay: readiness.payments).
+  // 'unlock' covers one Palm/Tarot/Life Guide/Sign match/Moon sign/Rashiphal/ideal-partner reading or Kundli;
+  // 'chat_bonus' covers extra AI questions. Falls straight back to the plain ad flow when payments are not set up.
+  let razorpayScript = null;
+  function ensureRazorpayScript() {
+    if (window.Razorpay) return Promise.resolve();
+    if (!razorpayScript) razorpayScript = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(); script.onerror = () => reject(new Error('razorpay script failed to load'));
+      document.head.appendChild(script);
+    });
+    return razorpayScript;
+  }
+  async function payViaRazorpay(feature) {
+    try {
+      const made = await post('/api/payment/create-order', { feature });
+      if (!made.ok || !made.body || made.body.status !== 'ok') return false;
+      const order = made.body;
+      await ensureRazorpayScript();
+      return await new Promise(resolve => {
+        const checkout = new window.Razorpay({
+          key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
+          handler: async response => {
+            try {
+              const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, feature });
+              resolve(verified.ok && verified.body && verified.body.status === 'ok');
+            } catch (_error) { resolve(false); }
+          },
+          modal: { ondismiss: () => resolve(false) },
+        });
+        checkout.open();
+      });
+    } catch (_error) { return false; }
+  }
+  // A small card with "Watch a free ad" and "Pay ₹N instead"; resolves 'ad', 'pay' or 'cancel'.
+  function unlockChooser(promptText, priceRs) {
+    return new Promise(resolve => {
+      const overlay = el('div', 'update-popup');
+      const card = el('div', 'update-popup-card');
+      const adBtn = el('button', 'btn', t('watchFreeAdBtn')); adBtn.type = 'button';
+      const payBtn = el('button', 'link-btn', fill(t('payInsteadBtn'), { price: priceRs })); payBtn.type = 'button';
+      const actions = el('div', 'update-popup-actions'); actions.append(payBtn, adBtn);
+      card.append(el('p', 'update-popup-body', promptText), actions);
+      overlay.appendChild(card);
+      const close = result => { try { document.body.removeChild(overlay); } catch (_error) { /* gone */ } resolve(result); };
+      adBtn.addEventListener('click', () => close('ad'));
+      payBtn.addEventListener('click', () => close('pay'));
+      document.body.appendChild(overlay);
+    });
+  }
+  async function unlockGate(feature, promptText, startsFreeWindow, ask = true) {
+    if (!state.payments) return watchRewardedAd(promptText, startsFreeWindow, ask);
+    const price = feature === 'chat_bonus' ? state.payments.chat_bonus_rs : state.payments.unlock_rs;
+    const choice = await unlockChooser(promptText || t('unlockPrompt'), price);
+    if (choice === 'pay') {
+      const ok = await payViaRazorpay(feature);
+      if (ok && startsFreeWindow) appAds.freeUntil = Date.now() + ((appAds.config && appAds.config.rewarded_free_minutes) || 10) * 60000;
+      return ok;
+    }
+    if (choice === 'ad') return watchRewardedAd('', startsFreeWindow, false);
+    return false;
   }
   // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
   function watchRewardedAd(promptText, startsFreeWindow, ask = true) {
@@ -3870,7 +3934,7 @@
     const quota = readQuota();
     if (quota.used < config.chat_free_questions + quota.bonus) { quota.used += 1; writeQuota(quota); return true; }
     const prompt = t('chatLimitPrompt').replace('{free}', config.chat_free_questions).replace('{bonus}', config.chat_bonus_questions);
-    if (!(await watchRewardedAd(prompt, false))) return false;
+    if (!(await unlockGate('chat_bonus', prompt, false))) return false;
     quota.bonus += config.chat_bonus_questions; quota.used += 1; writeQuota(quota);
     return true;
   }
@@ -4272,6 +4336,7 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
+    state.payments = readiness.payments && typeof readiness.payments.key_id === 'string' ? readiness.payments : null;
     startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);

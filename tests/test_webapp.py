@@ -1092,3 +1092,41 @@ def test_the_ad_box_on_the_welcome_steps_is_on_by_default(local_server, monkeypa
     assert config()["onboarding_banner"] is True
     monkeypatch.setenv("JYOTISHA_ONBOARDING_BANNER", "0")
     assert "onboarding_banner" not in config()
+
+
+def test_payments_are_off_by_default_and_appear_in_readiness_once_configured(local_server, monkeypatch):
+    for name in ("JYOTISHA_PAYMENTS_PROVIDER", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "JYOTISHA_PRICE_CHAT_BONUS_RS", "JYOTISHA_PRICE_UNLOCK_RS"):
+        monkeypatch.delenv(name, raising=False)
+    payments = lambda: json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["payments"]
+    assert payments() is None
+    monkeypatch.setenv("JYOTISHA_PAYMENTS_PROVIDER", "razorpay")
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_abc123")
+    assert payments() is None            # key id alone is not enough; the secret is required too
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "shh")
+    assert payments() == {"key_id": "rzp_test_abc123", "chat_bonus_rs": 9, "unlock_rs": 9}
+    monkeypatch.setenv("JYOTISHA_PRICE_UNLOCK_RS", "14")
+    assert payments()["unlock_rs"] == 14
+
+
+def test_payment_endpoints_create_a_real_order_and_verify_the_signature(local_server, monkeypatch):
+    import io
+    monkeypatch.setenv("JYOTISHA_PAYMENTS_PROVIDER", "razorpay")
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_abc123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "my-secret")
+
+    def fake_urlopen(req, timeout=0):
+        return io.BytesIO(json.dumps({"id": "order_abc123"}).encode())
+
+    monkeypatch.setattr(webapp.payments.urllib.request, "urlopen", fake_urlopen)
+    status, _, body = request(local_server, "POST", "/api/payment/create-order", json.dumps({"feature": "unlock"}), {"Content-Type": "application/json"})
+    result = json.loads(body)
+    assert status == 200 and result["status"] == "ok" and result["order_id"] == "order_abc123" and result["amount"] == 900
+
+    import hashlib, hmac
+    genuine = hmac.new(b"my-secret", b"order_abc123|pay_xyz", hashlib.sha256).hexdigest()
+    status, _, body = request(local_server, "POST", "/api/payment/verify",
+        json.dumps({"order_id": "order_abc123", "payment_id": "pay_xyz", "signature": genuine, "feature": "unlock"}), {"Content-Type": "application/json"})
+    assert status == 200 and json.loads(body) == {"status": "ok", "feature": "unlock"}
+    status, _, body = request(local_server, "POST", "/api/payment/verify",
+        json.dumps({"order_id": "order_abc123", "payment_id": "pay_xyz", "signature": "0" * 64, "feature": "unlock"}), {"Content-Type": "application/json"})
+    assert status == 200 and json.loads(body) == {"status": "invalid"}
