@@ -878,6 +878,15 @@ class LocalHandler(BaseHTTPRequestHandler):
             sample = {"question": "Reply with the single word OK.", "language": "en", "facts": ["Test: connection check"], "history": []}
             result = assistant.ask_status(sample)
             self._json(200, {"provider": assistant.provider(), "ok": "answer" in result, "status": result.get("status", "ok")})
+        elif path == "/api/admin/test-image":
+            if not limiter.allow(f"admin-image:{who}", 4, 60.0):
+                self._json(429, {"error": "slow down"})
+                return
+            if not partner_portrait.enabled():
+                self._json(200, {"ok": False, "detail": "Off: needs the Gemini provider and the 'AI ideal-partner illustration' setting both switched on"})
+                return
+            found = assistant.generate_image("A simple abstract pattern of soft pastel watercolour shapes, no text, no people.")
+            self._json(200, {"ok": found is not None, "detail": "" if found is not None else (assistant.LAST_ERROR["text"] or "no image in the reply")})
         elif path == "/api/admin/nudges":
             # Today's AI-written notification copy for one language (writes it now if it does not exist yet).
             language = payload.get("language")

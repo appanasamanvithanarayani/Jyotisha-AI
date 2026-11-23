@@ -158,3 +158,25 @@ def test_counters_keep_totals_only():
 def test_login_attempts_are_limited(panel):
     results = [call(panel, "POST", "/api/admin/login", {"password": "wrong-password-here"})[0] for _ in range(admin.MAX_FAILURES * 3 + 1)]
     assert results[-1] == 429
+
+
+def test_test_image_reports_off_and_the_real_failure_reason(panel, monkeypatch):
+    from jyotisha_ai import partner_portrait
+
+    cookie = sign_in(panel)
+    monkeypatch.delenv("JYOTISHA_AI_PARTNER_PORTRAIT", raising=False)
+    monkeypatch.delenv("JYOTISHA_ASSISTANT_PROVIDER", raising=False)
+    status, _, body = call(panel, "POST", "/api/admin/test-image", {}, cookie)
+    result = json.loads(body)
+    assert status == 200 and result["ok"] is False and "Off:" in result["detail"]
+
+    monkeypatch.setattr(partner_portrait, "enabled", lambda: True)
+    monkeypatch.setattr(partner_portrait.assistant, "generate_image", lambda prompt, **kwargs: None)
+    monkeypatch.setattr(partner_portrait.assistant, "LAST_ERROR", {"text": "gemini image model x answered HTTP 404: not found"})
+    status, _, body = call(panel, "POST", "/api/admin/test-image", {}, cookie)
+    result = json.loads(body)
+    assert status == 200 and result["ok"] is False and result["detail"] == "gemini image model x answered HTTP 404: not found"
+
+    monkeypatch.setattr(partner_portrait.assistant, "generate_image", lambda prompt, **kwargs: ("image/png", "ZmFrZQ=="))
+    status, _, body = call(panel, "POST", "/api/admin/test-image", {}, cookie)
+    assert status == 200 and json.loads(body) == {"ok": True, "detail": ""}

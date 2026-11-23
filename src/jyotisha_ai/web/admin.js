@@ -85,7 +85,15 @@
       catch (error) { toast(error.message, true); }
       test.disabled = false;
     });
-    status.appendChild(test); view.appendChild(status);
+    status.appendChild(test);
+    const testImage = el('button', 'btn', 'Test the ideal-partner illustration'); testImage.type = 'button'; testImage.style.marginTop = '10px'; testImage.style.marginInlineStart = '10px';
+    testImage.addEventListener('click', async () => {
+      testImage.disabled = true;
+      try { const result = await api('/api/admin/test-image', {}); toast(result.ok ? 'Image generation works' : `Image problem: ${result.detail}`, !result.ok); }
+      catch (error) { toast(error.message, true); }
+      testImage.disabled = false;
+    });
+    status.appendChild(testImage); view.appendChild(status);
 
     const usage = el('div', 'panel'); usage.appendChild(el('h2', null, 'Last 14 days'));
     usage.appendChild(el('p', 'hint', 'Only totals are kept. Visitors are counted from a one-way code that is thrown away at the end of each day.'));
