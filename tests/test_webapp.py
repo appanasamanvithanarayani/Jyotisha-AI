@@ -663,6 +663,63 @@ def test_generate_image_with_fal_flux_downloads_and_base64_encodes_the_result(mo
     assert "No image" in assistant.LAST_ERROR["text"]
 
 
+def test_generate_image_with_black_forest_labs_polls_until_ready_then_downloads_the_result(monkeypatch):
+    import io
+    from jyotisha_ai import assistant
+
+    monkeypatch.setenv("JYOTISHA_IMAGE_PROVIDER", "bfl")
+    monkeypatch.setenv("BFL_API_KEY", "test-bfl-key")
+    monkeypatch.setattr(assistant.time, "sleep", lambda seconds: None)   # no real waiting in the test
+    seen = {"polls": 0}
+
+    def fake_urlopen(request, timeout):
+        if isinstance(request, str):   # the follow-up GET to download the image bytes
+            seen["image_url"] = request
+
+            class Headers:
+                def get_content_type(self):
+                    return "image/jpeg"
+
+            response = io.BytesIO(b"\xff\xd8\xff" + b"\x00" * 20)
+            response.headers = Headers()
+            return response
+        if request.get_method() == "GET":   # polling for the result
+            seen["poll_url"] = request.full_url
+            seen["poll_key"] = request.get_header("X-key")
+            seen["polls"] += 1
+            if seen["polls"] < 2:
+                return io.BytesIO(json.dumps({"id": "task-1", "status": "Pending"}).encode())
+            return io.BytesIO(json.dumps({"id": "task-1", "status": "Ready", "result": {"sample": "https://bfl.example/result.jpg"}}).encode())
+        seen["url"] = request.full_url
+        seen["key"] = request.get_header("X-key")
+        seen["body"] = json.loads(request.data)
+        return io.BytesIO(json.dumps({"id": "task-1", "polling_url": "https://api.bfl.ml/v1/get_result?id=task-1"}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
+    mime, data = assistant.generate_image("draw a thing")
+    assert mime == "image/jpeg"
+    import base64
+    assert base64.b64decode(data).startswith(b"\xff\xd8\xff")
+    assert seen["url"] == "https://api.bfl.ml/v1/flux-dev"
+    assert seen["key"] == "test-bfl-key"
+    assert seen["body"] == {"prompt": "draw a thing", "width": 1024, "height": 1024}
+    assert seen["poll_url"] == "https://api.bfl.ml/v1/get_result?id=task-1"
+    assert seen["poll_key"] == "test-bfl-key"
+    assert seen["polls"] == 2   # Pending once, then Ready
+    assert seen["image_url"] == "https://bfl.example/result.jpg"
+
+    def failing_reply(request, timeout):
+        if isinstance(request, str):
+            raise AssertionError("must not try to download an image when generation failed")
+        if request.get_method() == "GET":
+            return io.BytesIO(json.dumps({"id": "task-2", "status": "Error"}).encode())
+        return io.BytesIO(json.dumps({"id": "task-2", "polling_url": "https://api.bfl.ml/v1/get_result?id=task-2"}).encode())
+
+    monkeypatch.setattr(assistant.urllib.request, "urlopen", failing_reply)
+    assert assistant.generate_image("draw a thing") is None
+    assert "Error" in assistant.LAST_ERROR["text"]
+
+
 def test_gemini_key_and_provider_can_come_from_ignored_dotenv(tmp_path, monkeypatch):
     from jyotisha_ai import assistant
 
