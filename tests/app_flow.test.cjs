@@ -119,7 +119,7 @@ function boot(setup = {}) {
   const fetch = async (url, options) => {
     requests.push({ url, body: options && options.body ? JSON.parse(options.body) : null });
     const reply = body => ({ ok: true, json: async () => body });
-    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null, teasers: setup.teasers || null });
+    if (url === '/api/birth-readiness') return reply({ can_calculate: true, assistant_available: setup.assistant === true, app_ads: setup.appAds || null, teasers: setup.teasers || null, payments: setup.payments || null });
     if (url === '/api/ask') return reply({ answer: 'AI answer' });
     if (url === '/api/nudges') return reply(setup.nudges || { status: 'off', batches: {} });
     if (url === '/api/rashiphal') return reply(setup.rashiphal || { status: 'off', readings: null, lucky: null });
@@ -129,6 +129,8 @@ function boot(setup = {}) {
     if (url === '/api/tarot') return reply(setup.tarot || { status: 'off', reading: null });
     if (url === '/api/palm') { if (setup.palmDelay) await new Promise(resolve => setTimeout(resolve, setup.palmDelay)); return reply(setup.palm || { status: 'off', reading: null }); }
     if (url === '/api/partner-portrait') { (setup.partnerPortraitRequests || (setup.partnerPortraitRequests = [])).push(JSON.parse(options.body)); return reply(setup.partnerPortrait || { status: 'off', image: null }); }
+    if (url === '/api/payment/create-order') { (setup.paymentOrders || (setup.paymentOrders = [])).push(JSON.parse(options.body)); return reply(setup.paymentOrder || { status: 'ok', order_id: 'order_test', amount: 900, currency: 'INR', key_id: 'rzp_test_abc' }); }
+    if (url === '/api/payment/verify') { (setup.paymentVerifies || (setup.paymentVerifies = [])).push(JSON.parse(options.body)); return reply(setup.paymentVerify || { status: 'ok', feature: JSON.parse(options.body).feature }); }
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -137,7 +139,7 @@ function boot(setup = {}) {
   };
   const context = {
     document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
-    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, JyotishaNumerology: numerologyTool, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }) },
+    window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, JyotishaNumerology: numerologyTool, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }), Razorpay: setup.razorpay },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   context.document.documentElement.style.setProperty = (name, value) => { (context.cssVars = context.cssVars || {})[name] = value; };
@@ -1294,6 +1296,66 @@ test('"▶ See my reading": Tarot asks for a rewarded ad after the third card, w
   assert.deepEqual(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 2);
 });
 
+function fakeRazorpay(outcome) {
+  const calls = [];
+  function Razorpay(options) { calls.push(options); this.options = options; }
+  Razorpay.prototype.open = function () {
+    if (outcome === 'success') Promise.resolve().then(() => this.options.handler({ razorpay_order_id: 'order_test', razorpay_payment_id: 'pay_test', razorpay_signature: 'sig_test' }));
+    else Promise.resolve().then(() => this.options.modal.ondismiss());
+  };
+  return { Razorpay, calls };
+}
+
+test('"▶ See my reading": once payments are configured, a chooser offers "pay instead" alongside the free ad, and a real order is verified before unlocking', async () => {
+  const ad = fakeRewardedAdMob();
+  const rz = fakeRazorpay('success');
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const payments = { key_id: 'rzp_test_abc', chat_bonus_rs: 9, unlock_rs: 9 };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: ad.plugin } },
+    appAds: resultsConfig, payments, razorpay: rz.Razorpay, tarot: { status: 'ok', reading } });
+  await settle(); await settle();
+  homeCard(app, 'Tarot').listeners.click();
+  app.element('tarot').children[2].children[0].listeners.click();
+  for (const n of [0, 1, 2]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+  const see = app.element('tarot').children.find(item => /reward-btn/.test(item.className));
+  see.listeners.click();
+  await settle();
+  const chooser = app.context.document.body.children.find(item => item.className === 'update-popup');
+  assert.ok(chooser, 'a chooser appears instead of jumping straight to the ad');
+  const [payBtn, adBtn] = chooser.children[0].children[1].children;
+  assert.equal(adBtn.textContent, '▶ Watch a free ad');
+  assert.equal(payBtn.textContent, '💳 Pay ₹9 instead');
+  assert.ok(!app.requests.some(r => r.url === '/api/payment/create-order'));
+  payBtn.listeners.click();
+  await settle(); await settle();
+  assert.deepEqual(app.requests.find(r => r.url === '/api/payment/create-order').body, { feature: 'unlock' });
+  assert.deepEqual(app.requests.find(r => r.url === '/api/payment/verify').body, { order_id: 'order_test', payment_id: 'pay_test', signature: 'sig_test', feature: 'unlock' });
+  assert.ok(app.requests.some(r => r.url === '/api/tarot'));                 // unlocked by paying, no ad was shown
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 0);
+  assert.ok(app.element('tarot').children.some(item => item.className === 'tarot-sec advice'));
+});
+
+test('"▶ See my reading": choosing the free ad from the chooser still plays a real rewarded ad', async () => {
+  const ad = fakeRewardedAdMob();
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const payments = { key_id: 'rzp_test_abc', chat_bonus_rs: 9, unlock_rs: 9 };
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor: { Plugins: { AdMob: ad.plugin } },
+    appAds: resultsConfig, payments, tarot: { status: 'ok', reading } });
+  await settle(); await settle();
+  homeCard(app, 'Tarot').listeners.click();
+  app.element('tarot').children[2].children[0].listeners.click();
+  for (const n of [0, 1, 2]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+  app.element('tarot').children.find(item => /reward-btn/.test(item.className)).listeners.click();
+  await settle();
+  const chooser = app.context.document.body.children.find(item => item.className === 'update-popup');
+  const adBtn = chooser.children[0].children[1].children[1];
+  adBtn.listeners.click();
+  await earnReward(ad);
+  assert.ok(app.requests.some(r => r.url === '/api/tarot'));
+  assert.ok(!app.requests.some(r => r.url === '/api/payment/create-order'));
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 1);
+});
+
 test('"▶ See my reading": Palm waits for the ad after the photo; Rashiphal needs one ad a day', async () => {
   const ad = fakeRewardedAdMob();
   const reading = { heart: 'H.', head: 'He.', life: 'L.', fate: 'F.', summary: 'S.' };
@@ -1403,6 +1465,30 @@ test('after the free AI questions of the day, a rewarded ad buys more; declining
   assert.equal(aiRequests(), 5); assert.equal(prompts.length, 2);                       // 3 bonus questions: 1 used by the one above, 2 more with no new ad
   const saved = JSON.parse(storage.getItem('jyotisha.chatquota.v1'));
   assert.deepEqual([saved.used, saved.bonus], [5, 3]);
+});
+
+test('after the free AI questions, paying instead of watching an ad also buys more, once payments are configured', async () => {
+  const ad = fakeRewardedAdMob();
+  const rz = fakeRazorpay('success');
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const config = { enabled: true, banner_id: rewardedConfig.banner_id, testing: true, rewarded_id: rewardedConfig.rewarded_id, chat_free_questions: 1, chat_bonus_questions: 3 };
+  const payments = { key_id: 'rzp_test_abc', chat_bonus_rs: 9, unlock_rs: 9 };
+  const app = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: config, payments, razorpay: rz.Razorpay, assistant: true, birth: syntheticBirth });
+  await settle();
+  const aiRequests = () => app.requests.filter(r => r.url === '/api/ask').length;
+  await typeInChat(app, 'will my business grow');
+  assert.equal(aiRequests(), 1);                                  // the one free question
+  await typeInChat(app, 'what about money');
+  await settle();
+  const chooser = app.context.document.body.children.find(item => item.className === 'update-popup');
+  assert.ok(chooser, 'the chooser appears instead of a plain window.confirm');
+  assert.match(chooser.children[0].children[0].textContent, /1 free AI questions .* 3 more/);
+  chooser.children[0].children[1].children[0].listeners.click();   // pay instead
+  await settle(); await settle();
+  assert.deepEqual(app.requests.find(r => r.url === '/api/payment/create-order').body, { feature: 'chat_bonus' });
+  assert.equal(aiRequests(), 2);
+  assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 0);
 });
 
 test('the AI chat has no daily limit in a browser or when the chat switch is off', async () => {

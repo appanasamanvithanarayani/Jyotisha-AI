@@ -1285,6 +1285,8 @@ body.page-feature .masthead{display:none}
 .reward-btn::before{content:"";width:22px;height:18px;margin-inline-end:8px;border-radius:5px;display:inline-block;vertical-align:-3px;
   background:currentColor;opacity:.92;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat;
   mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><rect x='1' y='1' width='22' height='16' rx='4' fill='black'/><path d='M10 5.5l5 3.5-5 3.5z' fill='white'/></svg>") center/contain no-repeat}
+/* A small "FREE" pill on reward-gated buttons: the value framing is real (the ad is the only cost), never a fake price. */
+.reward-btn::after{content:var(--free-label,"FREE");position:absolute;top:-10px;right:14px;background:#2ecc71;color:#06240f;font-size:.62rem;font-weight:800;letter-spacing:.03em;padding:3px 10px;border-radius:999px;box-shadow:0 4px 10px rgba(0,0,0,.35)}
 /* Underlined text tabs (Yesterday | Today | Tomorrow…). */
 .tabs-line{display:flex;gap:4px;margin:6px 0 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .tabs-line::-webkit-scrollbar{display:none}

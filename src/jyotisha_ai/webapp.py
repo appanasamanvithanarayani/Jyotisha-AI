@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, partner_portrait, push, settings_store as store, tarot
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, partner_portrait, payments, push, settings_store as store, tarot
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -189,6 +189,14 @@ def _app_ads() -> dict | None:
         config["interstitial_every"] = 4          # at most one ad per this many screen switches
         config["interstitial_gap_seconds"] = 180   # and never twice within this many seconds
     return config
+
+
+def _payments_config() -> dict | None:
+    """Prices (Rs) for paying instead of watching an ad, or None while payments are not configured."""
+    if not payments.enabled():
+        return None
+    return {"key_id": payments.key_id(), "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
+            "unlock_rs": payments.price_paise("unlock") // 100}
 
 
 def _notice() -> dict | None:
@@ -747,6 +755,9 @@ class LocalHandler(BaseHTTPRequestHandler):
         if allowed and path == "/api/partner-portrait":
             # Image generation costs more still: its own, smaller daily allowance per visitor.
             allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 3), 86400.0)
+        if allowed and path in ("/api/payment/create-order", "/api/payment/verify"):
+            # Each real order/verify call reaches Razorpay's API; a per-minute cap is enough to stop abuse.
+            allowed = limiter.allow(f"payment:{who}", 10, 60.0)
         if allowed and path in ("/api/ask", "/api/tarot", "/api/palm"):   # AI calls share the same allowance
             today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
             # These three can be changed in the admin panel without restarting.
@@ -1030,6 +1041,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness["assistant_available"] = assistant.available()
             readiness["adsense_client"] = _adsense_client() or None
             readiness["app_ads"] = _app_ads()
+            readiness["payments"] = _payments_config()
             readiness["notice"] = _notice()
             readiness["teasers"] = _teasers()
             contact = store.value("JYOTISHA_CONTACT")
@@ -1047,7 +1059,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/payment/create-order", "/api/payment/verify") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1105,6 +1117,12 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = palm.reading(payload)
             elif path == "/api/partner-portrait":
                 result = partner_portrait.portrait(payload)
+            elif path == "/api/payment/create-order":
+                self._json(200, payments.create_order(payload))
+                return
+            elif path == "/api/payment/verify":
+                self._json(200, payments.verify_payment(payload))
+                return
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
