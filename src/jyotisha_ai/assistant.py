@@ -6,6 +6,7 @@ import base64
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta
@@ -354,12 +355,17 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
 
 FAL_URL = "https://fal.run/"
 DEFAULT_FAL_MODEL = "fal-ai/flux/schnell"
+BFL_URL = "https://api.bfl.ml/v1/"
+DEFAULT_BFL_MODEL = "flux-dev"
 
 
 def image_provider() -> str | None:
     """Which image-generation backend is configured (independent of the text-chat provider above): "gemini",
-    "fal" (Flux, via fal.ai), or None if neither has both a provider choice and its key set."""
+    "fal" (Flux, via fal.ai), "bfl" (Flux, direct from Black Forest Labs), or None if none has both a provider
+    choice and its key set."""
     selected = _setting("JYOTISHA_IMAGE_PROVIDER").strip().lower()
+    if selected == "bfl" and _setting("BFL_API_KEY"):
+        return "bfl"
     if selected == "fal" and _setting("FAL_API_KEY"):
         return "fal"
     if selected == "gemini" and _setting("GEMINI_API_KEY"):
@@ -368,9 +374,9 @@ def image_provider() -> str | None:
 
 
 def generate_image(prompt: str, timeout: float = 60.0) -> tuple[str, str] | None:
-    """One-shot image generation with the configured image provider (Gemini or Flux via fal.ai; set independently of
-    the text-chat provider, since Claude/Anthropic has no image generation at all). (mime type, base64 data) or
-    None, with the reason kept in LAST_ERROR."""
+    """One-shot image generation with the configured image provider (Gemini, Flux via fal.ai, or Flux direct from
+    Black Forest Labs; set independently of the text-chat provider, since Claude/Anthropic has no image generation
+    at all). (mime type, base64 data) or None, with the reason kept in LAST_ERROR."""
     LAST_ERROR["text"] = ""
     selected = image_provider()
     if selected is None:
@@ -378,6 +384,8 @@ def generate_image(prompt: str, timeout: float = 60.0) -> tuple[str, str] | None
         return None
     if selected == "fal":
         return _generate_image_fal(prompt, timeout)
+    if selected == "bfl":
+        return _generate_image_bfl(prompt, timeout)
     return _generate_image_gemini(prompt, timeout)
 
 
@@ -460,3 +468,66 @@ def _generate_image_fal(prompt: str, timeout: float) -> tuple[str, str] | None:
         _fail(f"Could not download the generated image from fal.ai: {type(exc).__name__}")
         return None
     return mime, base64.b64encode(data).decode("ascii")
+
+
+def _generate_image_bfl(prompt: str, timeout: float) -> tuple[str, str] | None:
+    """Black Forest Labs' own API (not fal.ai): submitting a request returns a task id and a polling URL; the image
+    is only ready once polling reports status "Ready"."""
+    model = _setting("JYOTISHA_BFL_MODEL") or DEFAULT_BFL_MODEL
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", model):
+        _fail(f"Invalid Black Forest Labs model name {model!r}")
+        return None
+    key = _setting("BFL_API_KEY")
+    body = json.dumps({"prompt": prompt, "width": 1024, "height": 1024}).encode("utf-8")
+    request = urllib.request.Request(f"{BFL_URL}{model}", data=body, method="POST",
+                                     headers={"content-type": "application/json", "accept": "application/json", "x-key": key})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            reply = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            error = json.loads(exc.read())
+            detail = error.get("detail", "") if isinstance(error, dict) else str(error)
+        except (ValueError, OSError, AttributeError):
+            pass
+        _fail(f"Black Forest Labs model {model} answered HTTP {exc.code}: {detail}".strip())
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError) as exc:
+        _fail(f"Could not reach Black Forest Labs: {type(exc).__name__}")
+        return None
+    task_id = reply.get("id") if isinstance(reply, dict) else None
+    if not isinstance(task_id, str) or not task_id:
+        _fail("Unexpected reply from Black Forest Labs (no task id)")
+        return None
+    poll_url = reply.get("polling_url") if isinstance(reply.get("polling_url"), str) else f"{BFL_URL}get_result?id={task_id}"
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        time.sleep(1.0)
+        poll_request = urllib.request.Request(poll_url, method="GET", headers={"accept": "application/json", "x-key": key})
+        try:
+            with urllib.request.urlopen(poll_request, timeout=timeout) as response:
+                status_reply = json.loads(response.read())
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, UnicodeError, OSError):
+            continue
+        if not isinstance(status_reply, dict):
+            continue
+        status = status_reply.get("status")
+        if status == "Ready":
+            url = ((status_reply.get("result") or {}).get("sample")) if isinstance(status_reply.get("result"), dict) else None
+            if not isinstance(url, str) or not url.startswith("https://"):
+                _fail("No image URL in the Black Forest Labs result")
+                return None
+            try:
+                with urllib.request.urlopen(url, timeout=timeout) as image_response:
+                    data = image_response.read()
+                    mime = image_response.headers.get_content_type() or "image/jpeg"
+            except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
+                _fail(f"Could not download the generated image from Black Forest Labs: {type(exc).__name__}")
+                return None
+            return mime, base64.b64encode(data).decode("ascii")
+        if status and status != "Pending":
+            _fail(f"Black Forest Labs generation did not finish: {status}")
+            return None
+    _fail("Timed out waiting for Black Forest Labs to finish generating the image")
+    return None
