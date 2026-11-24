@@ -526,8 +526,9 @@ def _generate_image_bfl(prompt: str, timeout: float) -> tuple[str, str] | None:
                 _fail(f"Could not download the generated image from Black Forest Labs: {type(exc).__name__}")
                 return None
             return mime, base64.b64encode(data).decode("ascii")
-        if status and status != "Pending":
+        if status in ("Error", "Request Moderated", "Content Moderated", "Task not found"):
             _fail(f"Black Forest Labs generation did not finish: {status}")
             return None
+        # Any other status (Pending, Generating, or one not yet seen) means it is still working: keep polling.
     _fail("Timed out waiting for Black Forest Labs to finish generating the image")
     return None
