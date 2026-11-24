@@ -609,7 +609,8 @@
     state.partnerPortrait = { status: 'loading', image: null };
     renderRelationship();
     try {
-      const { ok, body } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi });
+      const gender = state.myRole === 'bride' ? 'man' : 'woman';   // the same Groom/Bride choice used for Kundli matching
+      const { ok, body } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi, gender });
       state.partnerPortrait = ok && body && body.status === 'ok' && body.image ? { status: 'ok', image: body.image }
         : { status: body && body.status === 'off' ? 'off' : 'unavailable', image: null };
     } catch (_error) { state.partnerPortrait = { status: 'unavailable', image: null }; }
