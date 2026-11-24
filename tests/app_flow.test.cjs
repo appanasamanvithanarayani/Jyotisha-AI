@@ -717,9 +717,13 @@ test('"Your ideal partner": the illustration button sends only the two sign numb
   btn.listeners.click();
   await settle();
   assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6, gender: 'woman' }]);   // default role is groom -> illustrate a woman
-  const img = app.element('relationship-traits-result').children.find(item => item.className === 'traits-portrait');
+  const result = app.element('relationship-traits-result');
+  const imgIndex = result.children.findIndex(item => item.className === 'traits-portrait');
+  const img = result.children[imgIndex];
   assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
-  assert.equal(app.element('relationship-traits-result').children.at(-1), img);   // no disclaimer line after the image
+  assert.ok(!result.children.slice(imgIndex + 1).some(item => item.tag === 'p'));   // no disclaimer paragraph after the image
+  const againBtn = result.children.find(item => item.tag === 'button');
+  assert.equal(againBtn.textContent, '🔄 Generate again');   // can regenerate without leaving the card
 });
 
 test('"Your ideal partner": a Woman/Man toggle on the page itself picks the gender, with no need to visit Kundli matching first', async () => {
