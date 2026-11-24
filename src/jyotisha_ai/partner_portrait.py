@@ -22,11 +22,11 @@ SIGN_TRAITS = (
 )
 PROMPT = (
     "Create a single gentle, stylized illustrated portrait (a soft watercolor-and-ink painting), waist-up, of a "
-    "fictional, generic adult {gender} whose vibe suggests these classical astrological traits: {trait_house} (from "
-    "the 7th house of partnerships) and {trait_venus} (from Venus, the planet of love). The image must be a clearly "
-    "non-photorealistic illustration, not a photo, and must not resemble any specific real or identifiable person, "
-    "celebrity or public figure. Depict only an adult. Warm, tasteful, general-audience art style. No text, no "
-    "caption, no watermark or signature anywhere in the image."
+    "fictional, generic Indian adult {gender} whose vibe suggests these classical astrological traits: {trait_house} "
+    "(from the 7th house of partnerships) and {trait_venus} (from Venus, the planet of love). The image must be a "
+    "clearly non-photorealistic illustration, not a photo, and must not resemble any specific real or identifiable "
+    "person, celebrity or public figure. Depict only an adult. Warm, tasteful, general-audience art style. No text, "
+    "no caption, no watermark or signature anywhere in the image."
 )
 # "man"/"woman" is the illustrated person's presentation, chosen by the client from the user's own Groom/Bride
 # choice on the Kundli-matching page (groom -> illustrate a woman, bride -> illustrate a man).
