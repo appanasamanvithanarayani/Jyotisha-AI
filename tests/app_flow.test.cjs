@@ -704,7 +704,7 @@ test('Love page: "Your ideal partner" reads relationship style from the 7th hous
   assert.match(empty.element('relationship-traits-result').children[0].textContent, /Create your own Kundli first/);
 });
 
-test('"Your ideal partner": the illustration button sends only the two sign numbers, never free text, and shows the AI-illustration disclaimer', async () => {
+test('"Your ideal partner": the illustration button sends only the two sign numbers and a gender, never free text', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
   const setup = { storage, birth: syntheticBirth, partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } };
@@ -716,10 +716,12 @@ test('"Your ideal partner": the illustration button sends only the two sign numb
   assert.ok(!/reward-btn/.test(btn.className));                 // no AdMob configured: free, no ad
   btn.listeners.click();
   await settle();
-  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6 }]);   // sign numbers only
+  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6, gender: 'woman' }]);   // default role is groom -> illustrate a woman
   const img = app.element('relationship-traits-result').children.find(item => item.className === 'traits-portrait');
   assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
-  assert.match(app.element('relationship-traits-result').children.at(-1).textContent, /not a real photo/);
+  assert.equal(app.element('relationship-traits-result').children.at(-1), img);   // no disclaimer line after the image
+  // The "Bride" role (set on the Kundli-matching page, not exercised here since the role buttons are static markup
+  // the fake-DOM harness does not load) flips the requested gender to 'man' via the same one-line mapping.
 });
 
 test('"Your ideal partner" illustration: off by default shows a plain note; a rewarded ad is asked for when switched on', async () => {

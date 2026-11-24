@@ -22,35 +22,40 @@ SIGN_TRAITS = (
 )
 PROMPT = (
     "Create a single gentle, stylized illustrated portrait (a soft watercolor-and-ink painting), waist-up, of a "
-    "fictional, generic adult person whose vibe suggests these classical astrological traits: {trait_house} (from "
-    "the 7th house of partnerships) and {trait_venus} (from Venus, the planet of love). The image must be a clearly "
-    "non-photorealistic illustration, not a photo, and must not resemble any specific real or identifiable person, "
-    "celebrity or public figure. Depict only an adult. Warm, tasteful, general-audience art style. No text, no "
-    "caption, no watermark or signature anywhere in the image."
+    "fictional, generic Indian adult {gender} whose vibe suggests these classical astrological traits: {trait_house} "
+    "(from the 7th house of partnerships) and {trait_venus} (from Venus, the planet of love). The image must be a "
+    "clearly non-photorealistic illustration, not a photo, and must not resemble any specific real or identifiable "
+    "person, celebrity or public figure. Depict only an adult. Warm, tasteful, general-audience art style. No text, "
+    "no caption, no watermark or signature anywhere in the image."
 )
+# "man"/"woman" is the illustrated person's presentation, chosen by the client from the user's own Groom/Bride
+# choice on the Kundli-matching page (groom -> illustrate a woman, bride -> illustrate a man).
+GENDERS = ("woman", "man")
 
 
 def enabled() -> bool:
     return store.value("JYOTISHA_AI_PARTNER_PORTRAIT", "0") == "1" and assistant.image_provider() is not None
 
 
-def check_request(payload: object) -> tuple[int, int]:
-    """(house7_rashi, venus_rashi), each 1-12, or ValueError."""
+def check_request(payload: object) -> tuple[int, int, str]:
+    """(house7_rashi, venus_rashi, gender), each rashi 1-12 and gender one of GENDERS, or ValueError."""
     if not isinstance(payload, dict):
         raise ValueError("JSON object required")
-    house7, venus = payload.get("house7_rashi"), payload.get("venus_rashi")
+    house7, venus, gender = payload.get("house7_rashi"), payload.get("venus_rashi"), payload.get("gender")
     for value in (house7, venus):
         if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 12:
             raise ValueError("house7_rashi and venus_rashi must be integers 1..12")
-    return house7, venus
+    if gender not in GENDERS:
+        raise ValueError(f"gender must be one of {GENDERS}")
+    return house7, venus, gender
 
 
 def portrait(payload: object) -> dict:
     """{'status': 'ok'|'off'|'unavailable', 'image': {'mime': str, 'data': str}|None}."""
-    house7, venus = check_request(payload)
+    house7, venus, gender = check_request(payload)
     if not enabled():
         return {"status": "off", "image": None}
-    prompt = PROMPT.format(trait_house=SIGN_TRAITS[house7 - 1], trait_venus=SIGN_TRAITS[venus - 1])
+    prompt = PROMPT.format(gender=gender, trait_house=SIGN_TRAITS[house7 - 1], trait_venus=SIGN_TRAITS[venus - 1])
     found = assistant.generate_image(prompt)
     if not found:
         return {"status": "unavailable", "image": None}

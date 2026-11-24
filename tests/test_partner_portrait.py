@@ -1,20 +1,23 @@
-"""Ideal-partner illustration: sign-number validation, image-provider gating, and that no free text reaches the prompt."""
+"""Ideal-partner illustration: sign-number and gender validation, image-provider gating, and that no free text
+reaches the prompt."""
 
 import pytest
 
 from jyotisha_ai import partner_portrait
 
-REQUEST = {"house7_rashi": 4, "venus_rashi": 7}
+REQUEST = {"house7_rashi": 4, "venus_rashi": 7, "gender": "woman"}
 
 
 def test_request_checks():
     for change in ({"house7_rashi": 0}, {"house7_rashi": 13}, {"house7_rashi": 4.5}, {"house7_rashi": True},
-                   {"venus_rashi": 0}, {"venus_rashi": 13}, {"venus_rashi": "7"}):
+                   {"venus_rashi": 0}, {"venus_rashi": 13}, {"venus_rashi": "7"},
+                   {"gender": "other"}, {"gender": ""}, {"gender": None}):
         with pytest.raises(ValueError):
             partner_portrait.check_request({**REQUEST, **change})
     with pytest.raises(ValueError):
         partner_portrait.check_request("not a dict")
-    assert partner_portrait.check_request(REQUEST) == (4, 7)
+    assert partner_portrait.check_request(REQUEST) == (4, 7, "woman")
+    assert partner_portrait.check_request({**REQUEST, "gender": "man"}) == (4, 7, "man")
 
 
 def test_off_by_default_even_with_an_image_provider_configured(monkeypatch):
@@ -31,7 +34,8 @@ def test_never_available_with_no_image_provider_set_up_even_when_switched_on(mon
 
 
 @pytest.mark.parametrize("image_provider", ["gemini", "fal"])
-def test_generates_an_image_from_the_sign_numbers_alone_never_from_client_text(monkeypatch, image_provider):
+@pytest.mark.parametrize("gender", ["woman", "man"])
+def test_generates_an_image_from_the_sign_numbers_and_gender_alone_never_from_client_text(monkeypatch, image_provider, gender):
     seen = {}
 
     def generate_image(prompt, **kwargs):
@@ -41,10 +45,11 @@ def test_generates_an_image_from_the_sign_numbers_alone_never_from_client_text(m
     monkeypatch.setattr(partner_portrait.assistant, "image_provider", lambda: image_provider)
     monkeypatch.setattr(partner_portrait.assistant, "generate_image", generate_image)
     monkeypatch.setattr(partner_portrait.store, "value", lambda name, default="0": "1" if name == "JYOTISHA_AI_PARTNER_PORTRAIT" else default)
-    result = partner_portrait.portrait(REQUEST)
+    result = partner_portrait.portrait({**REQUEST, "gender": gender})
     assert result == {"status": "ok", "image": {"mime": "image/png", "data": "base64data"}}
     assert partner_portrait.SIGN_TRAITS[3] in seen["prompt"]       # house7_rashi 4 -> index 3
     assert partner_portrait.SIGN_TRAITS[6] in seen["prompt"]       # venus_rashi 7 -> index 6
+    assert f"adult {gender}" in seen["prompt"]
     assert "not a photo" in seen["prompt"] and "not resemble any specific real" in seen["prompt"]
 
 
