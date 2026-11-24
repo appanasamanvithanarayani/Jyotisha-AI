@@ -687,8 +687,10 @@ def test_generate_image_with_black_forest_labs_polls_until_ready_then_downloads_
             seen["poll_url"] = request.full_url
             seen["poll_key"] = request.get_header("X-key")
             seen["polls"] += 1
-            if seen["polls"] < 2:
+            if seen["polls"] == 1:
                 return io.BytesIO(json.dumps({"id": "task-1", "status": "Pending"}).encode())
+            if seen["polls"] == 2:
+                return io.BytesIO(json.dumps({"id": "task-1", "status": "Generating"}).encode())   # also in-progress, not a failure
             return io.BytesIO(json.dumps({"id": "task-1", "status": "Ready", "result": {"sample": "https://bfl.example/result.jpg"}}).encode())
         seen["url"] = request.full_url
         seen["key"] = request.get_header("X-key")
@@ -705,7 +707,7 @@ def test_generate_image_with_black_forest_labs_polls_until_ready_then_downloads_
     assert seen["body"] == {"prompt": "draw a thing"}
     assert seen["poll_url"] == "https://api.bfl.ai/v1/get_result?id=task-1"
     assert seen["poll_key"] == "test-bfl-key"
-    assert seen["polls"] == 2   # Pending once, then Ready
+    assert seen["polls"] == 3   # Pending, then Generating, then Ready
     assert seen["image_url"] == "https://bfl.example/result.jpg"
 
     def failing_reply(request, timeout):
