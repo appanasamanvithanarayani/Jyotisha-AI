@@ -44,6 +44,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Without this, Android 12+ silently downgrades every scheduled reminder notification to an inexact alarm,
+         which Doze/App Standby can delay for hours until the app is opened again. Auto-granted on Android 12;
+         on Android 13+ the user can also turn it on themselves under Settings -> Apps -> Jyotirmaya -> Alarms & reminders. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- The palm scan opens the camera inside the app (a hand outline to line the palm up with). The photo is never stored. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
