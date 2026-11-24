@@ -693,17 +693,17 @@ def test_generate_image_with_black_forest_labs_polls_until_ready_then_downloads_
         seen["url"] = request.full_url
         seen["key"] = request.get_header("X-key")
         seen["body"] = json.loads(request.data)
-        return io.BytesIO(json.dumps({"id": "task-1", "polling_url": "https://api.bfl.ml/v1/get_result?id=task-1"}).encode())
+        return io.BytesIO(json.dumps({"id": "task-1", "polling_url": "https://api.bfl.ai/v1/get_result?id=task-1"}).encode())
 
     monkeypatch.setattr(assistant.urllib.request, "urlopen", fake_urlopen)
     mime, data = assistant.generate_image("draw a thing")
     assert mime == "image/jpeg"
     import base64
     assert base64.b64decode(data).startswith(b"\xff\xd8\xff")
-    assert seen["url"] == "https://api.bfl.ml/v1/flux-dev"
+    assert seen["url"] == "https://api.bfl.ai/v1/flux-3-image-klein"
     assert seen["key"] == "test-bfl-key"
-    assert seen["body"] == {"prompt": "draw a thing", "width": 1024, "height": 1024}
-    assert seen["poll_url"] == "https://api.bfl.ml/v1/get_result?id=task-1"
+    assert seen["body"] == {"prompt": "draw a thing"}
+    assert seen["poll_url"] == "https://api.bfl.ai/v1/get_result?id=task-1"
     assert seen["poll_key"] == "test-bfl-key"
     assert seen["polls"] == 2   # Pending once, then Ready
     assert seen["image_url"] == "https://bfl.example/result.jpg"
@@ -713,7 +713,7 @@ def test_generate_image_with_black_forest_labs_polls_until_ready_then_downloads_
             raise AssertionError("must not try to download an image when generation failed")
         if request.get_method() == "GET":
             return io.BytesIO(json.dumps({"id": "task-2", "status": "Error"}).encode())
-        return io.BytesIO(json.dumps({"id": "task-2", "polling_url": "https://api.bfl.ml/v1/get_result?id=task-2"}).encode())
+        return io.BytesIO(json.dumps({"id": "task-2", "polling_url": "https://api.bfl.ai/v1/get_result?id=task-2"}).encode())
 
     monkeypatch.setattr(assistant.urllib.request, "urlopen", failing_reply)
     assert assistant.generate_image("draw a thing") is None

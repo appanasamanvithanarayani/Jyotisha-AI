@@ -355,8 +355,8 @@ def complete(system: str, prompt: str, max_tokens: int = 4096, json_output: bool
 
 FAL_URL = "https://fal.run/"
 DEFAULT_FAL_MODEL = "fal-ai/flux/schnell"
-BFL_URL = "https://api.bfl.ml/v1/"
-DEFAULT_BFL_MODEL = "flux-dev"
+BFL_URL = "https://api.bfl.ai/v1/"
+DEFAULT_BFL_MODEL = "flux-3-image-klein"
 
 
 def image_provider() -> str | None:
@@ -478,7 +478,7 @@ def _generate_image_bfl(prompt: str, timeout: float) -> tuple[str, str] | None:
         _fail(f"Invalid Black Forest Labs model name {model!r}")
         return None
     key = _setting("BFL_API_KEY")
-    body = json.dumps({"prompt": prompt, "width": 1024, "height": 1024}).encode("utf-8")
+    body = json.dumps({"prompt": prompt}).encode("utf-8")
     request = urllib.request.Request(f"{BFL_URL}{model}", data=body, method="POST",
                                      headers={"content-type": "application/json", "accept": "application/json", "x-key": key})
     try:
