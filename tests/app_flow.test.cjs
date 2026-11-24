@@ -720,8 +720,24 @@ test('"Your ideal partner": the illustration button sends only the two sign numb
   const img = app.element('relationship-traits-result').children.find(item => item.className === 'traits-portrait');
   assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
   assert.equal(app.element('relationship-traits-result').children.at(-1), img);   // no disclaimer line after the image
-  // The "Bride" role (set on the Kundli-matching page, not exercised here since the role buttons are static markup
-  // the fake-DOM harness does not load) flips the requested gender to 'man' via the same one-line mapping.
+});
+
+test('"Your ideal partner": a Woman/Man toggle on the page itself picks the gender, with no need to visit Kundli matching first', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const setup = { storage, birth: syntheticBirth, partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } };
+  const app = boot(setup);
+  await settle();
+  app.element('love-options').children[2].listeners.click();
+  const result = () => app.element('relationship-traits-result');
+  const genderRow = () => result().children.find(item => item.className === 'seg');
+  assert.deepEqual(genderRow().children.map(button => button.textContent), ['Woman', 'Man']);
+  assert.equal(genderRow().children[0].className, 'on');   // Woman is pre-selected (default role is groom)
+  genderRow().children[1].listeners.click();                // switch to Man
+  assert.equal(genderRow().children[1].className, 'on');   // re-render makes new nodes; re-query instead of reusing the old one
+  result().children.find(item => item.tag === 'button').listeners.click();
+  await settle();
+  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6, gender: 'man' }]);
 });
 
 test('"Your ideal partner" illustration: off by default shows a plain note; a rewarded ad is asked for when switched on', async () => {
