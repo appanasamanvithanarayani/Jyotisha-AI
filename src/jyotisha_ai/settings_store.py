@@ -352,8 +352,6 @@ class Stats:
                 if token not in seen:
                     seen.add(token)
                     day["visitors"] = day.get("visitors", 0) + 1
-            for stale in [d for d in self._days if d < (date.today() - timedelta(days=45)).isoformat()]:
-                self._days.pop(stale, None)
             for stale in [d for d in self._seen if d != today]:
                 self._seen.pop(stale, None)
             if time.monotonic() - self._last_save > 30:
@@ -374,6 +372,17 @@ class Stats:
             result = []
             for offset in range(days):
                 day = (date.today() - timedelta(days=offset)).isoformat()
+                counts = self._days.get(day, {})
+                result.append({"date": day, **{name: counts.get(name, 0) for name in COUNTERS + ("visitors",)}})
+            return result
+
+    def history(self) -> list[dict]:
+        """Every recorded day, oldest first, for long-range admin trends."""
+        with self._lock:
+            self._load()
+            self._save()
+            result = []
+            for day in sorted(self._days):
                 counts = self._days.get(day, {})
                 result.append({"date": day, **{name: counts.get(name, 0) for name in COUNTERS + ("visitors",)}})
             return result
@@ -550,6 +559,15 @@ class Analytics:
     def snapshot(self, days: int = 14, user_limit: int = 100) -> dict:
         with self._lock:
             self._load()
+            def daily_row(day_name: str) -> dict:
+                raw = self._data["days"].get(day_name, {})
+                generations = {feature: int(raw.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
+                return {"date": day_name, "unique_users": len(set(raw.get("users", []))),
+                        "new_users": int(raw.get("new_users", 0)), "new_installs": int(raw.get("new_installs", 0)),
+                        "feature_views": sum(int(value) for value in raw.get("views", {}).values()),
+                        "feature_requests": sum(int(metric.get("requests", 0)) for metric in raw.get("observability", {}).values()),
+                        "generation_count": sum(generations.values()), "generations": generations}
+
             recent_days = [(date.today() - timedelta(days=offset)).isoformat() for offset in range(days)]
             day_rows, active, generation_totals = [], set(), {feature: 0 for feature in GENERATION_TYPES}
             observability = {feature: {"requests": 0, "success": 0, "failure": 0, "total_ms": 0, "max_ms": 0} for feature in FEATURE_TYPES}
@@ -562,7 +580,6 @@ class Analytics:
                 generations = {feature: int(row.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
                 for feature, count in generations.items():
                     generation_totals[feature] += count
-                daily_requests = 0
                 for feature in FEATURE_TYPES:
                     feature_views[feature] += int(row.get("views", {}).get(feature, 0))
                     feature_user_sets[feature].update(row.get("feature_users", {}).get(feature, []))
@@ -571,10 +588,8 @@ class Analytics:
                     for key in ("requests", "success", "failure", "total_ms"):
                         target[key] += int(metric.get(key, 0))
                     target["max_ms"] = max(target["max_ms"], int(metric.get("max_ms", 0)))
-                    daily_requests += int(metric.get("requests", 0))
                 new_installs_period += int(row.get("new_installs", 0))
-                day_rows.append({"date": day_name, "unique_users": len(users), "new_users": int(row.get("new_users", 0)),
-                                 "new_installs": int(row.get("new_installs", 0)), "feature_requests": daily_requests, "generations": generations})
+                day_rows.append(daily_row(day_name))
             for metric in observability.values():
                 metric["avg_ms"] = round(metric["total_ms"] / metric["requests"]) if metric["requests"] else 0
                 metric["success_rate"] = round(metric["success"] * 100 / metric["requests"], 1) if metric["requests"] else 0
@@ -599,6 +614,16 @@ class Analytics:
                                      "generations": generations, "usage": usage})
             installed_users = [user for user in self._data["users"].values() if user.get("installed_at")]
             platforms = {platform: sum(user.get("platform") == platform for user in installed_users) for platform in ("android", "ios")}
+            history = []
+            for day_name in sorted(self._data["days"]):
+                try:
+                    date.fromisoformat(day_name)
+                except (TypeError, ValueError):
+                    continue
+                history.append(daily_row(day_name))
+            comparison_labels = ((0, "Today"), (1, "Yesterday"), (7, "7 days ago"), (30, "30 days ago"))
+            comparisons = [{"label": label, **daily_row((date.today() - timedelta(days=offset)).isoformat())}
+                           for offset, label in comparison_labels]
             return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),
                     "new_installs_today": day_rows[0]["new_installs"] if day_rows else 0, "new_installs_period": new_installs_period,
                     "install_platforms": platforms, "active_today": day_rows[0]["unique_users"] if day_rows else 0,
@@ -606,7 +631,7 @@ class Analytics:
                     "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
                     "feature_views": feature_views, "feature_unique_users": {feature: len(users) for feature, users in feature_user_sets.items()},
                     "new_user_features": {feature: len(users) for feature, users in new_user_feature_sets.items()}, "observability": observability,
-                    "days": day_rows, "users": recent_users}
+                    "days": day_rows, "history": history, "comparisons": comparisons, "users": recent_users}
 
 
 analytics = Analytics()

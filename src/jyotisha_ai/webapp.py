@@ -863,7 +863,8 @@ class LocalHandler(BaseHTTPRequestHandler):
     def _admin_state(self) -> dict:
         current = assistant.provider()
         return {
-            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14), "analytics": store.analytics.snapshot(),
+            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14),
+            "stats_history": store.stats.history(), "analytics": store.analytics.snapshot(),
             "ratings": store.ratings_snapshot(),
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},

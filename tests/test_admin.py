@@ -2,6 +2,7 @@
 
 import http.client
 import json
+from datetime import date, timedelta
 from threading import Thread
 
 import pytest
@@ -190,6 +191,41 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     assert first["platform"] == "android" and first["installed_at"]
     saved = (store.data_dir() / "analytics.json").read_text()
     assert "random-device-token" not in saved and "2000-06-15" not in saved
+
+
+def test_admin_analytics_exposes_history_and_period_comparisons():
+    today = date.today()
+    old_day = (today - timedelta(days=30)).isoformat()
+    yesterday = (today - timedelta(days=1)).isoformat()
+    payload = {
+        "users": {"anon-a": {"first_seen": old_day, "last_seen": yesterday, "visits": 2, "generations": {"tarot": 2}}},
+        "days": {
+            old_day: {"users": ["anon-a"], "new_users": 1, "new_installs": 1, "views": {"tarot": 2},
+                      "generations": {"tarot": 2}, "observability": {"tarot": {"requests": 2}}},
+            yesterday: {"users": ["anon-a"], "new_users": 0, "views": {"home": 1}, "generations": {}},
+        },
+    }
+    path = store.data_dir() / "analytics.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    store.analytics._loaded_from = None
+
+    snapshot = store.analytics.snapshot()
+    assert [row["date"] for row in snapshot["history"]] == [old_day, yesterday]
+    month_ago = next(row for row in snapshot["comparisons"] if row["label"] == "30 days ago")
+    assert month_ago["unique_users"] == 1 and month_ago["new_installs"] == 1
+    assert month_ago["feature_views"] == 2 and month_ago["feature_requests"] == 2 and month_ago["generation_count"] == 2
+
+
+def test_counter_history_keeps_all_recorded_days():
+    old_day = (date.today() - timedelta(days=90)).isoformat()
+    path = store.data_dir() / "stats.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({old_day: {"page_views": 7}}), encoding="utf-8")
+    store.stats._loaded_from = None
+    assert store.stats.history() == [{"date": old_day, "page_views": 7, "day_panchang": 0, "month_calendar": 0,
+                                      "birth_chart": 0, "ai_questions": 0, "places": 0, "apk_downloads": 0,
+                                      "rate_limited": 0, "visitors": 0}]
 
 
 def test_private_low_rating_is_saved_and_visible_only_in_admin(panel):
