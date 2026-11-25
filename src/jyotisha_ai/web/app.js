@@ -2502,6 +2502,22 @@
     actions.append(askAi, share);
     box.append(actions, el('p', 'num-note', copy.note));
   }
+  // Numerology, asked straight in chat: the same Moolank/Bhagyank/name-number report, as a compact chat message.
+  async function chatNumerology() {
+    const tool = window.JyotishaNumerology, dob = numberDob(), copy = numCopy();
+    if (!tool || !tool.parse(dob)) { addMessage('assistant', copy.bad); return; }
+    if (rewardedFor('numbers') && !(await watchForResult())) return;
+    const name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
+    const result = tool.report(dob, name, state.lang, year);
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `🔢 ${copy.title}${name ? ` · ${name}` : ''}`));
+    const section = (label, info) => entry.append(el('p', null, `${label} ${info.number} · ${info.title}`), el('p', null, info.nature));
+    section(copy.moolank[0], result.moolank);
+    section(copy.bhagyank[0], result.bhagyank);
+    if (result.name) section(copy.nameNum[0], result.name);
+    entry.appendChild(el('p', null, `📅 ${fill(copy.year, { year, n: result.year.number })} ${result.year.text}`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
+  }
   /* ---- Life Guide: six balance bars (Love, Family, Marriage, Career, Wealth, Health out of 10) for yesterday, today,
      tomorrow, this month and this year, worked out on the server from planet transits and the lunar day (no AI). ---- */
   const lgCopy = () => toolText().lifeguide || TOOLS_COPY.en.lifeguide;
@@ -2656,6 +2672,21 @@
       }
       box.appendChild(grid);
     }
+  }
+  // Life Guide, asked straight in chat: today's balance (the free tab) for your own Moon sign, as a compact message.
+  async function chatLifeGuide() {
+    if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
+    const copy = lgCopy();
+    if (!lg.sign) { addMessage('assistant', copy.pickFirst); return; }
+    lg.tab = 'today';
+    if (!lg.cache[lgKey()]) await loadLifeGuide();
+    const data = lg.cache[lgKey()];
+    if (!data) { addMessage('assistant', copy.failed); return; }
+    const period = data.today;
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `⚖️ ${copy.balance[1]} · ${signName(lg.sign)}`));
+    for (const area of LG_AREAS) entry.appendChild(el('p', null, `${LG_ICONS[area]} ${copy.areas[area]}: ${period[area].score}/10`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
 
   /* ---- Sign match: any two Moon signs; Graha Maitri + Bhakoot (12 points) from matchUI.signMatch ---- */
@@ -2870,6 +2901,33 @@
     again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
     actions.append(askAi, share, again);
     box.appendChild(actions);
+  }
+  // Tarot, asked straight in chat: a fresh three-card draw and reading for the matched topic, shown as a message.
+  function matchTarotTopic(query) {
+    const text = String(query || '').toLowerCase(), copy = tarotCopy();
+    for (const [key] of TAROT_TOPICS) if (text.includes(key) || (copy.topics[key] && text.includes(copy.topics[key].toLowerCase()))) return key;
+    return null;
+  }
+  let chatTarotAwaitingTopic = false;
+  async function chatTarot(topicKey) {
+    const copy = tarotCopy();
+    startTarotDraw(topicKey);
+    tarot.chosen = [0, 1, 2];
+    if (rewardedFor('tarot') && !(await watchForResult())) { tarot.step = 'topic'; return; }
+    const pending = el('div', 'chat-message assistant', copy.loading);
+    chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
+    await loadTarotReading();
+    chatLog.removeChild(pending);
+    const cards = tarot.chosen.map(n => tarot.spread[n]), reading = tarot.reading;
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `🃏 ${copy.topics[tarot.topic]}`));
+    ['past', 'present', 'future'].forEach((key, i) => {
+      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
+      const text = reading ? reading[key] : `${tarotName(card.id)}: ${meaning}.`;
+      entry.appendChild(el('p', null, `${copy.positions[i]} · ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}: ${text}`));
+    });
+    entry.appendChild(el('p', null, `✨ ${reading ? reading.advice : copy.fallbackAdvice}`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
   /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
   state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
@@ -4126,7 +4184,7 @@
         saveProfile({ dob: intake.dob, pob: intake.pob, tob: intake.tob });
         const pending = intake.pending; intake.step = null; intake.pending = null; intake.recalculating = false;
         addMessage('assistant', t('chartReady'));
-        if (pending) { if (chartUI.isPartnerPortraitRequest(pending)) void chatPartnerPortrait(); else route(pending); } else addJathakam();
+        if (pending) { if (!routeSpecialIntent(pending)) route(pending); } else addJathakam();
         return;
       }
       let hint = '';
@@ -4156,6 +4214,27 @@
     intake.tob = tob; intake.step = 'busy';
     await finishIntake();
   }
+  // Any of the other tools, asked straight in chat instead of only from their own page. Returns true when handled,
+  // so the caller skips the general AI assistant / offline Q&A for it.
+  function routeSpecialIntent(query) {
+    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return true; }
+    if (chartUI.isNumerologyRequest(query)) { void chatNumerology(); return true; }
+    if (chartUI.isLifeGuideRequest(query)) { void chatLifeGuide(); return true; }
+    if (chartUI.isPalmRequest(query)) { openPalm(); void startPalmScan(); return true; }
+    if (chartUI.isTarotRequest(query)) {
+      const topic = matchTarotTopic(query);
+      if (topic) { void chatTarot(topic); return true; }
+      chatTarotAwaitingTopic = true;
+      addMessage('assistant', `${tarotCopy().ask} (${TAROT_TOPICS.map(([key]) => tarotCopy().topics[key]).join(', ')})`);
+      return true;
+    }
+    if (chatTarotAwaitingTopic) {
+      const topic = matchTarotTopic(query);
+      chatTarotAwaitingTopic = false;
+      if (topic) { void chatTarot(topic); return true; }
+    }
+    return false;
+  }
   function ask(shown, query, fromPrompt) {
     // Normally gated on having no chart yet; "recalculating" additionally covers typing a new birth date below,
     // even though a (now stale) chart still exists while that recalculation is in progress.
@@ -4164,7 +4243,7 @@
       addMessage('user', shown); void intakeInput(query, fromPrompt === true); return;
     }
     addMessage('user', shown);
-    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return; }
+    if (routeSpecialIntent(query)) return;
     // A bare birth date typed with a chart already on hand means a different Kundli, not a question about this
     // one — recalculate instead of asking the AI assistant, which would otherwise answer from the old chart's
     // facts about an unrelated date and give a nonsensical reading.

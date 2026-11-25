@@ -95,6 +95,22 @@
     const text = question.trim().toLowerCase();
     return text.length > 0 && text.length <= 300 && PARTNER_PORTRAIT_WORDS.some(word => text.includes(word.toLowerCase()));
   }
+  function wordMatcher(words) {
+    return question => {
+      if (typeof question !== 'string') return false;
+      const text = question.trim().toLowerCase();
+      return text.length > 0 && text.length <= 300 && words.some(word => text.includes(word.toLowerCase()));
+    };
+  }
+  // The other tools, asked straight in chat instead of only from their own page.
+  const isNumerologyRequest = wordMatcher(['numerology', 'moolank', 'bhagyank', 'name number', 'lucky number',
+    'సంఖ్యా శాస్త్రం', 'మూలాంకం', 'భాగ్యాంకం', 'నా అదృష్ట సంఖ్య', 'అంక జ్యోతిష', 'मूलांक', 'भाग्यांक', 'अंक ज्योतिष', 'मेरा भाग्यांक']);
+  const isTarotRequest = wordMatcher(['tarot', 'tarot card', 'tarot reading', 'draw a card',
+    'టారట్', 'టారో', 'టారో కార్డు', 'टैरो', 'टैरो कार्ड']);
+  const isLifeGuideRequest = wordMatcher(['life guide', 'my balance', 'balance score', 'balance for today',
+    'లైఫ్ గైడ్', 'నా సమతుల్యం', 'సమతుల్యత', 'जीवन मार्गदर्शक', 'मेरा संतुलन', 'संतुलन स्कोर']);
+  const isPalmRequest = wordMatcher(['palm reading', 'read my palm', 'my palm', 'palm scan',
+    'హస్తసాముద్రికం', 'నా అరచేతి', 'చేతి రేఖలు', 'हस्तरेखा', 'मेरी हथेली', 'हाथ की रेखा']);
   function fill(template, values) {
     return template.replace(/\{(\w+)\}/g, (_match, key) => String(values[key]));
   }
@@ -1161,7 +1177,7 @@
       venusRashi, venusSign: signName(venusRashi, language), venusTrait: text[venusRashi - 1],
     };
   }
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isPartnerPortraitRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isPartnerPortraitRequest, isNumerologyRequest, isTarotRequest, isLifeGuideRequest, isPalmRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

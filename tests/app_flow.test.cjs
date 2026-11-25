@@ -806,6 +806,75 @@ test('"Your ideal partner" asked in chat with a chart already on hand: generates
   assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
 });
 
+test('Numerology asked straight in chat: Moolank and Bhagyank show up there, not only on the Numerology page', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true });
+  await settle();
+  await typeInChat(app, 'what is my numerology moolank and bhagyank');
+  await settle();
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));   // not sent to the general AI assistant
+  const expected = numerologyTool.report('1995-08-15', '', 'en', new Date().getFullYear());
+  const last = app.element('chat-log').children.at(-1);
+  assert.match(last.children[0].textContent, /🔢/);
+  assert.match(last.children.map(item => item.textContent).join(' '), new RegExp(String(expected.moolank.number)));
+});
+
+test('Life Guide asked straight in chat: today\'s balance for your own Moon sign, as a compact message', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const lifeGuide = { today: Object.fromEntries(['love', 'family', 'marriage', 'career', 'wealth', 'health'].map(area => [area, { score: 7, support: [] }])) };
+  const app = boot({ storage, birth: syntheticBirth, lifeGuide, assistant: true });
+  await settle();
+  await typeInChat(app, 'show me my life guide balance for today');
+  await settle();
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));
+  const last = app.element('chat-log').children.at(-1);
+  assert.match(last.children[0].textContent, /⚖️/);
+  assert.equal(last.children.length, 7);   // the heading plus all six areas
+});
+
+test('Tarot asked straight in chat: with a named area, draws three cards and shows the reading right there', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const app = boot({ storage, birth: syntheticBirth, tarot: { status: 'ok', reading }, assistant: true });
+  await settle();
+  await typeInChat(app, 'give me a tarot reading about my career');
+  await settle();
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));
+  const last = app.element('chat-log').children.at(-1);
+  assert.match(last.children[0].textContent, /🃏/);
+  assert.match(last.children.map(item => item.textContent).join(' '), /Past text\./);
+});
+
+test('Tarot asked straight in chat: with no area named, asks which one first', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const app = boot({ storage, birth: syntheticBirth, tarot: { status: 'ok', reading } });
+  await settle();
+  await typeInChat(app, 'please give me a tarot reading');
+  assert.match(app.element('chat-log').children.at(-1).textContent, /love|career|money|health|luck|family/i);
+  await typeInChat(app, 'money please');
+  await settle();
+  const last = app.element('chat-log').children.at(-1);
+  assert.match(last.children.map(item => item.textContent).join(' '), /Past text\./);
+});
+
+test('"Read my palm" asked straight in chat: jumps to the Palm page and opens the camera right away', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const stream = { getTracks: () => [{ stop() {} }] };
+  const navigator = { mediaDevices: { getUserMedia: async () => stream } };
+  const app = boot({ storage, birth: syntheticBirth, navigator });
+  await settle();
+  await typeInChat(app, 'read my palm please');
+  await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  assert.ok(app.context.document.body.children.some(item => item.className === 'cam'), 'the camera opened directly');
+});
+
 test('"Your ideal partner": a Woman/Man toggle on the page itself picks the gender, with no need to visit Kundli matching first', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
