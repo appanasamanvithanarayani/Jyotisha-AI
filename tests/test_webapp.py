@@ -60,6 +60,20 @@ def test_server_binds_only_to_loopback_and_serves_ui(local_server):
     assert b'src="/chart-ui.js"' in body
     assert b'name="utc_offset"' not in body
     assert headers["Cache-Control"] == "no-store"
+    assert headers["Set-Cookie"].startswith("jyotisha_visitor=") and "HttpOnly" in headers["Set-Cookie"] and "SameSite=Lax" in headers["Set-Cookie"]
+
+
+def test_successful_kundli_keeps_only_birth_year_for_anonymous_analytics(local_server, monkeypatch):
+    _, headers, _ = request(local_server, "GET", "/")
+    cookie = headers["Set-Cookie"].split(";", 1)[0]
+    monkeypatch.setattr(webapp, "birth_input_status", lambda *_: {"status": "experimental_chart", "chart": {}, "details": None})
+    payload = json.dumps({"dob": "2000-06-15", "pob": "Test City", "tob": "12:00"})
+    status, _, _ = request(local_server, "POST", "/api/birth-chart", payload,
+                           {"Content-Type": "application/json", "Cookie": cookie})
+    assert status == 200
+    user = webapp.store.analytics.snapshot()["users"][0]
+    assert user["birth_year"] == 2000 and user["generation_count"] == 1
+    assert "2000-06-15" not in (webapp.store.data_dir() / "analytics.json").read_text()
 
 
 def test_chart_ui_script_is_local_and_served_with_no_cache(local_server):
@@ -956,7 +970,7 @@ def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_
     monkeypatch.delenv("JYOTISHA_DEVELOPER", raising=False)
     monkeypatch.setenv("JYOTISHA_CONTACT", "help@example.com")
     _, _, body = request(local_server, "GET", "/privacy")
-    assert b"developed and operated by Samanvitha" in body and b"Report this answer" in body and b"AI-generated" in body and b"{{DEVELOPER}}" not in body
+    assert b"developed and operated by Samanvitha" in body and b"Report this answer" in body and b"AI-generated" in body and b"Anonymous usage measurement" in body and b"{{DEVELOPER}}" not in body
     assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["contact_email"] == "help@example.com"
     monkeypatch.setenv("JYOTISHA_CONTACT", "not an email <script>")
     assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["contact_email"] is None

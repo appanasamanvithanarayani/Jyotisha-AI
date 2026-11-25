@@ -40,6 +40,16 @@ MAX_REQUEST_BYTES = 8192
 PUBLIC_API_PER_MINUTE = 120
 PUBLIC_ASK_PER_MINUTE = 8
 PUBLIC_ASK_PER_DAY = 60
+VISITOR_COOKIE = "jyotisha_visitor"
+VISITOR_MAX_AGE = 365 * 24 * 60 * 60
+
+
+def _cookie_value(header: str, name: str) -> str:
+    for part in (header or "").split(";"):
+        found, _, value = part.strip().partition("=")
+        if found == name:
+            return value
+    return ""
 
 
 class TTLCache:
@@ -834,10 +844,18 @@ class LocalHandler(BaseHTTPRequestHandler):
     def _admin_signed_in(self) -> bool:
         return admin.session_valid(admin.cookie_from(self.headers.get("Cookie", "")))
 
+    def _visitor(self) -> str:
+        value = _cookie_value(self.headers.get("Cookie", ""), VISITOR_COOKIE)
+        return value if re.fullmatch(r"[A-Za-z0-9_-]{20,64}", value) else ""
+
+    def _visitor_cookie(self, value: str) -> str:
+        return f"{VISITOR_COOKIE}={value}; Path=/; Max-Age={VISITOR_MAX_AGE}; HttpOnly; SameSite=Lax" + ("; Secure" if self._secure() else "")
+
     def _admin_state(self) -> dict:
         current = assistant.provider()
         return {
-            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14), "ratings": store.ratings_snapshot(),
+            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14), "analytics": store.analytics.snapshot(),
+            "ratings": store.ratings_snapshot(),
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
             "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
@@ -958,8 +976,11 @@ class LocalHandler(BaseHTTPRequestHandler):
             return
         if path == "/":
             store.stats.record("page_views", self._client())
+            existing_visitor = self._visitor()
+            visitor = existing_visitor or secrets.token_urlsafe(24)
+            store.analytics.visit(visitor)
             body = files("jyotisha_ai.web").joinpath("birth.html").read_bytes()
-            self._send(200, body, "text/html; charset=utf-8")
+            self._send(200, body, "text/html; charset=utf-8", {"Set-Cookie": self._visitor_cookie(visitor)} if not existing_visitor else None)
         elif path in ("/manifest.webmanifest", "/sw.js"):
             body = files("jyotisha_ai.web").joinpath(path[1:]).read_bytes()
             self._send(200, body, "application/manifest+json" if path.endswith(".webmanifest") else "application/javascript; charset=utf-8")
@@ -1165,7 +1186,15 @@ class LocalHandler(BaseHTTPRequestHandler):
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
             self._json(400, {"error": str(exc)})
             return
-        self._json(200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or "reading" in result or "variants" in result or "image" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422, result)
+        response_status = 200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or "reading" in result or "variants" in result or "image" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422
+        generation_type = {"/api/birth-chart": "kundli", "/api/ask": "ai_chat", "/api/rashiphal": "rashiphal",
+                           "/api/life-guide": "life_guide", "/api/moon-sign": "moon_sign", "/api/tarot": "tarot",
+                           "/api/palm": "palm", "/api/partner-portrait": "partner_portrait"}.get(path)
+        if generation_type and response_status == 200 and result.get("status") not in ("off", "unavailable", "unconfigured", "not_palm"):
+            if generation_type == "kundli" and isinstance(payload, dict):
+                store.analytics.profile_birth_year(self._visitor(), payload.get("dob"))
+            store.analytics.generated(self._visitor(), generation_type)
+        self._json(response_status, result)
 
 
 def serve_public(port: int | None = None) -> None:

@@ -382,6 +382,140 @@ class Stats:
 stats = Stats()
 
 
+# -------------------------------------------------------------------------------- anonymous product analytics
+GENERATION_TYPES = ("kundli", "ai_chat", "rashiphal", "life_guide", "moon_sign", "tarot", "palm", "partner_portrait")
+
+
+class Analytics:
+    """Anonymous users and successful generation types; never stores inputs, outputs, IP addresses, or the cookie."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._loaded_from = None
+        self._data: dict = {"users": {}, "days": {}}
+
+    def _path(self) -> Path:
+        return data_dir() / "analytics.json"
+
+    @staticmethod
+    def _anonymous_id(visitor: str) -> str:
+        return hashlib.sha256(("jyotisha-anonymous|" + visitor).encode("utf-8", "ignore")).hexdigest()[:24]
+
+    def _load(self) -> None:
+        path = str(self._path())
+        if self._loaded_from == path:
+            return
+        self._loaded_from = path
+        try:
+            raw = json.loads(Path(path).read_text(encoding="utf-8"))
+            self._data = raw if isinstance(raw, dict) and isinstance(raw.get("users"), dict) and isinstance(raw.get("days"), dict) else {"users": {}, "days": {}}
+        except (OSError, ValueError):
+            self._data = {"users": {}, "days": {}}
+
+    def _save(self) -> None:
+        try:
+            self._path().parent.mkdir(parents=True, exist_ok=True)
+            self._path().write_text(json.dumps(self._data, sort_keys=True), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _visit(self, visitor: str, today: str) -> tuple[str, dict, dict]:
+        anonymous_id = self._anonymous_id(visitor)
+        users, days = self._data["users"], self._data["days"]
+        is_new = anonymous_id not in users
+        user = users.setdefault(anonymous_id, {"first_seen": today, "last_seen": today, "visits": 0, "generations": {}})
+        day = days.setdefault(today, {"users": [], "new_users": 0, "generations": {}})
+        if anonymous_id not in day["users"]:
+            day["users"].append(anonymous_id)
+            user["visits"] = int(user.get("visits", 0)) + 1
+        if is_new:
+            day["new_users"] = int(day.get("new_users", 0)) + 1
+        user["last_seen"] = today
+        return anonymous_id, user, day
+
+    def visit(self, visitor: str) -> None:
+        if not visitor:
+            return
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            self._visit(visitor, today)
+            self._save()
+
+    def generated(self, visitor: str, feature: str) -> None:
+        if not visitor or feature not in GENERATION_TYPES:
+            return
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            _, user, day = self._visit(visitor, today)
+            user_generations = user.setdefault("generations", {})
+            day_generations = day.setdefault("generations", {})
+            user_generations[feature] = int(user_generations.get(feature, 0)) + 1
+            day_generations[feature] = int(day_generations.get(feature, 0)) + 1
+            self._save()
+
+    def profile_birth_year(self, visitor: str, dob: object) -> None:
+        """Keep only a birth year and broad current age range; the exact birth date is deliberately discarded."""
+        if not visitor or not isinstance(dob, str):
+            return
+        try:
+            born = date.fromisoformat(dob)
+        except ValueError:
+            return
+        today = date.today()
+        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        if not 0 <= age <= 125:
+            return
+        if age < 18:
+            age_range = "Under 18"
+        elif age < 25:
+            age_range = "18–24"
+        elif age < 35:
+            age_range = "25–34"
+        elif age < 45:
+            age_range = "35–44"
+        elif age < 55:
+            age_range = "45–54"
+        elif age < 65:
+            age_range = "55–64"
+        else:
+            age_range = "65+"
+        with self._lock:
+            self._load()
+            _, user, _ = self._visit(visitor, today.isoformat())
+            user["birth_year"] = born.year
+            user["age_range"] = age_range
+            self._save()
+
+    def snapshot(self, days: int = 14, user_limit: int = 100) -> dict:
+        with self._lock:
+            self._load()
+            recent_days = [(date.today() - timedelta(days=offset)).isoformat() for offset in range(days)]
+            day_rows, active, generation_totals = [], set(), {feature: 0 for feature in GENERATION_TYPES}
+            for day_name in recent_days:
+                row = self._data["days"].get(day_name, {})
+                users = set(row.get("users", [])); active.update(users)
+                generations = {feature: int(row.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
+                for feature, count in generations.items():
+                    generation_totals[feature] += count
+                day_rows.append({"date": day_name, "unique_users": len(users), "new_users": int(row.get("new_users", 0)), "generations": generations})
+            users = sorted(self._data["users"].items(), key=lambda item: (item[1].get("last_seen", ""), item[0]), reverse=True)
+            recent_users = []
+            for anonymous_id, user in users[:max(0, min(user_limit, 100))]:
+                generations = {feature: int(user.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
+                recent_users.append({"id": anonymous_id[:10], "birth_year": user.get("birth_year"), "age_range": user.get("age_range", ""),
+                                     "first_seen": user.get("first_seen", ""), "last_seen": user.get("last_seen", ""),
+                                     "active_days": int(user.get("visits", 0)), "generation_count": sum(generations.values()), "generations": generations})
+            return {"total_users": len(self._data["users"]), "active_today": day_rows[0]["unique_users"] if day_rows else 0,
+                    "new_today": day_rows[0]["new_users"] if day_rows else 0, "active_period": len(active),
+                    "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
+                    "days": day_rows, "users": recent_users}
+
+
+analytics = Analytics()
+
+
 # ----------------------------------------------------------------------------------------- private app ratings
 def record_rating(stars: object, reason: object = "", language: object = "") -> dict:
     """Store an app rating for the owner. Low ratings require a short private explanation."""

@@ -7,6 +7,7 @@
 
   const META = {
     Overview: ['Overview', 'Live product, engagement and service signals', '⌂'],
+    Users: ['Users', 'Anonymous visitors and the features they generated', '◎'],
     Usage: ['Usage & trends', 'Privacy-safe aggregate activity for the last 14 days', '↗'],
     Ratings: ['Ratings & feedback', 'User sentiment and private improvement notes', '★'],
     Notifications: ['Notifications', 'Compose messages and review AI-written daily copy', '◉'],
@@ -47,7 +48,7 @@
     const names = [];
     state.settings.forEach(item => { if (!names.includes(item.group)) names.push(item.group); });
     return [
-      ['Monitor', ['Overview', 'Usage', 'Ratings']],
+      ['Monitor', ['Overview', 'Users', 'Usage', 'Ratings']],
       ['Engage', ['Notifications']],
       ['Revenue', ['Monetization', ...names.filter(name => ['Android app ads', 'Website ads', 'Payments'].includes(name))]],
       ['Configuration', names.filter(name => !['Android app ads', 'Website ads', 'Payments'].includes(name))],
@@ -72,6 +73,7 @@
     $('top-title').textContent = info[0]; $('top-subtitle').textContent = info[1];
     const view = $('view'); view.textContent = '';
     if (tab === 'Overview') dashboard(view);
+    else if (tab === 'Users') users(view);
     else if (tab === 'Usage') usage(view);
     else if (tab === 'Ratings') ratings(view);
     else if (tab === 'Change log') changeLog(view);
@@ -97,24 +99,38 @@
 
   function sum(key) { return (state.stats || []).reduce((total, row) => total + Number(row[key] || 0), 0); }
 
-  function chart(key) {
-    const box = el('div', 'chart'); const values = [...(state.stats || [])].reverse();
-    const max = Math.max(1, ...values.map(row => Number(row[key] || 0)));
+  function barChart(values, key) {
+    const frame = el('div', 'chart-frame'), axis = el('div', 'y-axis'), box = el('div', 'chart');
+    const rawMax = Math.max(1, ...values.map(row => Number(row[key] || 0)));
+    const magnitude = 10 ** Math.max(0, Math.floor(Math.log10(rawMax)) - 1);
+    const max = Math.max(1, Math.ceil(rawMax / magnitude) * magnitude);
+    [max, Math.round(max * .75), Math.round(max * .5), Math.round(max * .25), 0].forEach(value => axis.appendChild(el('span', null, value.toLocaleString())));
     values.forEach(row => { const wrap = el('div', 'bar-wrap'); wrap.title = `${row.date}: ${row[key] || 0}`; const bar = el('span', 'bar'); bar.style.height = `${Math.max(2, Number(row[key] || 0) / max * 100)}%`; wrap.appendChild(bar); box.appendChild(wrap); });
-    return box;
+    frame.append(axis, box); return frame;
+  }
+
+  function chart(key) {
+    return barChart([...(state.stats || [])].reverse(), key);
+  }
+
+  const FEATURE_NAMES = { kundli: 'Kundli', ai_chat: 'AI chat', rashiphal: 'Rashiphal', life_guide: 'Life Guide', moon_sign: 'Moon sign', tarot: 'Tarot', palm: 'Palm', partner_portrait: 'Partner portrait' };
+
+  function analyticsChart(key) {
+    return barChart([...((state.analytics || {}).days || [])].reverse(), key);
   }
 
   function dashboard(view) {
     const today = state.stats[0] || {};
+    const analytics = state.analytics || {};
     intro(view, 'Overview & trends', 'A decision view for engagement, AI usage, user feedback, monetization and service readiness.');
     const tiles = el('div', 'tiles');
-    tiles.append(tile('Visitors today', today.visitors || 0), tile('Page opens today', today.page_views || 0),
-      tile('AI questions today', today.ai_questions || 0), tile('Average rating', state.ratings.total ? `${state.ratings.average} / 5` : '—', '', 'All time'));
+    tiles.append(tile('Unique users today', analytics.active_today || 0), tile('New users today', analytics.new_today || 0),
+      tile('Active users', analytics.active_period || 0, '', '14 days'), tile('Average rating', state.ratings.total ? `${state.ratings.average} / 5` : '—', '', 'All time'));
     view.appendChild(tiles);
 
     const live = state.live;
     const columns = el('div', 'grid-2');
-    const trend = el('div', 'panel'); trend.append(el('h2', null, 'Visitor trend'), el('p', 'hint', `${sum('visitors')} unique daily visitors across 14 days`), chart('visitors'));
+    const trend = el('div', 'panel'); trend.append(el('h2', null, 'Unique-user trend'), el('p', 'hint', `${analytics.active_period || 0} anonymous users active across 14 days`), analyticsChart('unique_users'));
     const quick = el('div', 'panel'); quick.append(el('h2', null, 'Fourteen-day activity'));
     [['Page opens', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
     columns.append(trend, quick); view.appendChild(columns);
@@ -152,6 +168,21 @@
     const columns = [['date', 'Day'], ['visitors', 'Visitors'], ['page_views', 'Opens'], ['day_panchang', 'Panchang'], ['month_calendar', 'Calendar'], ['birth_chart', 'Kundli'], ['ai_questions', 'AI'], ['apk_downloads', 'APK'], ['rate_limited', 'Blocked']];
     const head = el('tr'); columns.forEach(([, label]) => head.appendChild(el('th', null, label))); table.appendChild(head);
     state.stats.forEach(row => { const tr = el('tr'); columns.forEach(([key]) => tr.appendChild(el('td', null, String(row[key] === undefined ? 0 : row[key])))); table.appendChild(tr); }); wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
+  }
+
+  function users(view) {
+    const data = state.analytics || { users: [], generation_totals: {}, days: [] };
+    intro(view, 'Anonymous users', 'Users are identified by a random first-party ID. Only birth year and a broad age range are retained from a successful Kundli; exact DOB, names, questions, photos and generated content are not stored.');
+    const tiles = el('div', 'tiles'); tiles.append(tile('Tracked users', data.total_users || 0, '', 'All time'), tile('Unique users today', data.active_today || 0), tile('New users today', data.new_today || 0), tile('New users', data.new_period || 0, '', '14 days')); view.appendChild(tiles);
+    const trends = el('div', 'grid-even'); const unique = el('div', 'panel'); unique.append(el('h2', null, 'Unique users'), analyticsChart('unique_users')); const fresh = el('div', 'panel'); fresh.append(el('h2', null, 'New users'), analyticsChart('new_users')); trends.append(unique, fresh); view.appendChild(trends);
+    const generated = el('div', 'panel'); generated.append(el('h2', null, 'What users generated'), el('p', 'hint', 'Successful results in the last 14 days, grouped only by feature.'));
+    const total = Math.max(1, Object.values(data.generation_totals || {}).reduce((sum, value) => sum + Number(value || 0), 0));
+    Object.entries(FEATURE_NAMES).forEach(([key, label]) => { const count = Number((data.generation_totals || {})[key] || 0), row = el('div', 'mini-stat'), name = el('span', null, label), value = el('b', null, String(count)); name.style.minWidth = '120px'; const progress = el('div', 'progress'); progress.style.flex = '1'; const fill = el('span'); fill.style.width = `${count / total * 100}%`; progress.appendChild(fill); row.append(name, progress, value); generated.appendChild(row); }); view.appendChild(generated);
+    const panel = el('div', 'panel'); panel.append(el('h2', null, 'Recent users'), el('p', 'hint', 'Anonymous IDs are shortened. Counts show successful generation results only.'));
+    const wrap = el('div', 'scroll'), table = el('table'); const head = el('tr'); ['Anonymous ID', 'Birth year', 'Age range', 'First seen', 'Last seen', 'Active days', 'Generated', 'Breakdown'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    (data.users || []).forEach(user => { const breakdown = Object.entries(user.generations || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const row = el('tr'); [user.id, user.birth_year || '—', user.age_range || '—', user.first_seen, user.last_seen, user.active_days, user.generation_count, breakdown].forEach(value => row.appendChild(el('td', null, String(value)))); table.appendChild(row); });
+    if (!(data.users || []).length) { const row = el('tr'), cell = el('td', 'hint', 'No anonymous users have been recorded yet.'); cell.colSpan = 8; row.appendChild(cell); table.appendChild(row); }
+    wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
   }
 
   function ratings(view) {

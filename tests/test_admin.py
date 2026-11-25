@@ -162,6 +162,23 @@ def test_counters_keep_totals_only():
     assert "203.0.113" not in (store.data_dir() / "stats.json").read_text()
 
 
+def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
+    store.analytics.visit("random-device-token-a-12345")
+    store.analytics.visit("random-device-token-a-12345")
+    store.analytics.visit("random-device-token-b-67890")
+    store.analytics.generated("random-device-token-a-12345", "kundli")
+    store.analytics.generated("random-device-token-a-12345", "tarot")
+    store.analytics.profile_birth_year("random-device-token-a-12345", "2000-06-15")
+    snapshot = store.analytics.snapshot()
+    assert snapshot["total_users"] == 2 and snapshot["active_today"] == 2 and snapshot["new_today"] == 2
+    assert snapshot["generation_totals"]["kundli"] == 1 and snapshot["generation_totals"]["tarot"] == 1
+    first = next(user for user in snapshot["users"] if user["generation_count"] == 2)
+    assert first["generations"]["kundli"] == 1 and len(first["id"]) == 10
+    assert first["birth_year"] == 2000 and first["age_range"] in ("25–34", "18–24")
+    saved = (store.data_dir() / "analytics.json").read_text()
+    assert "random-device-token" not in saved and "2000-06-15" not in saved
+
+
 def test_private_low_rating_is_saved_and_visible_only_in_admin(panel):
     status, _, body = call(panel, "POST", "/api/rating", {"stars": 2, "reason": "The regenerate button failed", "language": "en"})
     assert status == 200 and json.loads(body) == {"ok": True, "stars": 2}
