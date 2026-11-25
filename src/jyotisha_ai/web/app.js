@@ -144,7 +144,6 @@
       kootas: { varna: 'Varna (nature)', vashya: 'Vashya (attraction)', tara: 'Tara (destiny)', yoni: 'Yoni (intimacy)', maitri: 'Graha Maitri (friendship)', gana: 'Gana (temperament)', bhakoot: 'Bhakoot (family & wealth)', nadi: 'Nadi (health & children)' },
       manglik: 'Manglik (Kuja dosha)', you: 'You', partner: 'Partner', yes: 'Yes', no: 'No',
       manglikBoth: 'Both are Manglik — traditionally this cancels out.', manglikOne: 'Only one is Manglik — many families consult an astrologer about this.',
-      note: 'Conventional Ashtakoota rules, not expert-reviewed. Use it as a guide, not as a decision about marriage. Enter another person’s details only with their consent; they are not saved on this device.',
       error: 'Calculated chart data is incomplete; no matching was made.',
     },
     te: {
@@ -170,7 +169,6 @@
       kootas: { varna: 'వర్ణ (స్వభావం)', vashya: 'వశ్య (ఆకర్షణ)', tara: 'తార (అదృష్టం)', yoni: 'యోని (అనుబంధం)', maitri: 'గ్రహ మైత్రి (స్నేహం)', gana: 'గణ (ప్రవృత్తి)', bhakoot: 'భకూట (కుటుంబం, సంపద)', nadi: 'నాడి (ఆరోగ్యం, సంతానం)' },
       manglik: 'కుజ దోషం', you: 'మీరు', partner: 'భాగస్వామి', yes: 'ఉంది', no: 'లేదు',
       manglikBoth: 'ఇద్దరికీ కుజ దోషం ఉంది — సంప్రదాయంగా ఇది పరిహారమవుతుంది.', manglikOne: 'ఒకరికి మాత్రమే కుజ దోషం ఉంది — చాలా కుటుంబాలు దీని గురించి జ్యోతిష్కుడిని సంప్రదిస్తాయి.',
-      note: 'ఇవి సంప్రదాయ అష్టకూట నియమాలు, నిపుణుల సమీక్ష పొందలేదు. వివాహ నిర్ణయంగా కాకుండా మార్గదర్శిగా మాత్రమే వాడండి. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి; అవి ఈ పరికరంలో సేవ్ కావు.',
       error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పొంతన చూడలేదు.',
     },
     hi: {
@@ -196,7 +194,6 @@
       kootas: { varna: 'वर्ण (स्वभाव)', vashya: 'वश्य (आकर्षण)', tara: 'तारा (भाग्य)', yoni: 'योनि (घनिष्ठता)', maitri: 'ग्रह मैत्री (मित्रता)', gana: 'गण (प्रकृति)', bhakoot: 'भकूट (परिवार और धन)', nadi: 'नाड़ी (स्वास्थ्य और संतान)' },
       manglik: 'मांगलिक (कुज दोष)', you: 'आप', partner: 'साथी', yes: 'हाँ', no: 'नहीं',
       manglikBoth: 'दोनों मांगलिक हैं — परंपरा में यह दोष कट जाता है।', manglikOne: 'केवल एक मांगलिक है — कई परिवार इसके लिए ज्योतिषी से परामर्श करते हैं।',
-      note: 'ये पारंपरिक अष्टकूट नियम हैं, विशेषज्ञ समीक्षा नहीं हुई। इसे विवाह का निर्णय नहीं, केवल मार्गदर्शन मानें। किसी और का विवरण उनकी सहमति से ही दर्ज करें; यह इस डिवाइस पर सहेजा नहीं जाता।',
       error: 'गणना की गई कुंडली अधूरी है; मिलान नहीं किया गया।',
     },
   };
@@ -520,7 +517,7 @@
     const copy = loveText();
     for (const [id, key] of [['relationship-nav', 'nav'], ['relationship-eyebrow', 'eyebrow'], ['relationship-title', 'title'],
       ['relationship-intro', 'intro'], ['relationship-reading', 'optReading'], ['relationship-compare-title', 'compare'],
-      ['relationship-submit', 'submit'], ['relationship-note', 'note'], ['partner-role-label', 'iAm']]) $(id).textContent = copy[key];
+      ['relationship-submit', 'submit'], ['partner-role-label', 'iAm']]) $(id).textContent = copy[key];
     const mode = state.loveMode;
     $('love-options').replaceChildren(
       optionCard('💞', copy.optMatch, copy.optMatchSub, () => { state.loveMode = 'match'; renderRelationship(); }, mode === 'match'),
