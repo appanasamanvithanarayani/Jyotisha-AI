@@ -4,53 +4,33 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>Jyotirmaya AstroChat · Admin</title>
+<title>Jyotirmaya · Operations Console</title>
 <style>
-  :root{--bg:#150d2e;--card:#221645;--line:#3a2c66;--ink:#f3ecff;--mute:#a99bd0;--gold:#f2c14e;--ok:#4cc38a;--bad:#ff6b6b}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
-  header h1{font-size:1.05rem;margin:0;color:var(--gold)}
-  main{max-width:900px;margin:0 auto;padding:16px 16px 80px}
-  nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
-  nav button,.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer}
-  nav button.on,.btn.primary{background:var(--gold);color:#150d2e;border-color:var(--gold);font-weight:700}
-  .btn.danger{border-color:var(--bad);color:var(--bad)}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-  .panel h2{margin:0 0 4px;font-size:1.05rem}
-  .hint{color:var(--mute);font-size:.86rem;margin:2px 0 0}
-  .field{padding:12px 0;border-top:1px solid var(--line)}.field:first-of-type{border-top:0}
-  .field label{display:block;font-weight:600;margin-bottom:4px}
-  input,select,textarea{width:100%;background:#150d2e;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>input,.row>select{flex:1;min-width:160px;width:auto}
-  .badge{font-size:.72rem;border-radius:99px;padding:1px 8px;border:1px solid var(--line);color:var(--mute)}
-  .badge.panel{color:var(--gold);border-color:var(--gold)}
-  table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
-  .scroll{overflow-x:auto}
-  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}.tile b{display:block;font-size:1.5rem;color:var(--gold)}
-  .on-text{color:var(--ok)}.off-text{color:var(--mute)}
-  #login{max-width:360px;margin:12vh auto;padding:0 16px}
-  #msg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;color:#150d2e;padding:10px 18px;border-radius:99px;font-weight:600;max-width:90vw}
-  #msg.bad{background:var(--bad);color:#fff}[hidden]{display:none!important}
-  .log td{text-align:left;vertical-align:top}
+  :root{color-scheme:dark;--bg:#090c14;--sidebar:#0d111c;--card:#121827;--card2:#171e30;--line:#252e43;--ink:#f4f6fb;--mute:#8d99ae;--accent:#f4ba57;--accent2:#8b7cf6;--ok:#42d392;--warn:#ffbd59;--bad:#ff6b7a;--shadow:0 18px 50px rgba(0,0,0,.22)}
+  [data-theme="light"]{color-scheme:light;--bg:#f3f5f9;--sidebar:#fff;--card:#fff;--card2:#f7f8fb;--line:#dde2ec;--ink:#171b28;--mute:#687086;--accent:#a76208;--accent2:#6956d8;--ok:#087f52;--warn:#9b5c00;--bad:#c62b42;--shadow:0 15px 40px rgba(37,45,70,.08)}
+  [data-theme="midnight"]{--bg:#0c1024;--sidebar:#101630;--card:#141c3b;--card2:#192348;--line:#29365f;--ink:#edf0ff;--mute:#99a4c8;--accent:#7dd3fc;--accent2:#a78bfa}
+  *{box-sizing:border-box}html{min-height:100%}body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  button,input,select,textarea{font:inherit}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  #shell{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}aside{position:sticky;top:0;height:100vh;background:var(--sidebar);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;overflow:auto}
+  .brand{display:flex;align-items:center;gap:11px;padding:0 8px 22px}.brand-mark{display:grid;place-items:center;width:39px;height:39px;border-radius:12px;background:linear-gradient(145deg,var(--accent),#e77841);color:#171018;font-size:21px;box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 25%,transparent)}.brand strong{display:block;font-size:15px}.brand span{display:block;color:var(--mute);font-size:11px}
+  nav{display:block}.nav-label{padding:16px 10px 7px;color:var(--mute);font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}nav button{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--mute);padding:9px 11px;margin:2px 0;border-radius:9px;text-align:left;cursor:pointer}nav button:hover{background:var(--card2);color:var(--ink)}nav button.on{background:color-mix(in srgb,var(--accent) 14%,var(--card));color:var(--accent);font-weight:700;box-shadow:inset 3px 0 var(--accent)}.nav-icon{width:18px;text-align:center}.staff{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line);color:var(--mute);font-size:12px}.staff b{display:block;color:var(--ink)}
+  .content{min-width:0}.topbar{height:72px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 30px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 88%,transparent);position:sticky;top:0;z-index:4;backdrop-filter:blur(14px)}.page-title h1{font-size:18px;margin:0}.page-title p{margin:1px 0 0;color:var(--mute);font-size:12px}.top-actions{display:flex;gap:8px;align-items:center}.top-actions select{width:auto;min-width:105px}
+  main{max-width:1440px;margin:0 auto;padding:26px 30px 70px}.page-intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}.page-intro h2{font-size:24px;margin:0 0 5px}.page-intro p{margin:0;color:var(--mute);max-width:750px}
+  .btn{border:1px solid var(--line);background:var(--card2);color:var(--ink);padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);color:#171018;border-color:var(--accent);font-weight:800}.btn.danger{border-color:color-mix(in srgb,var(--bad) 55%,var(--line));color:var(--bad)}.btn:disabled{opacity:.55;cursor:wait}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:19px;margin-bottom:16px;box-shadow:var(--shadow)}.panel h2{font-size:15px;margin:0 0 4px}.panel h3{font-size:13px;margin:18px 0 8px}.panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}.hint{color:var(--mute);font-size:12px;margin:3px 0 0}
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}.tile{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:17px;min-height:105px;box-shadow:var(--shadow)}.tile:after{content:"";position:absolute;right:-22px;bottom:-30px;width:75px;height:75px;border-radius:50%;background:color-mix(in srgb,var(--accent) 9%,transparent)}.tile b{display:block;font-size:26px;line-height:1.15;margin:9px 0 5px}.tile .hint{display:block}.tile-kicker{color:var(--mute);text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:800}.grid-2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.8fr);gap:16px}.grid-even{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .status-list{display:grid;gap:2px}.status-row{display:grid;grid-template-columns:12px minmax(130px,.8fr) minmax(0,1.4fr);gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.status-row:last-child{border:0}.status-dot{width:8px;height:8px;border-radius:50%;background:var(--mute)}.status-dot.ok{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 12%,transparent)}.status-detail{color:var(--mute);font-size:12px;overflow-wrap:anywhere}.on-text{color:var(--ok)}.off-text{color:var(--mute)}
+  .chart{display:flex;align-items:end;gap:7px;height:145px;padding:15px 0 2px}.bar-wrap{flex:1;min-width:5px;height:100%;display:flex;align-items:end;position:relative}.bar{width:100%;min-height:3px;border-radius:4px 4px 1px 1px;background:linear-gradient(180deg,var(--accent),var(--accent2));opacity:.9}.bar-wrap:hover .bar{filter:brightness(1.15)}.bar-wrap[title]:hover:after{content:attr(title);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);padding:4px 7px;border-radius:5px;background:var(--ink);color:var(--bg);font-size:10px;white-space:nowrap;z-index:2}.mini-stat{padding:12px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.mini-stat:last-child{border:0}.mini-stat span{color:var(--mute)}
+  .field{padding:15px 0;border-top:1px solid var(--line)}.field:first-of-type{border-top:0}.field label{display:block;font-weight:700;margin-bottom:6px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>input,.row>select{flex:1;min-width:180px;width:auto}input,select,textarea{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 11px}textarea{resize:vertical}.badge{display:inline-flex;font-size:10px;border-radius:99px;padding:2px 7px;border:1px solid var(--line);color:var(--mute);font-weight:600}.badge.panel{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+  table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:right;padding:10px 9px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.05em}th:first-child,td:first-child{text-align:left}.log td{text-align:left;white-space:normal;vertical-align:top}.scroll{overflow-x:auto}.progress{height:7px;background:var(--card2);border-radius:99px;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:inherit}
+  #login{max-width:410px;margin:12vh auto;padding:0 18px}.login-brand{text-align:center;margin-bottom:20px}.login-brand .brand-mark{margin:0 auto 10px}.login-brand h1{font-size:22px;margin:0}.login-brand p{color:var(--mute);margin:5px 0}#msg{position:fixed;right:22px;bottom:22px;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:9px;font-weight:700;max-width:min(420px,90vw);z-index:20;box-shadow:var(--shadow)}#msg.bad{background:var(--bad);color:#fff}[hidden]{display:none!important}
+  @media(max-width:950px){#shell{grid-template-columns:190px minmax(0,1fr)}.tiles{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-even{grid-template-columns:1fr}.topbar,main{padding-left:20px;padding-right:20px}}
+  @media(max-width:680px){#shell{display:block}aside{position:static;height:auto;padding:12px}.brand{padding-bottom:8px}nav{display:flex;overflow-x:auto;gap:5px}.nav-label,.staff{display:none}nav button{width:auto;flex:0 0 auto}.topbar{height:auto;padding:12px 15px}.page-title p{display:none}.top-actions select{display:none}main{padding:20px 14px 60px}.tiles{grid-template-columns:1fr 1fr;gap:9px}.tile{min-height:92px;padding:13px}.tile b{font-size:21px}.page-intro{align-items:start}.status-row{grid-template-columns:12px 1fr}.status-detail{grid-column:2}}
 </style>
 </head>
 <body>
-<section id="login" hidden>
-  <h1 style="color:var(--gold)">Jyotirmaya AstroChat · Admin</h1>
-  <div class="panel">
-    <label for="pw" style="font-weight:600">Admin password</label>
-    <input id="pw" type="password" autocomplete="current-password" style="margin:8px 0 12px">
-    <button id="signin" class="btn primary" type="button">Sign in</button>
-    <p class="hint" id="login-note"></p>
-  </div>
-</section>
-<div id="app" hidden>
-  <header><h1>Jyotirmaya AstroChat · Admin</h1><button id="signout" class="btn" type="button">Sign out</button></header>
-  <main><nav id="tabs"></nav><div id="view"></div></main>
-</div>
-<div id="msg" hidden></div>
-<script src="/admin.js"></script>
+<section id="login" hidden><div class="login-brand"><div class="brand-mark">✦</div><h1>Jyotirmaya Console</h1><p>Restricted operations access</p></div><div class="panel"><label for="pw" style="font-weight:700">Admin password</label><input id="pw" type="password" autocomplete="current-password" style="margin:8px 0 12px" placeholder="Enter your password"><button id="signin" class="btn primary" type="button" style="width:100%">Sign in securely</button><p class="hint" id="login-note"></p></div></section>
+<div id="app" hidden><div id="shell"><aside><div class="brand"><div class="brand-mark">✦</div><div><strong>Jyotirmaya</strong><span>Operations Console</span></div></div><nav id="tabs" aria-label="Admin sections"></nav><div class="staff"><b>● Staff session active</b><span id="session-note"></span></div></aside><section class="content"><header class="topbar"><div class="page-title"><h1 id="top-title">Overview</h1><p id="top-subtitle">Live product and service signals</p></div><div class="top-actions"><select id="theme" aria-label="Theme"><option value="dark">Dark</option><option value="midnight">Midnight</option><option value="light">Light</option></select><button id="refresh" class="btn" type="button">Refresh</button><button id="signout" class="btn" type="button">Sign out</button></div></header><main><div id="view"></div></main></section></div></div>
+<div id="msg" role="status" hidden></div><script src="/admin.js"></script>
 </body>
 </html>

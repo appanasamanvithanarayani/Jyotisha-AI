@@ -86,6 +86,13 @@ def test_cookie_is_httponly_strict_and_header_is_required(panel):
     assert call(panel, "GET", "/api/admin/state", cookie=cookie.split(";")[0])[0] == 200
 
 
+def test_admin_state_includes_safe_payment_status(panel):
+    cookie = sign_in(panel)
+    state = json.loads(call(panel, "GET", "/api/admin/state", cookie=cookie)[2])
+    assert state["payments"] == {"ready": False, "provider": None, "chat_bonus_rs": 9, "reading_unlock_rs": 9}
+    assert "RAZORPAY_KEY_SECRET" not in json.dumps(state["payments"])
+
+
 def test_expired_or_forged_sessions_are_refused(monkeypatch):
     monkeypatch.setenv("JYOTISHA_ADMIN_PASSWORD", PASSWORD)
     token = admin.make_session(now=1000)

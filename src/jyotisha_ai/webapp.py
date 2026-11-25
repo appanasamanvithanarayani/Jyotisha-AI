@@ -841,6 +841,9 @@ class LocalHandler(BaseHTTPRequestHandler):
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
             "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
+            "payments": {"ready": payments.enabled(), "provider": store.value("JYOTISHA_PAYMENTS_PROVIDER") or None,
+                         "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
+                         "reading_unlock_rs": payments.price_paise("unlock") // 100},
             "push": {**push.status(), "languages": list(assistant.LANGUAGES.items()), "pages": list(push.PAGES)},
         }
 

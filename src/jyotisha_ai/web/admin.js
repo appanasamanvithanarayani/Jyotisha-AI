@@ -3,7 +3,17 @@
   const $ = id => document.getElementById(id);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
   let state = null;
-  let tab = 'Dashboard';
+  let tab = 'Overview';
+
+  const META = {
+    Overview: ['Overview', 'Live product, engagement and service signals', '⌂'],
+    Usage: ['Usage & trends', 'Privacy-safe aggregate activity for the last 14 days', '↗'],
+    Ratings: ['Ratings & feedback', 'User sentiment and private improvement notes', '★'],
+    Notifications: ['Notifications', 'Compose messages and review AI-written daily copy', '◉'],
+    Monetization: ['Monetization', 'Advertising and payment readiness', '₹'],
+    'System health': ['System health', 'Provider and delivery-service readiness', '●'],
+    'Change log': ['Change log', 'Audited console changes, newest first', '≡'],
+  };
 
   async function api(path, body) {
     const options = body === undefined ? { headers: { 'X-Admin': '1' } }
@@ -28,57 +38,94 @@
   async function load() {
     try { state = await api('/api/admin/state'); }
     catch (error) { if (error.status === 401) { showLogin(); return; } if (error.status === 404) { document.body.textContent = 'Not found'; return; } toast(error.message, true); return; }
-    $('login').hidden = true; $('app').hidden = false; render();
+    $('login').hidden = true; $('app').hidden = false;
+    $('session-note').textContent = `Auto sign-out after ${state.server.session_minutes} minutes`;
+    render();
   }
 
   function groups() {
     const names = [];
     state.settings.forEach(item => { if (!names.includes(item.group)) names.push(item.group); });
-    return ['Dashboard', 'Ratings', 'Notifications', ...names, 'Change log'];
+    return [
+      ['Monitor', ['Overview', 'Usage', 'Ratings']],
+      ['Engage', ['Notifications']],
+      ['Revenue', ['Monetization', ...names.filter(name => ['Android app ads', 'Website ads', 'Payments'].includes(name))]],
+      ['Configuration', names.filter(name => !['Android app ads', 'Website ads', 'Payments'].includes(name))],
+      ['Operations', ['System health', 'Change log']],
+    ];
   }
 
   function render() {
     const tabs = $('tabs'); tabs.textContent = '';
-    groups().forEach(name => {
-      const button = el('button', name === tab ? 'on' : '', name); button.type = 'button';
-      button.addEventListener('click', () => { tab = name; render(); });
-      tabs.appendChild(button);
+    groups().forEach(([section, names]) => {
+      if (!names.length) return;
+      tabs.appendChild(el('div', 'nav-label', section));
+      names.forEach(name => {
+        const info = META[name] || [name, `Manage ${name.toLowerCase()}`, '◇'];
+        const button = el('button', name === tab ? 'on' : ''); button.type = 'button';
+        button.append(el('span', 'nav-icon', info[2]), el('span', null, info[0]));
+        button.addEventListener('click', () => { tab = name; render(); });
+        tabs.appendChild(button);
+      });
     });
+    const info = META[tab] || [tab, `Manage ${tab.toLowerCase()}`];
+    $('top-title').textContent = info[0]; $('top-subtitle').textContent = info[1];
     const view = $('view'); view.textContent = '';
-    if (tab === 'Dashboard') dashboard(view);
+    if (tab === 'Overview') dashboard(view);
+    else if (tab === 'Usage') usage(view);
     else if (tab === 'Ratings') ratings(view);
     else if (tab === 'Change log') changeLog(view);
     else if (tab === 'Notifications') notifications(view);
+    else if (tab === 'Monetization') monetization(view);
+    else if (tab === 'System health') systemHealth(view);
     else settingsGroup(view, tab);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
-  function tile(label, value, cls) {
-    const box = el('div', 'tile'); box.append(el('b', cls || '', String(value)), el('span', 'hint', label)); return box;
+  function intro(view, title, text, action) {
+    const box = el('div', 'page-intro'), copy = el('div'); copy.append(el('h2', null, title), el('p', null, text)); box.appendChild(copy);
+    if (action) box.appendChild(action); view.appendChild(box);
+  }
+
+  function tile(label, value, cls, kicker) {
+    const box = el('div', 'tile'); box.append(el('span', 'tile-kicker', kicker || 'Today'), el('b', cls || '', String(value)), el('span', 'hint', label)); return box;
+  }
+
+  function statusLine(parent, label, on, detail) {
+    const row = el('div', 'status-row'); row.append(el('span', `status-dot${on ? ' ok' : ''}`), el('b', null, label), el('span', 'status-detail', detail || (on ? 'Ready' : 'Not configured'))); parent.appendChild(row);
+  }
+
+  function sum(key) { return (state.stats || []).reduce((total, row) => total + Number(row[key] || 0), 0); }
+
+  function chart(key) {
+    const box = el('div', 'chart'); const values = [...(state.stats || [])].reverse();
+    const max = Math.max(1, ...values.map(row => Number(row[key] || 0)));
+    values.forEach(row => { const wrap = el('div', 'bar-wrap'); wrap.title = `${row.date}: ${row[key] || 0}`; const bar = el('span', 'bar'); bar.style.height = `${Math.max(2, Number(row[key] || 0) / max * 100)}%`; wrap.appendChild(bar); box.appendChild(wrap); });
+    return box;
   }
 
   function dashboard(view) {
     const today = state.stats[0] || {};
+    intro(view, 'Overview & trends', 'A decision view for engagement, AI usage, user feedback, monetization and service readiness.');
     const tiles = el('div', 'tiles');
     tiles.append(tile('Visitors today', today.visitors || 0), tile('Page opens today', today.page_views || 0),
-      tile('AI questions today', today.ai_questions || 0), tile('APK downloads today', today.apk_downloads || 0));
+      tile('AI questions today', today.ai_questions || 0), tile('Average rating', state.ratings.total ? `${state.ratings.average} / 5` : '—', '', 'All time'));
     view.appendChild(tiles);
 
     const live = state.live;
-    const status = el('div', 'panel'); status.appendChild(el('h2', null, 'What the app is told right now'));
-    const list = el('div'); status.appendChild(list);
-    const line = (label, on, detail) => {
-      const row = el('div', 'row'); row.style.padding = '6px 0';
-      row.append(el('span', on ? 'on-text' : 'off-text', on ? '● On' : '○ Off'), el('b', null, label), el('span', 'hint', detail || ''));
-      list.appendChild(row);
-    };
-    const ads = live.app_ads;
-    line('Android app ads', !!ads, ads ? (ads.testing ? 'Google test ads' : 'your own ad units') : '');
-    line('Rewarded ad before a Kundli', !!(ads && ads.rewarded_kundli));
-    line('Rewarded ad for extra AI questions', !!(ads && ads.chat_free_questions), ads && ads.chat_free_questions ? `${ads.chat_free_questions} free, +${ads.chat_bonus_questions} per ad` : '');
-    line('Full-screen ad between screens', !!(ads && ads.interstitial_id));
-    line('Website ads (AdSense)', !!live.adsense, live.adsense || '');
-    line('AI chat', state.server.ai_ready, state.server.ai_provider || 'offline answers only');
-    line('Notice shown to users', !!live.notice, live.notice ? `${live.notice.kind}: ${live.notice.text}` : '');
+    const columns = el('div', 'grid-2');
+    const trend = el('div', 'panel'); trend.append(el('h2', null, 'Visitor trend'), el('p', 'hint', `${sum('visitors')} unique daily visitors across 14 days`), chart('visitors'));
+    const quick = el('div', 'panel'); quick.append(el('h2', null, 'Fourteen-day activity'));
+    [['Page opens', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
+    columns.append(trend, quick); view.appendChild(columns);
+
+    const status = el('div', 'panel'); status.appendChild(el('h2', null, 'Live app configuration'));
+    const list = el('div', 'status-list'); status.appendChild(list); const ads = live.app_ads;
+    statusLine(list, 'AI chat', state.server.ai_ready, state.server.ai_provider || 'Offline answers only');
+    statusLine(list, 'Android ads', !!ads, ads ? (ads.testing ? 'Google test inventory' : 'Production ad units') : 'All app ads are off');
+    statusLine(list, 'Payments', state.payments.ready, state.payments.ready ? `${state.payments.provider} · ₹${state.payments.reading_unlock_rs} reading unlock` : 'Payments are not fully configured');
+    statusLine(list, 'Push delivery', state.push.ready, state.push.ready ? `Firebase project ${state.push.project}` : 'Firebase key not found');
+    statusLine(list, 'User notice', !!live.notice, live.notice ? `${live.notice.kind}: ${live.notice.text}` : 'No notice is visible');
     const test = el('button', 'btn', 'Test the AI connection'); test.type = 'button'; test.style.marginTop = '10px';
     test.addEventListener('click', async () => {
       test.disabled = true;
@@ -95,22 +142,25 @@
       testImage.disabled = false;
     });
     status.appendChild(testImage); view.appendChild(status);
+  }
 
-    const usage = el('div', 'panel'); usage.appendChild(el('h2', null, 'Last 14 days'));
-    usage.appendChild(el('p', 'hint', 'Only totals are kept. Visitors are counted from a one-way code that is thrown away at the end of each day.'));
-    const wrap = el('div', 'scroll'), table = el('table');
+  function usage(view) {
+    intro(view, 'Usage & trends', 'Aggregate counters only. Visitor codes are one-way and discarded at the end of each day.');
+    const tiles = el('div', 'tiles'); tiles.append(tile('Visitors', sum('visitors'), '', '14 days'), tile('Page opens', sum('page_views'), '', '14 days'), tile('AI questions', sum('ai_questions'), '', '14 days'), tile('APK downloads', sum('apk_downloads'), '', '14 days')); view.appendChild(tiles);
+    const graphs = el('div', 'grid-even'); const opens = el('div', 'panel'); opens.append(el('h2', null, 'Page opens'), chart('page_views')); const ai = el('div', 'panel'); ai.append(el('h2', null, 'AI questions'), chart('ai_questions')); graphs.append(opens, ai); view.appendChild(graphs);
+    const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Daily detail')); const wrap = el('div', 'scroll'), table = el('table');
     const columns = [['date', 'Day'], ['visitors', 'Visitors'], ['page_views', 'Opens'], ['day_panchang', 'Panchang'], ['month_calendar', 'Calendar'], ['birth_chart', 'Kundli'], ['ai_questions', 'AI'], ['apk_downloads', 'APK'], ['rate_limited', 'Blocked']];
     const head = el('tr'); columns.forEach(([, label]) => head.appendChild(el('th', null, label))); table.appendChild(head);
-    state.stats.forEach(row => { const tr = el('tr'); columns.forEach(([key]) => tr.appendChild(el('td', null, String(row[key] === undefined ? 0 : row[key])))); table.appendChild(tr); });
-    wrap.appendChild(table); usage.appendChild(wrap); view.appendChild(usage);
-    const foot = el('p', 'hint', `Settings are stored in ${state.server.data_dir}. You are signed out automatically after ${state.server.session_minutes} minutes.`);
-    view.appendChild(foot);
+    state.stats.forEach(row => { const tr = el('tr'); columns.forEach(([key]) => tr.appendChild(el('td', null, String(row[key] === undefined ? 0 : row[key])))); table.appendChild(tr); }); wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
   }
 
   function ratings(view) {
     const data = state.ratings || { total: 0, average: 0, counts: {}, recent: [] };
+    intro(view, 'Ratings & feedback', 'Understand user sentiment without treating a store-prompt open as a confirmed public review.');
     const tiles = el('div', 'tiles');
-    tiles.append(tile('Ratings received', data.total || 0), tile('Average rating', data.total ? `${data.average} / 5` : '—'));
+    const positive = Number((data.counts || {})['5'] || 0) + Number((data.counts || {})['4'] || 0);
+    tiles.append(tile('Ratings received', data.total || 0, '', 'All time'), tile('Average rating', data.total ? `${data.average} / 5` : '—', '', 'All time'),
+      tile('Positive ratings', data.total ? `${Math.round(positive / data.total * 100)}%` : '—', '', '4–5 stars'), tile('Written feedback', (data.recent || []).length, '', 'Most recent 100'));
     view.appendChild(tiles);
 
     const breakdown = el('div', 'panel'); breakdown.appendChild(el('h2', null, 'Rating breakdown'));
@@ -174,6 +224,7 @@
   // Send a notification to every installed Android app (or one language) through Firebase.
   function notifications(view) {
     const push = state.push || {};
+    intro(view, 'Notification operations', 'Send carefully targeted messages and inspect the daily copy generated for the app.');
     const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Send a notification'));
     if (!push.ready) {
       panel.appendChild(el('p', 'off-text', 'Not set up: the Firebase server key (firebase-key.json) was not found on the server. See the deploy notes.'));
@@ -241,6 +292,7 @@
 
   function settingsGroup(view, group) {
     const items = state.settings.filter(item => item.group === group);
+    intro(view, group, `${items.length} live setting${items.length === 1 ? '' : 's'}. Saved changes apply immediately and are recorded in the change log.`);
     const panel = el('div', 'panel'); panel.appendChild(el('h2', null, group));
     panel.appendChild(el('p', 'hint', 'Changes apply immediately, no restart. “Server” means the value comes from the server’s .env file until you change it here.'));
     const inputs = {};
@@ -295,6 +347,7 @@
   }
 
   function changeLog(view) {
+    intro(view, 'Change log', 'An audit trail of console changes. Secret values are masked and never shown in full.');
     const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Change log'));
     panel.appendChild(el('p', 'hint', 'Every change made here, newest first. API keys are never shown in full.'));
     if (!state.audit.length) panel.appendChild(el('p', 'hint', 'No changes yet.'));
@@ -307,6 +360,45 @@
     wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
   }
 
+  function monetization(view) {
+    intro(view, 'Monetization', 'A consolidated view of ad pressure, paid unlock pricing and production readiness.');
+    const ads = state.live.app_ads, pay = state.payments || {};
+    const tiles = el('div', 'tiles');
+    tiles.append(tile('App advertising', ads ? 'On' : 'Off', ads ? 'on-text' : 'off-text', 'AdMob'),
+      tile('Ad inventory', ads ? (ads.testing ? 'Test' : 'Live') : '—', '', 'AdMob'),
+      tile('Chat bonus', `₹${pay.chat_bonus_rs || 9}`, '', 'Razorpay'), tile('Reading unlock', `₹${pay.reading_unlock_rs || 9}`, '', 'Razorpay'));
+    view.appendChild(tiles);
+    const grid = el('div', 'grid-even');
+    const adPanel = el('div', 'panel'); adPanel.append(el('h2', null, 'Advertising configuration'), el('p', 'hint', 'Current behavior delivered to Android clients.'));
+    const adList = el('div', 'status-list'); adPanel.appendChild(adList);
+    statusLine(adList, 'Master switch', !!ads, ads ? 'Advertising is enabled' : 'No app ads are served');
+    statusLine(adList, 'Rewarded Kundli', !!(ads && ads.rewarded_kundli), 'Gate a new Kundli behind a rewarded ad');
+    statusLine(adList, 'Rewarded AI questions', !!(ads && ads.chat_free_questions), ads && ads.chat_free_questions ? `${ads.chat_free_questions} free, +${ads.chat_bonus_questions} per reward` : 'Disabled');
+    statusLine(adList, 'Interstitial', !!(ads && ads.interstitial_id), ads && ads.interstitial_id ? 'Ad unit is configured' : 'No active interstitial');
+    const payPanel = el('div', 'panel'); payPanel.append(el('h2', null, 'Payment readiness'), el('p', 'hint', 'Razorpay keys remain write-only.'));
+    const payList = el('div', 'status-list'); payPanel.appendChild(payList);
+    statusLine(payList, 'Provider', !!pay.provider, pay.provider || 'No provider selected');
+    statusLine(payList, 'Checkout ready', !!pay.ready, pay.ready ? 'Key ID and secret are configured' : 'Complete provider and key configuration');
+    statusLine(payList, 'Extra questions', !!pay.ready, `₹${pay.chat_bonus_rs || 9} per bonus pack`);
+    statusLine(payList, 'Single reading', !!pay.ready, `₹${pay.reading_unlock_rs || 9} per unlock`);
+    grid.append(adPanel, payPanel); view.appendChild(grid);
+    const open = el('button', 'btn primary', 'Manage payment settings'); open.type = 'button'; open.addEventListener('click', () => { tab = 'Payments'; render(); }); payPanel.appendChild(open);
+  }
+
+  function systemHealth(view) {
+    intro(view, 'System health', 'Configuration-level readiness for core services. External provider latency and host resource history require infrastructure monitoring.');
+    const ready = [state.server.ai_ready, state.push.ready, state.payments.ready].filter(Boolean).length;
+    const tiles = el('div', 'tiles'); tiles.append(tile('Core API', 'Online', 'on-text', 'Server'), tile('AI provider', state.server.ai_ready ? 'Ready' : 'Offline', state.server.ai_ready ? 'on-text' : 'off-text', 'Generation'), tile('Push', state.push.ready ? 'Ready' : 'Setup', state.push.ready ? 'on-text' : 'off-text', 'Firebase'), tile('Services ready', `${ready} / 3`, '', 'Configured')); view.appendChild(tiles);
+    const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Service checks')); const list = el('div', 'status-list'); panel.appendChild(list);
+    statusLine(list, 'Web application', true, `Serving ${state.server.host || 'current host'}`);
+    statusLine(list, 'AI text provider', state.server.ai_ready, state.server.ai_provider || 'No external provider selected');
+    const imageProvider = state.settings.find(item => item.key === 'JYOTISHA_IMAGE_PROVIDER');
+    statusLine(list, 'AI image provider', !!(imageProvider && imageProvider.value), imageProvider && imageProvider.value ? imageProvider.value : 'No image provider selected');
+    statusLine(list, 'Firebase push', state.push.ready, state.push.ready ? state.push.project : 'Firebase service key not found');
+    statusLine(list, 'Razorpay checkout', state.payments.ready, state.payments.ready ? 'Payment signature verification enabled' : 'Payments unavailable');
+    panel.appendChild(el('p', 'hint', `Settings data: ${state.server.data_dir}`)); view.appendChild(panel);
+  }
+
   async function signIn() {
     const field = $('pw');
     try { await api('/api/admin/login', { password: field.value }); field.value = ''; await load(); }
@@ -314,6 +406,9 @@
   }
   $('signin').addEventListener('click', signIn);
   $('pw').addEventListener('keydown', event => { if (event.key === 'Enter') signIn(); });
+  $('refresh').addEventListener('click', async () => { $('refresh').disabled = true; await load(); $('refresh').disabled = false; toast('Console refreshed'); });
+  const theme = localStorage.getItem('jyotisha-admin-theme') || 'dark'; document.documentElement.dataset.theme = theme; $('theme').value = theme;
+  $('theme').addEventListener('change', () => { document.documentElement.dataset.theme = $('theme').value; localStorage.setItem('jyotisha-admin-theme', $('theme').value); });
   $('signout').addEventListener('click', async () => { try { await api('/api/admin/logout', {}); } catch (_error) { /* ignore */ } state = null; showLogin('Signed out.'); });
   load();
 })();
