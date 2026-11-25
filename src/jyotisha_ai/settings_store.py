@@ -565,7 +565,9 @@ class Analytics:
                 raw = self._data["days"].get(day_name, {})
                 generations = {feature: int(raw.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
                 all_users = bisect_right(first_seen_dates, day_name)
-                return {"date": day_name, "all_users": all_users, "unique_users": len(set(raw.get("users", []))),
+                active_users = len(set(raw.get("users", [])))
+                return {"date": day_name, "all_users": all_users, "unique_users": active_users,
+                        "active_users": active_users, "inactive_users": max(0, all_users - active_users),
                         "new_users": int(raw.get("new_users", 0)), "new_installs": int(raw.get("new_installs", 0)),
                         "feature_views": sum(int(value) for value in raw.get("views", {}).values()),
                         "feature_requests": sum(int(metric.get("requests", 0)) for metric in raw.get("observability", {}).values()),
@@ -638,7 +640,9 @@ class Analytics:
                 active_users = set()
                 for row in period_rows:
                     active_users.update(row.get("users", []))
-                return {"all_users": len(self._data["users"]), "unique_users": len(active_users),
+                all_users = len(self._data["users"])
+                return {"all_users": all_users, "unique_users": len(active_users), "active_users": len(active_users),
+                        "inactive_users": max(0, all_users - len(active_users)),
                         "new_users": sum(1 for user in self._data["users"].values() if start <= user.get("first_seen", "") <= today_name),
                         "new_installs": sum(1 for user in self._data["users"].values() if start <= user.get("installed_at", "") <= today_name)}
             periods = {str(period_days): period_summary(period_days) for period_days in (7, 14, 30, 90)}

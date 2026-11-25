@@ -106,6 +106,7 @@
     const analytics = state.analytics || {};
     return (analytics.periods || {})[trendRange] || {
       all_users: analytics.total_users || 0, unique_users: analytics.active_period || 0,
+      active_users: analytics.active_period || 0, inactive_users: Math.max(0, (analytics.total_users || 0) - (analytics.active_period || 0)),
       new_users: analytics.new_period || 0, new_installs: analytics.new_installs_period || 0,
     };
   }
@@ -153,11 +154,11 @@
   function comparisonPanel() {
     const panel = el('div', 'panel'); panel.append(el('h2', null, 'Period comparison'), el('p', 'hint', 'Compare the same daily signals with yesterday, last week and 30 days ago.'));
     const wrap = el('div', 'scroll'), table = el('table'), head = el('tr');
-    ['Period', 'All users', 'Unique users', 'New users', 'Installs', 'Feature opens', 'API requests', 'Generated', 'Full page loads', 'AI questions'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    ['Period', 'All users', 'Active users (unique)', 'Inactive users', 'New users', 'Installs', 'Feature opens', 'API requests', 'Generated', 'Full page loads', 'AI questions'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
     const statsByDate = new Map((state.stats_history || state.stats || []).map(row => [row.date, row]));
     ((state.analytics || {}).comparisons || []).forEach(item => {
       const stats = statsByDate.get(item.date) || {}, row = el('tr');
-      [item.label, item.all_users || 0, item.unique_users || 0, item.new_users || 0, item.new_installs || 0, item.feature_views || 0,
+      [item.label, item.all_users || 0, item.active_users || item.unique_users || 0, item.inactive_users || 0, item.new_users || 0, item.new_installs || 0, item.feature_views || 0,
         item.feature_requests || 0, item.generation_count || 0, stats.page_views || 0, stats.ai_questions || 0]
         .forEach(value => row.appendChild(el('td', null, String(value))));
       table.appendChild(row);
@@ -172,7 +173,8 @@
     intro(view, 'Overview & trends', 'A decision view for engagement, AI usage, user feedback, monetization and service readiness.', trendPicker());
     const tiles = el('div', 'tiles');
     tiles.append(tile('All tracked users', period.all_users || 0, '', 'All time'),
-      tile('Unique active users', period.unique_users || 0, '', trendLabel()),
+      tile('Active users (unique)', period.active_users || period.unique_users || 0, '', trendLabel()),
+      tile('Inactive users', period.inactive_users || 0, '', trendLabel()),
       tile('New users', period.new_users || 0, '', trendLabel()),
       tile('New app installs', period.new_installs || 0, '', trendLabel()));
     view.appendChild(tiles);
@@ -235,18 +237,19 @@
     const period = selectedPeriod();
     intro(view, 'Anonymous users', 'Users are identified by a random first-party ID. Only birth year and a broad age range are retained from a successful Kundli; exact DOB, names, questions, photos and generated content are not stored.', trendPicker());
     const tiles = el('div', 'tiles'); tiles.append(tile('All tracked users', period.all_users || 0, '', 'All time'),
-      tile('Unique active users', period.unique_users || 0, '', trendLabel()), tile('New users', period.new_users || 0, '', trendLabel()),
+      tile('Active users (unique)', period.active_users || period.unique_users || 0, '', trendLabel()),
+      tile('Inactive users', period.inactive_users || 0, '', trendLabel()), tile('New users', period.new_users || 0, '', trendLabel()),
       tile('New app installs', period.new_installs || 0, '', trendLabel())); view.appendChild(tiles);
     const trends = el('div', 'grid-even');
-    [['all_users', 'All users'], ['unique_users', 'Unique active users'], ['new_users', 'New users'], ['new_installs', 'New app installs']].forEach(([key, label]) => {
+    [['all_users', 'All users'], ['active_users', 'Active users (unique)'], ['inactive_users', 'Inactive users'], ['new_users', 'New users'], ['new_installs', 'New app installs']].forEach(([key, label]) => {
       const panel = el('div', 'panel'); panel.append(el('h2', null, label), el('p', 'hint', trendLabel()), analyticsChart(key)); trends.appendChild(panel);
     });
     view.appendChild(trends);
     const dailyUsers = el('div', 'panel'); dailyUsers.append(el('h2', null, 'Daily user detail'), el('p', 'hint', trendLabel()));
     const dailyWrap = el('div', 'scroll'), dailyTable = el('table'), dailyHead = el('tr');
-    ['Day', 'All users', 'Unique active users', 'New users', 'New app installs'].forEach(label => dailyHead.appendChild(el('th', null, label))); dailyTable.appendChild(dailyHead);
+    ['Day', 'All users', 'Active users (unique)', 'Inactive users', 'New users', 'New app installs'].forEach(label => dailyHead.appendChild(el('th', null, label))); dailyTable.appendChild(dailyHead);
     historyRows(data.history || [...(data.days || [])].reverse()).reverse().forEach(item => {
-      const row = el('tr'); [item.date, item.all_users || 0, item.unique_users || 0, item.new_users || 0, item.new_installs || 0]
+      const row = el('tr'); [item.date, item.all_users || 0, item.active_users || item.unique_users || 0, item.inactive_users || 0, item.new_users || 0, item.new_installs || 0]
         .forEach(value => row.appendChild(el('td', null, String(value)))); dailyTable.appendChild(row);
     });
     dailyWrap.appendChild(dailyTable); dailyUsers.appendChild(dailyWrap); view.appendChild(dailyUsers);

@@ -178,7 +178,8 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     snapshot = store.analytics.snapshot()
     assert snapshot["total_users"] == 2 and snapshot["active_today"] == 2 and snapshot["new_today"] == 2
     assert snapshot["total_installs"] == 1 and snapshot["new_installs_today"] == 1 and snapshot["install_platforms"]["android"] == 1
-    assert snapshot["periods"]["30"] == {"all_users": 2, "unique_users": 2, "new_users": 2, "new_installs": 1}
+    assert snapshot["periods"]["30"] == {"all_users": 2, "unique_users": 2, "active_users": 2, "inactive_users": 0,
+                                            "new_users": 2, "new_installs": 1}
     assert snapshot["generation_totals"]["kundli"] == 1 and snapshot["generation_totals"]["tarot"] == 1
     assert snapshot["feature_views"]["numerology"] == 1
     assert snapshot["observability"]["tarot"]["success_rate"] == 100 and snapshot["observability"]["tarot"]["avg_ms"] == 120
@@ -199,9 +200,10 @@ def test_admin_analytics_exposes_history_and_period_comparisons():
     old_day = (today - timedelta(days=30)).isoformat()
     yesterday = (today - timedelta(days=1)).isoformat()
     payload = {
-        "users": {"anon-a": {"first_seen": old_day, "last_seen": yesterday, "visits": 2, "generations": {"tarot": 2}}},
+        "users": {"anon-a": {"first_seen": old_day, "last_seen": yesterday, "visits": 2, "generations": {"tarot": 2}},
+                  "anon-b": {"first_seen": old_day, "last_seen": old_day, "visits": 1, "generations": {}}},
         "days": {
-            old_day: {"users": ["anon-a"], "new_users": 1, "new_installs": 1, "views": {"tarot": 2},
+            old_day: {"users": ["anon-a", "anon-b"], "new_users": 2, "new_installs": 1, "views": {"tarot": 2},
                       "generations": {"tarot": 2}, "observability": {"tarot": {"requests": 2}}},
             yesterday: {"users": ["anon-a"], "new_users": 0, "views": {"home": 1}, "generations": {}},
         },
@@ -213,11 +215,15 @@ def test_admin_analytics_exposes_history_and_period_comparisons():
 
     snapshot = store.analytics.snapshot()
     assert [row["date"] for row in snapshot["history"]] == [old_day, yesterday]
-    assert [row["all_users"] for row in snapshot["history"]] == [1, 1]
+    assert [row["all_users"] for row in snapshot["history"]] == [2, 2]
+    assert snapshot["history"][-1]["active_users"] == 1 and snapshot["history"][-1]["inactive_users"] == 1
     month_ago = next(row for row in snapshot["comparisons"] if row["label"] == "30 days ago")
-    assert month_ago["all_users"] == 1 and month_ago["unique_users"] == 1 and month_ago["new_installs"] == 1
+    assert month_ago["all_users"] == 2 and month_ago["unique_users"] == 2 and month_ago["new_installs"] == 1
     assert month_ago["feature_views"] == 2 and month_ago["feature_requests"] == 2 and month_ago["generation_count"] == 2
-    assert snapshot["periods"]["all"] == {"all_users": 1, "unique_users": 1, "new_users": 1, "new_installs": 0}
+    assert snapshot["periods"]["30"] == {"all_users": 2, "unique_users": 1, "active_users": 1, "inactive_users": 1,
+                                          "new_users": 0, "new_installs": 0}
+    assert snapshot["periods"]["all"] == {"all_users": 2, "unique_users": 2, "active_users": 2, "inactive_users": 0,
+                                           "new_users": 2, "new_installs": 0}
 
 
 def test_counter_history_keeps_all_recorded_days():
