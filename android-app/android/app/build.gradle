@@ -6,7 +6,26 @@ def keystoreProps = new Properties()
 def keystoreFile = file(System.getenv("JYOTISHA_KEYSTORE_PROPERTIES") ?: "../keystore.properties")
 if (keystoreFile.exists()) { keystoreFile.withInputStream { keystoreProps.load(it) } }
 
+// Meta App Events configuration. Keep these values out of source control and pass them as either
+// Gradle properties (-PMETA_APP_ID=... -PMETA_CLIENT_TOKEN=...) or environment variables.
+// Debug builds remain usable without them; release builds fail below so an untracked production
+// APK cannot be published accidentally.
+def metaAppId = (project.findProperty("META_APP_ID") ?: System.getenv("META_APP_ID") ?: "").toString().trim()
+def metaClientToken = (project.findProperty("META_CLIENT_TOKEN") ?: System.getenv("META_CLIENT_TOKEN") ?: "").toString().trim()
+if (metaAppId && !(metaAppId ==~ /[0-9]+/)) {
+    throw new GradleException("META_APP_ID must contain digits only")
+}
+if (metaClientToken && !(metaClientToken ==~ /[A-Za-z0-9]+/)) {
+    throw new GradleException("META_CLIENT_TOKEN must contain letters and digits only")
+}
+if ((metaAppId && !metaClientToken) || (!metaAppId && metaClientToken)) {
+    throw new GradleException("Set both META_APP_ID and META_CLIENT_TOKEN, or neither")
+}
+
 android {
+    buildFeatures {
+        buildConfig true
+    }
     lint {
         checkReleaseBuilds false   // the release lint pass is very memory hungry and not needed for these builds
         abortOnError false
@@ -21,6 +40,8 @@ android {
         versionCode 23
         versionName "1.0.23"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "META_APP_ID", "\\\"${metaAppId}\\\""
+        buildConfigField "String", "META_CLIENT_TOKEN", "\\\"${metaClientToken}\\\""
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -58,10 +79,27 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Analytics/App Events only. This is enough for Meta install and app-launch attribution and is
+    // smaller than pulling in Login, Share, Gaming, and the rest of the full Facebook Android SDK.
+    implementation "com.facebook.android:facebook-core:19.0.1"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+}
+
+tasks.register("verifyMetaReleaseConfig") {
+    doLast {
+        if (!metaAppId || !metaClientToken) {
+            throw new GradleException(
+                "Release builds require META_APP_ID and META_CLIENT_TOKEN so Meta install tracking is not silently disabled"
+            )
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.named("preReleaseBuild").configure { dependsOn("verifyMetaReleaseConfig") }
 }
 
 apply from: 'capacitor.build.gradle'

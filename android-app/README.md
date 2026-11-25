@@ -23,6 +23,28 @@ In Android Studio let Gradle sync finish. Plug in your phone (USB debugging on) 
 Until you do this the app shows Google's **test** ads, which is also what you want while testing.
 Never click your own live ads.
 
+## Meta Ads install tracking (Facebook SDK)
+The native Android app includes Meta App Events Core. With automatic app-event logging enabled it reports the first
+activation as an app install and later opens as app launches; the website running inside Capacitor does not need the
+Meta browser Pixel for this.
+
+1. In Meta for Developers, add an **Android** platform to your Meta app.
+2. Use package name `store.karthiktraders.jyotisha` and add the release key hash printed in the **Build Android app**
+   workflow summary. Link the Meta app to the ad account used by the campaign.
+3. Copy **App ID** and **Client token** from Meta's app settings into GitHub repository secrets named `META_APP_ID` and
+   `META_CLIENT_TOKEN`. The client token is embedded in the APK as required by the SDK; never use an app secret here.
+4. Run the workflow and install its new APK/AAB. Existing builds cannot start reporting installs retroactively.
+5. In Meta Events Manager / App Ads Helper, open **Test App Events**, uninstall the old app, install the new build, and
+   launch it. Confirm an app activation/install and app-launch event appear before using it for campaign optimization.
+
+For a local debug build, set `META_APP_ID` and `META_CLIENT_TOKEN` in the shell before running Gradle. Debug builds are
+allowed without them and then log `Meta App Events disabled` in Logcat. Release builds deliberately fail when either
+value is absent, preventing a production APK from being published without attribution.
+
+The integration collects the Android advertising ID for ads measurement. Extra SDK screen metadata and product-
+improvement collection are explicitly disabled. Keep the Play Console Data safety answers and the public privacy page
+up to date when enabling it.
+
 ## Release to Google Play
 1. **Build → Generate Signed App Bundle (AAB)**. Create a keystore and keep it somewhere safe and backed up (also never commit it).
 2. Upload the `.aab` in Play Console (turn on Play App Signing). The package name `store.karthiktraders.jyotisha` can

@@ -100,7 +100,12 @@ jobs:
 
       - name: Build signed AAB and APK
         working-directory: android-app/android
+        env:
+          META_APP_ID: ${{ secrets.META_APP_ID }}
+          META_CLIENT_TOKEN: ${{ secrets.META_CLIENT_TOKEN }}
         run: |
+          test -n "$META_APP_ID" || { echo "::error::Add the META_APP_ID repository secret"; exit 1; }
+          test -n "$META_CLIENT_TOKEN" || { echo "::error::Add the META_CLIENT_TOKEN repository secret"; exit 1; }
           chmod +x gradlew
           ./gradlew bundleRelease assembleRelease --no-daemon
 
