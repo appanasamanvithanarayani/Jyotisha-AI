@@ -156,6 +156,7 @@
       "chatAskPob": "Which city or town were you born in?",
       "chatAskTob": "And your time of birth? (for example 06:30 AM or 18:45)",
       "chatBadInput": "I couldn’t read that. Please write a date like 15-08-1995 or a time like 06:30 AM.",
+      "chatNewDate": "That looks like a different birth date. Let's make a fresh Kundli for it —",
       "myJathakam": "My Jathakam",
       "jathakamPrint": "Print / Save PDF",
       "moonPosition": "Moon position",

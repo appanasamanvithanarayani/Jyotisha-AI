@@ -134,6 +134,7 @@
       traitsPortraitAgainBtn: '🔄 Generate again',
       traitsPortraitUnavailable: 'Could not create the illustration right now. Please try again in a moment.',
       traitsAskInChat: '💬 Tell me your birth details in chat',
+      traitsMakeKundliBtn: '✨ Make my Kundli',
       who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
@@ -159,6 +160,7 @@
       traitsPortraitAgainBtn: '🔄 మళ్ళీ చిత్రీకరించండి',
       traitsPortraitUnavailable: 'ప్రస్తుతం చిత్రీకరణను రూపొందించలేకపోయాం. కాసేపాగి మళ్ళీ ప్రయత్నించండి.',
       traitsAskInChat: '💬 మీ జనన వివరాలను చాట్‌లో చెప్పండి',
+      traitsMakeKundliBtn: '✨ నా జాతకం తయారు చేయండి',
       who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇతరులను చూడండి', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
@@ -184,6 +186,7 @@
       traitsPortraitAgainBtn: '🔄 फिर से बनाएँ',
       traitsPortraitUnavailable: 'अभी चित्रांकन नहीं बन सका। कृपया थोड़ी देर में फिर से कोशिश करें।',
       traitsAskInChat: '💬 चैट में अपना जन्म विवरण बताएँ',
+      traitsMakeKundliBtn: '✨ मेरी कुंडली बनाएँ',
       who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दूसरों को देखें', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
@@ -530,6 +533,25 @@
     if (mode === 'traits') {
       if (!state.chart) {
         traits.appendChild(el('p', 'muted-note', copy.needChart));
+        const form = el('form', 'traits-birth-form');
+        const dobInput = el('input'); dobInput.type = 'date'; dobInput.min = '1800-01-01'; dobInput.max = '2100-12-31'; dobInput.required = true; dobInput.setAttribute('aria-label', t('dob'));
+        const pobInput = el('input'); pobInput.type = 'text'; pobInput.setAttribute('list', 'place-suggestions'); pobInput.maxLength = 200; pobInput.autocomplete = 'off'; pobInput.required = true; pobInput.placeholder = t('placePlaceholder'); pobInput.setAttribute('aria-label', t('pob'));
+        const tobInput = el('input'); tobInput.type = 'time'; tobInput.step = 60; tobInput.required = true; tobInput.setAttribute('aria-label', t('tob'));
+        const statusP = el('p', 'muted-note');
+        const submitBtn = el('button', 'palm-scan', copy.traitsMakeKundliBtn); submitBtn.type = 'submit';
+        form.append(dobInput, pobInput, tobInput, submitBtn, statusP);
+        wirePlaceSuggestions(pobInput);
+        form.addEventListener('submit', async event => {
+          event.preventDefault();
+          if (!(await rewardedGate())) return;
+          statusP.textContent = t('checking');
+          try {
+            const { ok, body } = await post('/api/birth-chart', { dob: dobInput.value, pob: pobInput.value, tob: tobInput.value });
+            if (ok && body && body.chart) { applyChart(body, { dob: dobInput.value, pob: pobInput.value, tob: tobInput.value }); saveProfile({ dob: dobInput.value, pob: pobInput.value, tob: tobInput.value }); }
+            else statusP.textContent = t('chartFailed');
+          } catch (_error) { statusP.textContent = t('serviceUnavailable'); }
+        });
+        traits.appendChild(form);
         const chatBtn = el('button', 'palm-scan', copy.traitsAskInChat);
         chatBtn.type = 'button';
         chatBtn.addEventListener('click', () => { showPage('chat'); ask(copy.optTraits, copy.optTraits, true); });
@@ -1923,7 +1945,7 @@
 
   /* ------------------------------------------------------ place suggestions */
   const datalist = $('place-suggestions');
-  document.querySelectorAll('input[list="place-suggestions"]').forEach(input => {
+  function wirePlaceSuggestions(input) {
     const options = el('div', 'place-options'); options.hidden = true;
     options.setAttribute('role', 'group'); options.setAttribute('aria-label', t('matchingCitiesAria'));
     input.insertAdjacentElement('afterend', options);
@@ -1949,7 +1971,8 @@
         } catch (_error) { if (current === request) options.hidden = true; }
       }, 250);
     });
-  });
+  }
+  document.querySelectorAll('input[list="place-suggestions"]').forEach(wirePlaceSuggestions);
 
   /* ------------------------------------------------------------ time text */
   function clock(iso, baseDate) {
@@ -2479,6 +2502,22 @@
     actions.append(askAi, share);
     box.append(actions, el('p', 'num-note', copy.note));
   }
+  // Numerology, asked straight in chat: the same Moolank/Bhagyank/name-number report, as a compact chat message.
+  async function chatNumerology() {
+    const tool = window.JyotishaNumerology, dob = numberDob(), copy = numCopy();
+    if (!tool || !tool.parse(dob)) { addMessage('assistant', copy.bad); return; }
+    if (rewardedFor('numbers') && !(await watchForResult())) return;
+    const name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
+    const result = tool.report(dob, name, state.lang, year);
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `🔢 ${copy.title}${name ? ` · ${name}` : ''}`));
+    const section = (label, info) => entry.append(el('p', null, `${label} ${info.number} · ${info.title}`), el('p', null, info.nature));
+    section(copy.moolank[0], result.moolank);
+    section(copy.bhagyank[0], result.bhagyank);
+    if (result.name) section(copy.nameNum[0], result.name);
+    entry.appendChild(el('p', null, `📅 ${fill(copy.year, { year, n: result.year.number })} ${result.year.text}`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
+  }
   /* ---- Life Guide: six balance bars (Love, Family, Marriage, Career, Wealth, Health out of 10) for yesterday, today,
      tomorrow, this month and this year, worked out on the server from planet transits and the lunar day (no AI). ---- */
   const lgCopy = () => toolText().lifeguide || TOOLS_COPY.en.lifeguide;
@@ -2633,6 +2672,21 @@
       }
       box.appendChild(grid);
     }
+  }
+  // Life Guide, asked straight in chat: today's balance (the free tab) for your own Moon sign, as a compact message.
+  async function chatLifeGuide() {
+    if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
+    const copy = lgCopy();
+    if (!lg.sign) { addMessage('assistant', copy.pickFirst); return; }
+    lg.tab = 'today';
+    if (!lg.cache[lgKey()]) await loadLifeGuide();
+    const data = lg.cache[lgKey()];
+    if (!data) { addMessage('assistant', copy.failed); return; }
+    const period = data.today;
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `⚖️ ${copy.balance[1]} · ${signName(lg.sign)}`));
+    for (const area of LG_AREAS) entry.appendChild(el('p', null, `${LG_ICONS[area]} ${copy.areas[area]}: ${period[area].score}/10`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
 
   /* ---- Sign match: any two Moon signs; Graha Maitri + Bhakoot (12 points) from matchUI.signMatch ---- */
@@ -2847,6 +2901,33 @@
     again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
     actions.append(askAi, share, again);
     box.appendChild(actions);
+  }
+  // Tarot, asked straight in chat: a fresh three-card draw and reading for the matched topic, shown as a message.
+  function matchTarotTopic(query) {
+    const text = String(query || '').toLowerCase(), copy = tarotCopy();
+    for (const [key] of TAROT_TOPICS) if (text.includes(key) || (copy.topics[key] && text.includes(copy.topics[key].toLowerCase()))) return key;
+    return null;
+  }
+  let chatTarotAwaitingTopic = false;
+  async function chatTarot(topicKey) {
+    const copy = tarotCopy();
+    startTarotDraw(topicKey);
+    tarot.chosen = [0, 1, 2];
+    if (rewardedFor('tarot') && !(await watchForResult())) { tarot.step = 'topic'; return; }
+    const pending = el('div', 'chat-message assistant', copy.loading);
+    chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
+    await loadTarotReading();
+    chatLog.removeChild(pending);
+    const cards = tarot.chosen.map(n => tarot.spread[n]), reading = tarot.reading;
+    const entry = el('div', 'chat-message assistant');
+    entry.appendChild(el('p', null, `🃏 ${copy.topics[tarot.topic]}`));
+    ['past', 'present', 'future'].forEach((key, i) => {
+      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
+      const text = reading ? reading[key] : `${tarotName(card.id)}: ${meaning}.`;
+      entry.appendChild(el('p', null, `${copy.positions[i]} · ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}: ${text}`));
+    });
+    entry.appendChild(el('p', null, `✨ ${reading ? reading.advice : copy.fallbackAdvice}`));
+    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
   }
   /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
   state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
@@ -4077,7 +4158,7 @@
     chatLog.removeChild(pending); return false;
   }
   /* ---- No chart yet: the chat asks for date, place and time of birth, then calculates the chart ---- */
-  const intake = { step: 'dob', dob: '', pob: '', tob: '', pending: null };
+  const intake = { step: 'dob', dob: '', pob: '', tob: '', pending: null, recalculating: false };
   const stepPrompt = () => t(intake.step === 'dob' ? 'chatAskDob' : intake.step === 'pob' ? 'chatAskPob' : 'chatAskTob');
   function startIntake() { intake.step = 'dob'; intake.dob = ''; intake.pob = ''; intake.tob = ''; intake.pending = null; resetChat(t('chatAskDob')); }
   function applyChart(body, inputs) {
@@ -4101,9 +4182,9 @@
       if (ok && body && body.chart) {
         applyChart(body, { dob: intake.dob, pob: intake.pob, tob: intake.tob });
         saveProfile({ dob: intake.dob, pob: intake.pob, tob: intake.tob });
-        const pending = intake.pending; intake.step = null; intake.pending = null;
+        const pending = intake.pending; intake.step = null; intake.pending = null; intake.recalculating = false;
         addMessage('assistant', t('chartReady'));
-        if (pending) { if (chartUI.isPartnerPortraitRequest(pending)) void chatPartnerPortrait(); else route(pending); } else addJathakam();
+        if (pending) { if (!routeSpecialIntent(pending)) route(pending); } else addJathakam();
         return;
       }
       let hint = '';
@@ -4133,13 +4214,45 @@
     intake.tob = tob; intake.step = 'busy';
     await finishIntake();
   }
+  // Any of the other tools, asked straight in chat instead of only from their own page. Returns true when handled,
+  // so the caller skips the general AI assistant / offline Q&A for it.
+  function routeSpecialIntent(query) {
+    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return true; }
+    if (chartUI.isNumerologyRequest(query)) { void chatNumerology(); return true; }
+    if (chartUI.isLifeGuideRequest(query)) { void chatLifeGuide(); return true; }
+    if (chartUI.isPalmRequest(query)) { openPalm(); void startPalmScan(); return true; }
+    if (chartUI.isTarotRequest(query)) {
+      const topic = matchTarotTopic(query);
+      if (topic) { void chatTarot(topic); return true; }
+      chatTarotAwaitingTopic = true;
+      addMessage('assistant', `${tarotCopy().ask} (${TAROT_TOPICS.map(([key]) => tarotCopy().topics[key]).join(', ')})`);
+      return true;
+    }
+    if (chatTarotAwaitingTopic) {
+      const topic = matchTarotTopic(query);
+      chatTarotAwaitingTopic = false;
+      if (topic) { void chatTarot(topic); return true; }
+    }
+    return false;
+  }
   function ask(shown, query, fromPrompt) {
-    if (!state.chart) {
+    // Normally gated on having no chart yet; "recalculating" additionally covers typing a new birth date below,
+    // even though a (now stale) chart still exists while that recalculation is in progress.
+    if (!state.chart || intake.recalculating) {
       if (intake.step === 'busy') return;
       addMessage('user', shown); void intakeInput(query, fromPrompt === true); return;
     }
     addMessage('user', shown);
-    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return; }
+    if (routeSpecialIntent(query)) return;
+    // A bare birth date typed with a chart already on hand means a different Kundli, not a question about this
+    // one — recalculate instead of asking the AI assistant, which would otherwise answer from the old chart's
+    // facts about an unrelated date and give a nonsensical reading.
+    const newDob = !chartUI.isJathakamRequest(query) ? chartUI.parseBirthDate(query) : null;
+    if (newDob) {
+      intake.recalculating = true; intake.step = 'pob'; intake.dob = newDob; intake.pob = ''; intake.tob = ''; intake.pending = null;
+      addMessage('assistant', `${t('chatNewDate')} ${stepPrompt()}`);
+      return;
+    }
     route(query);
   }
   // "Your ideal partner", asked straight in chat: generate it here (asking for birth details first via the usual
