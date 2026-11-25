@@ -18,6 +18,17 @@
   }
 
   function current() { report((history.state && history.state.page) || location.hash || 'home'); }
+
+  function reportInstall() {
+    const capacitor = window.Capacitor;
+    if (!capacitor || (typeof capacitor.isNativePlatform === 'function' && !capacitor.isNativePlatform())) return;
+    const platform = typeof capacitor.getPlatform === 'function' ? capacitor.getPlatform() : '';
+    if (platform !== 'android' && platform !== 'ios') return;
+    const key = 'jyotisha-install-reported-v1';
+    try { if (localStorage.getItem(key)) return; } catch (_error) { return; }
+    fetch('/api/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform }), keepalive: true })
+      .then(function (response) { if (response.ok) localStorage.setItem(key, '1'); }).catch(function () {});
+  }
   window.addEventListener('hashchange', current);
   window.addEventListener('popstate', current);
   document.addEventListener('click', function (event) {
@@ -30,4 +41,5 @@
     history[name] = function () { const result = original.apply(this, arguments); setTimeout(current, 0); return result; };
   });
   setTimeout(current, 0);
+  setTimeout(reportInstall, 0);
 })();

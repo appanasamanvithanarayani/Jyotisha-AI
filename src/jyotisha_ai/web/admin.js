@@ -126,14 +126,14 @@
     intro(view, 'Overview & trends', 'A decision view for engagement, AI usage, user feedback, monetization and service readiness.');
     const tiles = el('div', 'tiles');
     tiles.append(tile('Unique users today', analytics.active_today || 0), tile('New users today', analytics.new_today || 0),
-      tile('Active users', analytics.active_period || 0, '', '14 days'), tile('Average rating', state.ratings.total ? `${state.ratings.average} / 5` : '—', '', 'All time'));
+      tile('New app installs', analytics.new_installs_today || 0), tile('Active users', analytics.active_period || 0, '', '14 days'));
     view.appendChild(tiles);
 
     const live = state.live;
     const columns = el('div', 'grid-2');
     const trend = el('div', 'panel'); trend.append(el('h2', null, 'Unique-user trend'), el('p', 'hint', `${analytics.active_period || 0} anonymous users active across 14 days`), analyticsChart('unique_users'));
     const quick = el('div', 'panel'); quick.append(el('h2', null, 'Fourteen-day activity'));
-    [['Page opens', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
+    [['Tracked app installs', analytics.total_installs || 0], ['Page opens', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
     columns.append(trend, quick); view.appendChild(columns);
 
     const status = el('div', 'panel'); status.appendChild(el('h2', null, 'Live app configuration'));
@@ -184,15 +184,25 @@
   function users(view) {
     const data = state.analytics || { users: [], generation_totals: {}, days: [] };
     intro(view, 'Anonymous users', 'Users are identified by a random first-party ID. Only birth year and a broad age range are retained from a successful Kundli; exact DOB, names, questions, photos and generated content are not stored.');
-    const tiles = el('div', 'tiles'); tiles.append(tile('Tracked users', data.total_users || 0, '', 'All time'), tile('Unique users today', data.active_today || 0), tile('New users today', data.new_today || 0), tile('New users', data.new_period || 0, '', '14 days')); view.appendChild(tiles);
+    const tiles = el('div', 'tiles'); tiles.append(tile('Tracked app installs', data.total_installs || 0, '', 'All time'), tile('New app installs', data.new_installs_today || 0), tile('New installs', data.new_installs_period || 0, '', '14 days'), tile('Unique users today', data.active_today || 0), tile('New users today', data.new_today || 0), tile('Active users', data.active_period || 0, '', '14 days')); view.appendChild(tiles);
     const trends = el('div', 'grid-even'); const unique = el('div', 'panel'); unique.append(el('h2', null, 'Unique users'), analyticsChart('unique_users')); const fresh = el('div', 'panel'); fresh.append(el('h2', null, 'New users'), analyticsChart('new_users')); trends.append(unique, fresh); view.appendChild(trends);
     const generated = el('div', 'panel'); generated.append(el('h2', null, 'What users generated'), el('p', 'hint', 'Successful results in the last 14 days, grouped only by feature.'));
     const total = Math.max(1, Object.values(data.generation_totals || {}).reduce((sum, value) => sum + Number(value || 0), 0));
     Object.entries(GENERATION_NAMES).forEach(([key, label]) => { const count = Number((data.generation_totals || {})[key] || 0), row = el('div', 'mini-stat'), name = el('span', null, label), value = el('b', null, String(count)); name.style.minWidth = '120px'; const progress = el('div', 'progress'); progress.style.flex = '1'; const fill = el('span'); fill.style.width = `${count / total * 100}%`; progress.appendChild(fill); row.append(name, progress, value); generated.appendChild(row); }); view.appendChild(generated);
+    const adoption = el('div', 'grid-even');
+    const newUsers = el('div', 'panel'); newUsers.append(el('h2', null, 'What new users are using'), el('p', 'hint', 'Unique new users who used each feature during their first 14-day reporting window.'));
+    const newRows = Object.entries(data.new_user_features || {}).filter(([, count]) => count).sort((a, b) => b[1] - a[1]);
+    if (!newRows.length) newUsers.appendChild(el('p', 'hint', 'No new-user feature activity recorded yet.'));
+    else newRows.slice(0, 10).forEach(([key, count]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, FEATURE_NAMES[key] || key), el('b', null, String(count))); newUsers.appendChild(row); });
+    const popular = el('div', 'panel'); popular.append(el('h2', null, 'Most-used features'), el('p', 'hint', 'Ranked by unique users in the last 14 days, then total interactions.'));
+    const popularRows = Object.keys(FEATURE_NAMES).map(key => ({ key, users: Number((data.feature_unique_users || {})[key] || 0), views: Number((data.feature_views || {})[key] || 0), requests: Number(((data.observability || {})[key] || {}).requests || 0) })).filter(row => row.users || row.views || row.requests).sort((a, b) => b.users - a.users || (b.views + b.requests) - (a.views + a.requests));
+    if (!popularRows.length) popular.appendChild(el('p', 'hint', 'No feature activity recorded yet.'));
+    else popularRows.slice(0, 10).forEach((item, index) => { const row = el('div', 'mini-stat'); row.append(el('span', null, `${index + 1}. ${FEATURE_NAMES[item.key] || item.key}`), el('b', null, `${item.users} users`)); popular.appendChild(row); });
+    adoption.append(newUsers, popular); view.appendChild(adoption);
     const panel = el('div', 'panel'); panel.append(el('h2', null, 'Recent users'), el('p', 'hint', 'Anonymous IDs are shortened. Counts show successful generation results only.'));
-    const wrap = el('div', 'scroll'), table = el('table'); const head = el('tr'); ['Anonymous ID', 'Birth year', 'Age range', 'First seen', 'Last seen', 'Active days', 'Generated', 'Feature usage', 'Generated breakdown'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
-    (data.users || []).forEach(user => { const breakdown = Object.entries(user.generations || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const usage = Object.entries(user.usage || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const row = el('tr'); [user.id, user.birth_year || '—', user.age_range || '—', user.first_seen, user.last_seen, user.active_days, user.generation_count, usage, breakdown].forEach(value => row.appendChild(el('td', null, String(value)))); table.appendChild(row); });
-    if (!(data.users || []).length) { const row = el('tr'), cell = el('td', 'hint', 'No anonymous users have been recorded yet.'); cell.colSpan = 9; row.appendChild(cell); table.appendChild(row); }
+    const wrap = el('div', 'scroll'), table = el('table'); const head = el('tr'); ['Anonymous ID', 'User', 'Platform', 'Installed', 'Birth year', 'Age range', 'First seen', 'Last seen', 'Active days', 'Generated', 'Feature usage', 'Generated breakdown'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    (data.users || []).forEach(user => { const breakdown = Object.entries(user.generations || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const usage = Object.entries(user.usage || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const row = el('tr'); [user.id, user.is_new_period ? 'New' : 'Returning', user.platform || 'Web', user.installed_at || '—', user.birth_year || '—', user.age_range || '—', user.first_seen, user.last_seen, user.active_days, user.generation_count, usage, breakdown].forEach(value => row.appendChild(el('td', null, String(value)))); table.appendChild(row); });
+    if (!(data.users || []).length) { const row = el('tr'), cell = el('td', 'hint', 'No anonymous users have been recorded yet.'); cell.colSpan = 12; row.appendChild(cell); table.appendChild(row); }
     wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
   }
 

@@ -99,13 +99,21 @@ def test_client_only_feature_usage_is_served_and_recorded(local_server):
     assert b'src="/usage.js"' in page
     status, script_headers, script = request(local_server, "GET", "/usage.js")
     assert status == 200 and script_headers["Content-Type"] == "application/javascript; charset=utf-8"
-    assert b"/api/usage" in script and b"numerology" in script
+    assert b"/api/usage" in script and b"/api/install" in script and b"numerology" in script
     status, _, body = request(local_server, "POST", "/api/usage", json.dumps({"feature": "numerology"}),
                               {"Content-Type": "application/json", "Cookie": cookie})
     assert status == 200 and json.loads(body) == {"ok": True}
     snapshot = webapp.store.analytics.snapshot()
     assert snapshot["feature_views"]["numerology"] == 1 and snapshot["users"][0]["usage"]["numerology"] == 1
+    for _ in range(2):
+        status, _, body = request(local_server, "POST", "/api/install", json.dumps({"platform": "android"}),
+                                  {"Content-Type": "application/json", "Cookie": cookie})
+        assert status == 200 and json.loads(body) == {"ok": True}
+    snapshot = webapp.store.analytics.snapshot()
+    assert snapshot["total_installs"] == 1 and snapshot["new_installs_today"] == 1
     assert request(local_server, "POST", "/api/usage", json.dumps({"feature": "unknown"}),
+                   {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
+    assert request(local_server, "POST", "/api/install", json.dumps({"platform": "web"}),
                    {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
 
 

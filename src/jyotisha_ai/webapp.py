@@ -1132,7 +1132,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             if observed_feature:
                 store.analytics.observe(self._visitor(), observed_feature, success, round((clock_time.monotonic() - observed_at) * 1000))
 
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/usage") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/usage", "/api/install") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1165,6 +1165,13 @@ class LocalHandler(BaseHTTPRequestHandler):
                 if feature not in store.FEATURE_TYPES:
                     raise ValueError("unknown feature")
                 store.analytics.viewed(self._visitor(), feature)
+                self._json(200, {"ok": True})
+                return
+            if path == "/api/install":
+                platform = payload.get("platform") if isinstance(payload, dict) else None
+                if platform not in ("android", "ios"):
+                    raise ValueError("unknown platform")
+                store.analytics.installed(self._visitor(), platform)
                 self._json(200, {"ok": True})
                 return
             store.stats.record({"/api/birth-chart": "birth_chart", "/api/day-panchang": "day_panchang", "/api/month-calendar": "month_calendar",

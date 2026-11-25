@@ -467,9 +467,12 @@ class Analytics:
         with self._lock:
             self._load()
             if visitor:
-                _, user, day = self._visit(visitor, today)
+                anonymous_id, user, day = self._visit(visitor, today)
                 usage = user.setdefault("usage", {})
                 usage[feature] = int(usage.get(feature, 0)) + 1
+                feature_users = day.setdefault("feature_users", {}).setdefault(feature, [])
+                if anonymous_id not in feature_users:
+                    feature_users.append(anonymous_id)
             else:
                 day = self._data["days"].setdefault(today, {"users": [], "new_users": 0, "generations": {}})
             feature_metrics = day.setdefault("observability", {}).setdefault(feature, {"requests": 0, "success": 0, "failure": 0, "total_ms": 0, "max_ms": 0})
@@ -487,11 +490,28 @@ class Analytics:
         today = date.today().isoformat()
         with self._lock:
             self._load()
-            _, user, day = self._visit(visitor, today)
+            anonymous_id, user, day = self._visit(visitor, today)
             views = day.setdefault("views", {})
             views[feature] = int(views.get(feature, 0)) + 1
             usage = user.setdefault("usage", {})
             usage[feature] = int(usage.get(feature, 0)) + 1
+            feature_users = day.setdefault("feature_users", {}).setdefault(feature, [])
+            if anonymous_id not in feature_users:
+                feature_users.append(anonymous_id)
+            self._save()
+
+    def installed(self, visitor: str, platform: str) -> None:
+        """Record the first launch reported by a native app installation, once per anonymous visitor."""
+        if not visitor or platform not in ("android", "ios"):
+            return
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            _, user, day = self._visit(visitor, today)
+            if not user.get("installed_at"):
+                user["installed_at"] = today
+                user["platform"] = platform
+                day["new_installs"] = int(day.get("new_installs", 0)) + 1
             self._save()
 
     def profile_birth_year(self, visitor: str, dob: object) -> None:
@@ -534,6 +554,8 @@ class Analytics:
             day_rows, active, generation_totals = [], set(), {feature: 0 for feature in GENERATION_TYPES}
             observability = {feature: {"requests": 0, "success": 0, "failure": 0, "total_ms": 0, "max_ms": 0} for feature in FEATURE_TYPES}
             feature_views = {feature: 0 for feature in FEATURE_TYPES}
+            feature_user_sets = {feature: set() for feature in FEATURE_TYPES}
+            new_installs_period = 0
             for day_name in recent_days:
                 row = self._data["days"].get(day_name, {})
                 users = set(row.get("users", [])); active.update(users)
@@ -543,31 +565,47 @@ class Analytics:
                 daily_requests = 0
                 for feature in FEATURE_TYPES:
                     feature_views[feature] += int(row.get("views", {}).get(feature, 0))
+                    feature_user_sets[feature].update(row.get("feature_users", {}).get(feature, []))
                     metric = row.get("observability", {}).get(feature, {})
                     target = observability[feature]
                     for key in ("requests", "success", "failure", "total_ms"):
                         target[key] += int(metric.get(key, 0))
                     target["max_ms"] = max(target["max_ms"], int(metric.get("max_ms", 0)))
                     daily_requests += int(metric.get("requests", 0))
+                new_installs_period += int(row.get("new_installs", 0))
                 day_rows.append({"date": day_name, "unique_users": len(users), "new_users": int(row.get("new_users", 0)),
-                                 "feature_requests": daily_requests, "generations": generations})
+                                 "new_installs": int(row.get("new_installs", 0)), "feature_requests": daily_requests, "generations": generations})
             for metric in observability.values():
                 metric["avg_ms"] = round(metric["total_ms"] / metric["requests"]) if metric["requests"] else 0
                 metric["success_rate"] = round(metric["success"] * 100 / metric["requests"], 1) if metric["requests"] else 0
                 metric.pop("total_ms", None)
             users = sorted(self._data["users"].items(), key=lambda item: (item[1].get("last_seen", ""), item[0]), reverse=True)
+            period_start = recent_days[-1] if recent_days else date.today().isoformat()
+            new_user_feature_sets = {feature: set() for feature in FEATURE_TYPES}
+            for anonymous_id, user in users:
+                if user.get("first_seen", "") >= period_start:
+                    for feature, count in user.get("usage", {}).items():
+                        if feature in new_user_feature_sets and int(count) > 0:
+                            new_user_feature_sets[feature].add(anonymous_id)
             recent_users = []
             for anonymous_id, user in users[:max(0, min(user_limit, 100))]:
                 generations = {feature: int(user.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
                 usage = {feature: int(user.get("usage", {}).get(feature, 0)) for feature in FEATURE_TYPES if user.get("usage", {}).get(feature)}
                 recent_users.append({"id": anonymous_id[:10], "birth_year": user.get("birth_year"), "age_range": user.get("age_range", ""),
+                                     "platform": user.get("platform", ""), "installed_at": user.get("installed_at", ""),
+                                     "is_new_period": user.get("first_seen", "") >= period_start,
                                      "first_seen": user.get("first_seen", ""), "last_seen": user.get("last_seen", ""),
                                      "active_days": int(user.get("visits", 0)), "generation_count": sum(generations.values()),
                                      "generations": generations, "usage": usage})
-            return {"total_users": len(self._data["users"]), "active_today": day_rows[0]["unique_users"] if day_rows else 0,
+            installed_users = [user for user in self._data["users"].values() if user.get("installed_at")]
+            platforms = {platform: sum(user.get("platform") == platform for user in installed_users) for platform in ("android", "ios")}
+            return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),
+                    "new_installs_today": day_rows[0]["new_installs"] if day_rows else 0, "new_installs_period": new_installs_period,
+                    "install_platforms": platforms, "active_today": day_rows[0]["unique_users"] if day_rows else 0,
                     "new_today": day_rows[0]["new_users"] if day_rows else 0, "active_period": len(active),
                     "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
-                    "feature_views": feature_views, "observability": observability,
+                    "feature_views": feature_views, "feature_unique_users": {feature: len(users) for feature, users in feature_user_sets.items()},
+                    "new_user_features": {feature: len(users) for feature, users in new_user_feature_sets.items()}, "observability": observability,
                     "days": day_rows, "users": recent_users}
 
 
