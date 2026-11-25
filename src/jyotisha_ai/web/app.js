@@ -130,6 +130,8 @@
       traitsVenus: 'Venus, the planet of love in your chart, sits in {sign} — affection tends to feel {trait} for you.',
       traitsPortraitBtn: '✨ See an illustrated impression', traitsPortraitLoading: 'Painting an impression…',
       traitsPortraitOff: 'This has not been turned on yet.',
+      traitsGenderLabel: 'Show me a partner who is a:', traitsGenderWoman: 'Woman', traitsGenderMan: 'Man',
+      traitsPortraitAgainBtn: '🔄 Generate again',
       who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
@@ -151,6 +153,8 @@
       traitsVenus: 'మీ జాతకంలో ప్రేమకు కారకుడైన శుక్రుడు {sign}లో ఉన్నాడు — మీకు ఆప్యాయత {trait}గా అనిపిస్తుంది.',
       traitsPortraitBtn: '✨ ఒక చిత్రీకరణను చూడండి', traitsPortraitLoading: 'చిత్రీకరణ గీస్తున్నాం…',
       traitsPortraitOff: 'ఇది ఇంకా ఆన్ చేయలేదు.',
+      traitsGenderLabel: 'భాగస్వామి ఎలా ఉండాలో ఎంచుకోండి:', traitsGenderWoman: 'స్త్రీ', traitsGenderMan: 'పురుషుడు',
+      traitsPortraitAgainBtn: '🔄 మళ్ళీ చిత్రీకరించండి',
       who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇతరులను చూడండి', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
@@ -172,6 +176,8 @@
       traitsVenus: 'आपकी कुंडली में प्रेम के कारक शुक्र {sign} में हैं — आपके लिए स्नेह {trait} जैसा महसूस होता है।',
       traitsPortraitBtn: '✨ एक चित्रांकन देखें', traitsPortraitLoading: 'चित्रांकन बनाया जा रहा है…',
       traitsPortraitOff: 'यह अभी चालू नहीं किया गया है।',
+      traitsGenderLabel: 'साथी कैसा हो, चुनें:', traitsGenderWoman: 'महिला', traitsGenderMan: 'पुरुष',
+      traitsPortraitAgainBtn: '🔄 फिर से बनाएँ',
       who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दूसरों को देखें', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
@@ -525,15 +531,26 @@
             el('p', null, fill(copy.traitsVenus, { sign: read.venusSign, trait: read.venusTrait })));
           const pp = state.partnerPortrait;
           if (pp.status === 'loading') traits.appendChild(loader(copy.traitsPortraitLoading));
-          else if (pp.status === 'ok' && pp.image) {
-            const img = el('img', 'traits-portrait'); img.src = `data:${pp.image.mime};base64,${pp.image.data}`; img.alt = copy.traitsPortraitBtn;
-            traits.appendChild(img);
-          } else {
-            if (pp.status === 'off') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitOff));
+          else {
+            if (pp.status === 'ok' && pp.image) {
+              const img = el('img', 'traits-portrait'); img.src = `data:${pp.image.mime};base64,${pp.image.data}`; img.alt = copy.traitsPortraitBtn;
+              traits.appendChild(img);
+            } else if (pp.status === 'off') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitOff));
             else if (pp.status === 'unavailable') traits.appendChild(el('p', 'muted-note', copy.error));
-            const btn = el('button', `palm-scan${rewardedFor('partner') ? ' reward-btn' : ''}`, copy.traitsPortraitBtn);
+            // The gender choice and the generate button stay available after a result too, so trying again (a
+            // different gender, or the same one) never needs leaving this card.
+            if (!state.partnerGender) state.partnerGender = state.myRole === 'bride' ? 'man' : 'woman';
+            const genderRow = el('div', 'seg');
+            [['woman', copy.traitsGenderWoman], ['man', copy.traitsGenderMan]].forEach(([value, label]) => {
+              const option = el('button', value === state.partnerGender ? 'on' : '', label);
+              option.type = 'button';
+              option.addEventListener('click', () => { state.partnerGender = value; renderRelationship(); });
+              genderRow.appendChild(option);
+            });
+            traits.append(el('small', 'muted-note', copy.traitsGenderLabel), genderRow);
+            const btn = el('button', `palm-scan${rewardedFor('partner') ? ' reward-btn' : ''}`, pp.status === 'ok' ? copy.traitsPortraitAgainBtn : copy.traitsPortraitBtn);
             btn.type = 'button';
-            btn.addEventListener('click', () => { void generatePartnerPortrait(read.house7Rashi, read.venusRashi); });
+            btn.addEventListener('click', () => { void generatePartnerPortrait(read.house7Rashi, read.venusRashi, state.partnerGender); });
             traits.appendChild(btn);
           }
         } catch (_error) { traits.appendChild(el('p', null, copy.error)); }
@@ -601,12 +618,11 @@
   }
   // "Your ideal partner": a stylized AI illustration from the 7th house and Venus traits alone (never a photo, never
   // a specific real person); behind "watch an ad" like Palm and Tarot results, when switched on in the admin panel.
-  async function generatePartnerPortrait(house7Rashi, venusRashi) {
+  async function generatePartnerPortrait(house7Rashi, venusRashi, gender) {
     if (rewardedFor('partner') && !(await watchForResult())) return;
     state.partnerPortrait = { status: 'loading', image: null };
     renderRelationship();
     try {
-      const gender = state.myRole === 'bride' ? 'man' : 'woman';   // the same Groom/Bride choice used for Kundli matching
       const { ok, body } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi, gender });
       state.partnerPortrait = ok && body && body.status === 'ok' && body.image ? { status: 'ok', image: body.image }
         : { status: body && body.status === 'off' ? 'off' : 'unavailable', image: null };
@@ -3691,6 +3707,8 @@
       $('result').textContent = ok && body && body.chart ? t('chartReady') : t('chartFailed');
       if (ok && body && body.chart) {
         state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
+        state.partnerPortrait = { status: 'idle', image: null };   // the old illustration no longer matches this chart
+        renderRelationship();
         saveProfile({ dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
         renderChart(); $('chart').hidden = false;
         useOwnRashi();
@@ -4054,7 +4072,9 @@
   function applyChart(body, inputs) {
     state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
     if (state.matchWho !== 'others') { state.partnerChart = null; state.partnerDetails = null; }
-    state.showLoveReading = false; $('relationship-status').textContent = ''; renderRelationship();
+    state.showLoveReading = false; $('relationship-status').textContent = '';
+    state.partnerPortrait = { status: 'idle', image: null };   // the old illustration no longer matches this chart
+    renderRelationship();
     try {
       for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
     } catch (_error) { /* the form is a convenience only */ }
