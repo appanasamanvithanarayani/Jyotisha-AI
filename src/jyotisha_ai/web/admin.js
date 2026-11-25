@@ -102,6 +102,14 @@
 
   function trendLabel() { return trendRange === 'all' ? 'All recorded days' : `Last ${trendRange} days`; }
 
+  function selectedPeriod() {
+    const analytics = state.analytics || {};
+    return (analytics.periods || {})[trendRange] || {
+      all_users: analytics.total_users || 0, unique_users: analytics.active_period || 0,
+      new_users: analytics.new_period || 0, new_installs: analytics.new_installs_period || 0,
+    };
+  }
+
   function historyRows(rows) {
     const sorted = [...(rows || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     if (trendRange === 'all') return sorted;
@@ -145,11 +153,11 @@
   function comparisonPanel() {
     const panel = el('div', 'panel'); panel.append(el('h2', null, 'Period comparison'), el('p', 'hint', 'Compare the same daily signals with yesterday, last week and 30 days ago.'));
     const wrap = el('div', 'scroll'), table = el('table'), head = el('tr');
-    ['Period', 'Unique users', 'New users', 'Installs', 'Feature opens', 'API requests', 'Generated', 'Page opens', 'AI questions'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    ['Period', 'All users', 'Unique users', 'New users', 'Installs', 'Feature opens', 'API requests', 'Generated', 'Full page loads', 'AI questions'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
     const statsByDate = new Map((state.stats_history || state.stats || []).map(row => [row.date, row]));
     ((state.analytics || {}).comparisons || []).forEach(item => {
       const stats = statsByDate.get(item.date) || {}, row = el('tr');
-      [item.label, item.unique_users || 0, item.new_users || 0, item.new_installs || 0, item.feature_views || 0,
+      [item.label, item.all_users || 0, item.unique_users || 0, item.new_users || 0, item.new_installs || 0, item.feature_views || 0,
         item.feature_requests || 0, item.generation_count || 0, stats.page_views || 0, stats.ai_questions || 0]
         .forEach(value => row.appendChild(el('td', null, String(value))));
       table.appendChild(row);
@@ -160,17 +168,20 @@
   function dashboard(view) {
     const today = state.stats[0] || {};
     const analytics = state.analytics || {};
+    const period = selectedPeriod();
     intro(view, 'Overview & trends', 'A decision view for engagement, AI usage, user feedback, monetization and service readiness.', trendPicker());
     const tiles = el('div', 'tiles');
-    tiles.append(tile('Unique users today', analytics.active_today || 0), tile('New users today', analytics.new_today || 0),
-      tile('New app installs', analytics.new_installs_today || 0), tile('Active users', analytics.active_period || 0, '', '14 days'));
+    tiles.append(tile('All tracked users', period.all_users || 0, '', 'All time'),
+      tile('Unique active users', period.unique_users || 0, '', trendLabel()),
+      tile('New users', period.new_users || 0, '', trendLabel()),
+      tile('New app installs', period.new_installs || 0, '', trendLabel()));
     view.appendChild(tiles);
 
     const live = state.live;
     const columns = el('div', 'grid-2');
     const trend = el('div', 'panel'); trend.append(el('h2', null, 'Unique-user trend'), el('p', 'hint', trendLabel()), analyticsChart('unique_users'));
     const quick = el('div', 'panel'); quick.append(el('h2', null, 'Fourteen-day activity'));
-    [['Tracked app installs', analytics.total_installs || 0], ['Page opens', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
+    [['Tracked app installs', analytics.total_installs || 0], ['Full page loads', sum('page_views')], ['AI questions', sum('ai_questions')], ['Kundli generated', sum('birth_chart')], ['Rate limited', sum('rate_limited')]].forEach(([label, value]) => { const row = el('div', 'mini-stat'); row.append(el('span', null, label), el('b', null, String(value))); quick.appendChild(row); });
     columns.append(trend, quick); view.appendChild(columns);
     view.appendChild(comparisonPanel());
 
@@ -206,8 +217,8 @@
     const featureRows = [...new Set([...Object.keys(featureViews), ...Object.keys(observed)])].map(key => ({ key, views: Number(featureViews[key] || 0), ...(observed[key] || {}) })).filter(row => row.views || row.requests).sort((a, b) => (b.views + (b.requests || 0)) - (a.views + (a.requests || 0)));
     const requestTotal = observedRows.reduce((total, row) => total + row.requests, 0), failureTotal = observedRows.reduce((total, row) => total + row.failure, 0);
     intro(view, 'Usage & observability', 'Feature-level volume, outcomes and latency. Request bodies, generated content, questions and photos are never retained in these metrics.', trendPicker());
-    const tiles = el('div', 'tiles'); tiles.append(tile('Feature requests', requestTotal, '', '14 days'), tile('Failed requests', failureTotal, failureTotal ? 'off-text' : 'on-text', '14 days'), tile('Unique users', (state.analytics || {}).active_period || 0, '', '14 days'), tile('Page opens', sum('page_views'), '', '14 days')); view.appendChild(tiles);
-    const graphs = el('div', 'grid-even'); const opens = el('div', 'panel'); opens.append(el('h2', null, 'Page opens'), chart('page_views')); const featureUse = el('div', 'panel'); featureUse.append(el('h2', null, 'Server-backed feature requests'), analyticsChart('feature_requests')); graphs.append(opens, featureUse); view.appendChild(graphs);
+    const tiles = el('div', 'tiles'); tiles.append(tile('Feature requests', requestTotal, '', '14 days'), tile('Failed requests', failureTotal, failureTotal ? 'off-text' : 'on-text', '14 days'), tile('Unique users', (state.analytics || {}).active_period || 0, '', '14 days'), tile('Full page loads', sum('page_views'), '', '14 days')); view.appendChild(tiles);
+    const graphs = el('div', 'grid-even'); const opens = el('div', 'panel'); opens.append(el('h2', null, 'Full page loads'), chart('page_views')); const featureUse = el('div', 'panel'); featureUse.append(el('h2', null, 'Server-backed feature requests'), analyticsChart('feature_requests')); graphs.append(opens, featureUse); view.appendChild(graphs);
     const health = el('div', 'panel'); health.append(el('h2', null, 'Feature usage & health'), el('p', 'hint', 'Screen opens include client-only tools; request outcomes and latency apply to server-backed features.'));
     const healthWrap = el('div', 'scroll'), healthTable = el('table'), healthHead = el('tr'); ['Feature', 'Screen opens', 'API requests', 'Successful', 'Failed', 'Success rate', 'Average', 'Peak'].forEach(label => healthHead.appendChild(el('th', null, label))); healthTable.appendChild(healthHead);
     featureRows.forEach(row => { const hasRequests = Number(row.requests || 0) > 0, tr = el('tr'); [FEATURE_NAMES[row.key] || row.key, row.views, row.requests || 0, row.success || 0, row.failure || 0, hasRequests ? `${row.success_rate}%` : '—', hasRequests ? `${row.avg_ms} ms` : '—', hasRequests ? `${row.max_ms} ms` : '—'].forEach(value => tr.appendChild(el('td', null, String(value)))); healthTable.appendChild(tr); });
@@ -221,9 +232,24 @@
 
   function users(view) {
     const data = state.analytics || { users: [], generation_totals: {}, days: [] };
+    const period = selectedPeriod();
     intro(view, 'Anonymous users', 'Users are identified by a random first-party ID. Only birth year and a broad age range are retained from a successful Kundli; exact DOB, names, questions, photos and generated content are not stored.', trendPicker());
-    const tiles = el('div', 'tiles'); tiles.append(tile('Tracked app installs', data.total_installs || 0, '', 'All time'), tile('New app installs', data.new_installs_today || 0), tile('New installs', data.new_installs_period || 0, '', '14 days'), tile('Unique users today', data.active_today || 0), tile('New users today', data.new_today || 0), tile('Active users', data.active_period || 0, '', '14 days')); view.appendChild(tiles);
-    const trends = el('div', 'grid-even'); const unique = el('div', 'panel'); unique.append(el('h2', null, 'Unique users'), el('p', 'hint', trendLabel()), analyticsChart('unique_users')); const fresh = el('div', 'panel'); fresh.append(el('h2', null, 'New users'), el('p', 'hint', trendLabel()), analyticsChart('new_users')); trends.append(unique, fresh); view.appendChild(trends);
+    const tiles = el('div', 'tiles'); tiles.append(tile('All tracked users', period.all_users || 0, '', 'All time'),
+      tile('Unique active users', period.unique_users || 0, '', trendLabel()), tile('New users', period.new_users || 0, '', trendLabel()),
+      tile('New app installs', period.new_installs || 0, '', trendLabel())); view.appendChild(tiles);
+    const trends = el('div', 'grid-even');
+    [['all_users', 'All users'], ['unique_users', 'Unique active users'], ['new_users', 'New users'], ['new_installs', 'New app installs']].forEach(([key, label]) => {
+      const panel = el('div', 'panel'); panel.append(el('h2', null, label), el('p', 'hint', trendLabel()), analyticsChart(key)); trends.appendChild(panel);
+    });
+    view.appendChild(trends);
+    const dailyUsers = el('div', 'panel'); dailyUsers.append(el('h2', null, 'Daily user detail'), el('p', 'hint', trendLabel()));
+    const dailyWrap = el('div', 'scroll'), dailyTable = el('table'), dailyHead = el('tr');
+    ['Day', 'All users', 'Unique active users', 'New users', 'New app installs'].forEach(label => dailyHead.appendChild(el('th', null, label))); dailyTable.appendChild(dailyHead);
+    historyRows(data.history || [...(data.days || [])].reverse()).reverse().forEach(item => {
+      const row = el('tr'); [item.date, item.all_users || 0, item.unique_users || 0, item.new_users || 0, item.new_installs || 0]
+        .forEach(value => row.appendChild(el('td', null, String(value)))); dailyTable.appendChild(row);
+    });
+    dailyWrap.appendChild(dailyTable); dailyUsers.appendChild(dailyWrap); view.appendChild(dailyUsers);
     view.appendChild(comparisonPanel());
     const generated = el('div', 'panel'); generated.append(el('h2', null, 'What users generated'), el('p', 'hint', 'Successful results in the last 14 days, grouped only by feature.'));
     const total = Math.max(1, Object.values(data.generation_totals || {}).reduce((sum, value) => sum + Number(value || 0), 0));

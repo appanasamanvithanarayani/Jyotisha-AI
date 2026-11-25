@@ -15,6 +15,7 @@ import os
 import re
 import threading
 import time
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -559,10 +560,12 @@ class Analytics:
     def snapshot(self, days: int = 14, user_limit: int = 100) -> dict:
         with self._lock:
             self._load()
+            first_seen_dates = sorted(user.get("first_seen") for user in self._data["users"].values() if user.get("first_seen"))
             def daily_row(day_name: str) -> dict:
                 raw = self._data["days"].get(day_name, {})
                 generations = {feature: int(raw.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
-                return {"date": day_name, "unique_users": len(set(raw.get("users", []))),
+                all_users = bisect_right(first_seen_dates, day_name)
+                return {"date": day_name, "all_users": all_users, "unique_users": len(set(raw.get("users", []))),
                         "new_users": int(raw.get("new_users", 0)), "new_installs": int(raw.get("new_installs", 0)),
                         "feature_views": sum(int(value) for value in raw.get("views", {}).values()),
                         "feature_requests": sum(int(metric.get("requests", 0)) for metric in raw.get("observability", {}).values()),
@@ -624,6 +627,22 @@ class Analytics:
             comparison_labels = ((0, "Today"), (1, "Yesterday"), (7, "7 days ago"), (30, "30 days ago"))
             comparisons = [{"label": label, **daily_row((date.today() - timedelta(days=offset)).isoformat())}
                            for offset, label in comparison_labels]
+            today_name = date.today().isoformat()
+            def period_summary(period_days: int | None) -> dict:
+                if period_days is None:
+                    start = min((user.get("first_seen") for user in self._data["users"].values() if user.get("first_seen")),
+                                default=today_name)
+                else:
+                    start = (date.today() - timedelta(days=period_days - 1)).isoformat()
+                period_rows = [row for name, row in self._data["days"].items() if start <= name <= today_name]
+                active_users = set()
+                for row in period_rows:
+                    active_users.update(row.get("users", []))
+                return {"all_users": len(self._data["users"]), "unique_users": len(active_users),
+                        "new_users": sum(1 for user in self._data["users"].values() if start <= user.get("first_seen", "") <= today_name),
+                        "new_installs": sum(1 for user in self._data["users"].values() if start <= user.get("installed_at", "") <= today_name)}
+            periods = {str(period_days): period_summary(period_days) for period_days in (7, 14, 30, 90)}
+            periods["all"] = period_summary(None)
             return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),
                     "new_installs_today": day_rows[0]["new_installs"] if day_rows else 0, "new_installs_period": new_installs_period,
                     "install_platforms": platforms, "active_today": day_rows[0]["unique_users"] if day_rows else 0,
@@ -631,7 +650,7 @@ class Analytics:
                     "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
                     "feature_views": feature_views, "feature_unique_users": {feature: len(users) for feature, users in feature_user_sets.items()},
                     "new_user_features": {feature: len(users) for feature, users in new_user_feature_sets.items()}, "observability": observability,
-                    "days": day_rows, "history": history, "comparisons": comparisons, "users": recent_users}
+                    "days": day_rows, "history": history, "comparisons": comparisons, "periods": periods, "users": recent_users}
 
 
 analytics = Analytics()
