@@ -93,6 +93,22 @@ def test_calendar_ui_script_is_local_and_served_with_no_cache(local_server):
     assert b"monthCells" in body
 
 
+def test_client_only_feature_usage_is_served_and_recorded(local_server):
+    _, headers, page = request(local_server, "GET", "/")
+    cookie = headers["Set-Cookie"].split(";", 1)[0]
+    assert b'src="/usage.js"' in page
+    status, script_headers, script = request(local_server, "GET", "/usage.js")
+    assert status == 200 and script_headers["Content-Type"] == "application/javascript; charset=utf-8"
+    assert b"/api/usage" in script and b"numerology" in script
+    status, _, body = request(local_server, "POST", "/api/usage", json.dumps({"feature": "numerology"}),
+                              {"Content-Type": "application/json", "Cookie": cookie})
+    assert status == 200 and json.loads(body) == {"ok": True}
+    snapshot = webapp.store.analytics.snapshot()
+    assert snapshot["feature_views"]["numerology"] == 1 and snapshot["users"][0]["usage"]["numerology"] == 1
+    assert request(local_server, "POST", "/api/usage", json.dumps({"feature": "unknown"}),
+                   {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
+
+
 def test_panchang_names_script_and_place_datalist_are_served(local_server):
     status, headers, body = request(local_server, "GET", "/panchang-names.js")
     assert status == 200

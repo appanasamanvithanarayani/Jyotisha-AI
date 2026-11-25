@@ -42,6 +42,15 @@ PUBLIC_ASK_PER_MINUTE = 8
 PUBLIC_ASK_PER_DAY = 60
 VISITOR_COOKIE = "jyotisha_visitor"
 VISITOR_MAX_AGE = 365 * 24 * 60 * 60
+OBSERVABILITY_ROUTES = {
+    "/api/chart": "research_chart", "/api/birth-chart": "kundli", "/api/panchang-noon": "panchang",
+    "/api/panchang-month": "calendar", "/api/day-panchang": "panchang", "/api/month-calendar": "calendar",
+    "/api/places": "place_search", "/api/nearby-place": "nearby_place", "/api/ask": "ai_chat", "/api/nudges": "nudges",
+    "/api/rashiphal": "rashiphal", "/api/life-guide": "life_guide", "/api/life-guide-text": "life_guide_text",
+    "/api/moon-sign": "moon_sign", "/api/tarot": "tarot", "/api/palm": "palm",
+    "/api/partner-portrait": "partner_portrait", "/api/rating": "rating",
+    "/api/payment/create-order": "payments", "/api/payment/verify": "payments",
+}
 
 
 def _cookie_value(header: str, name: str) -> str:
@@ -1084,6 +1093,9 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/panchang-names.js":
             body = files("jyotisha_ai.web").joinpath("panchang-names.js").read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8")
+        elif path == "/usage.js":
+            body = files("jyotisha_ai.web").joinpath("usage.js").read_bytes()
+            self._send(200, body, "application/javascript; charset=utf-8")
         elif path == "/api/status":
             self._json(200, research_status(self.server.project_root))
         elif path == "/api/birth-readiness":
@@ -1113,29 +1125,47 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify") and not path.startswith("/api/admin/"):
+        observed_feature = OBSERVABILITY_ROUTES.get(path)
+        observed_at = clock_time.monotonic()
+
+        def observe(success: bool) -> None:
+            if observed_feature:
+                store.analytics.observe(self._visitor(), observed_feature, success, round((clock_time.monotonic() - observed_at) * 1000))
+
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/usage") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
             self._json(403, {"error": "cross-origin requests are blocked"})
             return
         if self._limited(path):
+            observe(False)
             return
         if self.headers.get_content_type() != "application/json":
+            observe(False)
             self._json(415, {"error": "JSON required"})
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
+            observe(False)
             self._json(400, {"error": "invalid request length"})
             return
         if length <= 0 or length > (MAX_ASK_BYTES if path == "/api/ask" else MAX_PALM_BYTES if path == "/api/palm" else MAX_REQUEST_BYTES):
+            observe(False)
             self._json(413, {"error": "request body is too large"})
             return
         try:
             payload = json.loads(self.rfile.read(length))
             if path.startswith("/api/admin/"):
                 self._admin_post(path, payload)
+                return
+            if path == "/api/usage":
+                feature = payload.get("feature") if isinstance(payload, dict) else None
+                if feature not in store.FEATURE_TYPES:
+                    raise ValueError("unknown feature")
+                store.analytics.viewed(self._visitor(), feature)
+                self._json(200, {"ok": True})
                 return
             store.stats.record({"/api/birth-chart": "birth_chart", "/api/day-panchang": "day_panchang", "/api/month-calendar": "month_calendar",
                                 "/api/places": "places", "/api/ask": "ai_questions"}.get(path, "other"), self._client())
@@ -1173,17 +1203,23 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = partner_portrait.portrait(payload)
             elif path == "/api/rating":
                 row = store.record_rating(payload.get("stars"), payload.get("reason", ""), payload.get("language", ""))
+                observe(True)
                 self._json(200, {"ok": True, "stars": row["stars"]})
                 return
             elif path == "/api/payment/create-order":
-                self._json(200, payments.create_order(payload))
+                payment_result = payments.create_order(payload)
+                observe(payment_result.get("status") == "ok")
+                self._json(200, payment_result)
                 return
             elif path == "/api/payment/verify":
-                self._json(200, payments.verify_payment(payload))
+                payment_result = payments.verify_payment(payload)
+                observe(payment_result.get("status") == "ok")
+                self._json(200, payment_result)
                 return
             else:
                 result = experimental_chart(payload)
         except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
+            observe(False)
             self._json(400, {"error": str(exc)})
             return
         response_status = 200 if path == "/api/chart" or result.get("chart") is not None or result.get("indices") is not None or result.get("days") is not None or result.get("day") is not None or result.get("suggestions") is not None or result.get("candidate") is not None or result.get("answer") is not None or result.get("batches") is not None or "readings" in result or "reading" in result or "variants" in result or "image" in result or result.get("status") in ("unconfigured", "unavailable") or result.get("status") == "no_nearby_city" else 422
@@ -1194,6 +1230,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             if generation_type == "kundli" and isinstance(payload, dict):
                 store.analytics.profile_birth_year(self._visitor(), payload.get("dob"))
             store.analytics.generated(self._visitor(), generation_type)
+        observe(response_status == 200 and result.get("status") not in ("off", "unavailable", "unconfigured", "not_palm", "invalid"))
         self._json(response_status, result)
 
 

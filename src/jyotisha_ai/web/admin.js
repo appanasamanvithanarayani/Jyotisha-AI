@@ -113,7 +113,8 @@
     return barChart([...(state.stats || [])].reverse(), key);
   }
 
-  const FEATURE_NAMES = { kundli: 'Kundli', ai_chat: 'AI chat', rashiphal: 'Rashiphal', life_guide: 'Life Guide', moon_sign: 'Moon sign', tarot: 'Tarot', palm: 'Palm', partner_portrait: 'Partner portrait' };
+  const GENERATION_NAMES = { kundli: 'Kundli', ai_chat: 'AI chat', rashiphal: 'Rashiphal', life_guide: 'Life Guide', moon_sign: 'Moon sign', tarot: 'Tarot', palm: 'Palm', partner_portrait: 'Partner portrait' };
+  const FEATURE_NAMES = { home: 'Home', research_chart: 'Research chart', ...GENERATION_NAMES, panchang: 'Panchang', calendar: 'Calendar', festivals: 'Festivals', relationship: 'Love & relationship', place_search: 'Place search', nearby_place: 'Nearby place', nudges: 'Daily nudges', life_guide_text: 'Life Guide copy', numerology: 'Numerology', sign_match: 'Sign match', doshas: 'Doshas', dasha: 'Dasha', rating: 'Ratings', payments: 'Payments' };
 
   function analyticsChart(key) {
     return barChart([...((state.analytics || {}).days || [])].reverse(), key);
@@ -161,9 +162,19 @@
   }
 
   function usage(view) {
-    intro(view, 'Usage & trends', 'Aggregate counters only. Visitor codes are one-way and discarded at the end of each day.');
-    const tiles = el('div', 'tiles'); tiles.append(tile('Visitors', sum('visitors'), '', '14 days'), tile('Page opens', sum('page_views'), '', '14 days'), tile('AI questions', sum('ai_questions'), '', '14 days'), tile('APK downloads', sum('apk_downloads'), '', '14 days')); view.appendChild(tiles);
-    const graphs = el('div', 'grid-even'); const opens = el('div', 'panel'); opens.append(el('h2', null, 'Page opens'), chart('page_views')); const ai = el('div', 'panel'); ai.append(el('h2', null, 'AI questions'), chart('ai_questions')); graphs.append(opens, ai); view.appendChild(graphs);
+    const observed = (state.analytics || {}).observability || {};
+    const observedRows = Object.entries(observed).map(([key, metric]) => ({ key, ...metric })).filter(row => row.requests).sort((a, b) => b.requests - a.requests);
+    const featureViews = (state.analytics || {}).feature_views || {};
+    const featureRows = [...new Set([...Object.keys(featureViews), ...Object.keys(observed)])].map(key => ({ key, views: Number(featureViews[key] || 0), ...(observed[key] || {}) })).filter(row => row.views || row.requests).sort((a, b) => (b.views + (b.requests || 0)) - (a.views + (a.requests || 0)));
+    const requestTotal = observedRows.reduce((total, row) => total + row.requests, 0), failureTotal = observedRows.reduce((total, row) => total + row.failure, 0);
+    intro(view, 'Usage & observability', 'Feature-level volume, outcomes and latency. Request bodies, generated content, questions and photos are never retained in these metrics.');
+    const tiles = el('div', 'tiles'); tiles.append(tile('Feature requests', requestTotal, '', '14 days'), tile('Failed requests', failureTotal, failureTotal ? 'off-text' : 'on-text', '14 days'), tile('Unique users', (state.analytics || {}).active_period || 0, '', '14 days'), tile('Page opens', sum('page_views'), '', '14 days')); view.appendChild(tiles);
+    const graphs = el('div', 'grid-even'); const opens = el('div', 'panel'); opens.append(el('h2', null, 'Page opens'), chart('page_views')); const featureUse = el('div', 'panel'); featureUse.append(el('h2', null, 'Server-backed feature requests'), analyticsChart('feature_requests')); graphs.append(opens, featureUse); view.appendChild(graphs);
+    const health = el('div', 'panel'); health.append(el('h2', null, 'Feature usage & health'), el('p', 'hint', 'Screen opens include client-only tools; request outcomes and latency apply to server-backed features.'));
+    const healthWrap = el('div', 'scroll'), healthTable = el('table'), healthHead = el('tr'); ['Feature', 'Screen opens', 'API requests', 'Successful', 'Failed', 'Success rate', 'Average', 'Peak'].forEach(label => healthHead.appendChild(el('th', null, label))); healthTable.appendChild(healthHead);
+    featureRows.forEach(row => { const hasRequests = Number(row.requests || 0) > 0, tr = el('tr'); [FEATURE_NAMES[row.key] || row.key, row.views, row.requests || 0, row.success || 0, row.failure || 0, hasRequests ? `${row.success_rate}%` : '—', hasRequests ? `${row.avg_ms} ms` : '—', hasRequests ? `${row.max_ms} ms` : '—'].forEach(value => tr.appendChild(el('td', null, String(value)))); healthTable.appendChild(tr); });
+    if (!featureRows.length) { const tr = el('tr'), td = el('td', 'hint', 'No feature usage recorded yet.'); td.colSpan = 8; tr.appendChild(td); healthTable.appendChild(tr); }
+    healthWrap.appendChild(healthTable); health.appendChild(healthWrap); view.appendChild(health);
     const panel = el('div', 'panel'); panel.appendChild(el('h2', null, 'Daily detail')); const wrap = el('div', 'scroll'), table = el('table');
     const columns = [['date', 'Day'], ['visitors', 'Visitors'], ['page_views', 'Opens'], ['day_panchang', 'Panchang'], ['month_calendar', 'Calendar'], ['birth_chart', 'Kundli'], ['ai_questions', 'AI'], ['apk_downloads', 'APK'], ['rate_limited', 'Blocked']];
     const head = el('tr'); columns.forEach(([, label]) => head.appendChild(el('th', null, label))); table.appendChild(head);
@@ -177,11 +188,11 @@
     const trends = el('div', 'grid-even'); const unique = el('div', 'panel'); unique.append(el('h2', null, 'Unique users'), analyticsChart('unique_users')); const fresh = el('div', 'panel'); fresh.append(el('h2', null, 'New users'), analyticsChart('new_users')); trends.append(unique, fresh); view.appendChild(trends);
     const generated = el('div', 'panel'); generated.append(el('h2', null, 'What users generated'), el('p', 'hint', 'Successful results in the last 14 days, grouped only by feature.'));
     const total = Math.max(1, Object.values(data.generation_totals || {}).reduce((sum, value) => sum + Number(value || 0), 0));
-    Object.entries(FEATURE_NAMES).forEach(([key, label]) => { const count = Number((data.generation_totals || {})[key] || 0), row = el('div', 'mini-stat'), name = el('span', null, label), value = el('b', null, String(count)); name.style.minWidth = '120px'; const progress = el('div', 'progress'); progress.style.flex = '1'; const fill = el('span'); fill.style.width = `${count / total * 100}%`; progress.appendChild(fill); row.append(name, progress, value); generated.appendChild(row); }); view.appendChild(generated);
+    Object.entries(GENERATION_NAMES).forEach(([key, label]) => { const count = Number((data.generation_totals || {})[key] || 0), row = el('div', 'mini-stat'), name = el('span', null, label), value = el('b', null, String(count)); name.style.minWidth = '120px'; const progress = el('div', 'progress'); progress.style.flex = '1'; const fill = el('span'); fill.style.width = `${count / total * 100}%`; progress.appendChild(fill); row.append(name, progress, value); generated.appendChild(row); }); view.appendChild(generated);
     const panel = el('div', 'panel'); panel.append(el('h2', null, 'Recent users'), el('p', 'hint', 'Anonymous IDs are shortened. Counts show successful generation results only.'));
-    const wrap = el('div', 'scroll'), table = el('table'); const head = el('tr'); ['Anonymous ID', 'Birth year', 'Age range', 'First seen', 'Last seen', 'Active days', 'Generated', 'Breakdown'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
-    (data.users || []).forEach(user => { const breakdown = Object.entries(user.generations || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const row = el('tr'); [user.id, user.birth_year || '—', user.age_range || '—', user.first_seen, user.last_seen, user.active_days, user.generation_count, breakdown].forEach(value => row.appendChild(el('td', null, String(value)))); table.appendChild(row); });
-    if (!(data.users || []).length) { const row = el('tr'), cell = el('td', 'hint', 'No anonymous users have been recorded yet.'); cell.colSpan = 8; row.appendChild(cell); table.appendChild(row); }
+    const wrap = el('div', 'scroll'), table = el('table'); const head = el('tr'); ['Anonymous ID', 'Birth year', 'Age range', 'First seen', 'Last seen', 'Active days', 'Generated', 'Feature usage', 'Generated breakdown'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    (data.users || []).forEach(user => { const breakdown = Object.entries(user.generations || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const usage = Object.entries(user.usage || {}).filter(([, count]) => count).map(([key, count]) => `${FEATURE_NAMES[key] || key}: ${count}`).join(' · ') || '—'; const row = el('tr'); [user.id, user.birth_year || '—', user.age_range || '—', user.first_seen, user.last_seen, user.active_days, user.generation_count, usage, breakdown].forEach(value => row.appendChild(el('td', null, String(value)))); table.appendChild(row); });
+    if (!(data.users || []).length) { const row = el('tr'), cell = el('td', 'hint', 'No anonymous users have been recorded yet.'); cell.colSpan = 9; row.appendChild(cell); table.appendChild(row); }
     wrap.appendChild(table); panel.appendChild(wrap); view.appendChild(panel);
   }
 

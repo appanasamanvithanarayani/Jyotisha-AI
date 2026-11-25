@@ -384,6 +384,9 @@ stats = Stats()
 
 # -------------------------------------------------------------------------------- anonymous product analytics
 GENERATION_TYPES = ("kundli", "ai_chat", "rashiphal", "life_guide", "moon_sign", "tarot", "palm", "partner_portrait")
+FEATURE_TYPES = ("home", "research_chart", "kundli", "panchang", "calendar", "festivals", "relationship", "place_search",
+                 "nearby_place", "ai_chat", "nudges", "rashiphal", "life_guide", "life_guide_text", "moon_sign", "tarot",
+                 "palm", "partner_portrait", "numerology", "sign_match", "doshas", "dasha", "rating", "payments")
 
 
 class Analytics:
@@ -455,6 +458,42 @@ class Analytics:
             day_generations[feature] = int(day_generations.get(feature, 0)) + 1
             self._save()
 
+    def observe(self, visitor: str, feature: str, success: bool, duration_ms: int) -> None:
+        """Record feature-level volume, outcome and latency without storing request or response content."""
+        if feature not in FEATURE_TYPES:
+            return
+        today = date.today().isoformat()
+        elapsed = max(0, min(int(duration_ms), 300_000))
+        with self._lock:
+            self._load()
+            if visitor:
+                _, user, day = self._visit(visitor, today)
+                usage = user.setdefault("usage", {})
+                usage[feature] = int(usage.get(feature, 0)) + 1
+            else:
+                day = self._data["days"].setdefault(today, {"users": [], "new_users": 0, "generations": {}})
+            feature_metrics = day.setdefault("observability", {}).setdefault(feature, {"requests": 0, "success": 0, "failure": 0, "total_ms": 0, "max_ms": 0})
+            feature_metrics["requests"] = int(feature_metrics.get("requests", 0)) + 1
+            outcome = "success" if success else "failure"
+            feature_metrics[outcome] = int(feature_metrics.get(outcome, 0)) + 1
+            feature_metrics["total_ms"] = int(feature_metrics.get("total_ms", 0)) + elapsed
+            feature_metrics["max_ms"] = max(int(feature_metrics.get("max_ms", 0)), elapsed)
+            self._save()
+
+    def viewed(self, visitor: str, feature: str) -> None:
+        """Record a client-side feature/page open, including features that do not call the server."""
+        if not visitor or feature not in FEATURE_TYPES:
+            return
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            _, user, day = self._visit(visitor, today)
+            views = day.setdefault("views", {})
+            views[feature] = int(views.get(feature, 0)) + 1
+            usage = user.setdefault("usage", {})
+            usage[feature] = int(usage.get(feature, 0)) + 1
+            self._save()
+
     def profile_birth_year(self, visitor: str, dob: object) -> None:
         """Keep only a birth year and broad current age range; the exact birth date is deliberately discarded."""
         if not visitor or not isinstance(dob, str):
@@ -493,23 +532,42 @@ class Analytics:
             self._load()
             recent_days = [(date.today() - timedelta(days=offset)).isoformat() for offset in range(days)]
             day_rows, active, generation_totals = [], set(), {feature: 0 for feature in GENERATION_TYPES}
+            observability = {feature: {"requests": 0, "success": 0, "failure": 0, "total_ms": 0, "max_ms": 0} for feature in FEATURE_TYPES}
+            feature_views = {feature: 0 for feature in FEATURE_TYPES}
             for day_name in recent_days:
                 row = self._data["days"].get(day_name, {})
                 users = set(row.get("users", [])); active.update(users)
                 generations = {feature: int(row.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
                 for feature, count in generations.items():
                     generation_totals[feature] += count
-                day_rows.append({"date": day_name, "unique_users": len(users), "new_users": int(row.get("new_users", 0)), "generations": generations})
+                daily_requests = 0
+                for feature in FEATURE_TYPES:
+                    feature_views[feature] += int(row.get("views", {}).get(feature, 0))
+                    metric = row.get("observability", {}).get(feature, {})
+                    target = observability[feature]
+                    for key in ("requests", "success", "failure", "total_ms"):
+                        target[key] += int(metric.get(key, 0))
+                    target["max_ms"] = max(target["max_ms"], int(metric.get("max_ms", 0)))
+                    daily_requests += int(metric.get("requests", 0))
+                day_rows.append({"date": day_name, "unique_users": len(users), "new_users": int(row.get("new_users", 0)),
+                                 "feature_requests": daily_requests, "generations": generations})
+            for metric in observability.values():
+                metric["avg_ms"] = round(metric["total_ms"] / metric["requests"]) if metric["requests"] else 0
+                metric["success_rate"] = round(metric["success"] * 100 / metric["requests"], 1) if metric["requests"] else 0
+                metric.pop("total_ms", None)
             users = sorted(self._data["users"].items(), key=lambda item: (item[1].get("last_seen", ""), item[0]), reverse=True)
             recent_users = []
             for anonymous_id, user in users[:max(0, min(user_limit, 100))]:
                 generations = {feature: int(user.get("generations", {}).get(feature, 0)) for feature in GENERATION_TYPES}
+                usage = {feature: int(user.get("usage", {}).get(feature, 0)) for feature in FEATURE_TYPES if user.get("usage", {}).get(feature)}
                 recent_users.append({"id": anonymous_id[:10], "birth_year": user.get("birth_year"), "age_range": user.get("age_range", ""),
                                      "first_seen": user.get("first_seen", ""), "last_seen": user.get("last_seen", ""),
-                                     "active_days": int(user.get("visits", 0)), "generation_count": sum(generations.values()), "generations": generations})
+                                     "active_days": int(user.get("visits", 0)), "generation_count": sum(generations.values()),
+                                     "generations": generations, "usage": usage})
             return {"total_users": len(self._data["users"]), "active_today": day_rows[0]["unique_users"] if day_rows else 0,
                     "new_today": day_rows[0]["new_users"] if day_rows else 0, "active_period": len(active),
                     "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
+                    "feature_views": feature_views, "observability": observability,
                     "days": day_rows, "users": recent_users}
 
 

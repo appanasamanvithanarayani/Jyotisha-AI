@@ -168,13 +168,20 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     store.analytics.visit("random-device-token-b-67890")
     store.analytics.generated("random-device-token-a-12345", "kundli")
     store.analytics.generated("random-device-token-a-12345", "tarot")
+    store.analytics.viewed("random-device-token-a-12345", "numerology")
+    store.analytics.observe("random-device-token-a-12345", "tarot", True, 120)
+    store.analytics.observe("random-device-token-b-67890", "palm", False, 250)
     store.analytics.profile_birth_year("random-device-token-a-12345", "2000-06-15")
     snapshot = store.analytics.snapshot()
     assert snapshot["total_users"] == 2 and snapshot["active_today"] == 2 and snapshot["new_today"] == 2
     assert snapshot["generation_totals"]["kundli"] == 1 and snapshot["generation_totals"]["tarot"] == 1
+    assert snapshot["feature_views"]["numerology"] == 1
+    assert snapshot["observability"]["tarot"]["success_rate"] == 100 and snapshot["observability"]["tarot"]["avg_ms"] == 120
+    assert snapshot["observability"]["palm"]["failure"] == 1 and snapshot["observability"]["palm"]["max_ms"] == 250
     first = next(user for user in snapshot["users"] if user["generation_count"] == 2)
     assert first["generations"]["kundli"] == 1 and len(first["id"]) == 10
     assert first["birth_year"] == 2000 and first["age_range"] in ("25–34", "18–24")
+    assert first["usage"]["numerology"] == 1 and first["usage"]["tarot"] == 1
     saved = (store.data_dir() / "analytics.json").read_text()
     assert "random-device-token" not in saved and "2000-06-15" not in saved
 
