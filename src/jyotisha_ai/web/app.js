@@ -132,6 +132,8 @@
       traitsPortraitOff: 'This has not been turned on yet.',
       traitsGenderLabel: 'Show me a partner who is a:', traitsGenderWoman: 'Woman', traitsGenderMan: 'Man',
       traitsPortraitAgainBtn: '🔄 Generate again',
+      traitsPortraitUnavailable: 'Could not create the illustration right now. Please try again in a moment.',
+      traitsAskInChat: '💬 Tell me your birth details in chat',
       who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'Boy’s birth details', girlTitle: 'Girl’s birth details', needBoth: 'Fill in both the boy’s and the girl’s details.', failedFirst: 'The boy’s chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'Partner’s birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
       needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
       calculating: 'Calculating the partner’s chart…', failed: 'The partner’s chart could not be calculated. Check the birth details and select a city from the list.',
@@ -155,6 +157,8 @@
       traitsPortraitOff: 'ఇది ఇంకా ఆన్ చేయలేదు.',
       traitsGenderLabel: 'భాగస్వామి ఎలా ఉండాలో ఎంచుకోండి:', traitsGenderWoman: 'స్త్రీ', traitsGenderMan: 'పురుషుడు',
       traitsPortraitAgainBtn: '🔄 మళ్ళీ చిత్రీకరించండి',
+      traitsPortraitUnavailable: 'ప్రస్తుతం చిత్రీకరణను రూపొందించలేకపోయాం. కాసేపాగి మళ్ళీ ప్రయత్నించండి.',
+      traitsAskInChat: '💬 మీ జనన వివరాలను చాట్‌లో చెప్పండి',
       who: 'ఎవరి కోసం', whoMe: 'నేను & భాగస్వామి', whoOthers: 'ఇతరులను చూడండి', boyTitle: 'అబ్బాయి జనన వివరాలు', girlTitle: 'అమ్మాయి జనన వివరాలు', needBoth: 'అబ్బాయి, అమ్మాయి ఇద్దరి వివరాలు ఇవ్వండి.', failedFirst: 'అబ్బాయి జాతకం లెక్కించలేకపోయాం. జనన వివరాలు చూసి జాబితా నుండి నగరాన్ని ఎంచుకోండి.', boy: 'అబ్బాయి', girl: 'అమ్మాయి', compare: 'భాగస్వామి జనన వివరాలు', iAm: 'మీరు', groom: 'వరుడు', bride: 'వధువు', submit: 'పొంతన చూడండి',
       needChart: 'ముందుగా మీ పుట్టిన తేదీ, స్థలం, సమయంతో మీ జాతకాన్ని రూపొందించండి.',
       calculating: 'భాగస్వామి జాతకాన్ని గణిస్తున్నాం…', failed: 'భాగస్వామి జాతకం గణించలేకపోయాం. వివరాలను సరిచూసి జాబితాలోని నగరాన్ని ఎంచుకోండి.',
@@ -178,6 +182,8 @@
       traitsPortraitOff: 'यह अभी चालू नहीं किया गया है।',
       traitsGenderLabel: 'साथी कैसा हो, चुनें:', traitsGenderWoman: 'महिला', traitsGenderMan: 'पुरुष',
       traitsPortraitAgainBtn: '🔄 फिर से बनाएँ',
+      traitsPortraitUnavailable: 'अभी चित्रांकन नहीं बन सका। कृपया थोड़ी देर में फिर से कोशिश करें।',
+      traitsAskInChat: '💬 चैट में अपना जन्म विवरण बताएँ',
       who: 'किसके लिए', whoMe: 'मैं और साथी', whoOthers: 'दूसरों को देखें', boyTitle: 'लड़के का जन्म विवरण', girlTitle: 'लड़की का जन्म विवरण', needBoth: 'लड़के और लड़की दोनों का विवरण भरें।', failedFirst: 'लड़के की कुंडली नहीं बन सकी। जन्म विवरण जाँचें और सूची से शहर चुनें।', boy: 'लड़का', girl: 'लड़की', compare: 'साथी का जन्म विवरण', iAm: 'आप हैं', groom: 'वर', bride: 'वधू', submit: 'मिलान देखें',
       needChart: 'पहले जन्म तिथि, स्थान और समय से अपनी कुंडली बनाएँ।',
       calculating: 'साथी की कुंडली की गणना हो रही है…', failed: 'साथी की कुंडली की गणना नहीं हो सकी। विवरण जाँचें और सूची से शहर चुनें।',
@@ -522,8 +528,13 @@
     $('love-traits').hidden = mode !== 'traits';
     const traits = $('relationship-traits-result'); traits.replaceChildren();
     if (mode === 'traits') {
-      if (!state.chart) traits.appendChild(el('p', 'muted-note', copy.needChart));
-      else {
+      if (!state.chart) {
+        traits.appendChild(el('p', 'muted-note', copy.needChart));
+        const chatBtn = el('button', 'palm-scan', copy.traitsAskInChat);
+        chatBtn.type = 'button';
+        chatBtn.addEventListener('click', () => { showPage('chat'); ask(copy.optTraits, copy.optTraits, true); });
+        traits.appendChild(chatBtn);
+      } else {
         try {
           const read = chartUI.partnerTraits(state.chart, state.lang);
           traits.append(el('p', 'muted-note', copy.traitsIntro),
@@ -536,7 +547,7 @@
               const img = el('img', 'traits-portrait'); img.src = `data:${pp.image.mime};base64,${pp.image.data}`; img.alt = copy.traitsPortraitBtn;
               traits.appendChild(img);
             } else if (pp.status === 'off') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitOff));
-            else if (pp.status === 'unavailable') traits.appendChild(el('p', 'muted-note', copy.error));
+            else if (pp.status === 'unavailable') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitUnavailable));
             // The gender choice and the generate button stay available after a result too, so trying again (a
             // different gender, or the same one) never needs leaving this card.
             if (!state.partnerGender) state.partnerGender = state.myRole === 'bride' ? 'man' : 'woman';
@@ -4092,7 +4103,7 @@
         saveProfile({ dob: intake.dob, pob: intake.pob, tob: intake.tob });
         const pending = intake.pending; intake.step = null; intake.pending = null;
         addMessage('assistant', t('chartReady'));
-        if (pending) route(pending); else addJathakam();
+        if (pending) { if (chartUI.isPartnerPortraitRequest(pending)) void chatPartnerPortrait(); else route(pending); } else addJathakam();
         return;
       }
       let hint = '';
@@ -4128,7 +4139,33 @@
       addMessage('user', shown); void intakeInput(query, fromPrompt === true); return;
     }
     addMessage('user', shown);
+    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return; }
     route(query);
+  }
+  // "Your ideal partner", asked straight in chat: generate it here (asking for birth details first via the usual
+  // intake, above, if there is no chart yet) instead of only offering it on the Love page.
+  async function chatPartnerPortrait() {
+    let read;
+    try { read = chartUI.partnerTraits(state.chart, state.lang); } catch (_error) { addMessage('assistant', t('answerFailed')); return; }
+    if (!state.partnerGender) state.partnerGender = state.myRole === 'bride' ? 'man' : 'woman';
+    const copy = loveText();
+    if (rewardedFor('partner') && !(await watchForResult())) return;
+    const pending = el('div', 'chat-message assistant', copy.traitsPortraitLoading);
+    chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
+    try {
+      const { ok, body } = await post('/api/partner-portrait', { house7_rashi: read.house7Rashi, venus_rashi: read.venusRashi, gender: state.partnerGender });
+      chatLog.removeChild(pending);
+      if (ok && body && body.status === 'ok' && body.image) {
+        state.partnerPortrait = { status: 'ok', image: body.image };
+        const entry = el('div', 'chat-message assistant');
+        const img = el('img', 'traits-portrait'); img.src = `data:${body.image.mime};base64,${body.image.data}`; img.alt = copy.traitsPortraitBtn;
+        entry.appendChild(img);
+        chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
+      } else {
+        state.partnerPortrait = { status: body && body.status === 'off' ? 'off' : 'unavailable', image: null };
+        addMessage('assistant', body && body.status === 'off' ? copy.traitsPortraitOff : copy.traitsPortraitUnavailable);
+      }
+    } catch (_error) { chatLog.removeChild(pending); state.partnerPortrait = { status: 'unavailable', image: null }; addMessage('assistant', copy.traitsPortraitUnavailable); }
   }
   function route(query) {
     if (state.assistant && !chartUI.isJathakamRequest(query) && !/^(What is my Lagna\?|Where is the Moon\?|Which planets are in house 1\?)$/.test(query)) {
