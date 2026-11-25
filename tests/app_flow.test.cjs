@@ -726,17 +726,44 @@ test('"Your ideal partner": the illustration button sends only the two sign numb
   assert.equal(againBtn.textContent, '🔄 Generate again');   // can regenerate without leaving the card
 });
 
-test('"Your ideal partner": with no chart yet, a chat button asks for birth details right here instead of pointing at Kundli', async () => {
-  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+test('"Your ideal partner": with no chart yet, fields right here (or a chat button) collect birth details instead of pointing at Kundli', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, birth: syntheticBirth });
   await settle();
   app.element('love-options').children[2].listeners.click();
   const result = app.element('relationship-traits-result');
   assert.match(result.children[0].textContent, /Create your own Kundli first/);
-  const chatBtn = result.children.find(item => item.tag === 'button');
+  const form = result.children.find(item => item.tag === 'form');
+  const [dobInput, pobInput, tobInput, submitBtn] = form.children; // (a status <p> follows, left for the submit handler)
+  assert.equal(submitBtn.textContent, '✨ Make my Kundli');
+  dobInput.value = '1995-08-15'; pobInput.value = 'Hyderabad, IN'; tobInput.value = '06:30';
+  await form.listeners.submit({ preventDefault() {} });
+  await settle();
+  assert.ok(birthRequests(app).some(item => item.body.dob === '1995-08-15' && item.body.pob === 'Hyderabad, IN' && item.body.tob === '06:30'));
+  assert.equal(app.element('chart').hidden, false);                 // the chart was actually calculated, in place
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.profile.v1')), { dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' });
+});
+
+test('"Your ideal partner": with no chart yet, the chat button is offered alongside the fields', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  app.element('love-options').children[2].listeners.click();
+  const chatBtn = app.element('relationship-traits-result').children.find(item => item.tag === 'button');
   assert.equal(chatBtn.textContent, '💬 Tell me your birth details in chat');
-  chatBtn.listeners.click();
-  assert.equal(app.element('page-chat').hidden, false);
-  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
+});
+
+test('"Your ideal partner" in chat: typing a new birth date with a chart already on hand recalculates instead of asking the AI about that date', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, assistant: true });
+  await settle(); await settle();
+  await typeInChat(app, '22-07-2004');
+  assert.match(app.element('chat-log').children.at(-1).textContent, new RegExp(calendar.tr('en', 'chatAskPob').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));   // recalculating, not answered by the AI
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));
+  await typeInChat(app, 'Bengaluru, IN'); await typeInChat(app, '10:00 am');
+  await settle();
+  assert.equal(birthRequests(app).at(-1).body.dob, '2004-07-22');
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));   // recalculated locally throughout, never asked the AI about the typed date
 });
 
 test('"Your ideal partner": a failed generation says so plainly, not that the Kundli itself is incomplete', async () => {

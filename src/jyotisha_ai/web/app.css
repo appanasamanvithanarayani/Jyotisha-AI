@@ -1346,6 +1346,7 @@ body.page-feature .masthead{display:none}
 .palm-photo .palm-preview{margin:0}
 .palm-photo.has-rekha .palm-preview{object-fit:contain;background:#000}
 .traits-portrait{display:block;width:100%;max-width:320px;margin:10px auto 6px;border-radius:18px;border:1px solid var(--line)}
+.traits-birth-form{display:grid;gap:10px;margin:6px 0 10px}
 .rekha-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .rekha-line{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-dasharray:1;filter:drop-shadow(0 0 3px rgba(0,0,0,.6));animation:rekha-draw 1.1s cubic-bezier(.4,0,.2,1) both}
 .rekha-line.rekha-life{animation-delay:.05s}
