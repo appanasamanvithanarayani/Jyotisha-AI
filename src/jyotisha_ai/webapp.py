@@ -764,7 +764,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             allowed = limiter.allow(f"palm-day:{who}", store.number("JYOTISHA_PALM_PER_VISITOR_DAY", 5), 86400.0)
         if allowed and path == "/api/partner-portrait":
             # Image generation costs more still: its own, smaller daily allowance per visitor.
-            allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 10), 86400.0)
+            allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 3), 86400.0)
             if not allowed:
                 limited_code = "partner_daily_limit"
         if allowed and path == "/api/rating":
@@ -1074,7 +1074,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)
         elif path == "/api/partner-portrait-quota":
-            limit = store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 10)
+            limit = store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 3)
             remaining = self.server.limiter.remaining(f"portrait-day:{self._client()}", limit, 86400.0)
             self._json(200, {"limit": limit, "remaining": remaining})
         elif path == "/api/deployment-readiness":
