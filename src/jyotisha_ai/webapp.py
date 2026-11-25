@@ -90,6 +90,15 @@ class RateLimiter:
                 for stale in [name for name, queue in self._hits.items() if not queue or now - queue[-1] >= window_seconds][:10000]:
                     self._hits.pop(stale, None)
             return True
+
+    def remaining(self, key: str, limit: int, window_seconds: float, now: float | None = None) -> int:
+        """Return the allowance left without consuming it."""
+        now = clock_time.monotonic() if now is None else now
+        with self._lock:
+            hits = self._hits.setdefault(key, deque())
+            while hits and now - hits[0] >= window_seconds:
+                hits.popleft()
+            return max(0, limit - len(hits))
 MAX_ASK_BYTES = 49152  # chart facts for the optional assistant
 MAX_PALM_BYTES = 900_000  # a resized palm photo (base64 JPEG); used once, never stored
 DEFAULT_PORT = 8765
@@ -749,12 +758,17 @@ class LocalHandler(BaseHTTPRequestHandler):
             return False
         who, limiter = self._client(), self.server.limiter
         allowed = limiter.allow(f"api:{who}", PUBLIC_API_PER_MINUTE, 60.0)
+        limited_code = ""
         if allowed and path == "/api/palm":
             # A photo read by the AI costs more: a few a day per visitor, on top of the shared AI allowance below.
             allowed = limiter.allow(f"palm-day:{who}", store.number("JYOTISHA_PALM_PER_VISITOR_DAY", 5), 86400.0)
         if allowed and path == "/api/partner-portrait":
             # Image generation costs more still: its own, smaller daily allowance per visitor.
-            allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 3), 86400.0)
+            allowed = limiter.allow(f"portrait-day:{who}", store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 10), 86400.0)
+            if not allowed:
+                limited_code = "partner_daily_limit"
+        if allowed and path == "/api/rating":
+            allowed = limiter.allow(f"rating-day:{who}", 5, 86400.0)
         if allowed and path in ("/api/payment/create-order", "/api/payment/verify"):
             # Each real order/verify call reaches Razorpay's API; a per-minute cap is enough to stop abuse.
             allowed = limiter.allow(f"payment:{who}", 10, 60.0)
@@ -768,7 +782,10 @@ class LocalHandler(BaseHTTPRequestHandler):
                        and limiter.allow(f"ask-all:{today}", site_day, 86400.0))
         if not allowed:
             store.stats.record("rate_limited")
-            self._json(429, {"error": "too many requests, please try again later"}, {"Retry-After": "60"})
+            if limited_code == "partner_daily_limit":
+                self._json(429, {"error": "daily illustration limit reached; try again tomorrow", "code": limited_code}, {"Retry-After": "86400"})
+            else:
+                self._json(429, {"error": "too many requests, please try again later"}, {"Retry-After": "60"})
         return not allowed
 
     def _authorized(self) -> bool:
@@ -820,7 +837,7 @@ class LocalHandler(BaseHTTPRequestHandler):
     def _admin_state(self) -> dict:
         current = assistant.provider()
         return {
-            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14),
+            "settings": store.describe(), "audit": store.audit_tail(), "stats": store.stats.snapshot(14), "ratings": store.ratings_snapshot(),
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
             "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
@@ -1056,6 +1073,10 @@ class LocalHandler(BaseHTTPRequestHandler):
             contact = store.value("JYOTISHA_CONTACT")
             readiness["contact_email"] = contact if re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[^@\s<>\"]+", contact) else None
             self._json(200 if readiness["can_calculate"] else 503, readiness)
+        elif path == "/api/partner-portrait-quota":
+            limit = store.number("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", 10)
+            remaining = self.server.limiter.remaining(f"portrait-day:{self._client()}", limit, 86400.0)
+            self._json(200, {"limit": limit, "remaining": remaining})
         elif path == "/api/deployment-readiness":
             self._json(503, deployment_readiness())
         else:
@@ -1068,7 +1089,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         path = urlsplit(self.path).path
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/payment/create-order", "/api/payment/verify") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1126,6 +1147,10 @@ class LocalHandler(BaseHTTPRequestHandler):
                 result = palm.reading(payload)
             elif path == "/api/partner-portrait":
                 result = partner_portrait.portrait(payload)
+            elif path == "/api/rating":
+                row = store.record_rating(payload.get("stars"), payload.get("reason", ""), payload.get("language", ""))
+                self._json(200, {"ok": True, "stars": row["stars"]})
+                return
             elif path == "/api/payment/create-order":
                 self._json(200, payments.create_order(payload))
                 return

@@ -1,4550 +1,4508 @@
-/* Page controller: onboarding, Home (calendar + day Panchang), Kundli and Ask. No network except the local API. */
-(function () {
-  'use strict';
-  const $ = id => document.getElementById(id);
-  const calendarUI = window.JyotishaCalendar;
-  const names = window.JyotishaPanchangNames;
-  const chartUI = window.JyotishaChart;
-  const matchUI = window.matchUI;
+YкчКx-ощ▄j╫Эвыi║┌+Кзj[hСщ▄вщэ╫o:єФш╡йh║┌n╢Xзz═K╩ИY┘H██ЭЫ█\ОИ█ШЫ╪\Щ[Щ╦█YH
+╪[[Щ\И
+╚^H[Ш┌[Щ╩K▌[ЩH[Щ\┌╦ИЫ╚Щ]█▄Ъ╚^┘\H╪╪[TKИ
+Л┬КЭ[Ш▌[█И
 
-  const state = {
-    lang: 'en', city: '', onboarded: false, assistant: false, payments: null, rashiMode: 'day', contactEmail: '', week: null, weekLoading: null, weekCache: {}, useLocation: false, pendingLocation: false, todayIso: null, selectedDate: null,
-    view: { year: 0, month: 0 }, month: null, day: null, dayRequest: 0, monthRequest: 0,
-    chart: null, details: null, resolved: null, partnerChart: null, partnerDetails: null, firstChart: null, firstDetails: null, matchWho: 'me', showLoveReading: false, loveMode: null, myRole: 'groom', kundliView: 'chart', festivals: null, festivalsAll: false, kundli: { style: 'south', division: 'd1' },
-    partnerPortrait: { status: 'idle', image: null },
-  };
-  const t = key => calendarUI.tr(state.lang, key);
-  const bodyName = name => chartUI.bodyName(name, state.lang);
-  const signName = index => chartUI.signName(index, state.lang);
+H┬И	▌\┘H▌ЪX▌	╬┬И██Ь▌	HYOИ╪▌[Y[ЭЩ┘][[Y[ЭЮRY
+Y
+N┬И██Ь▌╪[[Щ\ХRHH┌[Щ▌╦ТЮ[▌\┌P╪[[Щ\О┬И██Ь▌Ш[Y\╚H┌[Щ▌╦ТЮ[▌\┌T[Ш┌[Щ╙Ш[Y\╬┬И██Ь▌┌\ЭRHH┌[Щ▌╦ТЮ[▌\┌P┌\Э┬И██Ь▌X]┌RHH┌[Щ▌╦ЫX]┌RN┬ВИ██Ь▌▌]HH┬И[Щ╬И	┘[Й╦┌]NИ	╔╦█ШЫ╪\ЩYИШ[┘K\▄┌\▌[ЭИШ[┘K^[Y[Э╬ИЭ[Ш\┌S[┘NИ	┘^I╦██ЭX▌[XZ[И	╔╦┘YZ╬ИЭ[┘YZ╙╪Y[Щ╬ИЭ[┘YZ╨╪X┌NИ▀K\┘S╪╪][█ОИШ[┘K[Щ[Щ╙╪╪][█ОИШ[┘K┘^R\█╬ИЭ[┘[X▌Y]NИЭ[ИЪY]╬И╚YX\ОИ[█ЭИK[█ЭИЭ[^NИЭ[^TЩ\]Y\▌И[█ЭЩ\]Y\▌ИИ┌\ЭИЭ[]Z[╬ИЭ[Щ\██ЩYИЭ[\ЭЩ\Р┌\ЭИЭ[\ЭЩ\С]Z[╬ИЭ[Ъ\Ь▌┌\ЭИЭ[Ъ\Ь▌]Z[╬ИЭ[X]┌┌╬И	█YI╦┌▌╙▌ЩTЩXY[Щ╬ИШ[┘K▌ЩS[┘NИЭ[^TЫ█NИ	┘▄Ы██I╦▌[ЩUЪY]╬И	╪┌\Э	╦Щ\▌]Ш[╬ИЭ[Щ\▌]Ш[╨[ИШ[┘K▌[ЩNИ╚▌[NИ	▄█▌]	╦]Ъ\┌[█ОИ	┘I╚KИ\ЭЩ\Ф▄ЭШZ]И╚▌]\╬И	┌YI╦[XY┘NИЭ[KИN┬И██Ь▌H┘^HOИ╪[[Щ\ХRKЭК▌]KЫ[Щ╦┘^JN┬И██Ь▌Ы┘SШ[YHHШ[YHOИ┌\ЭRKШЫ┘SШ[YJШ[YK▌]KЫ[Щ╩N┬И██Ь▌┌Y█УШ[YHH[Щ^OИ┌\ЭRKЬ┌Y█УШ[YJ[Щ^▌]KЫ[Щ╩N┬ВИ██Ь▌SСU╨╙╙╘Ф╚H╪ЪЩX▌ЩЬЩY^ЩJ┬И▌[ОИ	╚┘МLН	╦[██ОИ	╚═XОЩI╦X\Ь╬И	╚┘НL┘	╦Y\Ш▌\ЮNИ	╚╠ЩОYMШЙ╦Э\]\ОИ	╚┘XLМXЙ╦ИЩ[Э\╬И	╚┘MMNЙ╦╪]\ЫОИ	╚═XMШ┘Й╦ШZNИ	╚═ШНXН╠╔╦┘]NИ	╚╬MЩЙ╦ИJN┬И██Ь▌SСU╙╘СTИH╔╘▌[Й╦	╙[██Й╦	╙X\Ь╔╦	╙Y\Ш▌\ЮI╦	╥Э\]\Й╦	╒Щ[Э\╔╦	╘╪]\ЫЙ╦	╘ШZI╦	╥┘]I╫N┬И██Ь▌╒С╫╙Ф╚H	┌Л╦▌▌▌╦Э╠╦Ы▄Щ╦╠М▄▌Щ╔╬┬ВИЭ[Ш▌[█И[
+Y╦█\▄╙Ш[YK^
+H┬И██Ь▌Ы┘HH╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+Y╩N┬ИYИ
+█\▄╙Ш[YJHЫ┘KШ█\▄╙Ш[YHH█\▄╙Ш[YN┬ИYИ
+^OOH[ЩYЪ[ЩY
+HЫ┘KЭ^██Э[ЭH^┬ИЩ]\ЫИЫ┘N┬ИBИЭ[Ш▌[█И▌Щ╤[
+Y╦]ЪXЭ]\╚H▀JH┬И██Ь▌Ы┘HH╪▌[Y[ЭШ▄ЩX]Q[[Y[ЭФ╩╒С╫╙Ф╦Y╩N┬ИЫ▄И
+██Ь▌┌┘^KШ[YWH┘И╪ЪЩX▌Щ[ЭЪY\╩]ЪXЭ]\╩JHЫ┘KЬ┘]]ЪXЭ]J┘^K▌Ъ[Щ╩Ш[YJJN┬ИЩ]\ЫИЫ┘N┬ИBИ\▐[Ш╚Э[Ш▌[█И▄▌
+\Ы^[╪Y
+H┬И██Ь▌Щ\▄█Ь┘HH]╪Z]Щ]┌
+\Ы╚Y]┘И	╘╘╒	╦XY\Ь╬И╚	╨██Э[ЭU\I╬И	╪\X╪][█Л┌Ь██Й╚KЫ┘NИФ╙╙ЛЬ▌Ъ[Щ┌YЮJ^[╪Y
+K╪X┌NИ	█Ы╦\▌▄ЩI╚JN┬И]Ы┘HHЭ[┬ИЮH╚Ы┘HH]╪Z]Щ\▄█Ь┘KЪЬ██К
+N╚H╪]┌
+┘\ЬЫ▄КH╚Ы┘HHЭ[╚BИЩ]\ЫИ╚┌╬ИЩ\▄█Ь┘KЫ┌╦Ы┘K▌]\╬ИЩ\▄█Ь┘KЬ▌]\╚N┬ИBИ\▐[Ш╚Э[Ш▌[█И┘]Ь██К\Ы
+H┬И██Ь▌Щ\▄█Ь┘HH]╪Z]Щ]┌
+\Ы╚╪X┌NИ	█Ы╦\▌▄ЩI╚JN┬И]Ы┘HHЭ[┬ИЮH╚Ы┘HH]╪Z]Щ\▄█Ь┘KЪЬ██К
+N╚H╪]┌
+┘\ЬЫ▄КH╚Ы┘HHЭ[╚BИЩ]\ЫИ╚┌╬ИЩ\▄█Ь┘KЫ┌╦Ы┘K▌]\╬ИЩ\▄█Ь┘KЬ▌]\╚N┬ИBИ██Ь▌╪╪[\█╚H]HOИ	┘]KЩ┘]Э[YX\К
+_KI╘▌Ъ[Щ╩]KЩ┘][█Э
 
-  const PLANET_COLORS = Object.freeze({
-    Sun: '#f08a24', Moon: '#5b8bd9', Mars: '#d6453d', Mercury: '#2f9e6b', Jupiter: '#d9a21b',
-    Venus: '#d1558f', Saturn: '#5a4fcf', Rahu: '#6b5b73', Ketu: '#8a6d4b',
-  });
-  const PLANET_ORDER = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
-  const SVG_NS = 'http://www.w3.org/2000/svg';
+H
+╚JKЬY▌\Э
+Л	╠	╩_KI╘▌Ъ[Щ╩]KЩ┘]]J
+JKЬY▌\Э
+Л	╠	╩_X┬И██Ь▌┌YЭ\█╚H
+\█╦^\╩HOИ╚██Ь▌]HHЩ]╚]J	┌\█▀ULОММШ
+N╚]KЬ┘]U╤]J]KЩ┘]U╤]J
+H
+╚^\╩N╚Щ]\ЫИ]KЭ╥T╙╘▌Ъ[Щ╩
+KЬ█X┘JL
+N╚N┬ВИ╦╚Ш]]ЩKX\Y▌]H
+▌^\╚[\H[ИHЬЫ▌▄┘\КN╚X█\ЩYX\ЫHЩX╪]\┘H▌┌]┌[Щ╚╪▄ЩY[Ь╚╪[И\┌╚]Ы▄И[И[Э\Ь▌]X[ВИ██Ь▌\Y╚H╚██ЩЪY╬ИЭ[Y[╪ОИЭ[ЬЩYU[Э[И▌┌]┌\╬И\▌[Э\Ь▌]X[И▌\ЭYИ]KЫЫ▌╩
+HN┬И██Ь▌Ш[ЫЩ\Т█HЩ]╚┘]
 
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-  function svgEl(tag, attributes = {}) {
-    const node = document.createElementNS(SVG_NS, tag);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    return node;
-  }
-  async function post(url, payload) {
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), cache: 'no-store' });
-    let body = null;
-    try { body = await response.json(); } catch (_error) { body = null; }
-    return { ok: response.ok, body };
-  }
-  const localIso = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const shiftIso = (iso, days) => { const date = new Date(`${iso}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
+N╚╦╚ЩX\██Ь╚HЫ▌█HШ[ЫЩ\И\╚Y[ИЫ▄ИЪY┌Ы▌╚
+	╪┌]	╦	╪╪[Y\ШI╩BИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKHY┘\╚
+Л┬И██Ь▌Y┘\╚H▀N┬И╦╚ЩX]\ЩHY┘\╚┌▌╚Z\И▌█ИXY\И
+ШX┌╦]K█YK┌\ЩJH[Ь▌XY┘ИH\Ш\ЛВИ██Ь▌СPUTСW╘Q╤T╚H╔█[██Й╦	▌\Ы▌	╦	▄[I╦	█Э[XЩ\Ь╔╦	█YЩY▌ZYI╦	▄┌Y█ЫX]┌	╫N┬И██Ь▌Y┘R▄▌H	
+	▌▄	╩N┬ИЫ▄И
+██Ь▌Ш[YH┘И╔┌█YI╦	╪╪[[Щ\Й╦	┌▌[ЩI╦	▄Щ[][█Ь┌\	╦	╪┌]	╦	▄Ш\┌I╦	█[██Й╦	▌\Ы▌	╦	▄[I╦	█Э[XЩ\Ь╔╦	█YЩY▌ZYI╦	▄┌Y█ЫX]┌	╫JH┬И██Ь▌Y┘HH╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	▄┘X▌[█Й╩N┬ИY┘KШ█\▄╙Ш[YHH	╪\\Y┘I╬╚Y┘KЪYHY┘KI█Ш[Y_X╚Y┘KЪY[ИHЭYN┬ИY┘R▄▌Ш\[Щ┌[
+Y┘JN╚Y┘\╓█Ш[YWHHY┘N┬ИBИY┘\╦Ъ█YKШ\[Щ
+	
+	┘^K\[Ш┌[Щ╔╩K	
+	█Y╪[	╩JN┬ИY┘\╦Ш╪[[Щ\ЛШ\[Щ
+	
+	┘Щ\▌╪[]]I╩K	
+	┘Щ\▌]Ш[╔╩K	
+	█[█ЭX╪\Щ	╩JN┬ИY┘\╦Ъ▌[ЩKШ\[Щ
+	
+	┌▌[ЩI╩K	
+	╪┌\Э	╩JN┬ИY┘\╦ЬЩ[][█Ь┌\Ш\[Щ┌[
+	
+	▄Щ[][█Ь┌\	╩JN┬ИY┘\╦Ш┌]Ш\[Щ┌[
+	
+	╪┌]	╩JN┬ИY┘\╦ЬШ\┌KШ\[Щ┌[
+	
+	▄Ш\┌I╩JN┬ИY┘\╦Ы[██ЛШ\[Щ┌[
+	
+	█[██Ь┌Y█Й╩JN┬ИY┘\╦Э\Ы▌Ш\[Щ┌[
+	
+	▌\Ы▌	╩JN┬ИY┘\╦Ь[KШ\[Щ┌[
+	
+	▄[\ЩXY	╩JN┬ИY┘\╦ЫЭ[XЩ\Ь╦Ш\[Щ┌[
+	
+	█Э[Y\Ы█┘▐I╩JN┬ИY┘\╦ЫYЩY▌ZYKШ\[Щ┌[
+	
+	█YЩY▌ZYI╩JN┬ИY┘\╦Ь┌Y█ЫX]┌Ш\[Щ┌[
+	
+	▄┌Y█ЫX]┌	╩JN┬И╦╚XX┌Y┘H┌[Щ┘H\╚H▌\[ИH┘XХЪY]╔▄╚\▌▄ЮK█╚H█ЩI▄╚ШX┌╚Э]█ИЩ]\ЫЬ╚╚HЩ]Ъ[▌\╚╪▄ЩY[ВИ╦╚
+╪\X┌]▄И█┘\╚ШX┌╚┌[H\ЩH\╚\▌▄ЮH[Щ█ЫH█▄┘\╚H\ЬЫ█HHЪ\Ь▌╪▄ЩY[КKВИ]▌\ЬЩ[ЭY┘HHЭ[┬И]Щ\X┘SЩ^HШ[┘N╚╦╚HY┘H▄[ЩYЬЫ█HH┌YHY[ЭHZ┘\╚HY[ЭI▄╚\▌▄ЮH▌\И╦╚H[ЩЫ┌Y\	▄╚\Щ╪\ЩHШX┌╚Э]█И┘\╚Ы▌Э\▌H┘XХЪY]╔▄╚▌█ИШX┌╦┘Ы▄Э╪\Щ\▌
+]╪[ИЩH[ЬЩ[XXЫBИ╦╚┌]H\┌▌]K[█ЫH┌[Щ█K\Y┘H\█И██YH]ЪX┘\╩N╚[Ь▌XYXZ[РX▌]Ъ]H╪[╚┌[Щ▌╦Ч╫┌Ю[▌\┌PШX┌╩
+K┌X┌И╦╚▄╚\╚▌X┌╚]┘[И[Щ\╚H█ЫH[Щ╚Ш]]ЩHШX┌╚Щ[Y\╚█ЛИHЬЫ▌▄┘\И\▌▄ЮHTHЩ[▌╚\╚┘\\Ш]BИ╦╚[Щ▌[Ъ]Щ\╚H█ЩI▄╚┘\▌\ЩK[Ш]И╚H\┌▌▄ЬЫ▌▄┘\Й▄╚▌█ИШX┌╚Э]█ЛВИ██Ь▌Ш]Ф▌X┌╚H╫N┬ИЭ[Ш▌[█ИЩ[Y[XЩ\КY┘KЩ\X┘JH┬ИЮH┬ИYИ
+]┌[Щ▌╦Ъ\▌▄ЮH\[┘И┌[Щ▌╦Ъ\▌▄ЮKЬ\┌▌]HOOH	┘Э[Ш▌[█Й╩HЩ]\ЫО┬ИYИ
+Щ\X┘JH┌[Щ▌╦Ъ\▌▄ЮKЬЩ\X┘T▌]J╚Y┘HK	╔╦╔▄Y┘_X
+N╚[┘H┌[Щ▌╦Ъ\▌▄ЮKЬ\┌▌]J╚Y┘HK	╔╦╔▄Y┘_X
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И\▌▄ЮH\╚▄[█Ш[
+Л╚BИBИ┌[Щ▌╦Ч╫┌Ю[▌\┌PШX┌╚HЭ[Ш▌[█И
 
-  // Native-app ad state (stays empty in a browser); declared early because switching screens can ask it for an interstitial.
-  const appAds = { config: null, admob: null, freeUntil: 0, switches: 0, lastInterstitial: 0, started: Date.now() };
-  const bannerHold = new Set();   // reasons the bottom banner is hidden for right now ('chat', 'camera')
-  /* ---------------------------------------------------------------- pages */
-  const pages = {};
-  // Feature pages show their own header (back, title, home, share) instead of the app bar.
-  const FEATURE_PAGES = ['moon', 'tarot', 'palm', 'numbers', 'lifeguide', 'signmatch'];
-  const pageHost = $('top');
-  for (const name of ['home', 'calendar', 'kundli', 'relationship', 'chat', 'rashi', 'moon', 'tarot', 'palm', 'numbers', 'lifeguide', 'signmatch']) {
-    const page = document.createElement('section');
-    page.className = 'app-page'; page.id = `page-${name}`; page.hidden = true;
-    pageHost.appendChild(page); pages[name] = page;
-  }
-  pages.home.append($('day-panchang'), $('legal'));
-  pages.calendar.append($('festcal-title'), $('festivals'), $('month-card'));
-  pages.kundli.append($('kundli'), $('chart'));
-  pages.relationship.appendChild($('relationship'));
-  pages.chat.appendChild($('chat'));
-  pages.rashi.appendChild($('rashi'));
-  pages.moon.appendChild($('moonsign'));
-  pages.tarot.appendChild($('tarot'));
-  pages.palm.appendChild($('palmread'));
-  pages.numbers.appendChild($('numerology'));
-  pages.lifeguide.appendChild($('lifeguide'));
-  pages.signmatch.appendChild($('signmatch'));
-  // Each page change is a step in the WebView's history, so the phone's Back button returns to the previous screen
-  // (Capacitor goes back while there is history and only closes the app from the first screen).
-  let currentPage = null;
-  let replaceNext = false;   // a page opened from the side menu takes the menu's history step
-  // The Android app's hardware Back button does not trust the WebView's own back/forward list (it can be unreliable
-  // with a pushState-only single-page app on some devices); instead MainActivity calls window.__jyotishaBack(), which
-  // pops this stack itself and is the only thing native Back relies on. The browser History API below is separate
-  // and still drives the phone's gesture-nav / a desktop browser's own Back button.
-  const navStack = [];
-  function remember(page, replace) {
-    try {
-      if (!window.history || typeof window.history.pushState !== 'function') return;
-      if (replace) window.history.replaceState({ page }, '', `#${page}`); else window.history.pushState({ page }, '', `#${page}`);
-    } catch (_error) { /* history is optional */ }
-  }
-  window.__jyotishaBack = function () {
-    if (!navStack.length) return false;
-    showPage(navStack[navStack.length - 1], { back: true });
-    return true;
-  };
-  if (typeof window.addEventListener === 'function') window.addEventListener('popstate', event => {
-    const page = event && event.state && event.state.page;
-    hideMenu(); menuHistory = false;                 // Back closes the side menu first
-    if (page && page === currentPage) return;
-    showPage(Object.hasOwn(pages, page) ? page : 'home', { back: true });
-  });
-  function showPage(name, how = {}) {
-    const chosen = Object.hasOwn(pages, name) ? name : 'home';
-    if (how.back) { if (navStack.length) navStack.pop(); }
-    else if (chosen !== currentPage) { if (currentPage !== null) navStack.push(currentPage); remember(chosen, currentPage === null || replaceNext); }
-    currentPage = chosen;
-    for (const [key, page] of Object.entries(pages)) page.hidden = key !== chosen;
-    if (typeof hideMenu === 'function' && $('side-menu')) hideMenu();
-    document.querySelectorAll('.bottom-nav a').forEach(link => {
-      const active = link.getAttribute('href') === `#${chosen}`;
-      link.classList.toggle('active', active);
-      if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
-    });
-    if (document.body && document.body.classList) document.body.classList.toggle('page-chat', chosen === 'chat');
-    if (document.body && document.body.classList) document.body.classList.toggle('page-feature', FEATURE_PAGES.includes(chosen));
-    syncBanner(chosen);
-    window.scrollTo(0, 0);
-    if (!how.back) maybeInterstitial();   // no full-screen ad when going back
-  }
-  document.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', event => {
-    const target = link.getAttribute('href').slice(1);
-    if (Object.hasOwn(pages, target)) { event.preventDefault(); showPage(target); }
-  }));
-  showPage('home');
+H┬ИYИ
+[Ш]Ф▌X┌╦Ы[Щ▌
+HЩ]\ЫИШ[┘N┬И┌▌╘Y┘JШ]Ф▌X┌╓█Ш]Ф▌X┌╦Ы[Щ▌HWK╚ШX┌╬ИЭYHJN┬ИЩ]\ЫИЭYN┬ИN┬ИYИ
+\[┘И┌[Щ▌╦ШY]Щ[Э\▌[Щ\ИOOH	┘Э[Ш▌[█Й╩H┌[Щ▌╦ШY]Щ[Э\▌[Щ\К	▄▄▌]I╦]Щ[ЭOИ┬И██Ь▌Y┘HH]Щ[Э	ЙИ]Щ[ЭЬ▌]H	ЙИ]Щ[ЭЬ▌]KЬY┘N┬ИYSY[ЭJ
+N╚Y[ЭR\▌▄ЮHHШ[┘N╚╦╚ШX┌╚█▄┘\╚H┌YHY[ЭHЪ\Ь▌ИYИ
+Y┘H	ЙИY┘HOOH▌\ЬЩ[ЭY┘JHЩ]\ЫО┬И┌▌╘Y┘J╪ЪЩX▌Ъ\╙▌█КY┘\╦Y┘JH╚Y┘HИ	┌█YI╦╚ШX┌╬ИЭYHJN┬ИJN┬ИЭ[Ш▌[█И┌▌╘Y┘JШ[YK▌╚H▀JH┬И██Ь▌┌▄┘[ИH╪ЪЩX▌Ъ\╙▌█КY┘\╦Ш[YJH╚Ш[YHИ	┌█YI╬┬ИYИ
+▌╦ШШX┌╩H╚YИ
+Ш]Ф▌X┌╦Ы[Щ▌
+HШ]Ф▌X┌╦Ь▄
 
-  // Labels are author-written UI text; the rules behind them are conventional and not expert-reviewed.
-  const RELATIONSHIP_COPY = {
-    en: {
-      nav: 'Love', eyebrow: 'Relationships', title: 'Love & Kundli matching', intro: 'Choose what you want to see.',
-      optMatch: 'Kundli matching', optMatchSub: 'Guna Milan score out of 36', optReading: 'My love reading', optReadingSub: 'What your chart says about love and marriage',
-      optTraits: 'Your ideal partner', optTraitsSub: 'Relationship style from your 7th house and Venus',
-      traitsIntro: 'A classical reading of relationship style from your chart тАФ not a prediction of any specific person.',
-      traitsHouse: 'Your 7th house of partnerships falls in {sign} (lord: {lord}), so youтАЩre often drawn to someone {trait}.',
-      traitsVenus: 'Venus, the planet of love in your chart, sits in {sign} тАФ affection tends to feel {trait} for you.',
-      traitsPortraitBtn: 'тЬи See an illustrated impression', traitsPortraitLoading: 'Painting an impressionтАж',
-      traitsPortraitOff: 'This has not been turned on yet.',
-      traitsGenderLabel: 'Show me a partner who is a:', traitsGenderWoman: 'Woman', traitsGenderMan: 'Man',
-      traitsPortraitAgainBtn: 'ЁЯФД Generate again',
-      traitsPortraitUnavailable: 'Could not create the illustration right now. Please try again in a moment.',
-      traitsAskInChat: 'ЁЯТм Tell me your birth details in chat',
-      traitsMakeKundliBtn: 'тЬи Make my Kundli',
-      who: 'Check for', whoMe: 'Me & partner', whoOthers: 'Check others', boyTitle: 'BoyтАЩs birth details', girlTitle: 'GirlтАЩs birth details', needBoth: 'Fill in both the boyтАЩs and the girlтАЩs details.', failedFirst: 'The boyтАЩs chart could not be calculated. Check the birth details and select a city from the list.', boy: 'Boy', girl: 'Girl', compare: 'PartnerтАЩs birth details', iAm: 'You are', groom: 'Groom', bride: 'Bride', submit: 'Check matching',
-      needChart: 'Create your own Kundli first, using DOB, POB and TOB.',
-      calculating: 'Calculating the partnerтАЩs chartтАж', failed: 'The partnerтАЩs chart could not be calculated. Check the birth details and select a city from the list.',
-      score: 'Guna Milan', excellent: 'Excellent match', good: 'Good match', average: 'Average match тАФ acceptable in most traditions', low: 'Low match тАФ usually not recommended',
-      nadiDosha: 'Nadi dosha: both have the same Nadi.', bhakootDosha: 'Bhakoot dosha: the two Moon signs sit in a difficult position from each other.',
-      details: 'See all 8 kootas',
-      kootas: { varna: 'Varna (nature)', vashya: 'Vashya (attraction)', tara: 'Tara (destiny)', yoni: 'Yoni (intimacy)', maitri: 'Graha Maitri (friendship)', gana: 'Gana (temperament)', bhakoot: 'Bhakoot (family & wealth)', nadi: 'Nadi (health & children)' },
-      manglik: 'Manglik (Kuja dosha)', you: 'You', partner: 'Partner', yes: 'Yes', no: 'No',
-      manglikBoth: 'Both are Manglik тАФ traditionally this cancels out.', manglikOne: 'Only one is Manglik тАФ many families consult an astrologer about this.',
-      note: 'Conventional Ashtakoota rules, not expert-reviewed. Use it as a guide, not as a decision about marriage. Enter another personтАЩs details only with their consent; they are not saved on this device.',
-      error: 'Calculated chart data is incomplete; no matching was made.',
-    },
-    te: {
-      nav: 'р░кр▒Нр░░р▒Зр░о', eyebrow: 'р░╕р░Вр░мр░Вр░зр░╛р░▓р▒Б', title: 'р░кр▒Нр░░р▒Зр░о & р░Ьр░╛р░др░Х р░кр▒Кр░Вр░др░и', intro: 'р░ор▒Ар░░р▒Б р░Пр░жр░┐ р░Ър▒Вр░бр░╛р░▓р░ир▒Бр░Хр▒Бр░Вр░Яр▒Бр░ир▒Нр░ир░╛р░░р▒Л р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.',
-      optMatch: 'р░Ьр░╛р░др░Х р░кр▒Кр░Вр░др░и', optMatchSub: 'р░Чр▒Бр░г р░ор▒Зр░│р░ир░В тАФ 36р░Хр░┐ р░╕р▒Нр░Хр▒Лр░░р▒Б', optReading: 'р░ир░╛ р░кр▒Нр░░р▒Зр░о р░лр░▓р░┐р░др░В', optReadingSub: 'р░кр▒Нр░░р▒Зр░о, р░╡р░┐р░╡р░╛р░╣р░В р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░ор▒А р░Ьр░╛р░др░Хр░В р░Пр░ор░Вр░Яр▒Бр░Вр░жр░┐',
-      optTraits: 'р░ор▒А р░Жр░жр░░р▒Нр░╢ р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐', optTraitsSub: 'р░ор▒А 7р░╡ р░Зр░▓р▒Нр░▓р▒Б, р░╢р▒Бр░Хр▒Нр░░р▒Бр░бр░┐ р░Жр░зр░╛р░░р░Вр░Чр░╛ р░╕р░Вр░мр░Вр░з р░╢р▒Ир░▓р░┐',
-      traitsIntro: 'р░Зр░жр░┐ р░ор▒А р░Ьр░╛р░др░Хр░В р░Жр░зр░╛р░░р░Вр░Чр░╛ р░╕р░Вр░кр▒Нр░░р░жр░╛р░п р░╕р░Вр░мр░Вр░з-р░╢р▒Ир░▓р░┐ р░╡р░┐р░╢р▒Нр░▓р▒Зр░╖р░г тАФ р░П р░Тр░Хр▒Нр░Х р░╡р▒Нр░пр░Хр▒Нр░др░┐ р░Чр▒Бр░░р░┐р░Вр░Ър▒Л р░Ер░Вр░Ър░ир░╛ р░Хр░╛р░жр▒Б.',
-      traitsHouse: 'р░ор▒А 7р░╡ р░Зр░▓р▒Нр░▓р▒Б (р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор▒Нр░пр░В) {sign}р░▓р▒Л р░Йр░Вр░жр░┐ (р░Ер░зр░┐р░кр░др░┐: {lord}), р░Хр░╛р░мр░Яр▒Нр░Яр░┐ р░ор▒Ар░░р▒Б р░др░░р░Ър▒Бр░Чр░╛ {trait} р░╡р▒Нр░пр░Хр▒Нр░др░┐ р░╡р▒Ир░кр▒Б р░Жр░Хр░░р▒Нр░╖р░┐р░др▒Бр░▓р░╡р▒Бр░др░╛р░░р▒Б.',
-      traitsVenus: 'р░ор▒А р░Ьр░╛р░др░Хр░Вр░▓р▒Л р░кр▒Нр░░р▒Зр░ор░Хр▒Б р░Хр░╛р░░р░Хр▒Бр░бр▒Ир░и р░╢р▒Бр░Хр▒Нр░░р▒Бр░бр▒Б {sign}р░▓р▒Л р░Йр░ир▒Нр░ир░╛р░бр▒Б тАФ р░ор▒Ар░Хр▒Б р░Жр░кр▒Нр░пр░╛р░пр░д {trait}р░Чр░╛ р░Ер░ир░┐р░кр░┐р░╕р▒Нр░др▒Бр░Вр░жр░┐.',
-      traitsPortraitBtn: 'тЬи р░Тр░Х р░Ър░┐р░др▒Нр░░р▒Ар░Хр░░р░гр░ир▒Б р░Ър▒Вр░бр░Вр░бр░┐', traitsPortraitLoading: 'р░Ър░┐р░др▒Нр░░р▒Ар░Хр░░р░г р░Чр▒Ар░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░ВтАж',
-      traitsPortraitOff: 'р░Зр░жр░┐ р░Зр░Вр░Хр░╛ р░Жр░ир▒Н р░Ър▒Зр░пр░▓р▒Зр░жр▒Б.',
-      traitsGenderLabel: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐ р░Ор░▓р░╛ р░Йр░Вр░бр░╛р░▓р▒Л р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐:', traitsGenderWoman: 'р░╕р▒Нр░др▒Нр░░р▒А', traitsGenderMan: 'р░кр▒Бр░░р▒Бр░╖р▒Бр░бр▒Б',
-      traitsPortraitAgainBtn: 'ЁЯФД р░ор░│р▒Нр░│р▒А р░Ър░┐р░др▒Нр░░р▒Ар░Хр░░р░┐р░Вр░Ър░Вр░бр░┐',
-      traitsPortraitUnavailable: 'р░кр▒Нр░░р░╕р▒Нр░др▒Бр░др░В р░Ър░┐р░др▒Нр░░р▒Ар░Хр░░р░гр░ир▒Б р░░р▒Вр░кр▒Кр░Вр░жр░┐р░Вр░Ър░▓р▒Зр░Хр░кр▒Лр░пр░╛р░В. р░Хр░╛р░╕р▒Зр░кр░╛р░Чр░┐ р░ор░│р▒Нр░│р▒А р░кр▒Нр░░р░пр░др▒Нр░ир░┐р░Вр░Ър░Вр░бр░┐.',
-      traitsAskInChat: 'ЁЯТм р░ор▒А р░Ьр░ир░и р░╡р░┐р░╡р░░р░╛р░▓р░ир▒Б р░Ър░╛р░Яр▒НтАМр░▓р▒Л р░Ър▒Жр░кр▒Нр░кр░Вр░бр░┐',
-      traitsMakeKundliBtn: 'тЬи р░ир░╛ р░Ьр░╛р░др░Хр░В р░др░пр░╛р░░р▒Б р░Ър▒Зр░пр░Вр░бр░┐',
-      who: 'р░Ор░╡р░░р░┐ р░Хр▒Лр░╕р░В', whoMe: 'р░ир▒Зр░ир▒Б & р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐', whoOthers: 'р░Зр░др░░р▒Бр░▓р░ир▒Б р░Ър▒Вр░бр░Вр░бр░┐', boyTitle: 'р░Ер░мр▒Нр░мр░╛р░пр░┐ р░Ьр░ир░и р░╡р░┐р░╡р░░р░╛р░▓р▒Б', girlTitle: 'р░Ер░ор▒Нр░ор░╛р░пр░┐ р░Ьр░ир░и р░╡р░┐р░╡р░░р░╛р░▓р▒Б', needBoth: 'р░Ер░мр▒Нр░мр░╛р░пр░┐, р░Ер░ор▒Нр░ор░╛р░пр░┐ р░Зр░жр▒Нр░жр░░р░┐ р░╡р░┐р░╡р░░р░╛р░▓р▒Б р░Зр░╡р▒Нр░╡р░Вр░бр░┐.', failedFirst: 'р░Ер░мр▒Нр░мр░╛р░пр░┐ р░Ьр░╛р░др░Хр░В р░▓р▒Жр░Хр▒Нр░Хр░┐р░Вр░Ър░▓р▒Зр░Хр░кр▒Лр░пр░╛р░В. р░Ьр░ир░и р░╡р░┐р░╡р░░р░╛р░▓р▒Б р░Ър▒Вр░╕р░┐ р░Ьр░╛р░мр░┐р░др░╛ р░ир▒Бр░Вр░бр░┐ р░ир░Чр░░р░╛р░ир▒Нр░ир░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.', boy: 'р░Ер░мр▒Нр░мр░╛р░пр░┐', girl: 'р░Ер░ор▒Нр░ор░╛р░пр░┐', compare: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐ р░Ьр░ир░и р░╡р░┐р░╡р░░р░╛р░▓р▒Б', iAm: 'р░ор▒Ар░░р▒Б', groom: 'р░╡р░░р▒Бр░бр▒Б', bride: 'р░╡р░зр▒Бр░╡р▒Б', submit: 'р░кр▒Кр░Вр░др░и р░Ър▒Вр░бр░Вр░бр░┐',
-      needChart: 'р░ор▒Бр░Вр░жр▒Бр░Чр░╛ р░ор▒А р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А, р░╕р▒Нр░ер░▓р░В, р░╕р░ор░пр░Вр░др▒Л р░ор▒А р░Ьр░╛р░др░Хр░╛р░ир▒Нр░ир░┐ р░░р▒Вр░кр▒Кр░Вр░жр░┐р░Вр░Ър░Вр░бр░┐.',
-      calculating: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐ р░Ьр░╛р░др░Хр░╛р░ир▒Нр░ир░┐ р░Чр░гр░┐р░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░ВтАж', failed: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐ р░Ьр░╛р░др░Хр░В р░Чр░гр░┐р░Вр░Ър░▓р▒Зр░Хр░кр▒Лр░пр░╛р░В. р░╡р░┐р░╡р░░р░╛р░▓р░ир▒Б р░╕р░░р░┐р░Ър▒Вр░╕р░┐ р░Ьр░╛р░мр░┐р░др░╛р░▓р▒Лр░ир░┐ р░ир░Чр░░р░╛р░ир▒Нр░ир░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.',
-      score: 'р░Чр▒Бр░г р░ор▒Зр░│р░ир░В', excellent: 'р░Ер░др▒Нр░пр▒Бр░др▒Нр░др░о р░кр▒Кр░Вр░др░и', good: 'р░ор░Вр░Ър░┐ р░кр▒Кр░Вр░др░и', average: 'р░╕р░╛р░зр░╛р░░р░г р░кр▒Кр░Вр░др░и тАФ р░Ър░╛р░▓р░╛ р░╕р░Вр░кр▒Нр░░р░жр░╛р░пр░╛р░▓р░▓р▒Л р░Жр░ор▒Лр░жр░пр▒Лр░Чр▒Нр░пр░В', low: 'р░др░Хр▒Нр░Хр▒Бр░╡ р░кр▒Кр░Вр░др░и тАФ р░╕р░╛р░зр░╛р░░р░гр░Вр░Чр░╛ р░╕р░┐р░лр░╛р░░р▒Нр░╕р▒Б р░Ър▒Зр░пр░░р▒Б',
-      nadiDosha: 'р░ир░╛р░бр▒А р░жр▒Лр░╖р░В: р░Зр░жр▒Нр░жр░░р░┐р░жр▒А р░Тр░Хр▒З р░ир░╛р░бр░┐.', bhakootDosha: 'р░нр░Хр▒Вр░Я р░жр▒Лр░╖р░В: р░Зр░жр▒Нр░жр░░р░┐ р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р▒Бр░▓р▒Б р░Тр░Хр░жр░╛р░ир░┐р░Хр▒Кр░Хр░Яр░┐ р░Зр░мр▒Нр░мр░Вр░жр░┐р░Хр░░ р░╕р▒Нр░ер░╛р░ир░Вр░▓р▒Л р░Йр░ир▒Нр░ир░╛р░пр░┐.',
-      details: 'р░Ер░ир▒Нр░ир░┐ 8 р░Хр▒Вр░Яр░╛р░▓р▒Б р░Ър▒Вр░бр░Вр░бр░┐',
-      kootas: { varna: 'р░╡р░░р▒Нр░г (р░╕р▒Нр░╡р░нр░╛р░╡р░В)', vashya: 'р░╡р░╢р▒Нр░п (р░Жр░Хр░░р▒Нр░╖р░г)', tara: 'р░др░╛р░░ (р░Ер░жр▒Гр░╖р▒Нр░Яр░В)', yoni: 'р░пр▒Лр░ир░┐ (р░Ер░ир▒Бр░мр░Вр░зр░В)', maitri: 'р░Чр▒Нр░░р░╣ р░ор▒Ир░др▒Нр░░р░┐ (р░╕р▒Нр░ир▒Зр░╣р░В)', gana: 'р░Чр░г (р░кр▒Нр░░р░╡р▒Гр░др▒Нр░др░┐)', bhakoot: 'р░нр░Хр▒Вр░Я (р░Хр▒Бр░Яр▒Бр░Вр░мр░В, р░╕р░Вр░кр░ж)', nadi: 'р░ир░╛р░бр░┐ (р░Жр░░р▒Лр░Чр▒Нр░пр░В, р░╕р░Вр░др░╛р░ир░В)' },
-      manglik: 'р░Хр▒Бр░Ь р░жр▒Лр░╖р░В', you: 'р░ор▒Ар░░р▒Б', partner: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐', yes: 'р░Йр░Вр░жр░┐', no: 'р░▓р▒Зр░жр▒Б',
-      manglikBoth: 'р░Зр░жр▒Нр░жр░░р░┐р░Хр▒А р░Хр▒Бр░Ь р░жр▒Лр░╖р░В р░Йр░Вр░жр░┐ тАФ р░╕р░Вр░кр▒Нр░░р░жр░╛р░пр░Вр░Чр░╛ р░Зр░жр░┐ р░кр░░р░┐р░╣р░╛р░░р░ор░╡р▒Бр░др▒Бр░Вр░жр░┐.', manglikOne: 'р░Тр░Хр░░р░┐р░Хр░┐ р░ор░╛р░др▒Нр░░р░ор▒З р░Хр▒Бр░Ь р░жр▒Лр░╖р░В р░Йр░Вр░жр░┐ тАФ р░Ър░╛р░▓р░╛ р░Хр▒Бр░Яр▒Бр░Вр░мр░╛р░▓р▒Б р░жр▒Ар░ир░┐ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Ьр▒Нр░пр▒Лр░др░┐р░╖р▒Нр░Хр▒Бр░бр░┐р░ир░┐ р░╕р░Вр░кр▒Нр░░р░жр░┐р░╕р▒Нр░др░╛р░пр░┐.',
-      note: 'р░Зр░╡р░┐ р░╕р░Вр░кр▒Нр░░р░жр░╛р░п р░Ер░╖р▒Нр░Яр░Хр▒Вр░Я р░ир░┐р░пр░ор░╛р░▓р▒Б, р░ир░┐р░кр▒Бр░гр▒Бр░▓ р░╕р░ор▒Ар░Хр▒Нр░╖ р░кр▒Кр░Вр░жр░▓р▒Зр░жр▒Б. р░╡р░┐р░╡р░╛р░╣ р░ир░┐р░░р▒Нр░гр░пр░Вр░Чр░╛ р░Хр░╛р░Хр▒Бр░Вр░бр░╛ р░ор░╛р░░р▒Нр░Чр░жр░░р▒Нр░╢р░┐р░Чр░╛ р░ор░╛р░др▒Нр░░р░ор▒З р░╡р░╛р░бр░Вр░бр░┐. р░ор░░р▒Кр░Хр░░р░┐ р░╡р░┐р░╡р░░р░╛р░▓р░ир▒Б р░╡р░╛р░░р░┐ р░╕р░ор▒Нр░ор░др░┐р░др▒Лр░ир▒З р░ир░ор▒Лр░жр▒Б р░Ър▒Зр░пр░Вр░бр░┐; р░Ер░╡р░┐ р░И р░кр░░р░┐р░Хр░░р░Вр░▓р▒Л р░╕р▒Зр░╡р▒Н р░Хр░╛р░╡р▒Б.',
-      error: 'р░Чр░гр░┐р░Вр░Ър░┐р░и р░Ьр░╛р░др░Х р░╕р░ор░╛р░Ър░╛р░░р░В р░Ер░╕р░Вр░кр▒Вр░░р▒Нр░гр░Вр░Чр░╛ р░Йр░Вр░жр░┐; р░кр▒Кр░Вр░др░и р░Ър▒Вр░бр░▓р▒Зр░жр▒Б.',
-    },
-    hi: {
-      nav: 'рдкреНрд░реЗрдо', eyebrow: 'рд╕рдВрдмрдВрдз', title: 'рдкреНрд░реЗрдо рдФрд░ рдХреБрдВрдбрд▓реА рдорд┐рд▓рд╛рди', intro: 'рдЖрдк рдХреНрдпрд╛ рджреЗрдЦрдирд╛ рдЪрд╛рд╣рддреЗ рд╣реИрдВ, рдЪреБрдиреЗрдВред',
-      optMatch: 'рдХреБрдВрдбрд▓реА рдорд┐рд▓рд╛рди', optMatchSub: 'рдЧреБрдг рдорд┐рд▓рд╛рди тАФ 36 рдореЗрдВ рд╕реЗ рдЕрдВрдХ', optReading: 'рдореЗрд░рд╛ рдкреНрд░реЗрдо рдлрд▓', optReadingSub: 'рдкреНрд░реЗрдо рдФрд░ рд╡рд┐рд╡рд╛рд╣ рдкрд░ рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рдХреНрдпрд╛ рдХрд╣рддреА рд╣реИ',
-      optTraits: 'рдЖрдкрдХрд╛ рдЖрджрд░реНрд╢ рд╕рд╛рдереА', optTraitsSub: 'рдЖрдкрдХреЗ 7рд╡реЗрдВ рднрд╛рд╡ рдФрд░ рд╢реБрдХреНрд░ рд╕реЗ рд░рд┐рд╢реНрддреЗ рдХреА рд╢реИрд▓реА',
-      traitsIntro: 'рдпрд╣ рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рдкрд░ рдЖрдзрд╛рд░рд┐рдд рдкрд╛рд░рдВрдкрд░рд┐рдХ рд╕рдВрдмрдВрдз-рд╢реИрд▓реА рд╣реИ тАФ рдХрд┐рд╕реА рдЦрд╛рд╕ рд╡реНрдпрдХреНрддрд┐ рдХреА рднрд╡рд┐рд╖реНрдпрд╡рд╛рдгреА рдирд╣реАрдВред',
-      traitsHouse: 'рдЖрдкрдХрд╛ 7рд╡рд╛рдВ рднрд╛рд╡ (рд╕рд╛рдЭреЗрджрд╛рд░реА) {sign} рдореЗрдВ рд╣реИ (рд╕реНрд╡рд╛рдореА: {lord}), рдЗрд╕рд▓рд┐рдП рдЖрдк рдЕрдХреНрд╕рд░ рдРрд╕реЗ рд╕рд╛рдереА рдХреА рдУрд░ рдЖрдХрд░реНрд╖рд┐рдд рд╣реЛрддреЗ рд╣реИрдВ рдЬреЛ {trait} рд╣реЛред',
-      traitsVenus: 'рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рдореЗрдВ рдкреНрд░реЗрдо рдХреЗ рдХрд╛рд░рдХ рд╢реБрдХреНрд░ {sign} рдореЗрдВ рд╣реИрдВ тАФ рдЖрдкрдХреЗ рд▓рд┐рдП рд╕реНрдиреЗрд╣ {trait} рдЬреИрд╕рд╛ рдорд╣рд╕реВрд╕ рд╣реЛрддрд╛ рд╣реИред',
-      traitsPortraitBtn: 'тЬи рдПрдХ рдЪрд┐рддреНрд░рд╛рдВрдХрди рджреЗрдЦреЗрдВ', traitsPortraitLoading: 'рдЪрд┐рддреНрд░рд╛рдВрдХрди рдмрдирд╛рдпрд╛ рдЬрд╛ рд░рд╣рд╛ рд╣реИтАж',
-      traitsPortraitOff: 'рдпрд╣ рдЕрднреА рдЪрд╛рд▓реВ рдирд╣реАрдВ рдХрд┐рдпрд╛ рдЧрдпрд╛ рд╣реИред',
-      traitsGenderLabel: 'рд╕рд╛рдереА рдХреИрд╕рд╛ рд╣реЛ, рдЪреБрдиреЗрдВ:', traitsGenderWoman: 'рдорд╣рд┐рд▓рд╛', traitsGenderMan: 'рдкреБрд░реБрд╖',
-      traitsPortraitAgainBtn: 'ЁЯФД рдлрд┐рд░ рд╕реЗ рдмрдирд╛рдПрдБ',
-      traitsPortraitUnavailable: 'рдЕрднреА рдЪрд┐рддреНрд░рд╛рдВрдХрди рдирд╣реАрдВ рдмрди рд╕рдХрд╛ред рдХреГрдкрдпрд╛ рдереЛрдбрд╝реА рджреЗрд░ рдореЗрдВ рдлрд┐рд░ рд╕реЗ рдХреЛрд╢рд┐рд╢ рдХрд░реЗрдВред',
-      traitsAskInChat: 'ЁЯТм рдЪреИрдЯ рдореЗрдВ рдЕрдкрдирд╛ рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг рдмрддрд╛рдПрдБ',
-      traitsMakeKundliBtn: 'тЬи рдореЗрд░реА рдХреБрдВрдбрд▓реА рдмрдирд╛рдПрдБ',
-      who: 'рдХрд┐рд╕рдХреЗ рд▓рд┐рдП', whoMe: 'рдореИрдВ рдФрд░ рд╕рд╛рдереА', whoOthers: 'рджреВрд╕рд░реЛрдВ рдХреЛ рджреЗрдЦреЗрдВ', boyTitle: 'рд▓рдбрд╝рдХреЗ рдХрд╛ рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг', girlTitle: 'рд▓рдбрд╝рдХреА рдХрд╛ рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг', needBoth: 'рд▓рдбрд╝рдХреЗ рдФрд░ рд▓рдбрд╝рдХреА рджреЛрдиреЛрдВ рдХрд╛ рд╡рд┐рд╡рд░рдг рднрд░реЗрдВред', failedFirst: 'рд▓рдбрд╝рдХреЗ рдХреА рдХреБрдВрдбрд▓реА рдирд╣реАрдВ рдмрди рд╕рдХреАред рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг рдЬрд╛рдБрдЪреЗрдВ рдФрд░ рд╕реВрдЪреА рд╕реЗ рд╢рд╣рд░ рдЪреБрдиреЗрдВред', boy: 'рд▓рдбрд╝рдХрд╛', girl: 'рд▓рдбрд╝рдХреА', compare: 'рд╕рд╛рдереА рдХрд╛ рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг', iAm: 'рдЖрдк рд╣реИрдВ', groom: 'рд╡рд░', bride: 'рд╡рдзреВ', submit: 'рдорд┐рд▓рд╛рди рджреЗрдЦреЗрдВ',
-      needChart: 'рдкрд╣рд▓реЗ рдЬрдиреНрдо рддрд┐рдерд┐, рд╕реНрдерд╛рди рдФрд░ рд╕рдордп рд╕реЗ рдЕрдкрдиреА рдХреБрдВрдбрд▓реА рдмрдирд╛рдПрдБред',
-      calculating: 'рд╕рд╛рдереА рдХреА рдХреБрдВрдбрд▓реА рдХреА рдЧрдгрдирд╛ рд╣реЛ рд░рд╣реА рд╣реИтАж', failed: 'рд╕рд╛рдереА рдХреА рдХреБрдВрдбрд▓реА рдХреА рдЧрдгрдирд╛ рдирд╣реАрдВ рд╣реЛ рд╕рдХреАред рд╡рд┐рд╡рд░рдг рдЬрд╛рдБрдЪреЗрдВ рдФрд░ рд╕реВрдЪреА рд╕реЗ рд╢рд╣рд░ рдЪреБрдиреЗрдВред',
-      score: 'рдЧреБрдг рдорд┐рд▓рд╛рди', excellent: 'рдЙрддреНрддрдо рдорд┐рд▓рд╛рди', good: 'рдЕрдЪреНрдЫрд╛ рдорд┐рд▓рд╛рди', average: 'рд╕рд╛рдорд╛рдиреНрдп рдорд┐рд▓рд╛рди тАФ рдЕрдзрд┐рдХрд╛рдВрд╢ рдкрд░рдВрдкрд░рд╛рдУрдВ рдореЗрдВ рд╕реНрд╡реАрдХрд╛рд░реНрдп', low: 'рдХрдо рдорд┐рд▓рд╛рди тАФ рдЖрдорддреМрд░ рдкрд░ рдЕрдиреБрд╢рдВрд╕рд┐рдд рдирд╣реАрдВ',
-      nadiDosha: 'рдирд╛рдбрд╝реА рджреЛрд╖: рджреЛрдиреЛрдВ рдХреА рдирд╛рдбрд╝реА рдПрдХ рд╣реА рд╣реИред', bhakootDosha: 'рднрдХреВрдЯ рджреЛрд╖: рджреЛрдиреЛрдВ рдХреА рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐рдпрд╛рдБ рдПрдХ-рджреВрд╕рд░реЗ рд╕реЗ рдХрдард┐рди рд╕реНрдерд┐рддрд┐ рдореЗрдВ рд╣реИрдВред',
-      details: 'рд╕рднреА 8 рдХреВрдЯ рджреЗрдЦреЗрдВ',
-      kootas: { varna: 'рд╡рд░реНрдг (рд╕реНрд╡рднрд╛рд╡)', vashya: 'рд╡рд╢реНрдп (рдЖрдХрд░реНрд╖рдг)', tara: 'рддрд╛рд░рд╛ (рднрд╛рдЧреНрдп)', yoni: 'рдпреЛрдирд┐ (рдШрдирд┐рд╖реНрдарддрд╛)', maitri: 'рдЧреНрд░рд╣ рдореИрддреНрд░реА (рдорд┐рддреНрд░рддрд╛)', gana: 'рдЧрдг (рдкреНрд░рдХреГрддрд┐)', bhakoot: 'рднрдХреВрдЯ (рдкрд░рд┐рд╡рд╛рд░ рдФрд░ рдзрди)', nadi: 'рдирд╛рдбрд╝реА (рд╕реНрд╡рд╛рд╕реНрдереНрдп рдФрд░ рд╕рдВрддрд╛рди)' },
-      manglik: 'рдорд╛рдВрдЧрд▓рд┐рдХ (рдХреБрдЬ рджреЛрд╖)', you: 'рдЖрдк', partner: 'рд╕рд╛рдереА', yes: 'рд╣рд╛рдБ', no: 'рдирд╣реАрдВ',
-      manglikBoth: 'рджреЛрдиреЛрдВ рдорд╛рдВрдЧрд▓рд┐рдХ рд╣реИрдВ тАФ рдкрд░рдВрдкрд░рд╛ рдореЗрдВ рдпрд╣ рджреЛрд╖ рдХрдЯ рдЬрд╛рддрд╛ рд╣реИред', manglikOne: 'рдХреЗрд╡рд▓ рдПрдХ рдорд╛рдВрдЧрд▓рд┐рдХ рд╣реИ тАФ рдХрдИ рдкрд░рд┐рд╡рд╛рд░ рдЗрд╕рдХреЗ рд▓рд┐рдП рдЬреНрдпреЛрддрд┐рд╖реА рд╕реЗ рдкрд░рд╛рдорд░реНрд╢ рдХрд░рддреЗ рд╣реИрдВред',
-      note: 'рдпреЗ рдкрд╛рд░рдВрдкрд░рд┐рдХ рдЕрд╖реНрдЯрдХреВрдЯ рдирд┐рдпрдо рд╣реИрдВ, рд╡рд┐рд╢реЗрд╖рдЬреНрдЮ рд╕рдореАрдХреНрд╖рд╛ рдирд╣реАрдВ рд╣реБрдИред рдЗрд╕реЗ рд╡рд┐рд╡рд╛рд╣ рдХрд╛ рдирд┐рд░реНрдгрдп рдирд╣реАрдВ, рдХреЗрд╡рд▓ рдорд╛рд░реНрдЧрджрд░реНрд╢рди рдорд╛рдиреЗрдВред рдХрд┐рд╕реА рдФрд░ рдХрд╛ рд╡рд┐рд╡рд░рдг рдЙрдирдХреА рд╕рд╣рдорддрд┐ рд╕реЗ рд╣реА рджрд░реНрдЬ рдХрд░реЗрдВ; рдпрд╣ рдЗрд╕ рдбрд┐рд╡рд╛рдЗрд╕ рдкрд░ рд╕рд╣реЗрдЬрд╛ рдирд╣реАрдВ рдЬрд╛рддрд╛ред',
-      error: 'рдЧрдгрдирд╛ рдХреА рдЧрдИ рдХреБрдВрдбрд▓реА рдЕрдзреВрд░реА рд╣реИ; рдорд┐рд▓рд╛рди рдирд╣реАрдВ рдХрд┐рдпрд╛ рдЧрдпрд╛ред',
-    },
-  };
-  // Kundli views, doshas and the Home tool cards.
-  const TOOLS_COPY = {
-    en: {
-      views: { chart: 'Chart', planets: 'Planets', dasha: 'Dasha', doshas: 'Doshas', panchang: 'Panchang' },
-      kujaTitle: 'Kuja dosha (Manglik)', kujaYes: 'Present', kujaNo: 'Not present', kujaWhy: 'Mars is in house {lagna} from the Lagna and house {moon} from the Moon.',
-      kujaReduced: 'Mars is in its own or exalted sign, which traditionally reduces the effect.',
-      sadeTitle: 'Sade Sati', phase1: 'Running now тАФ phase 1 of 3 (beginning)', phase2: 'Running now тАФ phase 2 of 3 (peak)', phase3: 'Running now тАФ phase 3 of 3 (ending)',
-      sadeNo: 'Not running now.', period: '{start} to {end}', sadeNext: 'Next Sade Sati: {start} to {end}', now: 'now',
-      ashtama: 'Ashtama Shani (Saturn 8th from your Moon) is running until {end}.', ardhashtama: 'Ardhashtama Shani (Saturn 4th from your Moon) is running until {end}.',
-      doshaNote: 'Conventional rules, not expert-reviewed. Dates are approximate.', doshaUnavailable: 'Dosha details are not available for this chart.',
-      todayLabel: 'Today for you', todayGood: 'Chandrabalam and Tarabalam are both favourable for you today тАФ a good day for important work.',
-      todayCare: 'The Moon is 8th from your Moon sign today (Ashtama Chandra) тАФ go slow and avoid big decisions.',
-      todayMixed: 'A mixed day for you тАФ fine for routine work; take important steps with care.', todayQuiet: 'A quiet day for you тАФ better for routine work than new beginnings.',
-      askPlaceholder: 'Ask anything: career, marriage, moneyтАж', askButton: 'Ask', kundliCta: 'Get your free Kundli in 30 seconds тЖТ', needKundli: 'Create your Kundli to see',
-      liveDasha: '{maha} тАУ {antar} period now', liveDashaMaha: '{maha} period now', liveRashi: '{sign}: todayтАЩs reading', liveSade: 'Sade Sati: phase {p} of 3 running',
-      liveDosha: 'Kuja dosha: {k} ┬╖ Sade Sati: {s}', yes: 'Yes', no: 'No',
-      jkAsk: 'Want to know your Jathakam?', jkSub: 'Your free Kundli тАФ Lagna, Rashi, Nakshatra, planets, dasha and doshas тАФ in 30 seconds.',
-      jkCreate: 'Create my Kundli тЖТ', jkMine: 'My Jathakam', jkView: 'View full Kundli тЖТ', jkDasha: 'Dasha now',
-      look: { title: 'Appearance', mode: 'Mode', mystic: 'Mystic', light: 'Light', dark: 'Dark', auto: 'Auto', colour: 'Colour', done: 'Done',
-        saffron: 'Saffron', teal: 'Teal', rose: 'Rose', blue: 'Blue', button: 'Change appearance' },
-      notify: { title: 'Daily notifications', invite: 'Get todayтАЩs Panchang and how your day looks, every morning.', on: 'Turn on', later: 'Not now',
-        time: 'Time', off: 'Turn off', enabled: 'On тАФ every day at {time}', disabled: 'Off', denied: 'Notifications are blocked. Allow them for Jyotirmaya in your phoneтАЩs Settings, then try again.',
-        muhurta: 'Good and bad muhurta alerts',
-        evening: 'Evening question for you', eveningTime: 'Evening time',
-        rahu: 'Rahu Kalam', fest: 'ЁЯкФ {name} today', reopenTitle: 'ЁЯМЩ Your week ahead', reopenBody: 'Open Jyotirmaya to see this weekтАЩs Panchang.', },
-      lunar: { year: '{s} samvatsara', month: '{m} masa', adhika: 'Adhika {m}' },
-      cards: { good: 'Good times', panchang: 'Panchang', events: 'Auspicious muhurtas', bad: 'Inauspicious times', none: 'No auspicious muhurtas today',
-        again: 'and', amrita: 'Amrita kalam', durmuhurtam: 'Durmuhurtam', marriage: 'Marriage', gruhapravesam: 'Housewarming', vehicle: 'Vehicle purchase',
-        eventNote: 'A simple traditional check (tithi, nakshatra, weekday and month; avoids Rahu Kalam, Durmuhurtam and Varjyam). For a wedding or housewarming, confirm the exact muhurtam with your purohit.',
-        share: 'Share today on WhatsApp', full: 'Full Panchang tables', swipe: 'Swipe for more тЖТ' },
-      rashi: { pick: 'Choose your rashi', find: 'Find your rashi', mineButton: 'Show my rashi', mine: 'Yours', title: '{sign} rashiphal ({date})', more: 'тАжmore', less: 'Show less',
-        ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
-        details: 'Planet-by-planet details', transitGood: 'Favourable', transitCare: 'Take care', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see todayтАЩs reading.',
-        unlock: 'тЦ╢ See todayтАЩs reading', unlockNote: 'Watch one short ad to open todayтАЩs Rashiphal for all signs.',
-        luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis ┬╖ Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
-        colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
-        directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
-      detailTitle: 'Panchang in detail', festTitle: 'Upcoming festivals', festToday: 'Today', festTomorrow: 'Tomorrow', festIn: 'in {n} days',
-      festMore: 'Show more festivals', festLess: 'Show fewer', festNone: 'No festivals in the next few months.', festLoading: 'Loading festivalsтАж',
-      shortcuts: { title: 'Your stars, one tap from here', text: 'Choose a reading to start.', labels: ['Palm', 'Rashiphal', 'Tarot', 'Match'], channel: 'Shortcuts', toggle: 'Shortcuts in the notification bar' },
-      lifeguide: { card: ['Life Guide', 'Your daily balance: love, work, money'], title: 'Life Guide', tabs: ['Yesterday', 'Today', 'Tomorrow', 'This month', 'This year'],
-        balance: ['YesterdayтАЩs balance', 'TodayтАЩs balance', 'TomorrowтАЩs balance', 'This monthтАЩs balance', 'This yearтАЩs balance'],
-        areas: { love: 'Love', family: 'Family', marriage: 'Marriage', career: 'Career', wealth: 'Wealth', health: 'Health' }, byArea: 'By area', supported: 'Supported by {planets}',
-        yourSign: 'Your sign', change: 'Change', pick: 'Check another sign', pickFirst: 'Pick your sign to see your balance.', loading: 'Working out your balanceтАж', failed: 'Could not load right now. Please try again.',
-        personal: 'Personal to your chart: birth star {star}', dashaLine: 'dasha {lords}', general: 'General for this sign. Create your Kundli for a Life Guide that is personal to you.', tara: 'Your star today: {tara}',
-        taraNames: ['Janma', 'Sampat', 'Vipat', 'Kshema', 'Pratyak', 'Sadhana', 'Naidhana', 'Mitra', 'Parama Mitra'], taraEffect: ['needs care', 'neutral', 'supportive'],
-        unlock: 'Tabs with the video icon open after one short ad, for this sign for the rest of the day.',
-        note: 'Worked out from planet transits counted from the Moon sign. Guidance for reflection, not a prediction.',
-        text: { love: ['Go gently. Listen more and avoid hasty words.', 'A steady stretch. Small, thoughtful gestures matter most.', 'Warmth comes easily. A good time to share your feelings.'],
-          family: ['Misunderstandings can arise. Stay calm and give people space.', 'Ordinary and calm. Keep your routines and be patient.', 'Home feels supportive. Time with family refreshes you.'],
-          marriage: ['Patience helps. Postpone big decisions and avoid arguments.', 'Steady. Shared routines keep things comfortable.', 'Understanding grows. A good time for honest, caring talk.'],
-          career: ['Slow and demanding. Plan carefully and avoid risky moves.', 'Progress is steady. Focus on one task at a time.', 'Work moves well. A good time to take initiative.'],
-          wealth: ['Be careful with spending. Avoid impulsive purchases or lending.', 'Balanced. Track your spending and stay practical.', 'Money matters look supportive. Good for planning and saving.'],
-          health: ['Take it easy. Rest well, drink water and avoid overdoing things.', 'Fine overall. Keep to regular meals and rest.', 'Energy is good. Keep up exercise and sleep.'] } },
-      signmatch: { card: ['Sign match', 'Match any two Moon signs'], title: 'Sign match', you: 'You', partner: 'Partner', choose: 'Choose a sign', tabs: ['My sign', 'PartnerтАЩs sign'], see: 'See our match',
-        verdict: { excellent: 'Excellent match', good: 'Good match', average: 'Average match', low: 'Needs patience' },
-        text: { excellent: 'Your signs get along naturally: easy understanding and a shared outlook.', good: 'A comfortable pairing, with a few differences to adjust to.', average: 'Some differences to work on. Patience and talking things through help.', low: 'Quite different natures. It can work with understanding and effort.' },
-        friendship: 'Mind & friendship', family: 'Family & prosperity', dosha: 'The two signs sit in a difficult position from each other (Bhakoot dosha). Many families check this before a marriage.',
-        full: 'Full 36-point Kundli matching', note: 'Based on the two Moon signs only. Guidance for reflection, not a prediction.', shareLine: '{a} + {b}: {percent}% sign match, {verdict}.' },
-      numerology: { card: ['Numerology', 'Your numbers from name & birth date'], title: 'Numerology', intro: 'Your Moolank, Bhagyank and name number, worked out from your date of birth and name.',
-        dob: 'Date of birth', name: 'Name (in English letters)', show: 'Show my numbers', bad: 'Please enter a valid date of birth.', change: 'Change',
-        moolank: ['Moolank', 'Birth number ┬╖ how you are'], bhagyank: ['Bhagyank', 'Destiny number ┬╖ where life leads'], nameNum: ['Name number', 'How others see you'],
-        noName: 'Type your name in English letters to see your name number.', planet: 'Planet', strengths: 'Strengths', care: 'Watch out for',
-        harmonyGood: 'Your name number and Moolank are friendly: a good match.', harmonyNeutral: 'Your name number and Moolank are neutral to each other.',
-        year: 'Your year {year}: number {n}', lucky: 'Lucky for you', luckyNumbers: 'Numbers', luckyDays: 'Days', luckyColours: 'Colours',
-        askAi: 'Ask AI about my numbers', askQ: 'My numerology Moolank is {m} and Bhagyank is {b}. What do these numbers say about my career and relationships?', share: 'Share',
-        note: 'Numerology is a traditional system for reflection, not a certainty.' },
-      menu: { title: 'Menu', open: 'Open menu', close: 'Close menu', home: 'Home', panchang: 'TodayтАЩs Panchang', appearance: 'Appearance', privacy: 'Privacy and terms', back: 'Back', shareReading: 'Share', shareApp: 'Share app', rateApp: 'Rate app', funFact: 'FUN FACT', listen: 'Listen', chips: { palm: 'Read my palm', tarot: 'Pick tarot cards', lifeguide: 'My Life Guide', numbers: 'My numbers', signmatch: 'Match two signs' }, shareLine: 'Your Vedic astrologer in your pocket: Panchang, Kundli, Rashiphal, Palm and Tarot in your language.' },
-      palm: { card: ['Palm reading', 'Scan your palm with the camera'], title: 'Palm Analysis', step: 'Step 1 ┬╖ Pick a hand', left: 'Left palm', right: 'Right palm',
-        tipsTitle: 'Tips for a clear scan', tips: ['Use soft, bright light', 'Hold your palm flat, fingers spread', 'Keep your full hand inside the frame'],
-        scan: 'Scan', reading: 'Reading your palmтАж', notPalm: 'We could not see a palm clearly. Try again in bright light with your whole palm in the photo.',
-        off: 'Palm reading is switched off right now.', failed: 'Could not read the palm right now. Please try again in a little while.',
-        cam: { hint: 'Place your open palm inside the outline', dark: 'Too dark. Move to brighter light and press again.', gallery: 'Choose a photo', close: 'Close', snap: 'Take photo' }, tabs: ['Palm', 'Love', 'Career'], lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
-        ready: 'Your palm photo is ready.', see: 'тЦ╢ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
-        askQ: 'My palm reading says: тАЬ{summary}тАЭ What should I focus on now?',
-        rekhaNote: 'These lines are the AIтАЩs best guess from your photo, shown as a guide тАФ not an exact trace.' },
-      tarot: { card: ['Tarot', 'Ask the cards about love, career, moneyтАж'], title: 'Tarot', ask: 'What do you want to ask the cards?',
-        topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
-        pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
-        positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cardsтАж',
-        see: 'тЦ╢ See my reading', again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
-        askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
-      moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
-        approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
-        pick: 'Explore any sign', loading: 'Reading the moonтАж', share: 'Share', report: 'Report', yours: 'Yours',
-        sections: { emotional: 'Emotional nature', love: 'Love & family', career: 'Work & money', wellbeing: 'Wellbeing', remedy: 'Simple remedy' },
-        nature: ['Bold and quick to act, you feel things honestly and need room to be yourself.', 'Steady and loyal, you love comfort and beauty and stay calm under pressure.',
-          'Curious and quick-minded, you love conversation and need variety to feel alive.', 'Caring and sensitive, family means everything to you and your intuition is strong.',
-          'Warm-hearted and generous, you shine when you lead and when your effort is seen.', 'Thoughtful and careful, you love to help and find calm in order and small routines.',
-          'Gentle and fair-minded, you seek harmony and feel happiest in good company.', 'Intense and private, you love deeply, stay loyal and have strong willpower.',
-          'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
-          'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
-      sections: { chart: 'Your chart', palm: 'Palm, tarot & numbers', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
-      greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste ЁЯЩП' },
-      aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! ЁЯЩП I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['TodayтАЩs Panchang', 'Tithi, Rahu Kalam & muhurtas'],
-      tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planetтАЩs period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
-    },
-    te: {
-      views: { chart: 'р░Ър░Хр▒Нр░░р░В', planets: 'р░Чр▒Нр░░р░╣р░╛р░▓р▒Б', dasha: 'р░жр░╢', doshas: 'р░жр▒Лр░╖р░╛р░▓р▒Б', panchang: 'р░кр░Вр░Ър░╛р░Вр░Чр░В' },
-      kujaTitle: 'р░Хр▒Бр░Ь р░жр▒Лр░╖р░В', kujaYes: 'р░Йр░Вр░жр░┐', kujaNo: 'р░▓р▒Зр░жр▒Б', kujaWhy: 'р░Хр▒Бр░Ьр▒Бр░бр▒Б р░▓р░Чр▒Нр░ир░В р░ир▒Бр░Вр░бр░┐ {lagna}р░╡ р░Зр░Вр░Яр▒Нр░▓р▒Л, р░Ър░Вр░жр▒Нр░░р▒Бр░ир░┐ р░ир▒Бр░Вр░бр░┐ {moon}р░╡ р░Зр░Вр░Яр▒Нр░▓р▒Л р░Йр░ир▒Нр░ир░╛р░бр▒Б.',
-      kujaReduced: 'р░Хр▒Бр░Ьр▒Бр░бр▒Б р░╕р▒Нр░╡р░Хр▒Нр░╖р▒Зр░др▒Нр░░р░В р░▓р▒Зр░жр░╛ р░Йр░Ър▒Нр░Ър░▓р▒Л р░Йр░ир▒Нр░ир░Вр░жр▒Бр░и р░жр▒Лр░╖ р░кр▒Нр░░р░нр░╛р░╡р░В р░др░Чр▒Нр░Чр▒Бр░др▒Бр░Вр░жр░ир░┐ р░╕р░Вр░кр▒Нр░░р░жр░╛р░пр░В.',
-      sadeTitle: 'р░Пр░▓р░┐р░ир░╛р░Яр░┐ р░╢р░ир░┐', phase1: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐ тАФ р░ор▒Кр░жр░Яр░┐ р░жр░╢ (р░кр▒Нр░░р░╛р░░р░Вр░нр░В)', phase2: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐ тАФ р░░р▒Жр░Вр░бр░╡ р░жр░╢ (р░др▒Ар░╡р▒Нр░░ р░жр░╢)', phase3: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐ тАФ р░ор▒Вр░бр░╡ р░жр░╢ (р░ор▒Бр░Чр░┐р░Вр░кр▒Б)',
-      sadeNo: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ир░бр░╡р░бр░В р░▓р▒Зр░жр▒Б.', period: '{start} р░ир▒Бр░Вр░бр░┐ {end} р░╡р░░р░Хр▒Б', sadeNext: 'р░др░жр▒Бр░кр░░р░┐ р░Пр░▓р░┐р░ир░╛р░Яр░┐ р░╢р░ир░┐: {start} р░ир▒Бр░Вр░бр░┐ {end} р░╡р░░р░Хр▒Б', now: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б',
-      ashtama: 'р░Ер░╖р▒Нр░Яр░о р░╢р░ир░┐ (р░Ър░Вр░жр▒Нр░░р▒Бр░ир░┐ р░ир▒Бр░Вр░бр░┐ 8р░╡ р░Зр░Вр░Яр▒Нр░▓р▒Л р░╢р░ир░┐) {end} р░╡р░░р░Хр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐.', ardhashtama: 'р░Ер░░р▒Нр░зр░╛р░╖р▒Нр░Яр░о р░╢р░ир░┐ (р░Ър░Вр░жр▒Нр░░р▒Бр░ир░┐ р░ир▒Бр░Вр░бр░┐ 4р░╡ р░Зр░Вр░Яр▒Нр░▓р▒Л р░╢р░ир░┐) {end} р░╡р░░р░Хр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐.',
-      doshaNote: 'р░╕р░Вр░кр▒Нр░░р░жр░╛р░п р░ир░┐р░пр░ор░╛р░▓р▒Б, р░ир░┐р░кр▒Бр░гр▒Бр░▓ р░╕р░ор▒Ар░Хр▒Нр░╖ р░кр▒Кр░Вр░жр░▓р▒Зр░жр▒Б. р░др▒Зр░жр▒Ар░▓р▒Б р░╕р▒Бр░ор░╛р░░р▒Бр░Чр░╛.', doshaUnavailable: 'р░И р░Ьр░╛р░др░Хр░╛р░ир░┐р░Хр░┐ р░жр▒Лр░╖ р░╡р░┐р░╡р░░р░╛р░▓р▒Б р░Ер░Вр░жр▒Бр░мр░╛р░Яр▒Бр░▓р▒Л р░▓р▒Зр░╡р▒Б.',
-      todayLabel: 'р░И р░░р▒Лр░Ьр▒Б р░ор▒Ар░Хр▒Б', todayGood: 'р░И р░░р▒Лр░Ьр▒Б р░ор▒Ар░Хр▒Б р░Ър░Вр░жр▒Нр░░р░мр░▓р░В, р░др░╛р░░р░╛р░мр░▓р░В р░░р▒Жр░Вр░бр▒В р░Ер░ир▒Бр░Хр▒Вр░▓р░В тАФ р░ор▒Бр░Цр▒Нр░пр░ор▒Ир░и р░кр░ир▒Бр░▓р░Хр▒Б р░ор░Вр░Ър░┐ р░░р▒Лр░Ьр▒Б.',
-      todayCare: 'р░И р░░р▒Лр░Ьр▒Б р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б р░ор▒А р░░р░╛р░╢р░┐ р░ир▒Бр░Вр░бр░┐ 8р░╡ р░╕р▒Нр░ер░╛р░ир░Вр░▓р▒Л р░Йр░ир▒Нр░ир░╛р░бр▒Б (р░Ер░╖р▒Нр░Яр░о р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б) тАФ р░ир▒Жр░ор▒Нр░ор░жр░┐р░Чр░╛ р░╡р▒Жр░│р▒Нр░│р░Вр░бр░┐, р░кр▒Жр░жр▒Нр░ж р░ир░┐р░░р▒Нр░гр░пр░╛р░▓р▒Б р░╡р░╛р░пр░┐р░жр░╛ р░╡р▒Зр░пр░Вр░бр░┐.',
-      todayMixed: 'р░И р░░р▒Лр░Ьр▒Б р░ор▒Ар░Хр▒Б р░ор░┐р░╢р▒Нр░░р░о р░лр░▓р░┐р░др░В тАФ р░░р▒Лр░Ьр▒Бр░╡р░╛р░░р▒А р░кр░ир▒Бр░▓р░Хр▒Б р░╕р░░р▒З; р░ор▒Бр░Цр▒Нр░пр░ор▒Ир░и р░Ер░бр▒Бр░Чр▒Бр░▓р▒Б р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░др░Чр░╛ р░╡р▒Зр░пр░Вр░бр░┐.', todayQuiet: 'р░И р░░р▒Лр░Ьр▒Б р░ор▒Ар░Хр▒Б р░ир▒Жр░ор▒Нр░ор░жр▒Ир░и р░░р▒Лр░Ьр▒Б тАФ р░Хр▒Кр░др▒Нр░д р░кр▒Нр░░р░╛р░░р░Вр░нр░╛р░▓ р░Хр░Вр░Яр▒З р░░р▒Лр░Ьр▒Бр░╡р░╛р░░р▒А р░кр░ир▒Бр░▓р░Хр▒Б р░ор░Вр░Ър░┐р░жр░┐.',
-      askPlaceholder: 'р░Пр░жр▒Ир░ир░╛ р░Ер░бр░Чр░Вр░бр░┐: р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░кр▒Жр░│р▒Нр░▓р░┐, р░бр░мр▒Нр░мр▒БтАж', askButton: 'р░Ер░бр░Чр░Вр░бр░┐', kundliCta: 'р░ор▒А р░Йр░Ър░┐р░д р░Ьр░╛р░др░Хр░В 30 р░╕р▒Жр░Хр░ир▒Нр░▓р░▓р▒Л тЖТ', needKundli: 'р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ р░ор▒А р░Ьр░╛р░др░Хр░В р░░р▒Вр░кр▒Кр░Вр░жр░┐р░Вр░Ър░Вр░бр░┐',
-      liveDasha: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б {maha} тАУ {antar} р░жр░╢', liveDashaMaha: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б {maha} р░жр░╢', liveRashi: '{sign}: р░И р░░р▒Лр░Ьр▒Б р░лр░▓р░В', liveSade: 'р░Пр░▓р░┐р░ир░╛р░Яр░┐ р░╢р░ир░┐: {p}р░╡ р░жр░╢ р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐',
-      liveDosha: 'р░Хр▒Бр░Ь р░жр▒Лр░╖р░В: {k} ┬╖ р░Пр░▓р░┐р░ир░╛р░Яр░┐ р░╢р░ир░┐: {s}', yes: 'р░Йр░Вр░жр░┐', no: 'р░▓р▒Зр░жр▒Б',
-      jkAsk: 'р░ор▒А р░Ьр░╛р░др░Хр░В р░др▒Жр░▓р▒Бр░╕р▒Бр░Хр▒Лр░╡р░╛р░▓р░ир░┐ р░Йр░Вр░жр░╛?', jkSub: 'р░ор▒А р░Йр░Ър░┐р░д р░Ьр░╛р░др░Хр░В тАФ р░▓р░Чр▒Нр░ир░В, р░░р░╛р░╢р░┐, р░ир░Хр▒Нр░╖р░др▒Нр░░р░В, р░Чр▒Нр░░р░╣р░╛р░▓р▒Б, р░жр░╢, р░жр▒Лр░╖р░╛р░▓р▒Б тАФ 30 р░╕р▒Жр░Хр░ир▒Нр░▓р░▓р▒Л.',
-      jkCreate: 'р░ир░╛ р░Ьр░╛р░др░Хр░В р░Ър▒Вр░кр░┐р░Вр░Ър▒Б тЖТ', jkMine: 'р░ир░╛ р░Ьр░╛р░др░Хр░В', jkView: 'р░кр▒Вр░░р▒Нр░др░┐ р░Ьр░╛р░др░Хр░В р░Ър▒Вр░бр░Вр░бр░┐ тЖТ', jkDasha: 'р░кр▒Нр░░р░╕р▒Нр░др▒Бр░д р░жр░╢',
-      look: { title: 'р░░р▒Вр░кр░В', mode: 'р░ор▒Лр░бр▒Н', mystic: 'р░ор░┐р░╕р▒Нр░Яр░┐р░Хр▒Н', light: 'р░▓р▒Ир░Яр▒Н', dark: 'р░бр░╛р░░р▒Нр░Хр▒Н', auto: 'р░Жр░Яр▒Л', colour: 'р░░р░Вр░Чр▒Б', done: 'р░╕р░░р▒З',
-        saffron: 'р░Хр░╛р░╖р░╛р░пр░В', teal: 'р░кр░Ър▒Нр░Ъ', rose: 'р░Чр▒Бр░▓р░╛р░мр▒А', blue: 'р░ир▒Ар░▓р░В', button: 'р░░р▒Вр░кр░В р░ор░╛р░░р▒Нр░Ър░Вр░бр░┐' },
-      notify: { title: 'р░░р▒Лр░Ьр▒Бр░╡р░╛р░░р▒А р░ир▒Лр░Яр░┐р░лр░┐р░Хр▒Зр░╖р░ир▒Нр░▓р▒Б', invite: 'р░кр▒Нр░░р░др░┐ р░Йр░жр░пр░В р░И р░░р▒Лр░Ьр▒Б р░кр░Вр░Ър░╛р░Вр░Чр░В, р░ор▒А р░░р▒Лр░Ьр▒Б р░Ор░▓р░╛ р░Йр░Вр░Яр▒Бр░Вр░жр▒Л р░кр▒Кр░Вр░жр░Вр░бр░┐.', on: 'р░Жр░ир▒Н р░Ър▒Зр░пр░Вр░бр░┐', later: 'р░др░░р▒Нр░╡р░╛р░д',
-        time: 'р░╕р░ор░пр░В', off: 'р░Жр░лр▒Н р░Ър▒Зр░пр░Вр░бр░┐', enabled: 'р░Жр░ир▒Н тАФ р░кр▒Нр░░р░др░┐ р░░р▒Лр░Ьр▒Б {time}р░Хр░┐', disabled: 'р░Жр░лр▒Н', denied: 'р░ир▒Лр░Яр░┐р░лр░┐р░Хр▒Зр░╖р░ир▒Нр░▓р▒Б р░мр▒Нр░▓р░╛р░Хр▒Н р░Ер░пр▒Нр░пр░╛р░пр░┐. р░лр▒Лр░ир▒Н р░╕р▒Жр░Яр▒Нр░Яр░┐р░Вр░Чр▒Нр░╕р▒НтАМр░▓р▒Л Jyotirmayaр░Хр░┐ р░Ер░ир▒Бр░ор░др░┐ р░Зр░Ър▒Нр░Ър░┐ р░ор░│р▒Нр░│р▒А р░кр▒Нр░░р░пр░др▒Нр░ир░┐р░Вр░Ър░Вр░бр░┐.',
-        muhurta: 'р░╢р▒Бр░н / р░Ер░╢р▒Бр░н р░ор▒Бр░╣р▒Вр░░р▒Нр░др░В р░╣р▒Жр░Ър▒Нр░Ър░░р░┐р░Хр░▓р▒Б',
-        evening: 'р░╕р░╛р░пр░Вр░др▒Нр░░р░В р░ор▒А р░Хр▒Лр░╕р░В р░Тр░Х р░кр▒Нр░░р░╢р▒Нр░и', eveningTime: 'р░╕р░╛р░пр░Вр░др▒Нр░░р░В р░╕р░ор░пр░В',
-        rahu: 'р░░р░╛р░╣р▒Б р░Хр░╛р░▓р░В', fest: 'ЁЯкФ р░И р░░р▒Лр░Ьр▒Б {name}', reopenTitle: 'ЁЯМЩ р░И р░╡р░╛р░░р░В р░ор▒А р░Хр▒Лр░╕р░В', reopenBody: 'р░И р░╡р░╛р░░р░В р░кр░Вр░Ър░╛р░Вр░Чр░В р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ Jyotirmaya р░др▒Жр░░р░╡р░Вр░бр░┐.', },
-      lunar: { year: 'р░╢р▒Нр░░р▒А {s} р░ир░╛р░о р░╕р░Вр░╡р░др▒Нр░╕р░░р░В', month: '{m} р░ор░╛р░╕р░В', adhika: 'р░Ер░зр░┐р░Х {m}' },
-      cards: { good: 'р░╢р▒Бр░н р░╕р░ор░пр░╛р░▓р▒Б', panchang: 'р░кр░Вр░Ър░╛р░Вр░Чр░В', events: 'р░╢р▒Бр░н р░ор▒Бр░╣р▒Вр░░р▒Нр░др░╛р░▓р▒Б', bad: 'р░Ер░╢р▒Бр░н р░╕р░ор░пр░╛р░▓р▒Б', none: 'р░И р░░р▒Лр░Ьр▒Б р░╢р▒Бр░н р░ор▒Бр░╣р▒Вр░░р▒Нр░др░╛р░▓р▒Б р░▓р▒Зр░╡р▒Б',
-        again: 'р░ор░░р░▓р░╛', amrita: 'р░Ер░ор▒Гр░д р░Хр░╛р░▓р░В', durmuhurtam: 'р░жр▒Бр░░р▒Нр░ор▒Бр░╣р▒Вр░░р▒Нр░др░В', marriage: 'р░╡р░┐р░╡р░╛р░╣р░В', gruhapravesam: 'р░Чр▒Гр░╣р░кр▒Нр░░р░╡р▒Зр░╢р░В', vehicle: 'р░╡р░╛р░╣р░ир░В р░Хр▒Кр░ир▒Бр░Чр▒Лр░▓р▒Б',
-        eventNote: 'р░╕р░╛р░зр░╛р░░р░г р░╕р░Вр░кр▒Нр░░р░жр░╛р░п р░кр░░р░┐р░╢р▒Ар░▓р░и (р░др░┐р░ер░┐, р░ир░Хр▒Нр░╖р░др▒Нр░░р░В, р░╡р░╛р░░р░В, р░ор░╛р░╕р░В; р░░р░╛р░╣р▒Б р░Хр░╛р░▓р░В, р░жр▒Бр░░р▒Нр░ор▒Бр░╣р▒Вр░░р▒Нр░др░В, р░╡р░░р▒Нр░Ьр▒Нр░пр░В р░ор░┐р░ир░╣р░╛). р░кр▒Жр░│р▒Нр░▓р░┐, р░Чр▒Гр░╣р░кр▒Нр░░р░╡р▒Зр░╢р░В р░╡р░Вр░Яр░┐ р░╡р░╛р░Яр░┐р░Хр░┐ р░Цр░Ър▒Нр░Ър░┐р░др░ор▒Ир░и р░ор▒Бр░╣р▒Вр░░р▒Нр░др░╛р░ир▒Нр░ир░┐ р░ор▒А р░кр▒Бр░░р▒Лр░╣р░┐р░др▒Бр░ир░┐ р░жр▒Нр░╡р░╛р░░р░╛ р░ир░┐р░░р▒Нр░зр░╛р░░р░┐р░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.',
-        share: 'р░И р░░р▒Лр░Ьр▒Б р░кр░Вр░Ър░╛р░Вр░Чр░В WhatsAppр░▓р▒Л р░╖р▒Зр░░р▒Н р░Ър▒Зр░пр░Вр░бр░┐', full: 'р░кр▒Вр░░р▒Нр░др░┐ р░кр░Вр░Ър░╛р░Вр░Ч р░кр░Яр▒Нр░Яр░┐р░Хр░▓р▒Б', swipe: 'р░ор░░р░┐р░ир▒Нр░ир░┐ р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ р░╕р▒Нр░╡р▒Ир░кр▒Н р░Ър▒Зр░пр░Вр░бр░┐ тЖТ' },
-      rashi: { pick: 'р░ор▒А р░░р░╛р░╢р░┐р░ир░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐', find: 'р░ор▒А р░░р░╛р░╢р░┐ р░др▒Жр░▓р▒Бр░╕р▒Бр░Хр▒Лр░Вр░бр░┐', mineButton: 'р░ир░╛ р░░р░╛р░╢р░┐ р░Ър▒Вр░кр░┐р░Вр░Ър▒Б', mine: 'р░ор▒Ар░жр░┐', title: '{sign} р░░р░╛р░╢р░┐ р░лр░▓р░┐р░др░╛р░▓р▒Б ({date})', more: 'тАжр░ор░░р░┐р░Вр░д', less: 'р░др░Хр▒Нр░Хр▒Бр░╡ р░Ър▒Вр░кр▒Б',
-        ask: 'р░ир░╛ р░░р▒Лр░Ьр▒Б р░Чр▒Бр░░р░┐р░Вр░Ър░┐ AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐', askQ: 'р░И р░░р▒Лр░Ьр▒Б р░ир░╛ р░░р░╛р░╢р░┐ {sign}р░Хр░┐ р░Ор░▓р░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐? р░ир░╛ р░Ьр░╛р░др░Хр░В р░кр▒Нр░░р░Хр░╛р░░р░В р░Ър▒Жр░кр▒Нр░кр░Вр░бр░┐.', full: 'р░кр▒Вр░░р▒Нр░др░┐ р░Ьр░╛р░др░Хр░В р░др▒Жр░▓р▒Бр░╕р▒Бр░Хр▒Лр░Вр░бр░┐', share: 'WhatsAppр░▓р▒Л р░╖р▒Зр░░р▒Н р░Ър▒Зр░пр░Вр░бр░┐',
-        details: 'р░Чр▒Нр░░р░╣р░╛р░▓ р░╡р░╛р░░р▒Ар░Чр░╛ р░╡р░┐р░╡р░░р░╛р░▓р▒Б', transitGood: 'р░Ер░ир▒Бр░Хр▒Вр░▓р░В', transitCare: 'р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░д', jump: { transits: 'р░Чр▒Нр░░р░╣ р░╕р░Вр░Ър░╛р░░р░В', remedies: 'р░кр░░р░┐р░╣р░╛р░░р░╛р░▓р▒Б', full: 'р░кр▒Вр░░р▒Нр░др░┐ р░Ьр░╛р░др░Хр░В', ask: 'AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐' }, hint: 'р░И р░░р▒Лр░Ьр▒Б р░лр░▓р░┐р░др░╛р░▓р▒Б р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ р░кр▒Ир░и р░ор▒А р░░р░╛р░╢р░┐р░ир░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.',
-        unlock: 'тЦ╢ р░ир▒Зр░Яр░┐ р░░р░╛р░╢р░┐р░лр░▓р░В р░Ър▒Вр░бр░Вр░бр░┐', unlockNote: 'р░Тр░Х р░Ър░┐р░ир▒Нр░и р░пр░╛р░бр▒Н р░Ър▒Вр░╕р▒Нр░др▒З р░Ир░░р▒Лр░Ьр▒Б р░Ер░ир▒Нр░ир░┐ р░░р░╛р░╢р▒Бр░▓ р░лр░▓р░╛р░▓р▒Б р░др▒Жр░░р▒Бр░Ър▒Бр░Хр▒Бр░Вр░Яр░╛р░пр░┐.',
-        luckyTitle: 'р░Ер░жр▒Гр░╖р▒Нр░Я р░╕р▒Вр░Ър░Х р░Ер░Вр░╢р░╛р░▓р▒Б', luckyDay: 'р░░р░Вр░Чр▒Б, р░жр░┐р░Хр▒Нр░Хр▒Б: р░Ир░░р▒Лр░Ьр▒Б р░Ер░ир▒Нр░ир░┐ р░░р░╛р░╢р▒Бр░▓р░Хр▒Б р░Тр░Хр░Яр▒З ┬╖ р░╕р░Вр░Цр▒Нр░пр░▓р▒Б: р░ор▒А р░░р░╛р░╢р░┐р░Хр░┐', luckySign: 'р░ор▒А р░░р░╛р░╢р░┐р░Хр░┐ р░кр▒Нр░░р░др▒Нр░пр▒Зр░Хр░В', colour: 'р░░р░Вр░Чр▒Б', numbers: 'р░╕р░Вр░Цр▒Нр░пр░▓р▒Б', direction: 'р░жр░┐р░Хр▒Нр░Хр▒Б',
-        colours: { Sun: 'р░Хр░╛р░╖р░╛р░пр░В, р░Ор░░р▒Бр░кр▒Б', Moon: 'р░др▒Жр░▓р▒Бр░кр▒Б, р░╡р▒Жр░Вр░бр░┐', Mars: 'р░Ор░░р▒Бр░кр▒Б, р░кр░Чр░бр░кр▒Б р░░р░Вр░Чр▒Б', Mercury: 'р░Жр░Хр▒Бр░кр░Ър▒Нр░Ъ', Jupiter: 'р░кр░╕р▒Бр░кр▒Б, р░мр░Вр░Чр░╛р░░р▒Б', Venus: 'р░др▒Жр░▓р▒Бр░кр▒Б, р░Чр▒Бр░▓р░╛р░мр▒А', Saturn: 'р░ир▒Ар░▓р░В, р░ир░▓р▒Бр░кр▒Б', Rahu: 'р░мр▒Вр░бр░┐р░ж р░░р░Вр░Чр▒Б', Ketu: 'р░Чр▒Лр░зр▒Бр░о р░░р░Вр░Чр▒Б' },
-        directions: { Sun: 'р░др▒Вр░░р▒Нр░кр▒Б', Moon: 'р░╡р░╛р░пр▒Бр░╡р▒Нр░пр░В', Mars: 'р░жр░Хр▒Нр░╖р░┐р░гр░В', Mercury: 'р░Йр░др▒Нр░др░░р░В', Jupiter: 'р░Ир░╢р░╛р░ир▒Нр░пр░В', Venus: 'р░Жр░Чр▒Нр░ир▒Зр░пр░В', Saturn: 'р░кр░╢р▒Нр░Ър░┐р░ор░В', Rahu: 'р░ир▒Ир░░р▒Бр░др░┐', Ketu: 'р░╡р░╛р░пр▒Бр░╡р▒Нр░пр░В' } },
-      detailTitle: 'р░╡р░┐р░╡р░░р░ор▒Ир░и р░кр░Вр░Ър░╛р░Вр░Чр░В', festTitle: 'р░░р░╛р░мр▒Лр░пр▒З р░кр░Вр░бр▒Бр░Чр░▓р▒Б', festToday: 'р░И р░░р▒Лр░Ьр▒Б', festTomorrow: 'р░░р▒Зр░кр▒Б', festIn: '{n} р░░р▒Лр░Ьр▒Бр░▓р▒Нр░▓р▒Л',
-      festMore: 'р░ор░░р░┐р░ир▒Нр░ир░┐ р░кр░Вр░бр▒Бр░Чр░▓р▒Б р░Ър▒Вр░кр▒Б', festLess: 'р░др░Хр▒Нр░Хр▒Бр░╡ р░Ър▒Вр░кр▒Б', festNone: 'р░░р░╛р░мр▒Лр░пр▒З р░Хр▒Кр░ир▒Нр░ир░┐ р░ир▒Жр░▓р░▓р▒Нр░▓р▒Л р░кр░Вр░бр▒Бр░Чр░▓р▒Б р░▓р▒Зр░╡р▒Б.', festLoading: 'р░кр░Вр░бр▒Бр░Чр░▓р▒Б р░▓р▒Лр░бр▒Н р░Ер░╡р▒Бр░др▒Бр░ир▒Нр░ир░╛р░пр░┐тАж',
-      shortcuts: { title: 'р░ор▒А р░ир░Хр▒Нр░╖р░др▒Нр░░р░╛р░▓р▒Б, р░Тр░Хр▒Нр░Х р░Яр░Ър▒НтАМр░▓р▒Л', text: 'р░Тр░Х р░░р▒Ар░бр░┐р░Вр░Чр▒Н р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.', labels: ['р░Ер░░р░Ър▒Зр░пр░┐', 'р░░р░╛р░╢р░┐р░лр░▓р░В', 'р░Яр░╛р░░р▒Л', 'р░кр▒Кр░Вр░др░и'], channel: 'р░╖р░╛р░░р▒Нр░Яр▒НтАМр░Хр░Яр▒НтАМр░▓р▒Б', toggle: 'р░ир▒Лр░Яр░┐р░лр░┐р░Хр▒Зр░╖р░ир▒Н р░мр░╛р░░р▒НтАМр░▓р▒Л р░╖р░╛р░░р▒Нр░Яр▒НтАМр░Хр░Яр▒НтАМр░▓р▒Б' },
-      lifeguide: { card: ['р░▓р▒Ир░лр▒Н р░Чр▒Ир░бр▒Н', 'р░ор▒А р░░р▒Лр░Ьр▒Бр░╡р░╛р░░р▒А р░╕р░ор░др▒Бр░▓р▒Нр░пр░В: р░кр▒Нр░░р▒Зр░о, р░кр░ир░┐, р░бр░мр▒Нр░мр▒Б'], title: 'р░▓р▒Ир░лр▒Н р░Чр▒Ир░бр▒Н', tabs: ['р░ир░┐р░ир▒Нр░и', 'р░И р░░р▒Лр░Ьр▒Б', 'р░░р▒Зр░кр▒Б', 'р░И р░ир▒Жр░▓', 'р░И р░╕р░Вр░╡р░др▒Нр░╕р░░р░В'],
-        balance: ['р░ир░┐р░ир▒Нр░ир░Яр░┐ р░╕р░ор░др▒Бр░▓р▒Нр░пр░В', 'р░ир▒Зр░Яр░┐ р░╕р░ор░др▒Бр░▓р▒Нр░пр░В', 'р░░р▒Зр░кр░Яр░┐ р░╕р░ор░др▒Бр░▓р▒Нр░пр░В', 'р░И р░ир▒Жр░▓ р░╕р░ор░др▒Бр░▓р▒Нр░пр░В', 'р░И р░╕р░Вр░╡р░др▒Нр░╕р░░ р░╕р░ор░др▒Бр░▓р▒Нр░пр░В'],
-        areas: { love: 'р░кр▒Нр░░р▒Зр░о', family: 'р░Хр▒Бр░Яр▒Бр░Вр░мр░В', marriage: 'р░╡р░┐р░╡р░╛р░╣р░В', career: 'р░Йр░жр▒Нр░пр▒Лр░Чр░В', wealth: 'р░зр░ир░В', health: 'р░Жр░░р▒Лр░Чр▒Нр░пр░В' }, byArea: 'р░Ер░Вр░╢р░╛р░▓ р░╡р░╛р░░р▒Ар░Чр░╛', supported: '{planets} р░Ер░ир▒Бр░Хр▒Вр░▓р░В',
-        yourSign: 'р░ор▒А р░░р░╛р░╢р░┐', change: 'р░ор░╛р░░р▒Нр░Ър░Вр░бр░┐', pick: 'р░ор░░р▒Л р░░р░╛р░╢р░┐ р░Ър▒Вр░бр░Вр░бр░┐', pickFirst: 'р░ор▒А р░╕р░ор░др▒Бр░▓р▒Нр░пр░В р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ р░ор▒А р░░р░╛р░╢р░┐р░ир░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.', loading: 'р░ор▒А р░╕р░ор░др▒Бр░▓р▒Нр░пр░В р░▓р▒Жр░Хр▒Нр░Хр░┐р░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░ВтАж', failed: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░▓р▒Лр░бр▒Н р░Хр░╛р░▓р▒Зр░жр▒Б. р░жр░пр░Ър▒Зр░╕р░┐ р░ор░│р▒Нр░▓р▒А р░кр▒Нр░░р░пр░др▒Нр░ир░┐р░Вр░Ър░Вр░бр░┐.',
-        personal: 'р░ор▒А р░Ьр░╛р░др░Хр░╛р░ир░┐р░Хр░┐ р░кр▒Нр░░р░др▒Нр░пр▒Зр░Хр░В: р░Ьр░ир▒Нр░о р░ир░Хр▒Нр░╖р░др▒Нр░░р░В {star}', dashaLine: 'р░жр░╢ {lords}', general: 'р░И р░░р░╛р░╢р░┐р░Хр░┐ р░╕р░╛р░зр░╛р░░р░г р░лр░▓р░┐р░др░В. р░ор▒Ар░Хр▒Б р░кр▒Нр░░р░др▒Нр░пр▒Зр░Хр░ор▒Ир░и р░▓р▒Ир░лр▒Н р░Чр▒Ир░бр▒Н р░Хр▒Лр░╕р░В р░ор▒А р░Ьр░╛р░др░Хр░В р░╕р▒Гр░╖р▒Нр░Яр░┐р░Вр░Ър░Вр░бр░┐.', tara: 'р░И р░░р▒Лр░Ьр▒Б р░ор▒А р░др░╛р░░: {tara}',
-        taraNames: ['р░Ьр░ир▒Нр░о', 'р░╕р░Вр░кр░др▒Н', 'р░╡р░┐р░кр░др▒Н', 'р░Хр▒Нр░╖р▒Зр░о', 'р░кр▒Нр░░р░др▒Нр░пр░Хр▒Н', 'р░╕р░╛р░зр░и', 'р░ир▒Ир░зр░и', 'р░ор░┐р░др▒Нр░░', 'р░кр░░р░о р░ор░┐р░др▒Нр░░'], taraEffect: ['р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░д', 'р░╕р░╛р░зр░╛р░░р░гр░В', 'р░Ер░ир▒Бр░Хр▒Вр░▓р░В'],
-        unlock: 'р░╡р▒Ар░бр░┐р░пр▒Л р░Чр▒Бр░░р▒Нр░др▒Б р░Йр░ир▒Нр░и р░Яр▒Нр░пр░╛р░мр▒НтАМр░▓р▒Б р░Тр░Х р░Ър░┐р░ир▒Нр░и р░кр▒Нр░░р░Хр░Яр░и р░др░░р▒Нр░╡р░╛р░д, р░И р░░р░╛р░╢р░┐р░Хр░┐ р░И р░░р▒Лр░Ьр░Вр░др░╛ р░др▒Жр░░р▒Бр░Ър▒Бр░Хр▒Бр░Вр░Яр░╛р░пр░┐.',
-        note: 'р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐ р░ир▒Бр░Вр░Ър░┐ р░Чр▒Нр░░р░╣ р░╕р░Вр░Ър░╛р░░р░╛р░▓ р░Жр░зр░╛р░░р░Вр░Чр░╛ р░▓р▒Жр░Хр▒Нр░Хр░┐р░Вр░Ър░┐р░ир░жр░┐. р░Жр░▓р▒Лр░Ър░ир░Хр▒Б р░ор░╛р░░р▒Нр░Чр░жр░░р▒Нр░╢р░ир░В р░ор░╛р░др▒Нр░░р░ор▒З, р░Ьр▒Лр░╕р▒Нр░пр░В р░Хр░╛р░жр▒Б.',
-        text: { love: ['р░ир░┐р░жр░╛р░ир░Вр░Чр░╛ р░Йр░Вр░бр░Вр░бр░┐. р░Ор░Хр▒Нр░Хр▒Бр░╡ р░╡р░┐р░ир░Вр░бр░┐, р░др▒Кр░Вр░жр░░р░кр░бр░┐ р░ор░╛р░Яр▒Нр░▓р░╛р░бр░Хр░Вр░бр░┐.', 'р░ир░┐р░▓р░Хр░бр░Чр░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐. р░Ър░┐р░ир▒Нр░и р░Ър░┐р░ир▒Нр░и р░╢р▒Нр░░р░жр▒Нр░зр░▓р▒З р░ор▒Бр░Цр▒Нр░пр░В.', 'р░кр▒Нр░░р▒Зр░о р░нр░╛р░╡р░╛р░▓р▒Б р░╕р▒Бр░▓р░нр░Вр░Чр░╛ р░кр░Вр░Ър▒Бр░Хр▒Лр░Чр░▓р░░р▒Б. р░ор░ир░╕р▒Бр░▓р▒Л р░ор░╛р░Я р░Ър▒Жр░кр▒Нр░кр░бр░╛р░ир░┐р░Хр░┐ р░ор░Вр░Ър░┐ р░╕р░ор░пр░В.'],
-          family: ['р░Ер░кр░╛р░░р▒Нр░ер░╛р░▓р▒Б р░░р░╛р░╡р░Ър▒Нр░Ър▒Б. р░кр▒Нр░░р░╢р░╛р░Вр░др░Вр░Чр░╛ р░Йр░Вр░бр░┐ р░Зр░др░░р▒Бр░▓р░Хр▒Б р░Ър▒Лр░Яр░┐р░╡р▒Нр░╡р░Вр░бр░┐.', 'р░╕р░╛р░зр░╛р░░р░гр░Вр░Чр░╛, р░кр▒Нр░░р░╢р░╛р░Вр░др░Вр░Чр░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐. р░Ур░кр░┐р░Хр░Чр░╛ р░жр░┐р░ир░Ър░░р▒Нр░п р░кр░╛р░Яр░┐р░Вр░Ър░Вр░бр░┐.', 'р░Зр░Вр░Яр▒Нр░▓р▒Л р░╕р░╣р░Хр░╛р░░р░В р░мр░╛р░Чр▒Бр░Вр░Яр▒Бр░Вр░жр░┐. р░Хр▒Бр░Яр▒Бр░Вр░мр░Вр░др▒Л р░Чр░бр░кр░бр░В р░Йр░др▒Нр░╕р░╛р░╣р░╛р░ир▒Нр░ир░┐р░╕р▒Нр░др▒Бр░Вр░жр░┐.'],
-          marriage: ['р░Ур░кр░┐р░Х р░Ер░╡р░╕р░░р░В. р░кр▒Жр░жр▒Нр░ж р░ир░┐р░░р▒Нр░гр░пр░╛р░▓р▒Б р░╡р░╛р░пр░┐р░жр░╛ р░╡р▒Зр░пр░Вр░бр░┐, р░╡р░╛р░жр░ир░▓р▒Б р░╡р░жр▒Нр░жр▒Б.', 'р░ир░┐р░▓р░Хр░бр░Чр░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐. р░Хр░▓р░┐р░╕р░┐ р░Ър▒Зр░╕р▒З р░жр░┐р░ир░Ър░░р▒Нр░пр░▓р▒Б р░╣р░╛р░пр░┐р░ир░┐р░╕р▒Нр░др░╛р░пр░┐.', 'р░Ер░╡р░Чр░╛р░╣р░и р░кр▒Жр░░р▒Бр░Чр▒Бр░др▒Бр░Вр░жр░┐. р░ор░ир░╕р▒Б р░╡р░┐р░кр▒Нр░кр░┐ р░ор░╛р░Яр▒Нр░▓р░╛р░бр░Яр░╛р░ир░┐р░Хр░┐ р░ор░Вр░Ър░┐ р░╕р░ор░пр░В.'],
-          career: ['р░ир░┐р░жр░╛р░ир░Вр░Чр░╛, р░Хр░╖р▒Нр░Яр░Вр░Чр░╛ р░Йр░Вр░бр░╡р░Ър▒Нр░Ър▒Б. р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░др░Чр░╛ р░кр▒Нр░░р░гр░╛р░│р░┐р░Х р░╡р▒Зр░╕р▒Бр░Хр▒Лр░Вр░бр░┐, р░░р░┐р░╕р▒Нр░Хр▒Н р░╡р░жр▒Нр░жр▒Б.', 'р░кр▒Бр░░р▒Лр░Чр░др░┐ р░ир░┐р░▓р░Хр░бр░Чр░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐. р░Тр░Х р░кр░ир░┐р░кр▒И р░жр▒Гр░╖р▒Нр░Яр░┐ р░кр▒Жр░Яр▒Нр░Яр░Вр░бр░┐.', 'р░кр░ир▒Бр░▓р▒Б р░мр░╛р░Чр░╛ р░╕р░╛р░Чр▒Бр░др░╛р░пр░┐. р░Ър▒Кр░░р░╡ р░др▒Ар░╕р▒Бр░Хр▒Лр░╡р░бр░╛р░ир░┐р░Хр░┐ р░ор░Вр░Ър░┐ р░╕р░ор░пр░В.'],
-          wealth: ['р░Цр░░р▒Нр░Ър▒Бр░▓р▒Нр░▓р▒Л р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░д. р░др▒Кр░Вр░жр░░р░кр░╛р░Яр▒Б р░Хр▒Кр░ир▒Бр░Чр▒Лр░│р▒Нр░▓р▒Б, р░Ер░кр▒Нр░кр▒Бр░▓р▒Б р░Зр░╡р▒Нр░╡р░бр░В р░╡р░жр▒Нр░жр▒Б.', 'р░╕р░ор░др▒Бр░▓р▒Нр░пр░В. р░Цр░░р▒Нр░Ър▒Бр░▓р▒Б р░Чр░ор░ир░┐р░Вр░Ър░Вр░бр░┐, р░Жр░Ър░░р░гр░╛р░др▒Нр░ор░Хр░Вр░Чр░╛ р░Йр░Вр░бр░Вр░бр░┐.', 'р░Жр░░р▒Нр░ер░┐р░Х р░╡р░┐р░╖р░пр░╛р░▓р▒Б р░Ер░ир▒Бр░Хр▒Вр░▓р░В. р░кр▒Нр░░р░гр░╛р░│р░┐р░Х, р░кр▒Кр░жр▒Бр░кр▒Бр░Хр▒Б р░ор░Вр░Ър░┐ р░╕р░ор░пр░В.'],
-          health: ['р░др▒Зр░▓р░┐р░Хр░Чр░╛ р░др▒Ар░╕р▒Бр░Хр▒Лр░Вр░бр░┐. р░мр░╛р░Чр░╛ р░╡р░┐р░╢р▒Нр░░р░╛р░Вр░др░┐, р░ир▒Ар░│р▒Нр░▓р▒Б р░др░╛р░Чр░Вр░бр░┐, р░Ер░др░┐р░Чр░╛ р░╢р▒Нр░░р░ор░┐р░Вр░Ър░Хр░Вр░бр░┐.', 'р░ор▒Кр░др▒Нр░др░Вр░Чр░╛ р░мр░╛р░Чр▒Бр░Вр░жр░┐. р░╕р░ор░пр░╛р░ир░┐р░Хр░┐ р░нр▒Лр░Ьр░ир░В, р░╡р░┐р░╢р▒Нр░░р░╛р░Вр░др░┐ р░кр░╛р░Яр░┐р░Вр░Ър░Вр░бр░┐.', 'р░╢р░Хр▒Нр░др░┐ р░мр░╛р░Чр▒Бр░Вр░жр░┐. р░╡р▒Нр░пр░╛р░пр░╛р░ор░В, р░ир░┐р░жр▒Нр░░ р░Хр▒Кр░ир░╕р░╛р░Чр░┐р░Вр░Ър░Вр░бр░┐.'] } },
-      signmatch: { card: ['р░░р░╛р░╢р░┐ р░кр▒Кр░Вр░др░и', 'р░П р░░р▒Жр░Вр░бр▒Б р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р▒Бр░▓ р░кр▒Кр░Вр░др░и р░Ер░пр░┐р░ир░╛'], title: 'р░░р░╛р░╢р░┐ р░кр▒Кр░Вр░др░и', you: 'р░ор▒Ар░░р▒Б', partner: 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐', choose: 'р░░р░╛р░╢р░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐', tabs: ['р░ир░╛ р░░р░╛р░╢р░┐', 'р░нр░╛р░Чр░╕р▒Нр░╡р░╛р░ор░┐ р░░р░╛р░╢р░┐'], see: 'р░ор░╛ р░кр▒Кр░Вр░др░и р░Ър▒Вр░бр░Вр░бр░┐',
-        verdict: { excellent: 'р░Ер░жр▒Нр░нр▒Бр░др░ор▒Ир░и р░кр▒Кр░Вр░др░и', good: 'р░ор░Вр░Ър░┐ р░кр▒Кр░Вр░др░и', average: 'р░╕р░Чр░Яр▒Б р░кр▒Кр░Вр░др░и', low: 'р░Ур░кр░┐р░Х р░Ер░╡р░╕р░░р░В' },
-        text: { excellent: 'р░ор▒А р░░р░╛р░╢р▒Бр░▓р▒Б р░╕р░╣р░Ьр░Вр░Чр░╛ р░Хр░▓р▒Бр░╕р▒Нр░др░╛р░пр░┐: р░╕р▒Бр░▓р░нр░ор▒Ир░и р░Ер░╡р░Чр░╛р░╣р░и, р░Тр░Хр▒Зр░▓р░╛р░Вр░Яр░┐ р░жр▒Гр░Хр▒Нр░кр░ер░В.', good: 'р░╕р▒Мр░Хр░░р▒Нр░пр░╡р░Вр░др░ор▒Ир░и р░Ьр░Вр░Я, р░Хр▒Кр░ир▒Нр░ир░┐ р░др▒Зр░бр░╛р░▓р░Хр▒Б р░╕р░░р▒Нр░жр▒Бр░Хр▒Бр░кр▒Лр░╡р░╛р░▓р░┐.', average: 'р░Хр▒Кр░ир▒Нр░ир░┐ р░др▒Зр░бр░╛р░▓р░кр▒И р░Хр▒Гр░╖р░┐ р░Ър▒Зр░пр░╛р░▓р░┐. р░Ур░кр░┐р░Х, р░ор░╛р░Яр▒Нр░▓р░╛р░бр▒Бр░Хр▒Лр░╡р░бр░В р░╕р░╣р░╛р░пр░кр░бр░др░╛р░пр░┐.', low: 'р░╕р▒Нр░╡р░нр░╛р░╡р░╛р░▓р▒Б р░Ър░╛р░▓р░╛ р░нр░┐р░ир▒Нр░ир░В. р░Ер░╡р░Чр░╛р░╣р░и, р░Хр▒Гр░╖р░┐р░др▒Л р░╕р░╛р░Чр░╡р░Ър▒Нр░Ър▒Б.' },
-        friendship: 'р░ор░ир░╕р▒Б, р░╕р▒Нр░ир▒Зр░╣р░В', family: 'р░Хр▒Бр░Яр▒Бр░Вр░мр░В, р░╕р░Вр░кр░ж', dosha: 'р░░р▒Жр░Вр░бр▒Б р░░р░╛р░╢р▒Бр░▓р▒Б р░Тр░Хр░жр░╛р░ир░┐р░Хр▒Кр░Хр░Яр░┐ р░Хр░╖р▒Нр░Яр░ор▒Ир░и р░╕р▒Нр░ер░╛р░ир░Вр░▓р▒Л р░Йр░ир▒Нр░ир░╛р░пр░┐ (р░нр░Хр▒Вр░Я р░жр▒Лр░╖р░В). р░Ър░╛р░▓р░╛ р░Хр▒Бр░Яр▒Бр░Вр░мр░╛р░▓р▒Б р░кр▒Жр░│р▒Нр░▓р░┐р░Хр░┐ р░ор▒Бр░Вр░жр▒Б р░жр▒Ар░ир▒Нр░ир░┐ р░Ър▒Вр░╕р▒Нр░др░╛р░пр░┐.',
-        full: 'р░кр▒Вр░░р▒Нр░др░┐ 36 р░Чр▒Бр░гр░╛р░▓ р░Ьр░╛р░др░Х р░кр▒Кр░Вр░др░и', note: 'р░░р▒Жр░Вр░бр▒Б р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р▒Бр░▓ р░Жр░зр░╛р░░р░Вр░Чр░╛ р░ор░╛р░др▒Нр░░р░ор▒З. р░Жр░▓р▒Лр░Ър░ир░Хр▒Б р░ор░╛р░░р▒Нр░Чр░жр░░р▒Нр░╢р░ир░В, р░Ьр▒Лр░╕р▒Нр░пр░В р░Хр░╛р░жр▒Б.', shareLine: '{a} + {b}: {percent}% р░░р░╛р░╢р░┐ р░кр▒Кр░Вр░др░и, {verdict}.' },
-      numerology: { card: ['р░╕р░Вр░Цр▒Нр░пр░╛ р░╢р░╛р░╕р▒Нр░др▒Нр░░р░В', 'р░кр▒Зр░░р▒Б, р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А р░ир▒Бр░Вр░Ър░┐ р░ор▒А р░╕р░Вр░Цр▒Нр░пр░▓р▒Б'], title: 'р░╕р░Вр░Цр▒Нр░пр░╛ р░╢р░╛р░╕р▒Нр░др▒Нр░░р░В', intro: 'р░ор▒А р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А, р░кр▒Зр░░р▒Б р░Жр░зр░╛р░░р░Вр░Чр░╛ р░ор▒А р░ор▒Вр░▓р░╛р░Вр░Хр░В, р░нр░╛р░Чр▒Нр░пр░╛р░Вр░Хр░В, р░ир░╛р░о р░╕р░Вр░Цр▒Нр░п.',
-        dob: 'р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А', name: 'р░кр▒Зр░░р▒Б (р░Зр░Вр░Чр▒Нр░▓р▒Ар░╖р▒Н р░Ер░Хр▒Нр░╖р░░р░╛р░▓р▒Нр░▓р▒Л)', show: 'р░ир░╛ р░╕р░Вр░Цр▒Нр░пр░▓р▒Б р░Ър▒Вр░кр░┐р░Вр░Ър▒Б', bad: 'р░жр░пр░Ър▒Зр░╕р░┐ р░╕р░░р▒Ир░и р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А р░Зр░╡р▒Нр░╡р░Вр░бр░┐.', change: 'р░ор░╛р░░р▒Нр░Ър░Вр░бр░┐',
-        moolank: ['р░ор▒Вр░▓р░╛р░Вр░Хр░В', 'р░Ьр░ир▒Нр░о р░╕р░Вр░Цр▒Нр░п ┬╖ р░ор▒А р░╕р▒Нр░╡р░нр░╛р░╡р░В'], bhagyank: ['р░нр░╛р░Чр▒Нр░пр░╛р░Вр░Хр░В', 'р░Ер░жр▒Гр░╖р▒Нр░Я р░╕р░Вр░Цр▒Нр░п ┬╖ р░Ьр▒Ар░╡р░┐р░д р░ор░╛р░░р▒Нр░Чр░В'], nameNum: ['р░ир░╛р░о р░╕р░Вр░Цр▒Нр░п', 'р░Зр░др░░р▒Бр░▓р▒Б р░ор░┐р░ор▒Нр░ор░▓р▒Нр░ир░┐ р░Ор░▓р░╛ р░Ър▒Вр░╕р▒Нр░др░╛р░░р▒Б'],
-        noName: 'р░ир░╛р░о р░╕р░Вр░Цр▒Нр░п р░Хр▒Лр░╕р░В р░ор▒А р░кр▒Зр░░р▒Бр░ир▒Б р░Зр░Вр░Чр▒Нр░▓р▒Ар░╖р▒Н р░Ер░Хр▒Нр░╖р░░р░╛р░▓р▒Нр░▓р▒Л р░Яр▒Ир░кр▒Н р░Ър▒Зр░пр░Вр░бр░┐.', planet: 'р░Чр▒Нр░░р░╣р░В', strengths: 'р░мр░▓р░╛р░▓р▒Б', care: 'р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░д',
-        harmonyGood: 'р░ор▒А р░ир░╛р░о р░╕р░Вр░Цр▒Нр░п, р░ор▒Вр░▓р░╛р░Вр░Хр░В р░ор░┐р░др▒Нр░░ р░╕р░Вр░Цр▒Нр░пр░▓р▒Б: р░ор░Вр░Ър░┐ р░кр▒Кр░Вр░др░и.', harmonyNeutral: 'р░ор▒А р░ир░╛р░о р░╕р░Вр░Цр▒Нр░п, р░ор▒Вр░▓р░╛р░Вр░Хр░В р░Тр░Хр░жр░╛р░ир░┐р░Хр▒Кр░Хр░Яр░┐ р░╕р░ор░В (р░др░Яр░╕р▒Нр░ер░В).',
-        year: 'р░ор▒А {year} р░╕р░Вр░╡р░др▒Нр░╕р░░р░В: р░╕р░Вр░Цр▒Нр░п {n}', lucky: 'р░ор▒Ар░Хр▒Б р░Ер░жр▒Гр░╖р▒Нр░Яр░В', luckyNumbers: 'р░╕р░Вр░Цр▒Нр░пр░▓р▒Б', luckyDays: 'р░░р▒Лр░Ьр▒Бр░▓р▒Б', luckyColours: 'р░░р░Вр░Чр▒Бр░▓р▒Б',
-        askAi: 'р░ир░╛ р░╕р░Вр░Цр▒Нр░пр░▓ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐', askQ: 'р░ир░╛ р░ор▒Вр░▓р░╛р░Вр░Хр░В {m}, р░нр░╛р░Чр▒Нр░пр░╛р░Вр░Хр░В {b}. р░И р░╕р░Вр░Цр▒Нр░пр░▓р▒Б р░ир░╛ р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░мр░Вр░зр░╛р░▓ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Пр░В р░Ър▒Жр░мр▒Бр░др▒Бр░ир▒Нр░ир░╛р░пр░┐?', share: 'р░╖р▒Зр░░р▒Н р░Ър▒Зр░пр░Вр░бр░┐',
-        note: 'р░╕р░Вр░Цр▒Нр░пр░╛ р░╢р░╛р░╕р▒Нр░др▒Нр░░р░В р░Жр░▓р▒Лр░Ър░ир░Хр▒Б р░Тр░Х р░╕р░Вр░кр▒Нр░░р░жр░╛р░п р░ор░╛р░░р▒Нр░Чр░В р░ор░╛р░др▒Нр░░р░ор▒З, р░Цр░Ър▒Нр░Ър░┐р░др░ор▒Ир░ир░жр░┐ р░Хр░╛р░жр▒Б.' },
-      menu: { title: 'р░ор▒Жр░ир▒В', open: 'р░ор▒Жр░ир▒В р░др▒Жр░░р░╡р░Вр░бр░┐', close: 'р░ор▒Жр░ир▒В р░ор▒Вр░╕р░┐р░╡р▒Зр░пр░Вр░бр░┐', home: 'р░╣р▒Лр░ор▒Н', panchang: 'р░ир▒Зр░Яр░┐ р░кр░Вр░Ър░╛р░Вр░Чр░В', appearance: 'р░░р▒Вр░кр░В', privacy: 'р░Чр▒Лр░кр▒Нр░пр░д, р░ир░┐р░мр░Вр░зр░ир░▓р▒Б', back: 'р░╡р▒Жр░ир▒Бр░Хр░Хр▒Б', shareReading: 'р░╖р▒Зр░░р▒Н', shareApp: 'р░пр░╛р░кр▒Н р░╖р▒Зр░░р▒Н р░Ър▒Зр░пр░Вр░бр░┐', rateApp: 'р░пр░╛р░кр▒НтАМр░Хр▒Б р░░р▒Зр░Яр░┐р░Вр░Чр▒Н р░Зр░╡р▒Нр░╡р░Вр░бр░┐', funFact: 'р░др▒Жр░▓р▒Бр░╕р░╛?', listen: 'р░╡р░┐р░ир░Вр░бр░┐', chips: { palm: 'р░ир░╛ р░Ер░░р░Ър▒Зр░др░┐ р░░р▒Зр░Цр░▓р▒Б', tarot: 'р░Яр░╛р░░р▒Л р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б', lifeguide: 'р░ир░╛ р░▓р▒Ир░лр▒Н р░Чр▒Ир░бр▒Н', numbers: 'р░ир░╛ р░╕р░Вр░Цр▒Нр░пр░▓р▒Б', signmatch: 'р░░р░╛р░╢р░┐ р░кр▒Кр░Вр░др░и' }, shareLine: 'р░ор▒А р░Ьр▒Зр░мр▒Бр░▓р▒Л р░ор▒А р░╡р▒Ир░жр░┐р░Х р░Ьр▒Нр░пр▒Лр░др░┐р░╖р▒Нр░Хр▒Бр░бр▒Б: р░кр░Вр░Ър░╛р░Вр░Чр░В, р░Ьр░╛р░др░Хр░В, р░░р░╛р░╢р░┐ р░лр░▓р░╛р░▓р▒Б, р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░▓р▒Б, р░Яр░╛р░░р▒Л р░ор▒А р░нр░╛р░╖р░▓р▒Л.' },
-      palm: { card: ['р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░▓р▒Б', 'р░Хр▒Жр░ор▒Жр░░р░╛р░др▒Л р░ор▒А р░Ер░░р░Ър▒Зр░др░┐р░ир░┐ р░╕р▒Нр░Хр░╛р░ир▒Н р░Ър▒Зр░пр░Вр░бр░┐'], title: 'р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░╛ р░╡р░┐р░╢р▒Нр░▓р▒Зр░╖р░г', step: 'р░жр░╢ 1 ┬╖ р░Ър▒Зр░пр░┐ р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐', left: 'р░Ор░бр░о р░Ер░░р░Ър▒Зр░пр░┐', right: 'р░Хр▒Бр░бр░┐ р░Ер░░р░Ър▒Зр░пр░┐',
-        tipsTitle: 'р░╕р▒Нр░кр░╖р▒Нр░Яр░ор▒Ир░и р░╕р▒Нр░Хр░╛р░ир▒Н р░Хр▒Лр░╕р░В', tips: ['р░ор░Вр░Ър░┐ р░╡р▒Жр░▓р▒Бр░др▒Бр░░р▒Бр░▓р▒Л р░др▒Ар░пр░Вр░бр░┐', 'р░Ер░░р░Ър▒Зр░пр░┐ р░Ър░жр▒Бр░ир▒Бр░Чр░╛, р░╡р▒Зр░│р▒Нр░▓р▒Б р░╡р░┐р░бр░жр▒Ар░╕р░┐ р░Йр░Вр░Ър░Вр░бр░┐', 'р░кр▒Вр░░р▒Нр░др░┐ р░Ър▒Зр░пр░┐ р░лр▒Нр░░р▒Зр░ор▒НтАМр░▓р▒Л р░Йр░Вр░бр░╛р░▓р░┐'],
-        scan: 'р░╕р▒Нр░Хр░╛р░ир▒Н', reading: 'р░ор▒А р░Ер░░р░Ър▒Зр░др░┐р░ир░┐ р░Ър░жр▒Бр░╡р▒Бр░др▒Бр░ир▒Нр░ир░╛р░ВтАж', notPalm: 'р░Ер░░р░Ър▒Зр░пр░┐ р░╕р▒Нр░кр░╖р▒Нр░Яр░Вр░Чр░╛ р░Хр░ир░┐р░кр░┐р░Вр░Ър░▓р▒Зр░жр▒Б. р░ор░Вр░Ър░┐ р░╡р▒Жр░▓р▒Бр░др▒Бр░░р▒Бр░▓р▒Л р░кр▒Вр░░р▒Нр░др░┐ р░Ер░░р░Ър▒Зр░пр░┐ р░Хр░ир░┐р░кр░┐р░Вр░Ър▒Зр░▓р░╛ р░ор░│р▒Нр░│р▒А р░кр▒Нр░░р░пр░др▒Нр░ир░┐р░Вр░Ър░Вр░бр░┐.',
-        off: 'р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░╛ р░кр░ар░ир░В р░кр▒Нр░░р░╕р▒Нр░др▒Бр░др░В р░Жр░кр░┐р░╡р▒Зр░пр░мр░бр░┐р░Вр░жр░┐.', failed: 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░Ър░жр░╡р░▓р▒Зр░Хр░кр▒Лр░пр░╛р░В. р░Хр░╛р░╕р▒Зр░кр░Яр░┐ р░др░░р▒Нр░╡р░╛р░д р░ор░│р▒Нр░│р▒А р░кр▒Нр░░р░пр░др▒Нр░ир░┐р░Вр░Ър░Вр░бр░┐.',
-        cam: { hint: 'р░ор▒А р░др▒Жр░░р░┐р░Ър░┐р░и р░Ер░░р░Ър▒Зр░др░┐р░ир░┐ р░Ер░╡р▒Бр░Яр▒НтАМр░▓р▒Ир░ир▒Н р░▓р▒Лр░кр░▓ р░Йр░Вр░Ър░Вр░бр░┐', dark: 'р░Ър░╛р░▓р░╛ р░Ър▒Ар░Хр░Яр░┐р░Чр░╛ р░Йр░Вр░жр░┐. р░Ор░Хр▒Нр░Хр▒Бр░╡ р░╡р▒Жр░▓р▒Бр░др▒Бр░░р▒Бр░▓р▒Лр░Хр░┐ р░╡р▒Жр░│р▒Нр░▓р░┐ р░ор░│р▒Нр░▓р▒А р░ир▒Кр░Хр▒Нр░Хр░Вр░бр░┐.', gallery: 'р░лр▒Лр░Яр▒Л р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐', close: 'р░ор▒Вр░╕р░┐р░╡р▒Зр░пр░Вр░бр░┐', snap: 'р░лр▒Лр░Яр▒Л р░др▒Ар░пр░Вр░бр░┐' }, tabs: ['р░╣р░╕р▒Нр░др░В', 'р░кр▒Нр░░р▒Зр░о', 'р░Йр░жр▒Нр░пр▒Лр░Чр░В'], lines: { heart: 'р░╣р▒Гр░жр░п р░░р▒Зр░Ц', head: 'р░ор░╕р▒Нр░др░┐р░╖р▒Нр░Х р░░р▒Зр░Ц', life: 'р░Ьр▒Ар░╡р░и р░░р▒Зр░Ц', fate: 'р░нр░╛р░Чр▒Нр░п р░░р▒Зр░Ц', summary: 'р░ор▒А р░Ер░░р░Ър▒Зр░пр░┐ р░Ър▒Жр░кр▒Нр░кр▒Зр░жр░┐' },
-        ready: 'р░ор▒А р░Ер░░р░Ър▒Зр░пр░┐ р░лр▒Лр░Яр▒Л р░╕р░┐р░жр▒Нр░зр░В.', see: 'тЦ╢ р░ир░╛ р░░р▒Ар░бр░┐р░Вр░Чр▒Н р░Ър▒Вр░бр░Вр░бр░┐', again: 'р░ор░│р▒Нр░│р▒А р░╕р▒Нр░Хр░╛р░ир▒Н', askAi: 'р░ир░╛ р░Ер░░р░Ър▒Зр░пр░┐ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐', share: 'р░╖р▒Зр░░р▒Н', privacy: 'р░ор▒А р░лр▒Лр░Яр▒Л р░И р░Тр░Хр▒Нр░Х р░кр░ар░ир░╛р░ир░┐р░Хр▒З р░╡р░╛р░бр░мр░бр▒Бр░др▒Бр░Вр░жр░┐, р░╕р▒Зр░╡р▒Н р░Ър▒Зр░пр░мр░бр░жр▒Б.',
-        askQ: 'р░ир░╛ р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░╛ р░кр░ар░ир░В р░Зр░▓р░╛ р░Ър▒Жр░кр▒Нр░кр░┐р░Вр░жр░┐: тАЬ{summary}тАЭ р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ир▒Зр░ир▒Б р░жр▒Зр░ир░┐р░кр▒И р░жр▒Гр░╖р▒Нр░Яр░┐ р░кр▒Жр░Яр▒Нр░Яр░╛р░▓р░┐?',
-        rekhaNote: 'р░И р░Чр▒Ар░др░▓р▒Б р░ор▒А р░лр▒Лр░Яр▒Л р░ир▒Бр░Вр░бр░┐ AI р░Ер░Вр░Ър░ир░╛ р░╡р▒Зр░╕р░┐р░ир░╡р░┐, р░ор░╛р░░р▒Нр░Чр░жр░░р▒Нр░╢р░ир░В р░Хр▒Лр░╕р░В р░ор░╛р░др▒Нр░░р░ор▒З тАФ р░Цр░Ър▒Нр░Ър░┐р░др░ор▒Ир░и р░░р▒Зр░Цр░▓р▒Б р░Хр░╛р░╡р▒Б.' },
-      tarot: { card: ['р░Яр░╛р░░р▒Л', 'р░кр▒Нр░░р▒Зр░о, р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░бр░мр▒Нр░мр▒Б р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Хр░╛р░░р▒Нр░бр▒Бр░▓р░ир▒Б р░Ер░бр░Чр░Вр░бр░┐'], title: 'р░Яр░╛р░░р▒Л', ask: 'р░Хр░╛р░░р▒Нр░бр▒Бр░▓р░ир▒Б р░Пр░ор░┐ р░Ер░бр░Чр░╛р░▓р░ир▒Бр░Хр▒Бр░Вр░Яр▒Бр░ир▒Нр░ир░╛р░░р▒Б?',
-        topics: { love: 'р░кр▒Нр░░р▒Зр░о', career: 'р░Йр░жр▒Нр░пр▒Лр░Чр░В', money: 'р░бр░мр▒Нр░мр▒Б', health: 'р░Жр░░р▒Лр░Чр▒Нр░пр░В', luck: 'р░Ер░жр▒Гр░╖р▒Нр░Яр░В', family: 'р░Хр▒Бр░Яр▒Бр░Вр░мр░В' },
-        pick: '3 р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐', picked: '3р░▓р▒Л {n} р░Ор░Вр░Ър▒Бр░Хр▒Бр░ир▒Нр░ир░╛р░░р▒Б', shuffle: 'р░ор▒А р░кр▒Нр░░р░╢р▒Нр░ир░кр▒И р░ор░ир░╕р▒Б р░ир░┐р░▓р░┐р░кр░┐, р░ор▒Вр░бр▒Б р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.',
-        positions: ['р░Чр░др░В', 'р░╡р░░р▒Нр░др░ор░╛р░ир░В', 'р░нр░╡р░┐р░╖р▒Нр░пр░др▒Нр░др▒Б'], reversed: 'р░др░▓р░Хр░┐р░Вр░жр▒Бр░▓р▒Б', advice: 'р░ор▒Ар░Хр▒Л р░╕р░Вр░жр▒Зр░╢р░В', loading: 'р░ор▒А р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б р░Ър░жр▒Бр░╡р▒Бр░др▒Бр░ир▒Нр░ир░╛р░ВтАж',
-        see: 'тЦ╢ р░ир░╛ р░░р▒Ар░бр░┐р░Вр░Чр▒Н р░Ър▒Вр░бр░Вр░бр░┐', again: 'р░Хр▒Кр░др▒Нр░д р░░р▒Ар░бр░┐р░Вр░Чр▒Н', askAi: 'р░жр▒Ар░ир░┐ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐', share: 'р░╖р▒Зр░░р▒Н', fallbackAdvice: 'р░ор░зр▒Нр░п р░Хр░╛р░░р▒Нр░бр▒Б р░╕р░Вр░жр▒Зр░╢р░╛р░ир▒Нр░ир░┐ р░Ир░░р▒Лр░Ьр▒Б р░Чр▒Бр░░р▒Нр░др▒Бр░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐; р░Тр░Хр▒Нр░Хр▒Л р░Ър░┐р░ир▒Нр░и р░Ер░бр▒Бр░Чр▒Б р░╡р▒Зр░пр░Вр░бр░┐.',
-        askQ: '{topic} р░Яр░╛р░░р▒Л р░░р▒Ар░бр░┐р░Вр░Чр▒НтАМр░▓р▒Л р░ир░╛р░Хр▒Б {cards} р░╡р░Ър▒Нр░Ър░╛р░пр░┐. р░жр▒Ар░ир░┐ р░Ер░░р▒Нр░ер░В р░Пр░ор░┐р░Яр░┐?' },
-      moon: { card: ['р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐', 'р░ор▒А р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐ & р░╕р▒Нр░╡р░нр░╛р░╡р░В'], title: 'р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐', nakshatra: 'р░ир░Хр▒Нр░╖р░др▒Нр░░р░В', pada: 'р░кр░╛р░жр░В',
-        approx: 'р░╕р▒Бр░ор░╛р░░р▒Бр░Чр░╛: р░Цр░Ър▒Нр░Ър░┐р░др░ор▒Ир░и р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐ р░Хр▒Лр░╕р░В р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░╕р░ор░пр░В р░Зр░╡р▒Нр░╡р░Вр░бр░┐.', need: 'р░ор▒А р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐ р░Ър▒Вр░бр░Яр░╛р░ир░┐р░Хр░┐ р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А р░Зр░╡р▒Нр░╡р░Вр░бр░┐.', add: 'р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░╡р░┐р░╡р░░р░╛р░▓р▒Б р░Зр░╡р▒Нр░╡р░Вр░бр░┐',
-        pick: 'р░П р░░р░╛р░╢р░┐р░ир▒Ир░ир░╛ р░Ър▒Вр░бр░Вр░бр░┐', loading: 'р░Ър░Вр░жр▒Нр░░р▒Бр░бр░┐р░ир░┐ р░Ър░жр▒Бр░╡р▒Бр░др▒Бр░ир▒Нр░ир░╛р░ВтАж', share: 'р░╖р▒Зр░░р▒Н', report: 'р░░р░┐р░кр▒Лр░░р▒Нр░Яр▒Н', yours: 'р░ор▒Ар░жр░┐',
-        sections: { emotional: 'р░нр░╛р░╡р▒Лр░жр▒Нр░╡р▒Зр░Ч р░╕р▒Нр░╡р░нр░╛р░╡р░В', love: 'р░кр▒Нр░░р▒Зр░о & р░Хр▒Бр░Яр▒Бр░Вр░мр░В', career: 'р░Йр░жр▒Нр░пр▒Лр░Чр░В & р░бр░мр▒Нр░мр▒Б', wellbeing: 'р░Жр░░р▒Лр░Чр▒Нр░пр░В & р░кр▒Нр░░р░╢р░╛р░Вр░др░д', remedy: 'р░╕р▒Бр░▓р░н р░кр░░р░┐р░╣р░╛р░░р░В' },
-        nature: ['р░зр▒Ир░░р▒Нр░пр░Вр░Чр░╛, р░╡р▒Зр░Чр░Вр░Чр░╛ р░ор▒Бр░Вр░жр░бр▒Бр░Чр▒Б р░╡р▒Зр░╕р▒Нр░др░╛р░░р▒Б; р░ор░ир░╕р▒Бр░▓р▒Л р░Йр░ир▒Нр░ир░жр░┐ р░ир░┐р░Ьр░╛р░пр░┐р░др▒Ар░Чр░╛ р░Ър▒Жр░кр▒Нр░др░╛р░░р▒Б, р░╕р▒Нр░╡р▒Зр░Ър▒Нр░Ы р░Хр░╛р░╡р░╛р░▓р░┐.', 'р░╕р▒Нр░ер░┐р░░р░Вр░Чр░╛, р░ир░ор▒Нр░ор░Хр░Вр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б; р░╕р▒Мр░Хр░░р▒Нр░пр░В, р░Ер░Вр░жр░В р░Зр░╖р▒Нр░Яр░В, р░Тр░др▒Нр░др░┐р░бр░┐р░▓р▒Лр░ир▒В р░кр▒Нр░░р░╢р░╛р░Вр░др░Вр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б.',
-          'р░Жр░╕р░Хр▒Нр░др░┐, р░Ър▒Бр░░р▒Бр░Хр▒Ир░и р░мр▒Бр░жр▒Нр░зр░┐; р░ор░╛р░Яр▒Нр░▓р░╛р░бр░Яр░В р░Зр░╖р▒Нр░Яр░В, р░Хр▒Кр░др▒Нр░др░жр░ир░В р░Хр░╛р░╡р░╛р░▓р░┐.', 'р░кр▒Нр░░р▒Зр░ор░Чр░╛, р░╕р▒Бр░ир▒Нр░ир░┐р░др░Вр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б; р░Хр▒Бр░Яр▒Бр░Вр░мр░ор▒З р░╕р░░р▒Нр░╡р░╕р▒Нр░╡р░В, р░Ер░Вр░др░░р▒Н р░жр▒Гр░╖р▒Нр░Яр░┐ р░мр░▓р░Вр░Чр░╛ р░Йр░Вр░Яр▒Бр░Вр░жр░┐.',
-          'р░ор░Вр░Ър░┐ р░ор░ир░╕р▒Б, р░жр░╛р░др▒Гр░др▒Нр░╡р░В; р░ир░╛р░пр░Хр░др▒Нр░╡р░Вр░▓р▒Л, р░ор▒А р░Хр▒Гр░╖р░┐ р░Чр▒Бр░░р▒Нр░др░┐р░Вр░кр▒Б р░кр▒Кр░Вр░жр░┐р░ир░кр▒Нр░кр▒Бр░бр▒Б р░╡р▒Жр░▓р▒Бр░Чр▒Бр░др░╛р░░р▒Б.', 'р░Жр░▓р▒Лр░Ър░ир░╛р░кр░░р▒Бр░▓р▒Б, р░Ьр░╛р░Чр▒Нр░░р░др▒Нр░др░кр░░р▒Бр░▓р▒Б; р░╕р░╣р░╛р░пр░В р░Ър▒Зр░пр░бр░В р░Зр░╖р▒Нр░Яр░В, р░Хр▒Нр░░р░ор░╢р░┐р░Хр▒Нр░╖р░гр░▓р▒Л р░кр▒Нр░░р░╢р░╛р░Вр░др░д р░кр▒Кр░Вр░жр▒Бр░др░╛р░░р▒Б.',
-          'р░╕р▒Мр░ор▒Нр░пр░Вр░Чр░╛, р░ир▒Нр░пр░╛р░пр░Вр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б; р░╕р░╛р░ор░░р░╕р▒Нр░пр░В р░Хр▒Лр░░р▒Бр░Хр▒Бр░Вр░Яр░╛р░░р▒Б, р░ор░Вр░Ър░┐ р░╕р░╛р░Вр░Чр░др▒Нр░пр░Вр░▓р▒Л р░Жр░ир░Вр░жр░Вр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б.', 'р░▓р▒Лр░др▒Ир░и р░нр░╛р░╡р░╛р░▓р▒Б, р░Чр▒Лр░кр▒Нр░пр░д; р░Чр░╛р░вр░Вр░Чр░╛ р░кр▒Нр░░р▒Зр░ор░┐р░╕р▒Нр░др░╛р░░р▒Б, р░╡р░┐р░зр▒Зр░пр▒Бр░▓р▒Б, р░╕р░Вр░Хр░▓р▒Нр░к р░мр░▓р░В р░Ор░Хр▒Нр░Хр▒Бр░╡.',
-          'р░Жр░╢р░╛р░╡р░╛р░жр▒Бр░▓р▒Б, р░ир░┐р░Ьр░╛р░пр░┐р░др▒Ар░кр░░р▒Бр░▓р▒Б; р░ир▒Зр░░р▒Нр░Ър▒Бр░Хр▒Лр░╡р░бр░В, р░кр▒Нр░░р░пр░╛р░гр░╛р░▓р▒Б р░Зр░╖р▒Нр░Яр░В.', 'р░Жр░Ър░░р░гр░╛р░др▒Нр░ор░Хр░Вр░Чр░╛, р░Ур░кр░┐р░Хр░Чр░╛ р░Йр░Вр░Яр░╛р░░р▒Б; р░мр░╛р░зр▒Нр░пр░др░Чр░╛, р░ир░┐р░╢р▒Нр░╢р░мр▒Нр░жр░Вр░Чр░╛ р░Ор░жр▒Бр░Чр▒Бр░др░╛р░░р▒Б.',
-          'р░╕р▒Нр░╡р░др░Вр░др▒Нр░░р▒Бр░▓р▒Б, р░Жр░▓р▒Лр░Ър░ир░╛р░кр░░р▒Бр░▓р▒Б; р░╕р▒Нр░ир▒Зр░╣р░кр▒Вр░░р▒Нр░╡р░Хр░Вр░Чр░╛, р░╕р░ор░╛р░Ьр░В р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Жр░▓р▒Лр░Ър░┐р░╕р▒Нр░др░╛р░░р▒Б.', 'р░Хр░▓р░▓р▒Б р░Хр░ир▒З р░ор░ир░╕р▒Б, р░жр░п; р░Хр░░р▒Бр░г, р░╕р▒Гр░Ьр░ир░╛р░др▒Нр░ор░Хр░д, р░Жр░зр▒Нр░пр░╛р░др▒Нр░ор░┐р░Хр░д р░╕р░╣р░Ьр░В.'] },
-      sections: { chart: 'р░ор▒А р░Ьр░╛р░др░Хр░В', palm: 'р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░▓р▒Б, р░Яр░╛р░░р▒Л & р░╕р░Вр░Цр▒Нр░пр░▓р▒Б', love: 'р░кр▒Нр░░р▒Зр░о & р░кр▒Кр░Вр░др░и', time: 'р░Хр░╛р░▓р░В & р░кр░Вр░бр▒Бр░Чр░▓р▒Б' }, daily: 'р░░р▒Лр░Ьр▒Бр░╡р░╛р░░р▒А',
-      greet: { morning: 'р░╢р▒Бр░нр▒Лр░жр░пр░В', afternoon: 'р░╢р▒Бр░н р░ор░зр▒Нр░пр░╛р░╣р▒Нр░ир░В', evening: 'р░╢р▒Бр░н р░╕р░╛р░пр░Вр░др▒Нр░░р░В', night: 'р░╢р▒Бр░н р░░р░╛р░др▒Нр░░р░┐', hello: 'р░ир░ор░╕р▒Нр░др▒З ЁЯЩП' },
-      aiEyebrow: 'AI р░Ьр▒Нр░пр▒Лр░др░┐р░╖р▒Нр░Хр▒Бр░бр▒Б', tryAsking: 'р░Зр░▓р░╛ р░Ер░бр░Чр░Вр░бр░┐', persona: { hello: 'р░ир░ор░╕р▒Нр░др▒З{name}! ЁЯЩП р░ир▒Зр░ир▒Б р░Ьр▒Нр░пр▒Лр░др░┐р░░р▒Нр░ор░п, р░ор▒А р░Ьр▒Нр░пр▒Лр░др░┐р░╖р▒Нр░Хр▒Бр░бр░┐р░ир░┐. р░кр▒Нр░░р▒Зр░о, р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░бр░мр▒Нр░мр▒Б, р░Жр░░р▒Лр░Чр▒Нр░пр░В, р░░р░╛р░мр▒Лр░пр▒З р░░р▒Лр░Ьр▒Бр░▓ р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Ър▒Жр░кр▒Нр░кр░Чр░▓р░ир▒Б.' }, panchangCard: ['р░ир▒Зр░Яр░┐ р░кр░Вр░Ър░╛р░Вр░Чр░В', 'р░др░┐р░ер░┐, р░░р░╛р░╣р▒Б р░Хр░╛р░▓р░В, р░ор▒Бр░╣р▒Вр░░р▒Нр░др░╛р░▓р▒Б'],
-      tools: { jathakam: ['р░Ьр░╛р░др░Хр░В', 'р░ор▒А р░Ьр░ир▒Нр░о р░Хр▒Бр░Вр░бр░▓р░┐ & р░лр░▓р░┐р░др░╛р░▓р▒Б'], festivals: ['р░кр░Вр░бр▒Бр░Чр░▓р▒Б', 'р░░р░╛р░мр▒Лр░пр▒З р░кр░Вр░бр▒Бр░Чр░▓р▒Б, р░╕р▒Жр░▓р░╡р▒Бр░▓р▒Б'], match: ['р░Ьр░╛р░др░Х р░кр▒Кр░Вр░др░и', 'р░Чр▒Бр░г р░ор▒Зр░│р░ир░В 36р░Хр░┐'], doshas: ['р░жр▒Лр░╖р░╛р░▓р▒Б', 'р░Хр▒Бр░Ь р░жр▒Лр░╖р░В, р░Пр░▓р░┐р░ир░╛р░Яр░┐ р░╢р░ир░┐'], dasha: ['р░жр░╢р░▓р▒Б', 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░П р░Чр▒Нр░░р░╣ р░жр░╢ р░ир░бр▒Бр░╕р▒Нр░др▒Лр░Вр░жр░┐'], rashi: ['р░░р░╛р░╢р░┐ р░лр░▓р░╛р░▓р▒Б', 'р░░р▒Лр░Ьр▒Б, р░╡р░╛р░░р░В, р░ир▒Жр░▓'], chat: ['AIр░ир░┐ р░Ер░бр░Чр░Вр░бр░┐', 'р░ор▒А р░Ьр▒Ар░╡р░┐р░др░В р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░кр▒Нр░░р░╢р▒Нр░ир░▓р▒Б'] },
-    },
-    hi: {
-      views: { chart: 'рдЪрдХреНрд░', planets: 'рдЧреНрд░рд╣', dasha: 'рджрд╢рд╛', doshas: 'рджреЛрд╖', panchang: 'рдкрдВрдЪрд╛рдВрдЧ' },
-      kujaTitle: 'рдорд╛рдВрдЧрд▓рд┐рдХ (рдХреБрдЬ рджреЛрд╖)', kujaYes: 'рд╣реИ', kujaNo: 'рдирд╣реАрдВ рд╣реИ', kujaWhy: 'рдордВрдЧрд▓ рд▓рдЧреНрди рд╕реЗ {lagna}рд╡реЗрдВ рднрд╛рд╡ рдореЗрдВ рдФрд░ рдЪрдВрджреНрд░ рд╕реЗ {moon}рд╡реЗрдВ рднрд╛рд╡ рдореЗрдВ рд╣реИред',
-      kujaReduced: 'рдордВрдЧрд▓ рд╕реНрд╡рд░рд╛рд╢рд┐ рдпрд╛ рдЙрдЪреНрдЪ рдХрд╛ рд╣реИ; рдкрд░рдВрдкрд░рд╛ рдХреЗ рдЕрдиреБрд╕рд╛рд░ рдЗрд╕рд╕реЗ рджреЛрд╖ рдХрд╛ рдкреНрд░рднрд╛рд╡ рдШрдЯрддрд╛ рд╣реИред',
-      sadeTitle: 'рд╕рд╛рдврд╝реЗрд╕рд╛рддреА', phase1: 'рдЕрднреА рдЪрд▓ рд░рд╣реА рд╣реИ тАФ рдкрд╣рд▓рд╛ рдЪрд░рдг (рдЖрд░рдВрдн)', phase2: 'рдЕрднреА рдЪрд▓ рд░рд╣реА рд╣реИ тАФ рджреВрд╕рд░рд╛ рдЪрд░рдг (рдЪрд░рдо)', phase3: 'рдЕрднреА рдЪрд▓ рд░рд╣реА рд╣реИ тАФ рддреАрд╕рд░рд╛ рдЪрд░рдг (рдЕрдВрдд)',
-      sadeNo: 'рдЕрднреА рдирд╣реАрдВ рдЪрд▓ рд░рд╣реАред', period: '{start} рд╕реЗ {end} рддрдХ', sadeNext: 'рдЕрдЧрд▓реА рд╕рд╛рдврд╝реЗрд╕рд╛рддреА: {start} рд╕реЗ {end} рддрдХ', now: 'рдЕрднреА',
-      ashtama: 'рдЕрд╖реНрдЯрдо рд╢рдирд┐ (рдЪрдВрджреНрд░ рд╕реЗ 8рд╡реЗрдВ рднрд╛рд╡ рдореЗрдВ рд╢рдирд┐) {end} рддрдХ рдЪрд▓ рд░рд╣рд╛ рд╣реИред', ardhashtama: 'рдвреИрдпрд╛ (рдЪрдВрджреНрд░ рд╕реЗ рдЪреМрдереЗ рднрд╛рд╡ рдореЗрдВ рд╢рдирд┐) {end} рддрдХ рдЪрд▓ рд░рд╣реА рд╣реИред',
-      doshaNote: 'рдкрд╛рд░рдВрдкрд░рд┐рдХ рдирд┐рдпрдо, рд╡рд┐рд╢реЗрд╖рдЬреНрдЮ рд╕рдореАрдХреНрд╖рд╛ рдирд╣реАрдВред рддрд┐рдерд┐рдпрд╛рдБ рдЕрдиреБрдорд╛рдирд┐рдд рд╣реИрдВред', doshaUnavailable: 'рдЗрд╕ рдХреБрдВрдбрд▓реА рдХреЗ рд▓рд┐рдП рджреЛрд╖ рд╡рд┐рд╡рд░рдг рдЙрдкрд▓рдмреНрдз рдирд╣реАрдВ рд╣реИред',
-      todayLabel: 'рдЖрдЬ рдЖрдкрдХреЗ рд▓рд┐рдП', todayGood: 'рдЖрдЬ рдЖрдкрдХреЗ рд▓рд┐рдП рдЪрдВрджреНрд░рдмрд▓ рдФрд░ рддрд╛рд░рд╛рдмрд▓ рджреЛрдиреЛрдВ рдЕрдиреБрдХреВрд▓ рд╣реИрдВ тАФ рдорд╣рддреНрд╡рдкреВрд░реНрдг рдХрд╛рдореЛрдВ рдХреЗ рд▓рд┐рдП рдЕрдЪреНрдЫрд╛ рджрд┐рдиред',
-      todayCare: 'рдЖрдЬ рдЪрдВрджреНрд░рдорд╛ рдЖрдкрдХреА рд░рд╛рд╢рд┐ рд╕реЗ 8рд╡реЗрдВ рднрд╛рд╡ рдореЗрдВ рд╣реИ (рдЕрд╖реНрдЯрдо рдЪрдВрджреНрд░) тАФ рдзреАрд░реЗ рдЪрд▓реЗрдВ, рдмрдбрд╝реЗ рдирд┐рд░реНрдгрдп рдЯрд╛рд▓реЗрдВред',
-      todayMixed: 'рдЖрдЬ рдЖрдкрдХреЗ рд▓рд┐рдП рдорд┐рд▓рд╛-рдЬреБрд▓рд╛ рджрд┐рди тАФ рд░реЛрдЬрд╝ рдХреЗ рдХрд╛рдореЛрдВ рдХреЗ рд▓рд┐рдП рдареАрдХ; рдорд╣рддреНрд╡рдкреВрд░реНрдг рдХрджрдо рд╕реЛрдЪ-рд╕рдордЭрдХрд░ рдЙрдард╛рдПрдБред', todayQuiet: 'рдЖрдЬ рдЖрдкрдХреЗ рд▓рд┐рдП рд╢рд╛рдВрдд рджрд┐рди тАФ рдирдИ рд╢реБрд░реБрдЖрдд рд╕реЗ рдЬрд╝реНрдпрд╛рджрд╛ рд░реЛрдЬрд╝ рдХреЗ рдХрд╛рдореЛрдВ рдХреЗ рд▓рд┐рдП рдЕрдЪреНрдЫрд╛ред',
-      askPlaceholder: 'рдХреБрдЫ рднреА рдкреВрдЫреЗрдВ: рдиреМрдХрд░реА, рд╢рд╛рджреА, рдкреИрд╕рд╛тАж', askButton: 'рдкреВрдЫреЗрдВ', kundliCta: '30 рд╕реЗрдХрдВрдб рдореЗрдВ рдЕрдкрдиреА рдореБрдлрд╝реНрдд рдХреБрдВрдбрд▓реА тЖТ', needKundli: 'рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП рдЕрдкрдиреА рдХреБрдВрдбрд▓реА рдмрдирд╛рдПрдБ',
-      liveDasha: 'рдЕрднреА {maha} тАУ {antar} рджрд╢рд╛', liveDashaMaha: 'рдЕрднреА {maha} рджрд╢рд╛', liveRashi: '{sign}: рдЖрдЬ рдХрд╛ рдлрд▓', liveSade: 'рд╕рд╛рдврд╝реЗрд╕рд╛рддреА: {p} рдЪрд░рдг рдЪрд▓ рд░рд╣рд╛ рд╣реИ',
-      liveDosha: 'рдорд╛рдВрдЧрд▓рд┐рдХ: {k} ┬╖ рд╕рд╛рдврд╝реЗрд╕рд╛рддреА: {s}', yes: 'рд╣рд╛рдБ', no: 'рдирд╣реАрдВ',
-      jkAsk: 'рдЕрдкрдиреА рдХреБрдВрдбрд▓реА рдЬрд╛рдирдирд╛ рдЪрд╛рд╣рддреЗ рд╣реИрдВ?', jkSub: 'рдЖрдкрдХреА рдореБрдлрд╝реНрдд рдХреБрдВрдбрд▓реА тАФ рд▓рдЧреНрди, рд░рд╛рд╢рд┐, рдирдХреНрд╖рддреНрд░, рдЧреНрд░рд╣, рджрд╢рд╛ рдФрд░ рджреЛрд╖ тАФ 30 рд╕реЗрдХрдВрдб рдореЗрдВред',
-      jkCreate: 'рдореЗрд░реА рдХреБрдВрдбрд▓реА рдмрдирд╛рдПрдБ тЖТ', jkMine: 'рдореЗрд░реА рдХреБрдВрдбрд▓реА', jkView: 'рдкреВрд░реА рдХреБрдВрдбрд▓реА рджреЗрдЦреЗрдВ тЖТ', jkDasha: 'рд╡рд░реНрддрдорд╛рди рджрд╢рд╛',
-      look: { title: 'рд░реВрдк', mode: 'рдореЛрдб', mystic: 'рдорд┐рд╕реНрдЯрд┐рдХ', light: 'рд▓рд╛рдЗрдЯ', dark: 'рдбрд╛рд░реНрдХ', auto: 'рдСрдЯреЛ', colour: 'рд░рдВрдЧ', done: 'рдареАрдХ рд╣реИ',
-        saffron: 'рдХреЗрд╕рд░рд┐рдпрд╛', teal: 'рд╣рд░рд╛-рдиреАрд▓рд╛', rose: 'рдЧреБрд▓рд╛рдмреА', blue: 'рдиреАрд▓рд╛', button: 'рд░реВрдк рдмрджрд▓реЗрдВ' },
-      notify: { title: 'рд░реЛрдЬрд╝рд╛рдирд╛ рд╕реВрдЪрдирд╛рдПрдБ', invite: 'рд╣рд░ рд╕реБрдмрд╣ рдЖрдЬ рдХрд╛ рдкрдВрдЪрд╛рдВрдЧ рдФрд░ рдЖрдкрдХрд╛ рджрд┐рди рдХреИрд╕рд╛ рд░рд╣реЗрдЧрд╛, рдкрд╛рдПрдБред', on: 'рдЪрд╛рд▓реВ рдХрд░реЗрдВ', later: 'рдЕрднреА рдирд╣реАрдВ',
-        time: 'рд╕рдордп', off: 'рдмрдВрдж рдХрд░реЗрдВ', enabled: 'рдЪрд╛рд▓реВ тАФ рд╣рд░ рджрд┐рди {time} рдмрдЬреЗ', disabled: 'рдмрдВрдж', denied: 'рд╕реВрдЪрдирд╛рдПрдБ рдмрдВрдж рд╣реИрдВред рдлрд╝реЛрди рдХреА рд╕реЗрдЯрд┐рдВрдЧреНрд╕ рдореЗрдВ Jyotirmaya рдХреЛ рдЕрдиреБрдорддрд┐ рджреЗрдВ, рдлрд┐рд░ рджреЛрдмрд╛рд░рд╛ рдХреЛрд╢рд┐рд╢ рдХрд░реЗрдВред',
-        muhurta: 'рд╢реБрдн / рдЕрд╢реБрдн рдореБрд╣реВрд░реНрдд рдХреА рд╕реВрдЪрдирд╛',
-        evening: 'рд╢рд╛рдо рдХреЛ рдЖрдкрдХреЗ рд▓рд┐рдП рдПрдХ рд╕рд╡рд╛рд▓', eveningTime: 'рд╢рд╛рдо рдХрд╛ рд╕рдордп',
-        rahu: 'рд░рд╛рд╣реБ рдХрд╛рд▓', fest: 'ЁЯкФ рдЖрдЬ {name}', reopenTitle: 'ЁЯМЩ рдЖрдкрдХрд╛ рдЖрдиреЗ рд╡рд╛рд▓рд╛ рд╕рдкреНрддрд╛рд╣', reopenBody: 'рдЗрд╕ рд╕рдкреНрддрд╛рд╣ рдХрд╛ рдкрдВрдЪрд╛рдВрдЧ рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП Jyotirmaya рдЦреЛрд▓реЗрдВред', },
-      lunar: { year: '{s} рд╕рдВрд╡рддреНрд╕рд░', month: '{m} рдорд╛рд╕', adhika: 'рдЕрдзрд┐рдХ {m}' },
-      cards: { good: 'рд╢реБрдн рд╕рдордп', panchang: 'рдкрдВрдЪрд╛рдВрдЧ', events: 'рд╢реБрдн рдореБрд╣реВрд░реНрдд', bad: 'рдЕрд╢реБрдн рд╕рдордп', none: 'рдЖрдЬ рдХреЛрдИ рд╢реБрдн рдореБрд╣реВрд░реНрдд рдирд╣реАрдВ',
-        again: 'рдлрд┐рд░', amrita: 'рдЕрдореГрдд рдХрд╛рд▓', durmuhurtam: 'рджреБрд░реНрдореБрд╣реВрд░реНрдд', marriage: 'рд╡рд┐рд╡рд╛рд╣', gruhapravesam: 'рдЧреГрд╣ рдкреНрд░рд╡реЗрд╢', vehicle: 'рд╡рд╛рд╣рди рдЦрд╝рд░реАрдж',
-        eventNote: 'рд╕рд░рд▓ рдкрд╛рд░рдВрдкрд░рд┐рдХ рдЬрд╛рдБрдЪ (рддрд┐рдерд┐, рдирдХреНрд╖рддреНрд░, рд╡рд╛рд░ рдФрд░ рдорд╛рд╕; рд░рд╛рд╣реБ рдХрд╛рд▓, рджреБрд░реНрдореБрд╣реВрд░реНрдд рдФрд░ рд╡рд░реНрдЬреНрдп рдХреЛ рдЫреЛрдбрд╝рдХрд░)ред рд╡рд┐рд╡рд╛рд╣ рдпрд╛ рдЧреГрд╣ рдкреНрд░рд╡реЗрд╢ рдХреЗ рд▓рд┐рдП рд╕рдЯреАрдХ рдореБрд╣реВрд░реНрдд рдЕрдкрдиреЗ рдкреБрд░реЛрд╣рд┐рдд рд╕реЗ рдкрдХреНрдХрд╛ рдХрд░реЗрдВред',
-        share: 'рдЖрдЬ рдХрд╛ рдкрдВрдЪрд╛рдВрдЧ WhatsApp рдкрд░ рд╢реЗрдпрд░ рдХрд░реЗрдВ', full: 'рдкреВрд░реА рдкрдВрдЪрд╛рдВрдЧ рддрд╛рд▓рд┐рдХрд╛рдПрдБ', swipe: 'рдФрд░ рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП рд╕реНрд╡рд╛рдЗрдк рдХрд░реЗрдВ тЖТ' },
-      rashi: { pick: 'рдЕрдкрдиреА рд░рд╛рд╢рд┐ рдЪреБрдиреЗрдВ', find: 'рдЕрдкрдиреА рд░рд╛рд╢рд┐ рдЬрд╛рдиреЗрдВ', mineButton: 'рдореЗрд░реА рд░рд╛рд╢рд┐ рджрд┐рдЦрд╛рдПрдБ', mine: 'рдЖрдкрдХреА', title: '{sign} рд░рд╛рд╢рд┐рдлрд▓ ({date})', more: 'тАжрдФрд░ рдкрдврд╝реЗрдВ', less: 'рдХрдо рджрд┐рдЦрд╛рдПрдБ',
-        ask: 'рдореЗрд░реЗ рджрд┐рди рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ AI рд╕реЗ рдкреВрдЫреЗрдВ', askQ: 'рдЖрдЬ рдореЗрд░реА рд░рд╛рд╢рд┐ {sign} рдХреЗ рд▓рд┐рдП рдХреИрд╕рд╛ рд░рд╣реЗрдЧрд╛? рдореЗрд░реА рдХреБрдВрдбрд▓реА рдХреЗ рдЕрдиреБрд╕рд╛рд░ рдмрддрд╛рдЗрдПред', full: 'рдореЗрд░реА рдкреВрд░реА рдХреБрдВрдбрд▓реА рджреЗрдЦреЗрдВ', share: 'WhatsApp рдкрд░ рд╢реЗрдпрд░ рдХрд░реЗрдВ',
-        details: 'рдЧреНрд░рд╣-рд╡рд╛рд░ рд╡рд┐рд╡рд░рдг', transitGood: 'рдЕрдиреБрдХреВрд▓', transitCare: 'рд╕рд╛рд╡рдзрд╛рдиреА', jump: { transits: 'рдЧреНрд░рд╣ рдЧреЛрдЪрд░', remedies: 'рдЙрдкрд╛рдп', full: 'рдкреВрд░реА рдХреБрдВрдбрд▓реА', ask: 'AI рд╕реЗ рдкреВрдЫреЗрдВ' }, hint: 'рдЖрдЬ рдХрд╛ рд░рд╛рд╢рд┐рдлрд▓ рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП рдКрдкрд░ рдЕрдкрдиреА рд░рд╛рд╢рд┐ рдЪреБрдиреЗрдВред',
-        unlock: 'тЦ╢ рдЖрдЬ рдХрд╛ рд░рд╛рд╢рд┐рдлрд▓ рджреЗрдЦреЗрдВ', unlockNote: 'рдПрдХ рдЫреЛрдЯрд╛ рд╡рд┐рдЬреНрдЮрд╛рдкрди рджреЗрдЦреЗрдВ, рдЖрдЬ рд╕рднреА рд░рд╛рд╢рд┐рдпреЛрдВ рдХрд╛ рд░рд╛рд╢рд┐рдлрд▓ рдЦреБрд▓ рдЬрд╛рдПрдЧрд╛ред',
-        luckyTitle: 'рд╢реБрдн рд╕рдВрдХреЗрдд', luckyDay: 'рд░рдВрдЧ рдФрд░ рджрд┐рд╢рд╛: рдЖрдЬ рд╕рднреА рд░рд╛рд╢рд┐рдпреЛрдВ рдХреЗ рд▓рд┐рдП рдПрдХ ┬╖ рдЕрдВрдХ: рдЖрдкрдХреА рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП', luckySign: 'рдЖрдкрдХреА рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП рдЦрд╛рд╕', colour: 'рд░рдВрдЧ', numbers: 'рдЕрдВрдХ', direction: 'рджрд┐рд╢рд╛',
-        colours: { Sun: 'рдХреЗрд╕рд░рд┐рдпрд╛, рд▓рд╛рд▓', Moon: 'рд╕рдлрд╝реЗрдж, рдЪрд╛рдБрджреА', Mars: 'рд▓рд╛рд▓, рдореВрдБрдЧрд┐рдпрд╛', Mercury: 'рд╣рд░рд╛', Jupiter: 'рдкреАрд▓рд╛, рд╕реБрдирд╣рд░рд╛', Venus: 'рд╕рдлрд╝реЗрдж, рдЧреБрд▓рд╛рдмреА', Saturn: 'рдиреАрд▓рд╛, рдХрд╛рд▓рд╛', Rahu: 'рд╕реНрд▓реЗрдЯреА', Ketu: 'рднреВрд░рд╛' },
-        directions: { Sun: 'рдкреВрд░реНрд╡', Moon: 'рд╡рд╛рдпрд╡реНрдп', Mars: 'рджрдХреНрд╖рд┐рдг', Mercury: 'рдЙрддреНрддрд░', Jupiter: 'рдИрд╢рд╛рди', Venus: 'рдЖрдЧреНрдиреЗрдп', Saturn: 'рдкрд╢реНрдЪрд┐рдо', Rahu: 'рдиреИрдЛрддреНрдп', Ketu: 'рд╡рд╛рдпрд╡реНрдп' } },
-      detailTitle: 'рд╡рд┐рд╕реНрддреГрдд рдкрдВрдЪрд╛рдВрдЧ', festTitle: 'рдЖрдиреЗ рд╡рд╛рд▓реЗ рддреНрдпреЛрд╣рд╛рд░', festToday: 'рдЖрдЬ', festTomorrow: 'рдХрд▓', festIn: '{n} рджрд┐рди рдореЗрдВ',
-      festMore: 'рдФрд░ рддреНрдпреЛрд╣рд╛рд░ рджрд┐рдЦрд╛рдПрдБ', festLess: 'рдХрдо рджрд┐рдЦрд╛рдПрдБ', festNone: 'рдЕрдЧрд▓реЗ рдХреБрдЫ рдорд╣реАрдиреЛрдВ рдореЗрдВ рдХреЛрдИ рддреНрдпреЛрд╣рд╛рд░ рдирд╣реАрдВред', festLoading: 'рддреНрдпреЛрд╣рд╛рд░ рд▓реЛрдб рд╣реЛ рд░рд╣реЗ рд╣реИрдВтАж',
-      shortcuts: { title: 'рдЖрдкрдХреЗ рд╕рд┐рддрд╛рд░реЗ, рдмрд╕ рдПрдХ рдЯреИрдк рдкрд░', text: 'рдХреЛрдИ рд░реАрдбрд┐рдВрдЧ рдЪреБрдиреЗрдВред', labels: ['рд╣рдереЗрд▓реА', 'рд░рд╛рд╢рд┐рдлрд▓', 'рдЯреИрд░реЛ', 'рдорд┐рд▓рд╛рди'], channel: 'рд╢реЙрд░реНрдЯрдХрдЯ', toggle: 'рдиреЛрдЯрд┐рдлрд╝рд┐рдХреЗрд╢рди рдмрд╛рд░ рдореЗрдВ рд╢реЙрд░реНрдЯрдХрдЯ' },
-      lifeguide: { card: ['рд▓рд╛рдЗрдлрд╝ рдЧрд╛рдЗрдб', 'рдЖрдкрдХрд╛ рд░реЛрдЬрд╝ рдХрд╛ рд╕рдВрддреБрд▓рди: рдкреНрд░реЗрдо, рдХрд╛рдо, рдзрди'], title: 'рд▓рд╛рдЗрдлрд╝ рдЧрд╛рдЗрдб', tabs: ['рдмреАрддрд╛ рдХрд▓', 'рдЖрдЬ', 'рдЖрдиреЗ рд╡рд╛рд▓рд╛ рдХрд▓', 'рдЗрд╕ рдорд╛рд╣', 'рдЗрд╕ рд╡рд░реНрд╖'],
-        balance: ['рдмреАрддреЗ рдХрд▓ рдХрд╛ рд╕рдВрддреБрд▓рди', 'рдЖрдЬ рдХрд╛ рд╕рдВрддреБрд▓рди', 'рдЖрдиреЗ рд╡рд╛рд▓реЗ рдХрд▓ рдХрд╛ рд╕рдВрддреБрд▓рди', 'рдЗрд╕ рдорд╛рд╣ рдХрд╛ рд╕рдВрддреБрд▓рди', 'рдЗрд╕ рд╡рд░реНрд╖ рдХрд╛ рд╕рдВрддреБрд▓рди'],
-        areas: { love: 'рдкреНрд░реЗрдо', family: 'рдкрд░рд┐рд╡рд╛рд░', marriage: 'рд╡рд┐рд╡рд╛рд╣', career: 'рдХрд░рд┐рдпрд░', wealth: 'рдзрди', health: 'рд╕реНрд╡рд╛рд╕реНрдереНрдп' }, byArea: 'рдХреНрд╖реЗрддреНрд░ рдХреЗ рдЕрдиреБрд╕рд╛рд░', supported: '{planets} рдХрд╛ рд╕рд╛рде',
-        yourSign: 'рдЖрдкрдХреА рд░рд╛рд╢рд┐', change: 'рдмрджрд▓реЗрдВ', pick: 'рджреВрд╕рд░реА рд░рд╛рд╢рд┐ рджреЗрдЦреЗрдВ', pickFirst: 'рдЕрдкрдирд╛ рд╕рдВрддреБрд▓рди рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП рдЕрдкрдиреА рд░рд╛рд╢рд┐ рдЪреБрдиреЗрдВред', loading: 'рдЖрдкрдХрд╛ рд╕рдВрддреБрд▓рди рдирд┐рдХрд╛рд▓ рд░рд╣реЗ рд╣реИрдВтАж', failed: 'рдЕрднреА рд▓реЛрдб рдирд╣реАрдВ рд╣реЛ рд╕рдХрд╛ред рдХреГрдкрдпрд╛ рдлрд┐рд░ рдХреЛрд╢рд┐рд╢ рдХрд░реЗрдВред',
-        personal: 'рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рдХреЗ рдЕрдиреБрд╕рд╛рд░: рдЬрдиреНрдо рдирдХреНрд╖рддреНрд░ {star}', dashaLine: 'рджрд╢рд╛ {lords}', general: 'рдЗрд╕ рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП рд╕рд╛рдорд╛рдиреНрдпред рдЕрдкрдиреЗ рд▓рд┐рдП рдЦрд╝рд╛рд╕ рд▓рд╛рдЗрдлрд╝ рдЧрд╛рдЗрдб рдХреЗ рд▓рд┐рдП рдЕрдкрдиреА рдХреБрдВрдбрд▓реА рдмрдирд╛рдПрдБред', tara: 'рдЖрдЬ рдЖрдкрдХреА рддрд╛рд░рд╛: {tara}',
-        taraNames: ['рдЬрдиреНрдо', 'рд╕рдВрдкрддреН', 'рд╡рд┐рдкрддреН', 'рдХреНрд╖реЗрдо', 'рдкреНрд░рддреНрдпрдХреН', 'рд╕рд╛рдзрдирд╛', 'рдиреИрдзрди', 'рдорд┐рддреНрд░', 'рдкрд░рдо рдорд┐рддреНрд░'], taraEffect: ['рд╕рд╛рд╡рдзрд╛рдиреА', 'рд╕рд╛рдорд╛рдиреНрдп', 'рдЕрдиреБрдХреВрд▓'],
-        unlock: 'рд╡реАрдбрд┐рдпреЛ рдЖрдЗрдХрди рд╡рд╛рд▓реЗ рдЯреИрдм рдПрдХ рдЫреЛрдЯреЗ рд╡рд┐рдЬреНрдЮрд╛рдкрди рдХреЗ рдмрд╛рдж, рдЗрд╕ рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП рдЖрдЬ рдкреВрд░реЗ рджрд┐рди рдЦреБрд▓ рдЬрд╛рддреЗ рд╣реИрдВред',
-        note: 'рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рд╕реЗ рдЧреНрд░рд╣реЛрдВ рдХреЗ рдЧреЛрдЪрд░ рдХреЗ рдЖрдзрд╛рд░ рдкрд░ рдирд┐рдХрд╛рд▓рд╛ рдЧрдпрд╛ред рдЪрд┐рдВрддрди рдХреЗ рд▓рд┐рдП рдорд╛рд░реНрдЧрджрд░реНрд╢рди рд╣реИ, рднрд╡рд┐рд╖реНрдпрд╡рд╛рдгреА рдирд╣реАрдВред',
-        text: { love: ['рдзреАрд░реЗ рдЪрд▓реЗрдВред рдЬрд╝реНрдпрд╛рджрд╛ рд╕реБрдиреЗрдВ, рдЬрд▓реНрджрдмрд╛рдЬрд╝реА рдореЗрдВ рди рдмреЛрд▓реЗрдВред', 'рд╕реНрдерд┐рд░ рджреМрд░ред рдЫреЛрдЯреА-рдЫреЛрдЯреА рдкрд░рд╡рд╛рд╣ рд╕рдмрд╕реЗ рдЬрд╝рд░реВрд░реАред', 'рднрд╛рд╡рдирд╛рдПрдБ рд╕рд╣рдЬ рдмрд╛рдБрдЯ рдкрд╛рдПрдБрдЧреЗред рдорди рдХреА рдмрд╛рдд рдХрд╣рдиреЗ рдХрд╛ рдЕрдЪреНрдЫрд╛ рд╕рдордпред'],
-          family: ['рдЧрд▓рддрдлрд╝рд╣рдореА рд╣реЛ рд╕рдХрддреА рд╣реИред рд╢рд╛рдВрдд рд░рд╣реЗрдВ рдФрд░ рджреВрд╕рд░реЛрдВ рдХреЛ рдЬрдЧрд╣ рджреЗрдВред', 'рд╕рд╛рдорд╛рдиреНрдп рдФрд░ рд╢рд╛рдВрддред рдзреИрд░реНрдп рд╕реЗ рджрд┐рдирдЪрд░реНрдпрд╛ рдирд┐рднрд╛рдПрдБред', 'рдШрд░ рдореЗрдВ рд╕рд╣рдпреЛрдЧ рд░рд╣реЗрдЧрд╛ред рдкрд░рд┐рд╡рд╛рд░ рдХреЗ рд╕рд╛рде рд╕рдордп рддрд░реЛрддрд╛рдЬрд╝рд╛ рдХрд░реЗрдЧрд╛ред'],
-          marriage: ['рдзреИрд░реНрдп рд░рдЦреЗрдВред рдмрдбрд╝реЗ рдлрд╝реИрд╕рд▓реЗ рдЯрд╛рд▓реЗрдВ рдФрд░ рдмрд╣рд╕ рд╕реЗ рдмрдЪреЗрдВред', 'рд╕реНрдерд┐рд░ред рд╕рд╛рде рдХреА рджрд┐рдирдЪрд░реНрдпрд╛ рд╕реБрдХреВрди рджреЗрдЧреАред', 'рд╕рдордЭ рдмрдврд╝реЗрдЧреАред рдЦреБрд▓рдХрд░, рдкреНрдпрд╛рд░ рд╕реЗ рдмрд╛рдд рдХрд░рдиреЗ рдХрд╛ рдЕрдЪреНрдЫрд╛ рд╕рдордпред'],
-          career: ['рдзреАрдорд╛ рдФрд░ рдХрдард┐рди рд╣реЛ рд╕рдХрддрд╛ рд╣реИред рд╕реЛрдЪ-рд╕рдордЭрдХрд░ рдпреЛрдЬрдирд╛ рдмрдирд╛рдПрдБ, рдЬреЛрдЦрд┐рдо рд╕реЗ рдмрдЪреЗрдВред', 'рдкреНрд░рдЧрддрд┐ рд╕реНрдерд┐рд░ рд╣реИред рдПрдХ рд╕рдордп рдореЗрдВ рдПрдХ рдХрд╛рдо рдкрд░ рдзреНрдпрд╛рди рджреЗрдВред', 'рдХрд╛рдо рдЕрдЪреНрдЫрд╛ рдЪрд▓реЗрдЧрд╛ред рдкрд╣рд▓ рдХрд░рдиреЗ рдХрд╛ рдЕрдЪреНрдЫрд╛ рд╕рдордпред'],
-          wealth: ['рдЦрд╝рд░реНрдЪ рдореЗрдВ рд╕рд╛рд╡рдзрд╛рдиреАред рдЬрд▓реНрджрдмрд╛рдЬрд╝реА рдХреА рдЦрд╝рд░реАрдж рдпрд╛ рдЙрдзрд╛рд░ рд╕реЗ рдмрдЪреЗрдВред', 'рд╕рдВрддреБрд▓рд┐рддред рдЦрд╝рд░реНрдЪ рдкрд░ рдирдЬрд╝рд░ рд░рдЦреЗрдВ рдФрд░ рд╡реНрдпрд╛рд╡рд╣рд╛рд░рд┐рдХ рд░рд╣реЗрдВред', 'рдкреИрд╕реЗ рдХреЗ рдорд╛рдорд▓реЗ рдЕрдиреБрдХреВрд▓ред рдпреЛрдЬрдирд╛ рдФрд░ рдмрдЪрдд рдХрд╛ рдЕрдЪреНрдЫрд╛ рд╕рдордпред'],
-          health: ['рдЖрд░рд╛рдо рд╕реЗ рдЪрд▓реЗрдВред рдЕрдЪреНрдЫрд╛ рдЖрд░рд╛рдо рдХрд░реЗрдВ, рдкрд╛рдиреА рдкрд┐рдПрдБ, рдЕрддрд┐ рди рдХрд░реЗрдВред', 'рдХреБрд▓ рдорд┐рд▓рд╛рдХрд░ рдареАрдХред рд╕рдордп рдкрд░ рднреЛрдЬрди рдФрд░ рдЖрд░рд╛рдо рд░рдЦреЗрдВред', 'рдКрд░реНрдЬрд╛ рдЕрдЪреНрдЫреА рд╣реИред рд╡реНрдпрд╛рдпрд╛рдо рдФрд░ рдиреАрдВрдж рдмрдирд╛рдП рд░рдЦреЗрдВред'] } },
-      signmatch: { card: ['рд░рд╛рд╢рд┐ рдорд┐рд▓рд╛рди', 'рдХрд┐рдиреНрд╣реАрдВ рджреЛ рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐рдпреЛрдВ рдХрд╛ рдорд┐рд▓рд╛рди'], title: 'рд░рд╛рд╢рд┐ рдорд┐рд▓рд╛рди', you: 'рдЖрдк', partner: 'рд╕рд╛рдереА', choose: 'рд░рд╛рд╢рд┐ рдЪреБрдиреЗрдВ', tabs: ['рдореЗрд░реА рд░рд╛рд╢рд┐', 'рд╕рд╛рдереА рдХреА рд░рд╛рд╢рд┐'], see: 'рд╣рдорд╛рд░рд╛ рдорд┐рд▓рд╛рди рджреЗрдЦреЗрдВ',
-        verdict: { excellent: 'рдЙрддреНрддрдо рдорд┐рд▓рд╛рди', good: 'рдЕрдЪреНрдЫрд╛ рдорд┐рд▓рд╛рди', average: 'рдФрд╕рдд рдорд┐рд▓рд╛рди', low: 'рдзреИрд░реНрдп рдЪрд╛рд╣рд┐рдП' },
-        text: { excellent: 'рдЖрдкрдХреА рд░рд╛рд╢рд┐рдпрд╛рдБ рд╕рд╣рдЬ рдореЗрд▓ рдЦрд╛рддреА рд╣реИрдВ: рдЖрд╕рд╛рди рд╕рдордЭ рдФрд░ рдПрдХ-рд╕рд╛ рдирдЬрд╝рд░рд┐рдпрд╛ред', good: 'рдЖрд░рд╛рдорджрд╛рдпрдХ рдЬреЛрдбрд╝реА, рдХреБрдЫ рдЕрдВрддрд░ рдХреЗ рд╕рд╛рде рддрд╛рд▓рдореЗрд▓ рдмрд┐рдард╛рдирд╛ рд╣реЛрдЧрд╛ред', average: 'рдХреБрдЫ рдЕрдВрддрд░ рдкрд░ рдХрд╛рдо рдХрд░рдирд╛ рд╣реЛрдЧрд╛ред рдзреИрд░реНрдп рдФрд░ рдмрд╛рддрдЪреАрдд рдорджрдж рдХрд░реЗрдВрдЧреЗред', low: 'рд╕реНрд╡рднрд╛рд╡ рдХрд╛рдлрд╝реА рдЕрд▓рдЧ рд╣реИрдВред рд╕рдордЭ рдФрд░ рдХреЛрд╢рд┐рд╢ рд╕реЗ рдмрд╛рдд рдмрди рд╕рдХрддреА рд╣реИред' },
-        friendship: 'рдорди рдФрд░ рдорд┐рддреНрд░рддрд╛', family: 'рдкрд░рд┐рд╡рд╛рд░ рдФрд░ рд╕рдореГрджреНрдзрд┐', dosha: 'рджреЛрдиреЛрдВ рд░рд╛рд╢рд┐рдпрд╛рдБ рдПрдХ-рджреВрд╕рд░реЗ рд╕реЗ рдХрдард┐рди рд╕реНрдерд┐рддрд┐ рдореЗрдВ рд╣реИрдВ (рднрдХреВрдЯ рджреЛрд╖)ред рдХрдИ рдкрд░рд┐рд╡рд╛рд░ рд╡рд┐рд╡рд╛рд╣ рд╕реЗ рдкрд╣рд▓реЗ рдЗрд╕реЗ рджреЗрдЦрддреЗ рд╣реИрдВред',
-        full: 'рдкреВрд░рд╛ 36 рдЧреБрдг рдХреБрдВрдбрд▓реА рдорд┐рд▓рд╛рди', note: 'рдХреЗрд╡рд▓ рджреЛ рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐рдпреЛрдВ рдкрд░ рдЖрдзрд╛рд░рд┐рддред рдЪрд┐рдВрддрди рдХреЗ рд▓рд┐рдП рдорд╛рд░реНрдЧрджрд░реНрд╢рди, рднрд╡рд┐рд╖реНрдпрд╡рд╛рдгреА рдирд╣реАрдВред', shareLine: '{a} + {b}: {percent}% рд░рд╛рд╢рд┐ рдорд┐рд▓рд╛рди, {verdict}ред' },
-      numerology: { card: ['рдЕрдВрдХ рдЬреНрдпреЛрддрд┐рд╖', 'рдирд╛рдо рдФрд░ рдЬрдиреНрдо рддрд┐рдерд┐ рд╕реЗ рдЖрдкрдХреЗ рдЕрдВрдХ'], title: 'рдЕрдВрдХ рдЬреНрдпреЛрддрд┐рд╖', intro: 'рдЖрдкрдХреА рдЬрдиреНрдо рддрд┐рдерд┐ рдФрд░ рдирд╛рдо рд╕реЗ рдЖрдкрдХрд╛ рдореВрд▓рд╛рдВрдХ, рднрд╛рдЧреНрдпрд╛рдВрдХ рдФрд░ рдирд╛рдорд╛рдВрдХред',
-        dob: 'рдЬрдиреНрдо рддрд┐рдерд┐', name: 'рдирд╛рдо (рдЕрдВрдЧреНрд░реЗрдЬрд╝реА рдЕрдХреНрд╖рд░реЛрдВ рдореЗрдВ)', show: 'рдореЗрд░реЗ рдЕрдВрдХ рджрд┐рдЦрд╛рдПрдБ', bad: 'рдХреГрдкрдпрд╛ рд╕рд╣реА рдЬрдиреНрдо рддрд┐рдерд┐ рдбрд╛рд▓реЗрдВред', change: 'рдмрджрд▓реЗрдВ',
-        moolank: ['рдореВрд▓рд╛рдВрдХ', 'рдЬрдиреНрдо рдЕрдВрдХ ┬╖ рдЖрдкрдХрд╛ рд╕реНрд╡рднрд╛рд╡'], bhagyank: ['рднрд╛рдЧреНрдпрд╛рдВрдХ', 'рднрд╛рдЧреНрдп рдЕрдВрдХ ┬╖ рдЬреАрд╡рди рдХреА рджрд┐рд╢рд╛'], nameNum: ['рдирд╛рдорд╛рдВрдХ', 'рджреВрд╕рд░реЗ рдЖрдкрдХреЛ рдХреИрд╕реЗ рджреЗрдЦрддреЗ рд╣реИрдВ'],
-        noName: 'рдирд╛рдорд╛рдВрдХ рдХреЗ рд▓рд┐рдП рдЕрдкрдирд╛ рдирд╛рдо рдЕрдВрдЧреНрд░реЗрдЬрд╝реА рдЕрдХреНрд╖рд░реЛрдВ рдореЗрдВ рд▓рд┐рдЦреЗрдВред', planet: 'рдЧреНрд░рд╣', strengths: 'рдЦреВрдмрд┐рдпрд╛рдБ', care: 'рд╕рд╛рд╡рдзрд╛рдиреА',
-        harmonyGood: 'рдЖрдкрдХрд╛ рдирд╛рдорд╛рдВрдХ рдФрд░ рдореВрд▓рд╛рдВрдХ рдорд┐рддреНрд░ рд╣реИрдВ: рдЕрдЪреНрдЫрд╛ рдореЗрд▓ред', harmonyNeutral: 'рдЖрдкрдХрд╛ рдирд╛рдорд╛рдВрдХ рдФрд░ рдореВрд▓рд╛рдВрдХ рдПрдХ-рджреВрд╕рд░реЗ рдХреЗ рд▓рд┐рдП рд╕рдо (рддрдЯрд╕реНрде) рд╣реИрдВред',
-        year: 'рдЖрдкрдХрд╛ {year} рд╕рд╛рд▓: рдЕрдВрдХ {n}', lucky: 'рдЖрдкрдХреЗ рд▓рд┐рдП рд╢реБрдн', luckyNumbers: 'рдЕрдВрдХ', luckyDays: 'рджрд┐рди', luckyColours: 'рд░рдВрдЧ',
-        askAi: 'рдореЗрд░реЗ рдЕрдВрдХреЛрдВ рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ AI рд╕реЗ рдкреВрдЫреЗрдВ', askQ: 'рдореЗрд░рд╛ рдореВрд▓рд╛рдВрдХ {m} рдФрд░ рднрд╛рдЧреНрдпрд╛рдВрдХ {b} рд╣реИред рдпреЗ рдЕрдВрдХ рдореЗрд░реЗ рдХрд░рд┐рдпрд░ рдФрд░ рд░рд┐рд╢реНрддреЛрдВ рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ рдХреНрдпрд╛ рдХрд╣рддреЗ рд╣реИрдВ?', share: 'рд╢реЗрдпрд░ рдХрд░реЗрдВ',
-        note: 'рдЕрдВрдХ рдЬреНрдпреЛрддрд┐рд╖ рд╕реЛрдЪрдиреЗ рдХрд╛ рдПрдХ рдкрд╛рд░рдВрдкрд░рд┐рдХ рддрд░реАрдХрд╛ рд╣реИ, рдирд┐рд╢реНрдЪрд┐рддрддрд╛ рдирд╣реАрдВред' },
-      menu: { title: 'рдореЗрдиреВ', open: 'рдореЗрдиреВ рдЦреЛрд▓реЗрдВ', close: 'рдореЗрдиреВ рдмрдВрдж рдХрд░реЗрдВ', home: 'рд╣реЛрдо', panchang: 'рдЖрдЬ рдХрд╛ рдкрдВрдЪрд╛рдВрдЧ', appearance: 'рд░реВрдк', privacy: 'рдЧреЛрдкрдиреАрдпрддрд╛ рдФрд░ рд╢рд░реНрддреЗрдВ', back: 'рд╡рд╛рдкрд╕', shareReading: 'рд╢реЗрдпрд░', shareApp: 'рдРрдк рд╢реЗрдпрд░ рдХрд░реЗрдВ', rateApp: 'рдРрдк рдХреЛ рд░реЗрдЯ рдХрд░реЗрдВ', funFact: 'рдХреНрдпрд╛ рдЖрдк рдЬрд╛рдирддреЗ рд╣реИрдВ?', listen: 'рд╕реБрдиреЗрдВ', chips: { palm: 'рдореЗрд░реА рд╣рдереЗрд▓реА рдкрдврд╝реЗрдВ', tarot: 'рдЯреИрд░реЛ рдХрд╛рд░реНрдб рдЪреБрдиреЗрдВ', lifeguide: 'рдореЗрд░реА рд▓рд╛рдЗрдлрд╝ рдЧрд╛рдЗрдб', numbers: 'рдореЗрд░реЗ рдЕрдВрдХ', signmatch: 'рд░рд╛рд╢рд┐ рдорд┐рд▓рд╛рди' }, shareLine: 'рдЖрдкрдХреА рдЬреЗрдм рдореЗрдВ рдЖрдкрдХрд╛ рд╡реИрджрд┐рдХ рдЬреНрдпреЛрддрд┐рд╖реА: рдкрдВрдЪрд╛рдВрдЧ, рдХреБрдВрдбрд▓реА, рд░рд╛рд╢рд┐рдлрд▓, рд╣рд╕реНрдд рд░реЗрдЦрд╛ рдФрд░ рдЯреИрд░реЛ рдЖрдкрдХреА рднрд╛рд╖рд╛ рдореЗрдВред' },
-      palm: { card: ['рд╣рд╕реНрдд рд░реЗрдЦрд╛', 'рдХреИрдорд░реЗ рд╕реЗ рдЕрдкрдиреА рд╣рдереЗрд▓реА рд╕реНрдХреИрди рдХрд░реЗрдВ'], title: 'рд╣рд╕реНрдд рд░реЗрдЦрд╛ рд╡рд┐рд╢реНрд▓реЗрд╖рдг', step: 'рдЪрд░рдг 1 ┬╖ рд╣рд╛рде рдЪреБрдиреЗрдВ', left: 'рдмрд╛рдИрдВ рд╣рдереЗрд▓реА', right: 'рджрд╛рдИрдВ рд╣рдереЗрд▓реА',
-        tipsTitle: 'рд╕рд╛рдлрд╝ рд╕реНрдХреИрди рдХреЗ рд▓рд┐рдП', tips: ['рдЕрдЪреНрдЫреА рд░реЛрд╢рдиреА рдореЗрдВ рд▓реЗрдВ', 'рд╣рдереЗрд▓реА рд╕реАрдзреА, рдЙрдБрдЧрд▓рд┐рдпрд╛рдБ рдлреИрд▓рд╛рдХрд░ рд░рдЦреЗрдВ', 'рдкреВрд░рд╛ рд╣рд╛рде рдлреНрд░реЗрдо рдореЗрдВ рд░рдЦреЗрдВ'],
-        scan: 'рд╕реНрдХреИрди', reading: 'рдЖрдкрдХреА рд╣рдереЗрд▓реА рдкрдврд╝ рд░рд╣реЗ рд╣реИрдВтАж', notPalm: 'рд╣рдереЗрд▓реА рд╕рд╛рдлрд╝ рдирд╣реАрдВ рджрд┐рдЦреАред рдЕрдЪреНрдЫреА рд░реЛрд╢рдиреА рдореЗрдВ рдкреВрд░реА рд╣рдереЗрд▓реА рджрд┐рдЦрд╛рддреЗ рд╣реБрдП рдлрд┐рд░ рдХреЛрд╢рд┐рд╢ рдХрд░реЗрдВред',
-        off: 'рд╣рд╕реНрдд рд░реЗрдЦрд╛ рдкрдарди рдЕрднреА рдмрдВрдж рд╣реИред', failed: 'рдЕрднреА рдкрдврд╝ рдирд╣реАрдВ рдкрд╛рдПред рдереЛрдбрд╝реА рджреЗрд░ рдмрд╛рдж рдлрд┐рд░ рдХреЛрд╢рд┐рд╢ рдХрд░реЗрдВред',
-        cam: { hint: 'рдЕрдкрдиреА рдЦреБрд▓реА рд╣рдереЗрд▓реА рдХреЛ рдЖрдЙрдЯрд▓рд╛рдЗрди рдХреЗ рдЕрдВрджрд░ рд░рдЦреЗрдВ', dark: 'рдмрд╣реБрдд рдЕрдВрдзреЗрд░рд╛ рд╣реИред рддреЗрдЬрд╝ рд░реЛрд╢рдиреА рдореЗрдВ рдЬрд╛рдХрд░ рдлрд┐рд░ рджрдмрд╛рдПрдБред', gallery: 'рдлрд╝реЛрдЯреЛ рдЪреБрдиреЗрдВ', close: 'рдмрдВрдж рдХрд░реЗрдВ', snap: 'рдлрд╝реЛрдЯреЛ рд▓реЗрдВ' }, tabs: ['рд╣рдереЗрд▓реА', 'рдкреНрд░реЗрдо', 'рдХрд░рд┐рдпрд░'], lines: { heart: 'рд╣реГрджрдп рд░реЗрдЦрд╛', head: 'рдорд╕реНрддрд┐рд╖реНрдХ рд░реЗрдЦрд╛', life: 'рдЬреАрд╡рди рд░реЗрдЦрд╛', fate: 'рднрд╛рдЧреНрдп рд░реЗрдЦрд╛', summary: 'рдЖрдкрдХреА рд╣рдереЗрд▓реА рдХрд╣рддреА рд╣реИ' },
-        ready: 'рдЖрдкрдХреА рд╣рдереЗрд▓реА рдХреА рдлрд╝реЛрдЯреЛ рддреИрдпрд╛рд░ рд╣реИред', see: 'тЦ╢ рдореЗрд░реА рд░реАрдбрд┐рдВрдЧ рджреЗрдЦреЗрдВ', again: 'рдлрд┐рд░ рд╕реНрдХреИрди рдХрд░реЗрдВ', askAi: 'рдореЗрд░реА рд╣рдереЗрд▓реА рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ AI рд╕реЗ рдкреВрдЫреЗрдВ', share: 'рд╢реЗрдпрд░', privacy: 'рдЖрдкрдХреА рдлрд╝реЛрдЯреЛ рд╕рд┐рд░реНрдлрд╝ рдЗрд╕реА рдкрдарди рдХреЗ рд▓рд┐рдП рд╣реИ рдФрд░ рд╕реЗрд╡ рдирд╣реАрдВ рд╣реЛрддреАред',
-        askQ: 'рдореЗрд░реА рд╣рд╕реНрдд рд░реЗрдЦрд╛ рдкрдарди рдХрд╣рддреА рд╣реИ: тАЬ{summary}тАЭ рдЕрдм рдореБрдЭреЗ рдХрд┐рд╕ рдкрд░ рдзреНрдпрд╛рди рджреЗрдирд╛ рдЪрд╛рд╣рд┐рдП?',
-        rekhaNote: 'рдпреЗ рд░реЗрдЦрд╛рдПрдБ рдЖрдкрдХреА рдлреЛрдЯреЛ рд╕реЗ AI рдХреЗ рдЕрдиреБрдорд╛рди рдкрд░ рдЖрдзрд╛рд░рд┐рдд рд╣реИрдВ, рдХреЗрд╡рд▓ рдорд╛рд░реНрдЧрджрд░реНрд╢рди рдХреЗ рд▓рд┐рдП тАФ рд╕рдЯреАрдХ рд░реЗрдЦрд╛рдПрдБ рдирд╣реАрдВред' },
-      tarot: { card: ['рдЯреИрд░реЛ', 'рдкреНрд░реЗрдо, рдХрд░рд┐рдпрд░, рдкреИрд╕реЗ рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ рдХрд╛рд░реНрдб рд╕реЗ рдкреВрдЫреЗрдВ'], title: 'рдЯреИрд░реЛ', ask: 'рдЖрдк рдХрд╛рд░реНрдб рд╕реЗ рдХреНрдпрд╛ рдкреВрдЫрдирд╛ рдЪрд╛рд╣рддреЗ рд╣реИрдВ?',
-        topics: { love: 'рдкреНрд░реЗрдо', career: 'рдХрд░рд┐рдпрд░', money: 'рдкреИрд╕рд╛', health: 'рд╕реЗрд╣рдд', luck: 'рднрд╛рдЧреНрдп', family: 'рдкрд░рд┐рд╡рд╛рд░' },
-        pick: '3 рдХрд╛рд░реНрдб рдЪреБрдиреЗрдВ', picked: '3 рдореЗрдВ рд╕реЗ {n} рдЪреБрдиреЗ', shuffle: 'рдЕрдкрдиреЗ рдкреНрд░рд╢реНрди рдкрд░ рдзреНрдпрд╛рди рджреЗрдВ, рдлрд┐рд░ рддреАрди рдХрд╛рд░реНрдб рдЪреБрдиреЗрдВред',
-        positions: ['рдЕрддреАрдд', 'рд╡рд░реНрддрдорд╛рди', 'рднрд╡рд┐рд╖реНрдп'], reversed: 'рдЙрд▓реНрдЯрд╛', advice: 'рдЖрдкрдХреЗ рд▓рд┐рдП рд╕рдВрджреЗрд╢', loading: 'рдЖрдкрдХреЗ рдХрд╛рд░реНрдб рдкрдврд╝ рд░рд╣реЗ рд╣реИрдВтАж',
-        see: 'тЦ╢ рдореЗрд░реА рд░реАрдбрд┐рдВрдЧ рджреЗрдЦреЗрдВ', again: 'рдирдИ рд░реАрдбрд┐рдВрдЧ', askAi: 'рдЗрд╕ рдмрд╛рд░реЗ рдореЗрдВ AI рд╕реЗ рдкреВрдЫреЗрдВ', share: 'рд╢реЗрдпрд░', fallbackAdvice: 'рдмреАрдЪ рд╡рд╛рд▓реЗ рдХрд╛рд░реНрдб рдХрд╛ рд╕рдВрджреЗрд╢ рдЖрдЬ рдпрд╛рдж рд░рдЦреЗрдВ; рдПрдХ-рдПрдХ рдЫреЛрдЯрд╛ рдХрджрдо рдмрдврд╝рд╛рдПрдБред',
-        askQ: '{topic} рдЯреИрд░реЛ рд░реАрдбрд┐рдВрдЧ рдореЗрдВ рдореБрдЭреЗ {cards} рдорд┐рд▓реЗред рдЗрд╕рдХрд╛ рдореЗрд░реЗ рд▓рд┐рдП рдХреНрдпрд╛ рдЕрд░реНрде рд╣реИ?' },
-      moon: { card: ['рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐', 'рдЖрдкрдХреА рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рдФрд░ рд╕реНрд╡рднрд╛рд╡'], title: 'рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐', nakshatra: 'рдирдХреНрд╖рддреНрд░', pada: 'рдЪрд░рдг',
-        approx: 'рдЕрдиреБрдорд╛рдирд┐рдд: рд╕рдЯреАрдХ рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП рдЬрдиреНрдо рд╕рдордп рдЬреЛрдбрд╝реЗрдВред', need: 'рдЕрдкрдиреА рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рджреЗрдЦрдиреЗ рдХреЗ рд▓рд┐рдП рдЬрдиреНрдо рддрд┐рдерд┐ рдЬреЛрдбрд╝реЗрдВред', add: 'рдЬрдиреНрдо рд╡рд┐рд╡рд░рдг рдЬреЛрдбрд╝реЗрдВ',
-        pick: 'рдХреЛрдИ рднреА рд░рд╛рд╢рд┐ рджреЗрдЦреЗрдВ', loading: 'рдЪрдВрджреНрд░рдорд╛ рдкрдврд╝ рд░рд╣реЗ рд╣реИрдВтАж', share: 'рд╢реЗрдпрд░', report: 'рд░рд┐рдкреЛрд░реНрдЯ', yours: 'рдЖрдкрдХреА',
-        sections: { emotional: 'рднрд╛рд╡рдирд╛рддреНрдордХ рд╕реНрд╡рднрд╛рд╡', love: 'рдкреНрд░реЗрдо рдФрд░ рдкрд░рд┐рд╡рд╛рд░', career: 'рдХрд╛рдо рдФрд░ рдкреИрд╕рд╛', wellbeing: 'рд╕реЗрд╣рдд рдФрд░ рд╕реБрдХреВрди', remedy: 'рд╕рд░рд▓ рдЙрдкрд╛рдп' },
-        nature: ['рд╕рд╛рд╣рд╕реА рдФрд░ рддреБрд░рдВрдд рдХрджрдо рдЙрдард╛рдиреЗ рд╡рд╛рд▓реЗ; рдорди рдХреА рдмрд╛рдд рдИрдорд╛рдирджрд╛рд░реА рд╕реЗ рдХрд╣рддреЗ рд╣реИрдВ, рдЖрдЬрд╝рд╛рджреА рдЪрд╛рд╣рд┐рдПред', 'рд╕реНрдерд┐рд░ рдФрд░ рд╡рдлрд╝рд╛рджрд╛рд░; рдЖрд░рд╛рдо рдФрд░ рд╕реБрдВрджрд░рддрд╛ рдкрд╕рдВрдж, рджрдмрд╛рд╡ рдореЗрдВ рднреА рд╢рд╛рдВрддред',
-          'рдЬрд┐рдЬреНрдЮрд╛рд╕реБ рдФрд░ рддреЗрдЬрд╝ рджрд┐рдорд╛рдЧ; рдмрд╛рддрдЪреАрдд рдкрд╕рдВрдж, рдирдпрд╛рдкрди рдЪрд╛рд╣рд┐рдПред', 'рджреЗрдЦрднрд╛рд▓ рдХрд░рдиреЗ рд╡рд╛рд▓реЗ рдФрд░ рд╕рдВрд╡реЗрджрдирд╢реАрд▓; рдкрд░рд┐рд╡рд╛рд░ рд╕рдм рдХреБрдЫ рд╣реИ, рдЕрдВрддрд░реНрдЬреНрдЮрд╛рди рдордЬрд╝рдмреВрддред',
-          'рдЙрджрд╛рд░ рдФрд░ рдЧрд░реНрдордЬреЛрд╢реА рднрд░реЗ; рдиреЗрддреГрддреНрд╡ рдореЗрдВ рдФрд░ рдореЗрд╣рдирдд рдХреА рдкрд╣рдЪрд╛рди рдорд┐рд▓рдиреЗ рдкрд░ рдЪрдордХрддреЗ рд╣реИрдВред', 'рд╡рд┐рдЪрд╛рд░рд╢реАрд▓ рдФрд░ рд╕рд╛рд╡рдзрд╛рди; рдорджрдж рдХрд░рдирд╛ рдкрд╕рдВрдж, рд╡реНрдпрд╡рд╕реНрдерд╛ рдореЗрдВ рд╕реБрдХреВрди рдкрд╛рддреЗ рд╣реИрдВред',
-          'рд╕реМрдореНрдп рдФрд░ рдиреНрдпрд╛рдпрдкреНрд░рд┐рдп; рд╕рд╛рдордВрдЬрд╕реНрдп рдЪрд╛рд╣рддреЗ рд╣реИрдВ, рдЕрдЪреНрдЫреЗ рд╕рд╛рде рдореЗрдВ рд╕рдмрд╕реЗ рдЦреБрд╢ред', 'рдЧрд╣рд░реЗ рдФрд░ рдирд┐рдЬреА; рдЧрд╣рд░рд╛рдИ рд╕реЗ рдкреНрд░реЗрдо рдХрд░рддреЗ рд╣реИрдВ, рд╡рдлрд╝рд╛рджрд╛рд░, рдЗрдЪреНрдЫрд╛рд╢рдХреНрддрд┐ рдкреНрд░рдмрд▓ред',
-          'рдЖрд╢рд╛рд╡рд╛рджреА рдФрд░ рдИрдорд╛рдирджрд╛рд░; рд╕реАрдЦрдирд╛, рдпрд╛рддреНрд░рд╛ рдФрд░ рдмрдбрд╝реА рд╕реЛрдЪ рдкрд╕рдВрджред', 'рд╡реНрдпрд╛рд╡рд╣рд╛рд░рд┐рдХ рдФрд░ рдзреИрд░реНрдпрд╡рд╛рди; рдЬрд╝рд┐рдореНрдореЗрджрд╛рд░ рдФрд░ рдЪреБрдкрдЪрд╛рдк рдорд╣рддреНрд╡рд╛рдХрд╛рдВрдХреНрд╖реАред',
-          'рд╕реНрд╡рддрдВрддреНрд░ рдФрд░ рд╡рд┐рдЪрд╛рд░рд╢реАрд▓; рдорд┐рд▓рдирд╕рд╛рд░, рд▓реЛрдЧреЛрдВ рдХреА рдкрд░рд╡рд╛рд╣ рдХрд░рддреЗ рд╣реИрдВред', 'рд╕реНрд╡рдкреНрдирд┐рд▓ рдФрд░ рджрдпрд╛рд▓реБ; рдХрд░реБрдгрд╛рдордп, рд░рдЪрдирд╛рддреНрдордХ рдФрд░ рд╕реНрд╡рднрд╛рд╡ рд╕реЗ рдЖрдзреНрдпрд╛рддреНрдорд┐рдХред'] },
-      sections: { chart: 'рдЖрдкрдХреА рдХреБрдВрдбрд▓реА', palm: 'рд╣рд╕реНрдд рд░реЗрдЦрд╛, рдЯреИрд░реЛ рдФрд░ рдЕрдВрдХ', love: 'рдкреНрд░реЗрдо рдФрд░ рдорд┐рд▓рд╛рди', time: 'рд╕рдордп рдФрд░ рддреНрдпреЛрд╣рд╛рд░' }, daily: 'рд░реЛрдЬрд╝рд╛рдирд╛',
-      greet: { morning: 'рд╕реБрдкреНрд░рднрд╛рдд', afternoon: 'рд╢реБрдн рджреЛрдкрд╣рд░', evening: 'рд╢реБрдн рд╕рдВрдзреНрдпрд╛', night: 'рд╢реБрдн рд░рд╛рддреНрд░рд┐', hello: 'рдирдорд╕реНрддреЗ ЁЯЩП' },
-      aiEyebrow: 'AI рдЬреНрдпреЛрддрд┐рд╖реА', tryAsking: 'рдРрд╕реЗ рдкреВрдЫреЗрдВ', persona: { hello: 'рдирдорд╕реНрддреЗ{name}! ЁЯЩП рдореИрдВ рдЬреНрдпреЛрддрд┐рд░реНрдордп рд╣реВрдБ, рдЖрдкрдХрд╛ рдЬреНрдпреЛрддрд┐рд╖реАред рдкреНрд░реЗрдо, рдХрд░рд┐рдпрд░, рдкреИрд╕рд╛, рд╕реЗрд╣рдд рдФрд░ рдЖрдиреЗ рд╡рд╛рд▓реЗ рджрд┐рдиреЛрдВ рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ рдмрддрд╛ рд╕рдХрддрд╛ рд╣реВрдБред' }, panchangCard: ['рдЖрдЬ рдХрд╛ рдкрдВрдЪрд╛рдВрдЧ', 'рддрд┐рдерд┐, рд░рд╛рд╣реБ рдХрд╛рд▓ рдФрд░ рдореБрд╣реВрд░реНрдд'],
-      tools: { jathakam: ['рдЬрдиреНрдо рдХреБрдВрдбрд▓реА', 'рдЖрдкрдХрд╛ рдЬрдиреНрдо рдЪрд╛рд░реНрдЯ рдФрд░ рдлрд▓'], festivals: ['рддреНрдпреЛрд╣рд╛рд░', 'рдЖрдиреЗ рд╡рд╛рд▓реЗ рддреНрдпреЛрд╣рд╛рд░ рдФрд░ рдЫреБрдЯреНрдЯрд┐рдпрд╛рдБ'], match: ['рдХреБрдВрдбрд▓реА рдорд┐рд▓рд╛рди', '36 рдореЗрдВ рд╕реЗ рдЧреБрдг'], doshas: ['рджреЛрд╖', 'рдорд╛рдВрдЧрд▓рд┐рдХ рдФрд░ рд╕рд╛рдврд╝реЗрд╕рд╛рддреА'], dasha: ['рджрд╢рд╛', 'рдЕрднреА рдХрд┐рд╕ рдЧреНрд░рд╣ рдХреА рджрд╢рд╛ рд╣реИ'], rashi: ['рд░рд╛рд╢рд┐рдлрд▓', 'рджрд┐рди, рд╕рдкреНрддрд╛рд╣, рдорд╣реАрдирд╛'], chat: ['AI рд╕реЗ рдкреВрдЫреЗрдВ', 'рдЬреАрд╡рди рдХреЗ рдмрд╛рд░реЗ рдореЗрдВ рдкреНрд░рд╢реНрди'] },
-    },
-  };
-  // Newer screens keep their words in texts/<code>.js ({love, tools, teaser, more, facts}). A language without its own words
-  // borrows its closest relative's (Hindi for the Devanagari languages), then English.
-  const TEXT_FALLBACK = { mr: 'hi', ne: 'hi', sa: 'hi', kok: 'hi', mai: 'hi', as: 'bn' };
-  function copyFor(table, section) {
-    const extra = (typeof window !== 'undefined' && window.JyotishaTexts) || {};
-    let code = state.lang;
-    for (let hop = 0; hop < 3 && code; hop += 1) {
-      if (table[code]) return table[code];
-      if (extra[code] && extra[code][section]) return extra[code][section];
-      code = TEXT_FALLBACK[code] || 'en';
-    }
-    return table.en;
-  }
-  const loveText = () => copyFor(RELATIONSHIP_COPY, 'love');
-  const toolText = () => copyFor(TOOLS_COPY, 'tools');
-  const fill = (text, values) => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
-  // "2028-02" -> "February 2028" in the chosen language; null (beyond the scanned years) -> "тАФ".
-  const monthText = value => (typeof value === 'string' && /^\d{4}-\d{2}$/.test(value)
-    ? calendarUI.monthTitle(Number(value.slice(0, 4)), Number(value.slice(5, 7)), state.lang) : 'тАФ');
+N╚BИ[┘HYИ
+┌▄┘[ИOOH▌\ЬЩ[ЭY┘JH╚YИ
+▌\ЬЩ[ЭY┘HOOHЭ[
+HШ]Ф▌X┌╦Ь\┌
+▌\ЬЩ[ЭY┘JN╚Щ[Y[XЩ\К┌▄┘[Л▌\ЬЩ[ЭY┘HOOHЭ[Щ\X┘SЩ^
+N╚BИ▌\ЬЩ[ЭY┘HH┌▄┘[О┬ИЫ▄И
+██Ь▌┌┘^KY┘WH┘И╪ЪЩX▌Щ[ЭЪY\╩Y┘\╩JHY┘KЪY[ИH┘^HOOH┌▄┘[О┬ИYИ
+\[┘ИYSY[ЭHOOH	┘Э[Ш▌[█Й╚	ЙИ	
+	▄┌YK[Y[ЭI╩JHYSY[ЭJ
+N┬И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╦ШЫ▌█K[Ш]ИI╩KЩЫ▄СXX┌
+[Ъ╚OИ┬И██Ь▌X▌]ЩHH[Ъ╦Щ┘]]ЪXЭ]J	┌ЩYЙ╩HOOH╔╪┌▄┘[ЯX┬И[Ъ╦Ш█\▄╙\▌Э┘┘█J	╪X▌]ЩI╦X▌]ЩJN┬ИYИ
+X▌]ЩJH[Ъ╦Ь┘]]ЪXЭ]J	╪\ЪXKX▌\ЬЩ[Э	╦	▄Y┘I╩N╚[┘H[Ъ╦ЬЩ[[▌ЩP]ЪXЭ]J	╪\ЪXKX▌\ЬЩ[Э	╩N┬ИJN┬ИYИ
+╪▌[Y[ЭШЫ┘H	ЙИ╪▌[Y[ЭШЫ┘KШ█\▄╙\▌
+H╪▌[Y[ЭШЫ┘KШ█\▄╙\▌Э┘┘█J	▄Y┘KX┌]	╦┌▄┘[ИOOH	╪┌]	╩N┬ИYИ
+╪▌[Y[ЭШЫ┘H	ЙИ╪▌[Y[ЭШЫ┘KШ█\▄╙\▌
+H╪▌[Y[ЭШЫ┘KШ█\▄╙\▌Э┘┘█J	▄Y┘KYЩX]\ЩI╦СPUTСW╘Q╤T╦Ъ[Ш█Y\╩┌▄┘[КJN┬И▐[Ш╨Ш[ЫЩ\К┌▄┘[КN┬И┌[Щ▌╦Ь╪▄Ы█╩
+N┬ИYИ
+Z▌╦ШШX┌╩HX^XЩR[Э\Ь▌]X[
 
-  function optionCard(icon, title, sub, onClick, active) {
-    const card = el('button', `option-card${active ? ' on' : ''}`);
-    card.type = 'button';
-    card.append(el('span', 'option-icon', icon), el('b', null, title), el('small', null, sub));
-    card.setAttribute('aria-pressed', active ? 'true' : 'false');
-    card.addEventListener('click', onClick);
-    return card;
-  }
-  function renderRelationship() {
-    const copy = loveText();
-    for (const [id, key] of [['relationship-nav', 'nav'], ['relationship-eyebrow', 'eyebrow'], ['relationship-title', 'title'],
-      ['relationship-intro', 'intro'], ['relationship-reading', 'optReading'], ['relationship-compare-title', 'compare'],
-      ['relationship-submit', 'submit'], ['relationship-note', 'note'], ['partner-role-label', 'iAm']]) $(id).textContent = copy[key];
-    const mode = state.loveMode;
-    $('love-options').replaceChildren(
-      optionCard('ЁЯТЮ', copy.optMatch, copy.optMatchSub, () => { state.loveMode = 'match'; renderRelationship(); }, mode === 'match'),
-      optionCard('ЁЯТЧ', copy.optReading, copy.optReadingSub, () => { state.loveMode = 'reading'; state.showLoveReading = true; renderRelationship(); }, mode === 'reading'),
-      optionCard('тЬи', copy.optTraits, copy.optTraitsSub, () => { state.loveMode = 'traits'; renderRelationship(); }, mode === 'traits'));
-    $('love-match').hidden = mode !== 'match';
-    $('love-reading').hidden = mode !== 'reading';
-    $('love-traits').hidden = mode !== 'traits';
-    const traits = $('relationship-traits-result'); traits.replaceChildren();
-    if (mode === 'traits') {
-      if (!state.chart) {
-        traits.appendChild(el('p', 'muted-note', copy.needChart));
-        const form = el('form', 'traits-birth-form');
-        const dobInput = el('input'); dobInput.type = 'date'; dobInput.min = '1800-01-01'; dobInput.max = '2100-12-31'; dobInput.required = true; dobInput.setAttribute('aria-label', t('dob'));
-        const pobInput = el('input'); pobInput.type = 'text'; pobInput.setAttribute('list', 'place-suggestions'); pobInput.maxLength = 200; pobInput.autocomplete = 'off'; pobInput.required = true; pobInput.placeholder = t('placePlaceholder'); pobInput.setAttribute('aria-label', t('pob'));
-        const tobInput = el('input'); tobInput.type = 'time'; tobInput.step = 60; tobInput.required = true; tobInput.setAttribute('aria-label', t('tob'));
-        const statusP = el('p', 'muted-note');
-        const submitBtn = el('button', 'palm-scan', copy.traitsMakeKundliBtn); submitBtn.type = 'submit';
-        form.append(dobInput, pobInput, tobInput, submitBtn, statusP);
-        wirePlaceSuggestions(pobInput);
-        form.addEventListener('submit', async event => {
-          event.preventDefault();
-          if (!(await rewardedGate())) return;
-          statusP.textContent = t('checking');
-          try {
-            const { ok, body } = await post('/api/birth-chart', { dob: dobInput.value, pob: pobInput.value, tob: tobInput.value });
-            if (ok && body && body.chart) { applyChart(body, { dob: dobInput.value, pob: pobInput.value, tob: tobInput.value }); saveProfile({ dob: dobInput.value, pob: pobInput.value, tob: tobInput.value }); }
-            else statusP.textContent = t('chartFailed');
-          } catch (_error) { statusP.textContent = t('serviceUnavailable'); }
-        });
-        traits.appendChild(form);
-        const chatBtn = el('button', 'palm-scan', copy.traitsAskInChat);
-        chatBtn.type = 'button';
-        chatBtn.addEventListener('click', () => { showPage('chat'); ask(copy.optTraits, copy.optTraits, true); });
-        traits.appendChild(chatBtn);
-      } else {
-        try {
-          const read = chartUI.partnerTraits(state.chart, state.lang);
-          traits.append(el('p', 'muted-note', copy.traitsIntro),
-            el('p', null, fill(copy.traitsHouse, { sign: read.house7Sign, lord: read.house7Lord, trait: read.house7Trait })),
-            el('p', null, fill(copy.traitsVenus, { sign: read.venusSign, trait: read.venusTrait })));
-          const pp = state.partnerPortrait;
-          if (pp.status === 'loading') traits.appendChild(loader(copy.traitsPortraitLoading));
-          else {
-            if (pp.status === 'ok' && pp.image) {
-              const img = el('img', 'traits-portrait'); img.src = `data:${pp.image.mime};base64,${pp.image.data}`; img.alt = copy.traitsPortraitBtn;
-              traits.appendChild(img);
-            } else if (pp.status === 'off') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitOff));
-            else if (pp.status === 'unavailable') traits.appendChild(el('p', 'muted-note', copy.traitsPortraitUnavailable));
-            // The gender choice and the generate button stay available after a result too, so trying again (a
-            // different gender, or the same one) never needs leaving this card.
-            if (!state.partnerGender) state.partnerGender = state.myRole === 'bride' ? 'man' : 'woman';
-            const genderRow = el('div', 'seg');
-            [['woman', copy.traitsGenderWoman], ['man', copy.traitsGenderMan]].forEach(([value, label]) => {
-              const option = el('button', value === state.partnerGender ? 'on' : '', label);
-              option.type = 'button';
-              option.addEventListener('click', () => { state.partnerGender = value; renderRelationship(); });
-              genderRow.appendChild(option);
-            });
-            traits.append(el('small', 'muted-note', copy.traitsGenderLabel), genderRow);
-            const btn = el('button', `palm-scan${rewardedFor('partner') ? ' reward-btn' : ''}`, pp.status === 'ok' ? copy.traitsPortraitAgainBtn : copy.traitsPortraitBtn);
-            btn.type = 'button';
-            btn.addEventListener('click', () => { void generatePartnerPortrait(read.house7Rashi, read.venusRashi, state.partnerGender); });
-            traits.appendChild(btn);
-          }
-        } catch (_error) { traits.appendChild(el('p', null, copy.error)); }
-      }
-    }
-    if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => {
-      button.textContent = copy[button.dataset.role]; button.classList.toggle('on', button.dataset.role === state.myRole);
-    });
-    const others = state.matchWho === 'others';
-    $('match-who-label').textContent = copy.who;
-    $('match-who').replaceChildren(...['me', 'others'].map(who => {
-      const button = el('button', who === state.matchWho ? 'on' : '', who === 'me' ? copy.whoMe : copy.whoOthers);
-      button.type = 'button';
-      button.addEventListener('click', () => {
-        state.matchWho = who;
-        state.partnerChart = null; state.partnerDetails = null; state.firstChart = null; state.firstDetails = null;
-        $('relationship-status').textContent = ''; renderRelationship();
-      });
-      return button;
-    }));
-    $('first-block').hidden = !others; $('role-row').hidden = others;
-    $('first-title').textContent = copy.boyTitle; $('second-title').textContent = copy.girlTitle;
-    $('relationship-compare-title').hidden = others;
-    $('relationship-reading').disabled = !state.chart;
-    if (!state.chart && mode && !(mode === 'match' && others)) $('relationship-status').textContent = copy.needChart;
-    const reading = $('relationship-reading-result'); reading.replaceChildren();
-    if (mode === 'reading' && !state.chart) reading.appendChild(el('p', 'muted-note', copy.needChart));
-    if (state.chart && state.showLoveReading) {
-      try {
-        const lines = chartUI.readLife(state.chart, state.details, 'marriage', state.lang, null);
-        for (const line of lines) reading.appendChild(el('p', null, line));
-      } catch (_error) { reading.appendChild(el('p', null, copy.error)); }
-    }
-    const result = $('relationship-result'); result.replaceChildren();
-    const first = others ? state.firstChart : state.chart, firstInfo = others ? state.firstDetails : state.details;
-    if (mode !== 'match' || !first || !state.partnerChart) return;
-    try {
-      const mine = first.positions.Moon.sidereal_longitude, theirs = state.partnerChart.positions.Moon.sidereal_longitude;
-      const match = others || state.myRole !== 'bride' ? matchUI.gunaMilan(mine, theirs) : matchUI.gunaMilan(theirs, mine);
-      const score = el('div', `relationship-score match-${match.verdict}`);
-      score.append(el('span', null, copy.score), el('strong', null, `${match.total} / ${match.max}`));
-      const bar = el('progress'); bar.max = match.max; bar.value = match.total;
-      bar.setAttribute('aria-label', copy.score); score.appendChild(bar);
-      score.appendChild(el('small', null, copy[match.verdict]));
-      result.appendChild(score);
-      for (const [flag, key] of [[match.nadiDosha, 'nadiDosha'], [match.bhakootDosha, 'bhakootDosha']]) if (flag) result.appendChild(el('p', 'dosha-flag', copy[key]));
-      const kuja = details => details && details.doshas && details.doshas.kuja ? details.doshas.kuja.present : null;
-      const me = kuja(firstInfo), them = kuja(state.partnerDetails);
-      if (me !== null && them !== null) {
-        const box = el('div', 'manglik-row');
-        box.append(el('b', null, copy.manglik), el('span', null, `${others ? copy.boy : copy.you}: ${me ? copy.yes : copy.no} ┬╖ ${others ? copy.girl : copy.partner}: ${them ? copy.yes : copy.no}`));
-        if (me && them) box.appendChild(el('small', null, copy.manglikBoth)); else if (me || them) box.appendChild(el('small', null, copy.manglikOne));
-        result.appendChild(box);
-      }
-      const fold = el('details', 'fold');
-      fold.appendChild(el('summary', null, copy.details));
-      const list = el('ul', 'koota-list');
-      for (const koota of match.kootas) {
-        const item = el('li', koota.points === 0 ? 'zero' : '');
-        item.append(el('span', null, copy.kootas[koota.key]), el('b', null, `${koota.points} / ${koota.max}`));
-        list.appendChild(item);
-      }
-      fold.appendChild(list); result.appendChild(fold);
-    } catch (_error) { result.appendChild(el('p', null, copy.error)); }
-  }
-  // "Your ideal partner": a stylized AI illustration from the 7th house and Venus traits alone (never a photo, never
-  // a specific real person); behind "watch an ad" like Palm and Tarot results, when switched on in the admin panel.
-  async function generatePartnerPortrait(house7Rashi, venusRashi, gender) {
-    if (rewardedFor('partner') && !(await watchForResult())) return;
-    state.partnerPortrait = { status: 'loading', image: null };
-    renderRelationship();
-    try {
-      const { ok, body } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi, gender });
-      state.partnerPortrait = ok && body && body.status === 'ok' && body.image ? { status: 'ok', image: body.image }
-        : { status: body && body.status === 'off' ? 'off' : 'unavailable', image: null };
-    } catch (_error) { state.partnerPortrait = { status: 'unavailable', image: null }; }
-    renderRelationship();
-  }
-  $('relationship-reading').addEventListener('click', () => { state.showLoveReading = true; renderRelationship(); });
-  if ($('partner-role').querySelectorAll) $('partner-role').querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-    state.myRole = button.dataset.role; renderRelationship();
-  }));
-  const usableChart = body => body && body.chart && body.chart.positions && body.chart.positions.Moon;
-  $('relationship-form').addEventListener('submit', async event => {
-    event.preventDefault();
-    const copy = loveText(), others = state.matchWho === 'others';
-    if (!others && !state.chart) { $('relationship-status').textContent = copy.needChart; return; }
-    const input = { dob: $('partner-dob').value, pob: $('partner-pob').value.trim(), tob: $('partner-tob').value };
-    const firstInput = { dob: $('first-dob').value, pob: $('first-pob').value.trim(), tob: $('first-tob').value };
-    if (others && !(firstInput.dob && firstInput.pob && firstInput.tob)) { $('relationship-status').textContent = copy.needBoth; return; }
-    const ownChart = state.chart;
-    state.partnerChart = null; state.partnerDetails = null; state.firstChart = null; state.firstDetails = null; $('relationship-result').replaceChildren();
-    $('relationship-status').textContent = copy.calculating;
-    $('relationship-submit').disabled = true;
-    let step = 'second';
-    try {
-      if (others) {
-        step = 'first';
-        const boy = await post('/api/birth-chart', firstInput);
-        if (!boy.ok || !usableChart(boy.body)) throw new Error('First chart unavailable');
-        state.firstChart = boy.body.chart; state.firstDetails = boy.body.details || null;
-        step = 'second';
-      }
-      const { ok, body } = await post('/api/birth-chart', input);
-      if (state.chart !== ownChart) return;
-      if (!ok || !usableChart(body)) throw new Error('Second chart unavailable');
-      state.partnerChart = body.chart; state.partnerDetails = body.details || null;
-      $('relationship-status').textContent = '';
-      renderRelationship();
-    } catch (_error) {
-      state.firstChart = null; state.firstDetails = null;
-      if (state.chart === ownChart) $('relationship-status').textContent = step === 'first' ? copy.failedFirst : copy.failed;
-    }
-    finally { $('relationship-submit').disabled = false; }
-  });
+N╚╦╚Ы╚Э[\╪▄ЩY[ИY┌[И█┌[Щ╚ШX┌┬ИBИ╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╪V┌ЩYЧПHИ╚ЧI╩KЩЫ▄СXX┌
+[Ъ╚OИ[Ъ╦ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦]Щ[ЭOИ┬И██Ь▌\Щ┘]H[Ъ╦Щ┘]]ЪXЭ]J	┌ЩYЙ╩KЬ█X┘JJN┬ИYИ
+╪ЪЩX▌Ъ\╙▌█КY┘\╦\Щ┘]
+JH╚]Щ[ЭЬЩ]Щ[ЭYШ][
 
-  /* ---- Kundli: one view at a time (chart, planets, dasha, doshas, birth Panchang) ---- */
-  const KUNDLI_VIEWS = ['chart', 'planets', 'dasha', 'doshas', 'panchang'];
-  function showKundliView(name) {
-    state.kundliView = KUNDLI_VIEWS.includes(name) ? name : 'chart';
-    const copy = toolText();
-    $('kundli-views').replaceChildren(...KUNDLI_VIEWS.map(view => {
-      const button = el('button', view === state.kundliView ? 'on' : '', copy.views[view]);
-      button.type = 'button'; button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', view === state.kundliView ? 'true' : 'false');
-      button.addEventListener('click', () => showKundliView(view));
-      return button;
-    }));
-    const chartCard = $('chart');
-    const panes = chartCard.querySelectorAll ? chartCard.querySelectorAll('.kview') : [];
-    panes.forEach(pane => { pane.hidden = pane.dataset.kview !== state.kundliView; });
-  }
-  function renderDoshas() {
-    const copy = toolText(), host = $('dosha-body'); host.replaceChildren();
-    const doshas = state.details && state.details.doshas;
-    if (!doshas) { host.appendChild(el('p', 'muted-note', copy.doshaUnavailable)); return; }
-    const card = (title, status, good, lines) => {
-      const box = el('div', `dosha-card ${good ? 'ok' : 'warn'}`);
-      const head = el('div', 'dosha-head'); head.append(el('b', null, title), el('span', 'dosha-status', status));
-      box.appendChild(head);
-      for (const line of lines) if (line) box.appendChild(el('p', null, line));
-      return box;
-    };
-    const kuja = doshas.kuja;
-    if (kuja) host.appendChild(card(copy.kujaTitle, kuja.present ? copy.kujaYes : copy.kujaNo, !kuja.present,
-      [fill(copy.kujaWhy, { lagna: kuja.house_from_lagna, moon: kuja.house_from_moon }), kuja.reduced ? copy.kujaReduced : '']));
-    const saturn = doshas.saturn;
-    if (saturn && saturn.sade_sati) {
-      const sade = saturn.sade_sati;
-      const span = item => item ? fill(copy.period, { start: monthText(item.start), end: monthText(item.end) }) : '';
-      const lines = sade.active ? [span(sade.current)] : [sade.next ? fill(copy.sadeNext, { start: monthText(sade.next.start), end: monthText(sade.next.end) }) : ''];
-      for (const [key, item] of [['ashtama', saturn.ashtama_shani], ['ardhashtama', saturn.ardhashtama_shani]]) {
-        if (item && item.active) lines.push(fill(copy[key], { end: monthText(item.current && item.current.end) }));
-      }
-      host.appendChild(card(copy.sadeTitle, sade.active ? copy[`phase${sade.phase}`] || copy.phase2 : copy.sadeNo, !sade.active, lines));
-    }
-    host.appendChild(el('p', 'muted-note', copy.doshaNote));
-  }
-  // Home: a few clear choices; each card shows something about the user (their dasha, doshas, sign, the next festival).
-  function nextFestivalText() {
-    const copy = toolText(), events = state.festivals && state.festivals.events;
-    if (!events || !events.length || !state.todayIso) return null;
-    const event = events[0];
-    const day = iso => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
-    const days = Math.round((day(event.date) - day(state.todayIso)) / 86400000);
-    return `${eventName(event)} ┬╖ ${days === 0 ? copy.festToday : days === 1 ? copy.festTomorrow : fill(copy.festIn, { n: days })}`;
-  }
-  function liveSubtitles() {
-    const copy = toolText(), details = state.details, live = {};
-    if (state.chart) live.rashi = fill(copy.liveRashi, { sign: signName(state.chart.positions.Moon.rashi_index) });
-    const dasha = details && details.dasha;
-    if (dasha && dasha.current_mahadasha) {
-      const sub = (dasha.antardasha || []).find(item => item.current);
-      live.dasha = sub ? fill(copy.liveDasha, { maha: bodyName(dasha.current_mahadasha), antar: bodyName(sub.lord) }) : fill(copy.liveDashaMaha, { maha: bodyName(dasha.current_mahadasha) });
-    }
-    const doshas = details && details.doshas;
-    if (doshas && doshas.saturn && doshas.saturn.sade_sati && doshas.saturn.sade_sati.active) live.doshas = fill(copy.liveSade, { p: doshas.saturn.sade_sati.phase });
-    else if (doshas && doshas.kuja) live.doshas = fill(copy.liveDosha, { k: doshas.kuja.present ? copy.yes : copy.no, s: copy.no });
-    live.festivals = nextFestivalText();
-    return live;
-  }
-  // Where the Home cards and the side menu take people (one place, so both behave the same).
-  function openTool(page, view) {
-    if (page === 'relationship') { state.loveMode = 'match'; renderRelationship(); }
-    showPage(page);
-    if (view) {
-      showKundliView(view);
-      // With a chart already made, jump straight to the chosen view instead of the birth form.
-      if (state.chart) { try { $('kundli-views').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ } }
-    }
-  }
-  function toPanchang() { showPage('home'); try { $('day-panchang').querySelector('.hero-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* optional */ } }
-  function openJathakam() {
-    showPage('kundli');
-    if (state.chart) { showKundliView('chart'); try { $('chart').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* optional */ } }
-    else { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } }
-  }
-  function renderTools() {
-    const text = toolText(), copy = text.tools, live = liveSubtitles();
-    $('detail-title').textContent = text.detailTitle;
-    $('festivals-title').textContent = text.festTitle;
-    const open = (page, view) => () => openTool(page, view);
-    const toFestivals = () => showPage('calendar');
-    const needs = key => live[key] || (state.chart ? copy[key][1] : text.needKundli);
-    // Big illustrated cards in sections, like a magazine: picture on top, name and a live line at the bottom.
-    const art = window.JyotishaArt || null;
-    const card = (key, title, sub, onClick, extra = {}) => {
-      const button = el('button', `art-card${extra.wide ? ' wide' : ''}`); button.type = 'button';
-      const picture = el('span', 'art-pic');
-      if (art && art[extra.art || key]) picture.innerHTML = art[extra.art || key](); else picture.textContent = extra.emoji || 'тЬи';
-      button.append(picture, el('b', null, title), el('small', null, sub));
-      if (extra.badge) button.appendChild(el('span', 'art-badge', extra.badge));
-      button.addEventListener('click', onClick);
-      return button;
-    };
-    const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
-    const sections = text.sections || TOOLS_COPY.en.sections;
-    const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
-    const todayTithi = state.day && state.day.tithi && state.day.tithi[0] ? names.tithiName(state.day.tithi[0].index, state.lang) : '';
-    $('tool-grid').replaceChildren(
-      section(sections.chart, [
-        card('lifeguide', lgCopy().card[0], lgCopy().card[1], openLifeGuide, { badge: text.daily || TOOLS_COPY.en.daily }),
-        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
-        card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} ┬╖ ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign),
-        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'))]),
-      section(sections.palm || TOOLS_COPY.en.sections.palm, [
-        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
-        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
-        card('numerology', numCopy().card[0], numberLine() || numCopy().card[1], openNumerology)]),
-      section(sections.love, [
-        card('match', copy.match[0], copy.match[1], open('relationship')),
-        card('signmatch', smCopy().card[0], smCopy().card[1], openSignMatch),
-        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
-      section(sections.time, [
-        // Today's Panchang first, so it is seen without swiping.
-        card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang),
-        card('festivals', copy.festivals[0], live.festivals || copy.festivals[1], toFestivals, { wide: true })]));
-    renderGreeting();
-    renderJathakamCard();
-    renderHomeAi();
-    renderNotify();
-    renderMenu();
-  }
-  // Home greeting: "Good afternoon" and the user's name (or Namaste when we do not know it).
-  function renderGreeting() {
-    const text = toolText(), greet = text.greet || TOOLS_COPY.en.greet, hour = new Date().getHours();
-    const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
-    $('greet-time').textContent = greet[part];
-    $('greet-name').textContent = state.userName || greet.hello;
-    const art = window.JyotishaArt, box = $('ai-art');
-    if (art && box && !box.dataset.done) { box.innerHTML = art.orb(); box.dataset.done = '1'; }
-    $('ai-eyebrow').textContent = text.aiEyebrow || TOOLS_COPY.en.aiEyebrow;
-    $('try-asking').textContent = `тЬж ${text.tryAsking || TOOLS_COPY.en.tryAsking}`;
-  }
-  // Home: "Want to know your Jathakam?" before a chart exists, a short summary of it afterwards.
-  function renderJathakamCard() {
-    const copy = toolText(), box = $('my-jathakam'), chart = state.chart;
-    box.replaceChildren();
-    const button = el('button', 'jk-cta', chart ? copy.jkView : copy.jkCreate); button.type = 'button';
-    button.addEventListener('click', openJathakam);
-    const head = el('div', 'jk-head');
-    head.append(el('span', 'jk-icon', 'ЁЯкР'), el('div'));
-    head.children[1].append(el('h2', null, chart ? copy.jkMine : copy.jkAsk));
-    if (!chart) head.children[1].append(el('p', null, copy.jkSub));
-    box.appendChild(head);
-    if (chart) {
-      const stats = el('div', 'jk-stats');
-      const stat = (label, value) => { const item = el('div', 'jk-stat'); item.append(el('small', null, label), el('b', null, value)); return item; };
-      stats.append(stat(t('lagna'), signName(chart.ascendant.rashi_index)), stat(t('janmaRashi'), signName(chart.positions.Moon.rashi_index)),
-        stat(t('nakshatra'), names.nakshatraName(chart.panchanga_at_birth.nakshatra_index, state.lang)));
-      const dasha = state.details && state.details.dasha;
-      if (dasha && dasha.current_mahadasha) {
-        const sub = (dasha.antardasha || []).find(item => item.current);
-        stats.append(stat(copy.jkDasha, `${bodyName(dasha.current_mahadasha)}${sub ? ' тАУ ' + bodyName(sub.lord) : ''}`));
-      }
-      box.appendChild(stats);
-    }
-    box.appendChild(button);
-  }
-  // Home AI card: a personal line for today, a type box, and a nudge to make a Kundli first.
-  function todayForYou() {
-    const day = state.day;
-    if (!day || day.date !== state.todayIso) return null;
-    return dayForYou(day, localIso(new Date()) + 'T' + new Date().toTimeString().slice(0, 5));
-  }
-  // The personal line for a day at a given local time ('YYYY-MM-DDTHH:MM'), from Chandrabalam and Tarabalam.
-  function dayForYou(day, now) {
-    const chart = state.chart;
-    if (!day || !chart || !Array.isArray(day.nakshatra) || !Array.isArray(day.moon_rashi)) return null;
-    const current = list => list.find(item => item.starts_at <= now && now < item.ends_at) || list[0];
-    const tara = current(day.nakshatra), moon = current(day.moon_rashi);
-    if (!tara || !moon) return null;
-    const mySign = chart.positions.Moon.rashi_index, myStar = chart.panchanga_at_birth.nakshatra_index;
-    const copy = toolText();
-    if (moon.ashtama_chandra_rashi === mySign) return copy.todayCare;
-    const chandra = (moon.good_chandrabalam_rashis || []).includes(mySign), taraGood = (tara.good_tara_nakshatras || []).includes(myStar);
-    return chandra && taraGood ? copy.todayGood : chandra || taraGood ? copy.todayMixed : copy.todayQuiet;
-  }
-  function renderHomeAi() {
-    const copy = toolText();
-    $('home-question').placeholder = copy.askPlaceholder;
-    $('home-ask-send').textContent = copy.askButton;
-    const line = todayForYou(), box = $('home-today');
-    box.replaceChildren();
-    if (line) { box.append(el('b', null, `тЬи ${copy.todayLabel}: `), document.createTextNode(line)); box.hidden = false; } else box.hidden = true;
-  }
-  $('home-ask').addEventListener('submit', event => {
-    event.preventDefault();
-    const question = $('home-question').value.trim();
-    if (!question) return;
-    $('home-question').value = '';
-    showPage('chat');
-    ask(question, question, true);
-  });
+N╚┌▌╘Y┘J\Щ┘]
+N╚BИJJN┬И┌▌╘Y┘J	┌█YI╩N┬ВИ╦╚XЩ[╚\ЩH]]▄Л]▄Ъ][ИRH^╚HЭ[\╚ЩZ[Щ[H\ЩH██ЭЩ[Э[█Ш[[ЩЫ▌^\Э\Щ]ЪY]┘YВИ██Ь▌СSUS╙Ф╥T╨╙╘HH┬И[ОИ┬ИШ]ОИ	╙▌ЩI╦^YXЬЫ▌╬И	╘Щ[][█Ь┌\╔╦]NИ	╙▌ЩH	И▌[ЩHX]┌[Щ╔╦[ЭЫ╬И	╨┌█▄┘H┌][▌H╪[Э╚┘YKЙ╦И▄X]┌И	╥▌[ЩHX]┌[Щ╔╦▄X]┌▌XОИ	╤▌[ШHZ[[И╪█▄ЩH▌]┘И═Й╦▄ЩXY[Щ╬И	╙^H▌ЩHЩXY[Щ╔╦▄ЩXY[Щ╘▌XОИ	╒┌][▌\И┌\Э╪^\╚XЫ▌]▌ЩH[ЩX\ЬЪXY┘I╦И▄ШZ]╬И	╓[▌\ИYX[\ЭЩ\Й╦▄ШZ]╘▌XОИ	╘Щ[][█Ь┌\▌[HЬЫ█H[▌\И▌▌\┘H[ЩЩ[Э\╔╦ИШZ]╥[ЭЫ╬И	╨H█\▄┌X╪[ЩXY[Щ╚┘ИЩ[][█Ь┌\▌[HЬЫ█H[▌\И┌\Э8а%Ы▌HЩYX▌[█И┘И[ЮH▄X┌YЪX╚\Ь██ЛЙ╦ИШZ]╥▌\┘NИ	╓[▌\И▌▌\┘H┘И\ЭЩ\Ь┌\╚Ш[╚[И▄┌Y█ЯH
+▄ЩИ█▄ЩJK█╚[▌xа&\ЩH┘Э[ИШ]█И╚██Y[█ЩH▌ШZ]KЙ╦ИШZ]╒Щ[Э\╬И	╒Щ[Э\╦H[Щ]┘И▌ЩH[И[▌\И┌\Э┌]╚[И▄┌Y█ЯH8а%YЩЩX▌[█И[Щ╚╚ЩY[▌ШZ]HЫ▄И[▌KЙ╦ИШZ]╘▄ЭШZ]ЭОИ	°з*┘YH[И[\▌Ш]Y[\Щ\▄┌[█Й╦ШZ]╘▄ЭШZ]╪Y[Щ╬И	╘Z[Э[Щ╚[И[\Щ\▄┌[█╕а)Й╦ИШZ]╘▄ЭШZ]┘ЩОИ	╒\╚\╚Ы▌ЩY[И\ЫЩY█ИY]Й╦ИШZ]╤┘[Щ\УXЩ[И	╘┌▌╚YHH\ЭЩ\И┌╚\╚NЙ╦ШZ]╤┘[Щ\Х██X[ОИ	╒██X[Й╦ШZ]╤┘[Щ\УX[ОИ	╙X[Й╦ИШZ]╘▄ЭШZ]Y╪Z[РЭОИ	№'х!┘[Щ\Ш]HY╪Z[Й╦ИШZ]╘▄ЭШZ][Ш]ШZ[XЫNИ	╨█▌[Ы▌▄ЩX]HH[\▌Ш][█ИЪY┌Ы▌╦ИX\┘HЮHY╪Z[И[ИH[█Y[ЭЙ╦ИШZ]╨\┌╥[Р┌]И	№'фл[YH[▌\ИЪ\Э]Z[╚[И┌]	╦ИШZ]╙XZ┘R▌[ЩPЭОИ	°з*XZ┘H^H▌[ЩI╦И┌╬И	╨┌X┌╚Ы▄Й╦┌╙YNИ	╙YH	И\ЭЩ\Й╦┌╙▌\Ь╬И	╨┌X┌╚▌\Ь╔╦Ы▐U]NИ	╨Ы▐xа&\╚Ъ\Э]Z[╔╦┌\Ы]NИ	╤┌\Ы8а&\╚Ъ\Э]Z[╔╦ЩYYЫ▌И	╤Ъ[[ИЫ▌HЫ▐xа&\╚[ЩH┌\Ы8а&\╚]Z[╦Й╦ШZ[YЪ\Ь▌И	╒HЫ▐xа&\╚┌\Э█▌[Ы▌ЩH╪[▌[]YИ┌X┌╚HЪ\Э]Z[╚[Щ┘[X▌H┌]HЬЫ█HH\▌Й╦Ы▐NИ	╨Ы▐I╦┌\ЫИ	╤┌\Ы	╦██\\ЩNИ	╘\ЭЩ\╕а&\╚Ъ\Э]Z[╔╦P[NИ	╓[▌H\ЩI╦▄Ы██NИ	╤▄Ы██I╦ЬЪYNИ	╨ЬЪYI╦▌XЫZ]И	╨┌X┌╚X]┌[Щ╔╦ИЩYY┌\ЭИ	╨▄ЩX]H[▌\И▌█И▌[ЩHЪ\Ь▌\┌[Щ╚╨Л╨И[Щ╨ЛЙ╦И╪[▌[][Щ╬И	╨╪[▌[][Щ╚H\ЭЩ\╕а&\╚┌\Э8а)Й╦ШZ[YИ	╒H\ЭЩ\╕а&\╚┌\Э█▌[Ы▌ЩH╪[▌[]YИ┌X┌╚HЪ\Э]Z[╚[Щ┘[X▌H┌]HЬЫ█HH\▌Й╦И╪█▄ЩNИ	╤▌[ШHZ[[Й╦^┘[[ЭИ	╤^┘[[ЭX]┌	╦██┘И	╤██┘X]┌	╦]Щ\ШY┘NИ	╨]Щ\ШY┘HX]┌8а%X╪┘\XЫH[И[▄▌ШY][█Ь╔╦▌╬И	╙▌╚X]┌8а%\▌X[HЫ▌ЩX██[Y[ЩY	╦ИШYQ▄┌NИ	╙ШYH▄┌NИЫ▌]ЩHH╪[YHШYKЙ╦ЪZ██▌▄┌NИ	╨ЪZ██▌▄┌NИH█╚[██И┌Y█Ь╚┌][ИHYЩЪX▌[▄┌][█ИЬЫ█HXX┌▌\ЛЙ╦И]Z[╬И	╘┘YH[██▌\╔╦И██▌\╬И╚Ш\ЫШNИ	╒Ш\ЫШH
+Ш]\ЩJI╦Ш\┌XNИ	╒Ш\┌XH
+]ШX▌[█КI╦\ШNИ	╒\ШH
+\▌[ЮJI╦[█ЪNИ	╓[█ЪH
+[Э[XX▐JI╦XZ]ЪNИ	╤▄ШZHXZ]ЪH
+ЬЪY[Щ┌\
+I╦╪[ШNИ	╤╪[ШH
+[\\Ш[Y[Э
+I╦ЪZ██▌И	╨ЪZ██▌
+Ш[Z[H	И┘X[
+I╦ШYNИ	╙ШYH
+X[	И┌[Щ[КI╚KИX[Щ█Z╬И	╙X[Щ█Z╚
+▌ZШH▄┌JI╦[▌NИ	╓[▌I╦\ЭЩ\ОИ	╘\ЭЩ\Й╦Y\╬И	╓Y\╔╦Ы╬И	╙Ы╔╦ИX[Щ█Z╨Ы▌И	╨Ы▌\ЩHX[Щ█Z╚8а%ШY][█Ш[H\╚╪[Ш┘[╚▌]Й╦X[Щ█Z╙█ЩNИ	╙█ЫH█ЩH\╚X[Щ█Z╚8а%X[ЮHШ[Z[Y\╚██Ь▌[[И\▌Ы█┘┘\ИXЫ▌]\╦Й╦ИЫ▌NИ	╨██ЭЩ[Э[█Ш[\┌Z██▌HЭ[\╦Ы▌^\Э\Щ]ЪY]┘YИ\┘H]\╚H▌ZYKЫ▌\╚HX┌\┌[█ИXЫ▌]X\ЬЪXY┘KИ[Э\И[Ы▌\И\Ь██╕а&\╚]Z[╚█ЫH┌]Z\И██Ь┘[Э╚^H\ЩHЫ▌╪]ЩY█И\╚]ЪX┘KЙ╦И\ЬЫ▄ОИ	╨╪[▌[]Y┌\Э]H\╚[Ш██\]N╚Ы╚X]┌[Щ╚╪\╚XYKЙ╦ИKИNИ┬ИШ]ОИ	°,*╕,cx,,8,a°,+Й╦^YXЬЫ▌╬И	°,.8, ╕,+8, ╕,)°,/╕,,╕,`I╦]NИ	°,*╕,cx,,8,a°,+И	И8,'8,/╕,)8,%H8,*╕,b╕, ╕,)8,*	╦[ЭЫ╬И	°,+╕,`8,,8,`H8,#°,)╕,/╚8,&╕,`╕,(x,/╕,,╕,*8,`x,%x,`x, ╕,'°,`x,*8,cx,*8,/╕,,8,b╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦И▄X]┌И	°,'8,/╕,)8,%H8,*╕,b╕, ╕,)8,*	╦▄X]┌▌XОИ	°,%°,`x,(╚8,+╕,a°,,°,*8, И8а%═╕,%x,/╚8,.8,cx,%x,b°,,8,`I╦▄ЩXY[Щ╬И	°,*8,/И8,*╕,cx,,8,a°,+И8,*°,,╕,/°,)8, Й╦▄ЩXY[Щ╘▌XОИ	°,*╕,cx,,8,a°,+Л8,-x,/°,-x,/╕,.x, И8,%°,`x,,8,/°, ╕,&╕,/╚8,+╕,`8,'8,/╕,)8,%x, И8,#°,+╕, ╕,'°,`x, ╕,)╕,/╔╦И▄ШZ]╬И	°,+╕,`8,!╕,)╕,,8,cx,-И8,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╔╦▄ШZ]╘▌XОИ	°,+╕,`°,-H8,!°,,╕,cx,,╕,`K8,-╕,`x,%x,cx,,8,`x,(x,/╚8,!╕,)°,/╕,,8, ╕,%°,/И8,.8, ╕,+8, ╕,)╚8,-╕,b8,,╕,/╔╦ИШZ]╥[ЭЫ╬И	°,!°,)╕,/╚8,+╕,`8,'8,/╕,)8,%x, И8,!╕,)°,/╕,,8, ╕,%°,/И8,.8, ╕,*╕,cx,,8,)╕,/╕,+╚8,.8, ╕,+8, ╕,)╦x,-╕,b8,,╕,/╚8,-x,/°,-╕,cx,,╕,a°,-°,(╚8а%8,#╚8,$╕,%x,cx,%H8,-x,cx,+°,%x,cx,)8,/╚8,%°,`x,,8,/°, ╕,&╕,b╚8,!x, ╕,&╕,*8,/И8,%x,/╕,)╕,`KЙ╦ИШZ]╥▌\┘NИ	°,+╕,`°,-H8,!°,,╕,cx,,╕,`H
+8,+x,/╕,%°,.8,cx,-x,/╕,+╕,cx,+°, КH▄┌Y█Яx,,╕,b╚8,"x, ╕,)╕,/╚
+8,!x,)°,/°,*╕,)8,/╬И█▄ЩJK8,%x,/╕,+8,'°,cx,'°,/╚8,+╕,`8,,8,`H8,)8,,8,&╕,`x,%°,/И▌ШZ]H8,-x,cx,+°,%x,cx,)8,/╚8,-x,b8,*╕,`H8,!╕,%x,,8,cx,-°,/°,)8,`x,,╕,-x,`x,)8,/╕,,8,`KЙ╦ИШZ]╒Щ[Э\╬И	°,+╕,`8,'8,/╕,)8,%x, ╕,,╕,b╚8,*╕,cx,,8,a°,+╕,%x,`H8,%x,/╕,,8,%x,`x,(x,b8,*8,-╕,`x,%x,cx,,8,`x,(x,`H▄┌Y█Яx,,╕,b╚8,"x,*8,cx,*8,/╕,(x,`H8а%8,+╕,`8,%x,`H8,!╕,*╕,cx,+°,/╕,+°,)▌ШZ]x,%°,/И8,!x,*8,/°,*╕,/°,.8,cx,)8,`x, ╕,)╕,/╦Й╦ИШZ]╘▄ЭШZ]ЭОИ	°з*8,$╕,%H8,&╕,/°,)8,cx,,8,`8,%x,,8,(°,*8,`H8,&╕,`╕,(x, ╕,(x,/╔╦ШZ]╘▄ЭШZ]╪Y[Щ╬И	°,&╕,/°,)8,cx,,8,`8,%x,,8,(╚8,%°,`8,.8,cx,)8,`x,*8,cx,*8,/╕, ╕а)Й╦ИШZ]╘▄ЭШZ]┘ЩОИ	°,!°,)╕,/╚8,!°, ╕,%x,/И8,!╕,*8,cH8,&╕,a°,+°,,╕,a°,)╕,`KЙ╦ИШZ]╤┘[Щ\УXЩ[И	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╚8,#╕,,╕,/И8,"x, ╕,(x,/╕,,╕,b╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╬Й╦ШZ]╤┘[Щ\Х██X[ОИ	°,.8,cx,)8,cx,,8,`	╦ШZ]╤┘[Щ\УX[ОИ	°,*╕,`x,,8,`x,-°,`x,(x,`I╦ИШZ]╘▄ЭШZ]Y╪Z[РЭОИ	№'х!8,+╕,,°,cx,,°,`8,&╕,/°,)8,cx,,8,`8,%x,,8,/°, ╕,&╕, ╕,(x,/╔╦ИШZ]╘▄ЭШZ][Ш]ШZ[XЫNИ	°,*╕,cx,,8,.8,cx,)8,`x,)8, И8,&╕,/°,)8,cx,,8,`8,%x,,8,(°,*8,`H8,,8,`╕,*╕,b╕, ╕,)╕,/°, ╕,&╕,,╕,a°,%x,*╕,b°,+°,/╕, ЛИ8,%x,/╕,.8,a°,*╕,/╕,%°,/╚8,+╕,,°,cx,,°,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦ИШZ]╨\┌╥[Р┌]И	№'фл8,+╕,`8,'8,*8,*8,-x,/°,-x,,8,/╕,,╕,*8,`H8,&╕,/╕,'°,cxа#8,,╕,b╚8,&╕,a╕,*╕,cx,*╕, ╕,(x,/╔╦ИШZ]╙XZ┘R▌[ЩPЭОИ	°з*8,*8,/И8,'8,/╕,)8,%x, И8,)8,+°,/╕,,8,`H8,&╕,a°,+°, ╕,(x,/╔╦И┌╬И	°,#╕,-x,,8,/╚8,%x,b°,.8, Й╦┌╙YNИ	°,*8,a°,*8,`H	И8,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╔╦┌╙▌\Ь╬И	°,!°,)8,,8,`x,,╕,*8,`H8,&╕,`╕,(x, ╕,(x,/╔╦Ы▐U]NИ	°,!x,+8,cx,+8,/╕,+°,/╚8,'8,*8,*8,-x,/°,-x,,8,/╕,,╕,`I╦┌\Ы]NИ	°,!x,+╕,cx,+╕,/╕,+°,/╚8,'8,*8,*8,-x,/°,-x,,8,/╕,,╕,`I╦ЩYYЫ▌И	°,!x,+8,cx,+8,/╕,+°,/╦8,!x,+╕,cx,+╕,/╕,+°,/╚8,!°,)╕,cx,)╕,,8,/╚8,-x,/°,-x,,8,/╕,,╕,`H8,!°,-x,cx,-x, ╕,(x,/╦Й╦ШZ[YЪ\Ь▌И	°,!x,+8,cx,+8,/╕,+°,/╚8,'8,/╕,)8,%x, И8,,╕,a╕,%x,cx,%x,/°, ╕,&╕,,╕,a°,%x,*╕,b°,+°,/╕, ЛИ8,'8,*8,*8,-x,/°,-x,,8,/╕,,╕,`H8,&╕,`╕,.8,/╚8,'8,/╕,+8,/°,)8,/И8,*8,`x, ╕,(x,/╚8,*8,%°,,8,/╕,*8,cx,*8,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦Ы▐NИ	°,!x,+8,cx,+8,/╕,+°,/╔╦┌\ЫИ	°,!x,+╕,cx,+╕,/╕,+°,/╔╦██\\ЩNИ	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╚8,'8,*8,*8,-x,/°,-x,,8,/╕,,╕,`I╦P[NИ	°,+╕,`8,,8,`I╦▄Ы██NИ	°,-x,,8,`x,(x,`I╦ЬЪYNИ	°,-x,)°,`x,-x,`I╦▌XЫZ]И	°,*╕,b╕, ╕,)8,*8,&╕,`╕,(x, ╕,(x,/╔╦ИЩYY┌\ЭИ	°,+╕,`x, ╕,)╕,`x,%°,/И8,+╕,`8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,.8,cx,)x,,╕, Л8,.8,+╕,+°, ╕,)8,b╚8,+╕,`8,'8,/╕,)8,%x,/╕,*8,cx,*8,/╚8,,8,`╕,*╕,b╕, ╕,)╕,/°, ╕,&╕, ╕,(x,/╦Й╦И╪[▌[][Щ╬И	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╚8,'8,/╕,)8,%x,/╕,*8,cx,*8,/╚8,%°,(°,/°,.8,cx,)8,`x,*8,cx,*8,/╕, ╕а)Й╦ШZ[YИ	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╚8,'8,/╕,)8,%x, И8,%°,(°,/°, ╕,&╕,,╕,a°,%x,*╕,b°,+°,/╕, ЛИ8,-x,/°,-x,,8,/╕,,╕,*8,`H8,.8,,8,/°,&╕,`╕,.8,/╚8,'8,/╕,+8,/°,)8,/╕,,╕,b°,*8,/╚8,*8,%°,,8,/╕,*8,cx,*8,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦И╪█▄ЩNИ	°,%°,`x,(╚8,+╕,a°,,°,*8, Й╦^┘[[ЭИ	°,!x,)8,cx,+°,`x,)8,cx,)8,+И8,*╕,b╕, ╕,)8,*	╦██┘И	°,+╕, ╕,&╕,/╚8,*╕,b╕, ╕,)8,*	╦]Щ\ШY┘NИ	°,.8,/╕,)°,/╕,,8,(╚8,*╕,b╕, ╕,)8,*8а%8,&╕,/╕,,╕,/И8,.8, ╕,*╕,cx,,8,)╕,/╕,+°,/╕,,╕,,╕,b╚8,!╕,+╕,b°,)╕,+°,b°,%°,cx,+°, Й╦▌╬И	°,)8,%x,cx,%x,`x,-H8,*╕,b╕, ╕,)8,*8а%8,.8,/╕,)°,/╕,,8,(°, ╕,%°,/И8,.8,/°,*°,/╕,,8,cx,.8,`H8,&╕,a°,+°,,8,`I╦ИШYQ▄┌NИ	°,*8,/╕,(x,`8,)╕,b°,-°, ОИ8,!°,)╕,cx,)╕,,8,/°,)╕,`8,$╕,%x,a╚8,*8,/╕,(x,/╦Й╦ЪZ██▌▄┌NИ	°,+x,%x,`╕,'╚8,)╕,b°,-°, ОИ8,!°,)╕,cx,)╕,,8,/╚8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,`x,,╕,`H8,$╕,%x,)╕,/╕,*8,/°,%x,b╕,%x,'°,/╚8,!°,+8,cx,+8, ╕,)╕,/°,%x,,8,.8,cx,)x,/╕,*8, ╕,,╕,b╚8,"x,*8,cx,*8,/╕,+°,/╦Й╦И]Z[╬И	°,!x,*8,cx,*8,/╚8,%x,`╕,'°,/╕,,╕,`H8,&╕,`╕,(x, ╕,(x,/╔╦И██▌\╬И╚Ш\ЫШNИ	°,-x,,8,cx,(╚
+8,.8,cx,-x,+x,/╕,-x, КI╦Ш\┌XNИ	°,-x,-╕,cx,+╚
+8,!╕,%x,,8,cx,-°,(╩I╦\ШNИ	°,)8,/╕,,
+8,!x,)╕,`°,-°,cx,'°, КI╦[█ЪNИ	°,+°,b°,*8,/╚
+8,!x,*8,`x,+8, ╕,)°, КI╦XZ]ЪNИ	°,%°,cx,,8,.H8,+╕,b8,)8,cx,,8,/╚
+8,.8,cx,*8,a°,.x, КI╦╪[ШNИ	°,%°,(╚
+8,*╕,cx,,8,-x,`°,)8,cx,)8,/╩I╦ЪZ██▌И	°,+x,%x,`╕,'╚
+8,%x,`x,'°,`x, ╕,+8, Л8,.8, ╕,*╕,)КI╦ШYNИ	°,*8,/╕,(x,/╚
+8,!╕,,8,b°,%°,cx,+°, Л8,.8, ╕,)8,/╕,*8, КI╚KИX[Щ█Z╬И	°,%x,`x,'8,)╕,b°,-°, Й╦[▌NИ	°,+╕,`8,,8,`I╦\ЭЩ\ОИ	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╔╦Y\╬И	°,"x, ╕,)╕,/╔╦Ы╬И	°,,╕,a°,)╕,`I╦ИX[Щ█Z╨Ы▌И	°,!°,)╕,cx,)╕,,8,/°,%x,`8,%x,`x,'8,)╕,b°,-°, И8,"x, ╕,)╕,/╚8а%8,.8, ╕,*╕,cx,,8,)╕,/╕,+°, ╕,%°,/И8,!°,)╕,/╚8,*╕,,8,/°,.x,/╕,,8,+╕,-x,`x,)8,`x, ╕,)╕,/╦Й╦X[Щ█Z╙█ЩNИ	°,$╕,%x,,8,/°,%x,/╚8,+╕,/╕,)8,cx,,8,+╕,a╚8,%x,`x,'8,)╕,b°,-°, И8,"x, ╕,)╕,/╚8а%8,&╕,/╕,,╕,/И8,%x,`x,'°,`x, ╕,+8,/╕,,╕,`H8,)╕,`8,*8,/╚8,%°,`x,,8,/°, ╕,&╕,/╚8,'8,cx,+°,b°,)8,/°,-°,cx,%x,`x,(x,/°,*8,/╚8,.8, ╕,*╕,cx,,8,)╕,/°,.8,cx,)8,/╕,+°,/╦Й╦ИЫ▌NИ	°,!°,-x,/╚8,.8, ╕,*╕,cx,,8,)╕,/╕,+╚8,!x,-°,cx,'°,%x,`╕,'╚8,*8,/°,+°,+╕,/╕,,╕,`K8,*8,/°,*╕,`x,(°,`x,,И8,.8,+╕,`8,%x,cx,-╚8,*╕,b╕, ╕,)╕,,╕,a°,)╕,`KИ8,-x,/°,-x,/╕,.H8,*8,/°,,8,cx,(°,+°, ╕,%°,/И8,%x,/╕,%x,`x, ╕,(x,/И8,+╕,/╕,,8,cx,%°,)╕,,8,cx,-╕,/°,%°,/И8,+╕,/╕,)8,cx,,8,+╕,a╚8,-x,/╕,(x, ╕,(x,/╦И8,+╕,,8,b╕,%x,,8,/╚8,-x,/°,-x,,8,/╕,,╕,*8,`H8,-x,/╕,,8,/╚8,.8,+╕,cx,+╕,)8,/°,)8,b°,*8,a╚8,*8,+╕,b°,)╕,`H8,&╕,a°,+°, ╕,(x,/╬╚8,!x,-x,/╚8,"8,*╕,,8,/°,%x,,8, ╕,,╕,b╚8,.8,a°,-x,cH8,%x,/╕,-x,`KЙ╦И\ЬЫ▄ОИ	°,%°,(°,/°, ╕,&╕,/°,*8,'8,/╕,)8,%H8,.8,+╕,/╕,&╕,/╕,,8, И8,!x,.8, ╕,*╕,`╕,,8,cx,(°, ╕,%°,/И8,"x, ╕,)╕,/╬╚8,*╕,b╕, ╕,)8,*8,&╕,`╕,(x,,╕,a°,)╕,`KЙ╦ИKИNИ┬ИШ]ОИ	°)*╕)cx),8)a°)+Й╦^YXЬЫ▌╬И	°).8) ╕)+8) ╕))╔╦]NИ	°)*╕)cx),8)a°)+И8)%8),8)%x)`x) ╕)(x),╕)`8)+╕)/°),╕)/╕)*	╦[ЭЫ╬И	°)!╕)*И8)%x)cx)+°)/И8))╕)a°)%╕)*8)/И8)&╕)/╕).x))8)a╚8).x)b8) Л8)&╕)`x)*8)a°) ╕)i	╦И▄X]┌И	°)%x)`x) ╕)(x),╕)`8)+╕)/°),╕)/╕)*	╦▄X]┌▌XОИ	°)%°)`x)(╚8)+╕)/°),╕)/╕)*8а%═И8)+╕)a°) И8).8)a╚8)!x) ╕)%I╦▄ЩXY[Щ╬И	°)+╕)a°),8)/И8)*╕)cx),8)a°)+И8)*°),Й╦▄ЩXY[Щ╘▌XОИ	°)*╕)cx),8)a°)+И8)%8),8)-x)/°)-x)/╕).H8)*╕),8)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8)%x)cx)+°)/И8)%x).x))8)`8).x)b	╦И▄ШZ]╬И	°)!╕)*╕)%x)/И8)!╕))╕),8)cx)-И8).8)/╕))x)`	╦▄ШZ]╘▌XОИ	°)!╕)*╕)%x)a╚°)-x)a°) И8)+x)/╕)-H8)%8),8)-╕)`x)%x)cx),8).8)a╚8),8)/°)-╕)cx))8)a╚8)%x)`8)-╕)b8),╕)`	╦ИШZ]╥[ЭЫ╬И	°)+°).H8)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8)*╕),8)!╕))°)/╕),8)/°))8)*╕)/╕),8) ╕)*╕),8)/°)%H8).8) ╕)+8) ╕))╦x)-╕)b8),╕)`8).x)b8а%8)%x)/°).8)`8)%╕)/╕).8)-x)cx)+°)%x)cx))8)/╚8)%x)`8)+x)-x)/°)-°)cx)+°)-x)/╕)(°)`8)*8).x)`8) ╕)i	╦ИШZ]╥▌\┘NИ	°)!╕)*╕)%x)/И°)-x)/╕) И8)+x)/╕)-H
+8).8)/╕)'x)a°))╕)/╕),8)`
+H▄┌Y█ЯH8)+╕)a°) И8).x)b
+8).8)cx)-x)/╕)+╕)`И█▄ЩJK8)!°).8),╕)/°)#╚8)!╕)*И8)!x)%x)cx).8),8)$8).8)a╚8).8)/╕))x)`8)%x)`8)$°),8)!╕)%x),8)cx)-°)/°))8).x)b°))8)a╚8).x)b8) И8)'8)b╚▌ШZ]H8).x)b°)i	╦ИШZ]╒Щ[Э\╬И	°)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8)+╕)a°) И8)*╕)cx),8)a°)+И8)%x)a╚8)%x)/╕),8)%H8)-╕)`x)%x)cx),▄┌Y█ЯH8)+╕)a°) И8).x)b8) И8а%8)!╕)*╕)%x)a╚8),╕)/°)#╚8).8)cx)*8)a°).H▌ШZ]H8)'8)b8).8)/И8)+╕).x).8)`╕).8).x)b°))8)/И8).x)b8)i	╦ИШZ]╘▄ЭШZ]ЭОИ	°з*8)#°)%H8)&╕)/°))8)cx),8)/╕) ╕)%x)*8))╕)a°)%╕)a°) Й╦ШZ]╘▄ЭШZ]╪Y[Щ╬И	°)&╕)/°))8)cx),8)/╕) ╕)%x)*8)+8)*8)/╕)+°)/И8)'8)/И8),8).x)/И8).x)b8а)Й╦ИШZ]╘▄ЭШZ]┘ЩОИ	°)+°).H8)!x)+x)`8)&╕)/╕),╕)`И8)*8).x)`8) И8)%x)/°)+°)/И8)%°)+°)/И8).x)b8)i	╦ИШZ]╤┘[Щ\УXЩ[И	°).8)/╕))x)`8)%x)b8).8)/И8).x)b╦8)&╕)`x)*8)a°) ОЙ╦ШZ]╤┘[Щ\Х██X[ОИ	°)+╕).x)/°),╕)/Й╦ШZ]╤┘[Щ\УX[ОИ	°)*╕)`x),8)`x)-╔╦ИШZ]╘▄ЭШZ]Y╪Z[РЭОИ	№'х!8)*°)/°),8).8)a╚8)+8)*8)/╕)#°) I╦ИШZ]╘▄ЭШZ][Ш]ШZ[XЫNИ	°)!x)+x)`8)&╕)/°))8)cx),8)/╕) ╕)%x)*8)*8).x)`8) И8)+8)*8).8)%x)/╕)i8)%x)`°)*╕)+°)/И8))x)b°)(x)/8)`8))╕)a°),8)+╕)a°) И8)*°)/°),8).8)a╚8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦ИШZ]╨\┌╥[Р┌]И	№'фл8)&╕)b8)'╚8)+╕)a°) И8)!x)*╕)*8)/И8)'8)*8)cx)+И8)-x)/°)-x),8)(╚8)+8))8)/╕)#°) I╦ИШZ]╙XZ┘R▌[ЩPЭОИ	°з*8)+╕)a°),8)`8)%x)`x) ╕)(x),╕)`8)+8)*8)/╕)#°) I╦И┌╬И	°)%x)/°).8)%x)a╚8),╕)/°)#╔╦┌╙YNИ	°)+╕)b8) И8)%8),8).8)/╕))x)`	╦┌╙▌\Ь╬И	°))╕)`╕).8),8)b°) И8)%x)b╚8))╕)a°)%╕)a°) Й╦Ы▐U]NИ	°),╕)(x)/8)%x)a╚8)%x)/И8)'8)*8)cx)+И8)-x)/°)-x),8)(╔╦┌\Ы]NИ	°),╕)(x)/8)%x)`8)%x)/И8)'8)*8)cx)+И8)-x)/°)-x),8)(╔╦ЩYYЫ▌И	°),╕)(x)/8)%x)a╚8)%8),8),╕)(x)/8)%x)`8))╕)b°)*8)b°) И8)%x)/И8)-x)/°)-x),8)(╚8)+x),8)a°) ╕)i	╦ШZ[YЪ\Ь▌И	°),╕)(x)/8)%x)a╚8)%x)`8)%x)`x) ╕)(x),╕)`8)*8).x)`8) И8)+8)*8).8)%x)`8)i8)'8)*8)cx)+И8)-x)/°)-x),8)(╚8)'8)/╕) x)&╕)a°) И8)%8),8).8)`╕)&╕)`8).8)a╚8)-╕).x),8)&╕)`x)*8)a°) ╕)i	╦Ы▐NИ	°),╕)(x)/8)%x)/Й╦┌\ЫИ	°),╕)(x)/8)%x)`	╦██\\ЩNИ	°).8)/╕))x)`8)%x)/И8)'8)*8)cx)+И8)-x)/°)-x),8)(╔╦P[NИ	°)!╕)*И8).x)b8) Й╦▄Ы██NИ	°)-x),	╦ЬЪYNИ	°)-x))°)`Й╦▌XЫZ]И	°)+╕)/°),╕)/╕)*8))╕)a°)%╕)a°) Й╦ИЩYY┌\ЭИ	°)*╕).x),╕)a╚8)'8)*8)cx)+И8))8)/°))x)/╦8).8)cx))x)/╕)*8)%8),8).8)+╕)+╚8).8)a╚8)!x)*╕)*8)`8)%x)`x) ╕)(x),╕)`8)+8)*8)/╕)#°) x)i	╦И╪[▌[][Щ╬И	°).8)/╕))x)`8)%x)`8)%x)`x) ╕)(x),╕)`8)%x)`8)%°)(°)*8)/И8).x)b╚8),8).x)`8).x)b8а)Й╦ШZ[YИ	°).8)/╕))x)`8)%x)`8)%x)`x) ╕)(x),╕)`8)%x)`8)%°)(°)*8)/И8)*8).x)`8) И8).x)b╚8).8)%x)`8)i8)-x)/°)-x),8)(╚8)'8)/╕) x)&╕)a°) И8)%8),8).8)`╕)&╕)`8).8)a╚8)-╕).x),8)&╕)`x)*8)a°) ╕)i	╦И╪█▄ЩNИ	°)%°)`x)(╚8)+╕)/°),╕)/╕)*	╦^┘[[ЭИ	°)"x))8)cx))8)+И8)+╕)/°),╕)/╕)*	╦██┘И	°)!x)&╕)cx)&°)/И8)+╕)/°),╕)/╕)*	╦]Щ\ШY┘NИ	°).8)/╕)+╕)/╕)*8)cx)+╚8)+╕)/°),╕)/╕)*8а%8)!x))°)/°)%x)/╕) ╕)-И8)*╕),8) ╕)*╕),8)/╕)$°) И8)+╕)a°) И8).8)cx)-x)`8)%x)/╕),8)cx)+╔╦▌╬И	°)%x)+И8)+╕)/°),╕)/╕)*8а%8)!╕)+╕))8)c8),8)*╕),8)!x)*8)`x)-╕) ╕).8)/°))8)*8).x)`8) Й╦ИШYQ▄┌NИ	°)*8)/╕)(x)/8)`8))╕)b°)-╬И8))╕)b°)*8)b°) И8)%x)`8)*8)/╕)(x)/8)`8)#°)%H8).x)`8).x)b8)i	╦ЪZ██▌▄┌NИ	°)+x)%x)`╕)'╚8))╕)b°)-╬И8))╕)b°)*8)b°) И8)%x)`8)&╕) ╕))╕)cx),8),8)/╕)-╕)/°)+°)/╕) H8)#°)%Kx))╕)`╕).8),8)a╚8).8)a╚8)%x)(8)/°)*8).8)cx))x)/°))8)/╚8)+╕)a°) И8).x)b8) ╕)i	╦И]Z[╬И	°).8)+x)`8)%x)`╕)'╚8))╕)a°)%╕)a°) Й╦И██▌\╬И╚Ш\ЫШNИ	°)-x),8)cx)(╚
+8).8)cx)-x)+x)/╕)-JI╦Ш\┌XNИ	°)-x)-╕)cx)+╚
+8)!╕)%x),8)cx)-°)(╩I╦\ШNИ	°))8)/╕),8)/И
+8)+x)/╕)%°)cx)+╩I╦[█ЪNИ	°)+°)b°)*8)/╚
+8)&8)*8)/°)-°)cx)(8))8)/КI╦XZ]ЪNИ	°)%°)cx),8).H8)+╕)b8))8)cx),8)`
+8)+╕)/°))8)cx),8))8)/КI╦╪[ШNИ	°)%°)(╚
+8)*╕)cx),8)%x)`°))8)/╩I╦ЪZ██▌И	°)+x)%x)`╕)'╚
+8)*╕),8)/°)-x)/╕),8)%8),8))°)*
+I╦ШYNИ	°)*8)/╕)(x)/8)`
+8).8)cx)-x)/╕).8)cx))x)cx)+╚8)%8),8).8) ╕))8)/╕)*
+I╚KИX[Щ█Z╬И	°)+╕)/╕) ╕)%°),╕)/°)%H
+8)%x)`x)'8))╕)b°)-╩I╦[▌NИ	°)!╕)*Й╦\ЭЩ\ОИ	°).8)/╕))x)`	╦Y\╬И	°).x)/╕) I╦Ы╬И	°)*8).x)`8) Й╦ИX[Щ█Z╨Ы▌И	°))╕)b°)*8)b°) И8)+╕)/╕) ╕)%°),╕)/°)%H8).x)b8) И8а%8)*╕),8) ╕)*╕),8)/И8)+╕)a°) И8)+°).H8))╕)b°)-╚8)%x)'╚8)'8)/╕))8)/И8).x)b8)i	╦X[Щ█Z╙█ЩNИ	°)%x)a°)-x),И8)#°)%H8)+╕)/╕) ╕)%°),╕)/°)%H8).x)b8а%8)%x)"8)*╕),8)/°)-x)/╕),8)!°).8)%x)a╚8),╕)/°)#╚8)'8)cx)+°)b°))8)/°)-°)`8).8)a╚8)*╕),8)/╕)+╕),8)cx)-И8)%x),8))8)a╚8).x)b8) ╕)i	╦ИЫ▌NИ	°)+°)a╚8)*╕)/╕),8) ╕)*╕),8)/°)%H8)!x)-°)cx)'°)%x)`╕)'╚8)*8)/°)+°)+И8).x)b8) Л8)-x)/°)-╕)a°)-°)'8)cx)'И8).8)+╕)`8)%x)cx)-°)/И8)*8).x)`8) И8).x)`x)"8)i8)!°).8)a╚8)-x)/°)-x)/╕).H8)%x)/И8)*8)/°),8)cx)(°)+╚8)*8).x)`8) Л8)%x)a°)-x),И8)+╕)/╕),8)cx)%°))╕),8)cx)-╕)*8)+╕)/╕)*8)a°) ╕)i8)%x)/°).8)`8)%8),8)%x)/И8)-x)/°)-x),8)(╚8)"x)*8)%x)`8).8).x)+╕))8)/╚8).8)a╚8).x)`8))╕),8)cx)'8)%x),8)a°) О╚8)+°).H8)!°).8)(x)/°)-x)/╕)!°).8)*╕),8).8).x)a°)'8)/И8)*8).x)`8) И8)'8)/╕))8)/╕)i	╦И\ЬЫ▄ОИ	°)%°)(°)*8)/И8)%x)`8)%°)"8)%x)`x) ╕)(x),╕)`8)!x))°)`╕),8)`8).x)b╚8)+╕)/°),╕)/╕)*8)*8).x)`8) И8)%x)/°)+°)/И8)%°)+°)/╕)i	╦ИKИN┬И╦╚▌[ЩHЪY]▄╦▄┌\╚[ЩH█YH██╪\Щ╦ВИ██Ь▌╙╙╫╨╙╘HH┬И[ОИ┬ИЪY]▄╬И╚┌\ЭИ	╨┌\Э	╦[Щ]╬И	╘[Щ]╔╦\┌NИ	╤\┌I╦▄┌\╬И	╤▄┌\╔╦[Ш┌[Щ╬И	╘[Ш┌[Щ╔╚KИ▌ZШU]NИ	╥▌ZШH▄┌H
+X[Щ█Z╩I╦▌ZШVY\╬И	╘Щ\┘[Э	╦▌ZШSЫ╬И	╙Ы▌Щ\┘[Э	╦▌ZШU┌NИ	╙X\Ь╚\╚[И▌\┘H█Y█Ш_HЬЫ█HHY█ШH[Щ▌\┘H█[██ЯHЬЫ█HH[██ЛЙ╦И▌ZШTЩYX┘YИ	╙X\Ь╚\╚[И]╚▌█И▄И^[Y┌Y█Л┌X┌ШY][█Ш[HЩYX┘\╚HYЩЩX▌Й╦И╪YU]NИ	╘╪YH╪]I╦\┘LNИ	╘Э[ЫЪ[Щ╚Ы▌╚8а%\┘HH┘И╚
+ЩY┌[ЫЪ[Щ╩I╦\┘LОИ	╘Э[ЫЪ[Щ╚Ы▌╚8а%\┘HИ┘И╚
+XZ╩I╦\┘L╬И	╘Э[ЫЪ[Щ╚Ы▌╚8а%\┘H╚┘И╚
+[Щ[Щ╩I╦И╪YSЫ╬И	╙Ы▌Э[ЫЪ[Щ╚Ы▌╦Й╦\Ъ[┘И	▐▄▌\ЭH╚┘[ЩI╦╪YSЩ^И	╙Щ^╪YH╪]NИ▄▌\ЭH╚┘[ЩI╦Ы▌╬И	█Ы▌╔╦И\┌[XNИ	╨\┌[XH┌[ЪH
+╪]\ЫИЬЫ█H[▌\И[██КH\╚Э[ЫЪ[Щ╚[Э[┘[ЩKЙ╦\Щ\┌[XNИ	╨\Щ\┌[XH┌[ЪH
+╪]\ЫИЬЫ█H[▌\И[██КH\╚Э[ЫЪ[Щ╚[Э[┘[ЩKЙ╦И▄┌SЫ▌NИ	╨██ЭЩ[Э[█Ш[Э[\╦Ы▌^\Э\Щ]ЪY]┘YИ]\╚\ЩH\Ы▐[X]KЙ╦▄┌U[Ш]ШZ[XЫNИ	╤▄┌H]Z[╚\ЩHЫ▌]ШZ[XЫHЫ▄И\╚┌\ЭЙ╦И┘^SXЩ[И	╒┘^HЫ▄И[▌I╦┘^Q██┘И	╨┌[ЩШXШ[[H[Щ\ШXШ[[H\ЩHЫ▌Ш]Ы▌\ШXЫHЫ▄И[▌H┘^H8а%H██┘^HЫ▄И[\▄Э[Э█▄Ъ╦Й╦И┘^P╪\ЩNИ	╒H[██И\╚ЬЫ█H[▌\И[██И┌Y█И┘^H
+\┌[XH┌[ЩШJH8а%█╚█▌╚[Щ]Ы┌YЪY╚X┌\┌[█Ь╦Й╦И┘^SZ^YИ	╨HZ^Y^HЫ▄И[▌H8а%Ъ[ЩHЫ▄ИЫ▌][ЩH█▄Ъ╬╚Z┘H[\▄Э[Э▌\╚┌]╪\ЩKЙ╦┘^T]ZY]И	╨H]ZY]^HЫ▄И[▌H8а%Щ]\ИЫ▄ИЫ▌][ЩH█▄Ъ╚[ИЩ]╚ЩY┌[ЫЪ[Щ▄╦Й╦И\┌╘X┘Z█\ОИ	╨\┌╚[Ю][Щ╬И╪\ЩY\ЛX\ЬЪXY┘K[█Щ^xа)Й╦\┌╨Э]█ОИ	╨\┌╔╦▌[ЩP▌NИ	╤┘][▌\ИЬЩYH▌[ЩH[И╠┘X██Щ╚8бдЙ╦ЩYY▌[ЩNИ	╨▄ЩX]H[▌\И▌[ЩH╚┘YI╦И]ЩQ\┌NИ	▐█XZ_H8а$╚╪[Э\ЯH\Ъ[┘Ы▌╔╦]ЩQ\┌SXZNИ	▐█XZ_H\Ъ[┘Ы▌╔╦]ЩTШ\┌NИ	▐▄┌Y█ЯNИ┘^xа&\╚ЩXY[Щ╔╦]ЩT╪YNИ	╘╪YH╪]NИ\┘H▄H┘И╚Э[ЫЪ[Щ╔╦И]ЩQ▄┌NИ	╥▌ZШH▄┌NИ┌▀H0н╚╪YH╪]NИ▄▀I╦Y\╬И	╓Y\╔╦Ы╬И	╙Ы╔╦ИЪ╨\┌╬И	╒╪[Э╚█Ы▌╚[▌\ИШ]Z╪[O╔╦Ъ╘▌XОИ	╓[▌\ИЬЩYH▌[ЩH8а%Y█ШKШ\┌KШZ▄┌]ШK[Щ]╦\┌H[Щ▄┌\╚8а%[И╠┘X██Щ╦Й╦ИЪ╨▄ЩX]NИ	╨▄ЩX]H^H▌[ЩH8бдЙ╦Ъ╙Z[ЩNИ	╙^HШ]Z╪[I╦Ъ╒ЪY]╬И	╒ЪY]╚Э[▌[ЩH8бдЙ╦Ъ╤\┌NИ	╤\┌HЫ▌╔╦И█┌╬И╚]NИ	╨\X\Ш[Ш┘I╦[┘NИ	╙[┘I╦^\▌X╬И	╙^\▌X╔╦Y┌И	╙Y┌	╦\Ъ╬И	╤\Ъ╔╦]]╬И	╨]]╔╦██▌\ОИ	╨██▌\Й╦█ЩNИ	╤█ЩI╦И╪YЩЬЫ█ОИ	╘╪YЩЬЫ█Й╦X[И	╒X[	╦Ы▄┘NИ	╘Ы▄┘I╦ЫYNИ	╨ЫYI╦Э]█ОИ	╨┌[Щ┘H\X\Ш[Ш┘I╚KИЫ▌YЮNИ╚]NИ	╤Z[HЫ▌YЪX╪][█Ь╔╦[ЭЪ]NИ	╤┘]┘^xа&\╚[Ш┌[Щ╚[Щ▌╚[▌\И^H█┌▄╦]Щ\ЮH[▄ЫЪ[Щ╦Й╦█ОИ	╒\ЫИ█Й╦]\ОИ	╙Ы▌Ы▌╔╦И[YNИ	╒[YI╦┘ЩОИ	╒\ЫИ┘ЩЙ╦[ШXЫYИ	╙█И8а%]Щ\ЮH^H]▌[Y_I╦\╪XЫYИ	╙┘ЩЙ╦[ЪYYИ	╙Ы▌YЪX╪][█Ь╚\ЩHЫ╪┌┘YИ[▌╚[HЫ▄ИЮ[▌\ЫX^XH[И[▌\И█Щxа&\╚┘][Щ▄╦[ИЮHY╪Z[ЛЙ╦И]Z\ЭNИ	╤██┘[ЩШY]Z\ЭH[\Э╔╦И]Щ[Ъ[Щ╬И	╤]Щ[Ъ[Щ╚]Y\▌[█ИЫ▄И[▌I╦]Щ[Ъ[Щ╒[YNИ	╤]Щ[Ъ[Щ╚[YI╦ИШZNИ	╘ШZH╪[[I╦Щ\▌И	№'ъе█Ш[Y_H┘^I╦Щ[▄[Х]NИ	№'у&H[▌\И┘YZ╚ZXY	╦Щ[▄[РЫ┘NИ	╙▄[ИЮ[▌\ЫX^XH╚┘YH\╚┘YZ°а&\╚[Ш┌[Щ╦Й╦KИ[Ш\ОИ╚YX\ОИ	▐▄▀H╪[]Ш]╪\ШI╦[█ЭИ	▐█_HX\╪I╦YZ╪NИ	╨YZ╪H█_I╚KИ╪\Щ╬И╚██┘И	╤██┘[Y\╔╦[Ш┌[Щ╬И	╘[Ш┌[Щ╔╦]Щ[Э╬И	╨]\▄X┌[▌\╚]Z\Э\╔╦ШYИ	╥[Ш]\▄X┌[▌\╚[Y\╔╦Ы█ЩNИ	╙Ы╚]\▄X┌[▌\╚]Z\Э\╚┘^I╦ИY╪Z[ОИ	╪[Щ	╦[\Ъ]NИ	╨[\Ъ]H╪[[I╦\Ы]Z\Э[NИ	╤\Ы]Z\Э[I╦X\ЬЪXY┘NИ	╙X\ЬЪXY┘I╦▄ЭZ\Ш]Щ\╪[NИ	╥▌\┘]╪\ЫZ[Щ╔╦ЩZX█NИ	╒ЩZX█H\Ш┌\┘I╦И]Щ[ЭЫ▌NИ	╨H┌[\HШY][█Ш[┌X┌╚
+]KШZ▄┌]ШK┘YZ┘^H[Щ[█Э╚]Ы┌Y╚ШZH╪[[K\Ы]Z\Э[H[ЩШ\ЪЮX[JKИЫ▄ИH┘Y[Щ╚▄И▌\┘]╪\ЫZ[Щ╦██ЩЪ\ЫHH^X▌]Z\Э[H┌][▌\И\Ы┌]Й╦И┌\ЩNИ	╘┌\ЩH┘^H█И┌]╨\	╦Э[И	╤Э[[Ш┌[Щ╚XЫ\╔╦▌┌\NИ	╘▌┌\HЫ▄И[▄ЩH8бдЙ╚KИШ\┌NИ╚X┌╬И	╨┌█▄┘H[▌\ИШ\┌I╦Ъ[ЩИ	╤Ъ[Щ[▌\ИШ\┌I╦Z[ЩPЭ]█ОИ	╘┌▌╚^HШ\┌I╦Z[ЩNИ	╓[▌\Ь╔╦]NИ	▐▄┌Y█ЯHШ\┌\[
+┘]_JI╦[▄ЩNИ	°а)Ы[▄ЩI╦\▄╬И	╘┌▌╚\▄╔╦И\┌╬И	╨\┌╚RHXЫ▌]^H^I╦\┌╘NИ	╥▌╚\╚┘^HЫ▄И^HШ\┌H▄┌Y█ЯO╚X\┘H[YHЬЫ█H^H┌\ЭЙ╦Э[И	╘┘YH^HЭ[Ш]Z╪[I╦┌\ЩNИ	╘┌\ЩH█И┌]╨\	╦И]Z[╬И	╘[Щ]XЮK\[Щ]]Z[╔╦Ш[Ь┌]██┘И	╤Ш]Ы▌\ШXЫI╦Ш[Ь┌]╪\ЩNИ	╒Z┘H╪\ЩI╦Э[\И╚Ш[Ь┌]╬И	╘[Щ]Ш[Ь┌]╔╦Щ[YYY\╬И	╘Щ[YYY\╔╦Э[И	╤Э[Ш]Z╪[I╦\┌╬И	╨\┌╚RI╚K[ЭИ	╘X┌╚[▌\ИШ\┌HXЫ▌ЩH╚┘YH┘^xа&\╚ЩXY[Щ╦Й╦И[Ы╪┌╬И	°енИ┘YH┘^xа&\╚ЩXY[Щ╔╦[Ы╪┌╙Ы▌NИ	╒╪]┌█ЩH┌▄ЭY╚▄[И┘^xа&\╚Ш\┌\[Ы▄И[┌Y█Ь╦Й╦ИX┌▐U]NИ	╙X┌▐HШX▌▄Ь╔╦X┌▐Q^NИ	╨██▌\И[Щ\ЩX▌[█ОИ┘^K╪[YHЫ▄И[Ш\┌\╚0н╚Э[XЩ\Ь╬ИЫ▄И[▌\ИШ\┌I╦X┌▐T┌Y█ОИ	╘▄X┌X[Ы▄И[▌\ИШ\┌I╦██▌\ОИ	╨██▌\Й╦Э[XЩ\Ь╬И	╙Э[XЩ\Ь╔╦\ЩX▌[█ОИ	╤\ЩX▌[█Й╦И██▌\Ь╬И╚▌[ОИ	╙▄Ш[Щ┘KЩY	╦[██ОИ	╒┌]K┌[Щ\Й╦X\Ь╬И	╘ЩY█▄Ш[	╦Y\Ш▌\ЮNИ	╤▄ЩY[Й╦Э\]\ОИ	╓Y[▌╦██	╦Щ[Э\╬И	╒┌]K[Ъ╔╦╪]\ЫОИ	╨ЫYKЫX┌╔╦ШZNИ	╤▄Щ^I╦┘]NИ	╨ЬЫ▌█Й╚KИ\ЩX▌[█Ь╬И╚▌[ОИ	╤X\▌	╦[██ОИ	╙Ы▄Э]┘\▌	╦X\Ь╬И	╘█▌]	╦Y\Ш▌\ЮNИ	╙Ы▄Э	╦Э\]\ОИ	╙Ы▄ЭYX\▌	╦Щ[Э\╬И	╘█▌]YX\▌	╦╪]\ЫОИ	╒┘\▌	╦ШZNИ	╘█▌]]┘\▌	╦┘]NИ	╙Ы▄Э]┘\▌	╚HKИ]Z[]NИ	╘[Ш┌[Щ╚[И]Z[	╦Щ\▌]NИ	╒\██Z[Щ╚Щ\▌]Ш[╔╦Щ\▌┘^NИ	╒┘^I╦Щ\▌█[▄ЬЫ▌╬И	╒█[▄ЬЫ▌╔╦Щ\▌[ОИ	┌[И█ЯH^\╔╦ИЩ\▌[▄ЩNИ	╘┌▌╚[▄ЩHЩ\▌]Ш[╔╦Щ\▌\▄╬И	╘┌▌╚Щ]┘\Й╦Щ\▌Ы█ЩNИ	╙Ы╚Щ\▌]Ш[╚[ИHЩ^Щ]╚[█Э╦Й╦Щ\▌╪Y[Щ╬И	╙╪Y[Щ╚Щ\▌]Ш[°а)Й╦И┌▄Э▌]╬И╚]NИ	╓[▌\И▌\Ь╦█ЩH\ЬЫ█H\ЩI╦^И	╨┌█▄┘HHЩXY[Щ╚╚▌\ЭЙ╦XЩ[╬И╔╘[I╦	╘Ш\┌\[	╦	╒\Ы▌	╦	╙X]┌	╫K┌[ЫЩ[И	╘┌▄Э▌]╔╦┘┘█NИ	╘┌▄Э▌]╚[ИHЫ▌YЪX╪][█ИШ\Й╚KИYЩY▌ZYNИ╚╪\ЩИ╔╙YЩH▌ZYI╦	╓[▌\ИZ[HШ[[Ш┘NИ▌ЩK█▄Ъ╦[█Щ^I╫K]NИ	╙YЩH▌ZYI╦XЬ╬И╔╓Y\▌\Щ^I╦	╒┘^I╦	╒█[▄ЬЫ▌╔╦	╒\╚[█Э	╦	╒\╚YX\Й╫KИШ[[Ш┘NИ╔╓Y\▌\Щ^xа&\╚Ш[[Ш┘I╦	╒┘^xа&\╚Ш[[Ш┘I╦	╒█[▄ЬЫ▌°а&\╚Ш[[Ш┘I╦	╒\╚[█Э8а&\╚Ш[[Ш┘I╦	╒\╚YX\╕а&\╚Ш[[Ш┘I╫KИ\ЩX\╬И╚▌ЩNИ	╙▌ЩI╦Ш[Z[NИ	╤Ш[Z[I╦X\ЬЪXY┘NИ	╙X\ЬЪXY┘I╦╪\ЩY\ОИ	╨╪\ЩY\Й╦┘X[И	╒┘X[	╦X[И	╥X[	╚KЮP\ЩXNИ	╨ЮH\ЩXI╦▌\▄ЭYИ	╘▌\▄ЭYЮH▄[Щ]▀I╦И[▌\Ф┌Y█ОИ	╓[▌\И┌Y█Й╦┌[Щ┘NИ	╨┌[Щ┘I╦X┌╬И	╨┌X┌╚[Ы▌\И┌Y█Й╦X┌╤Ъ\Ь▌И	╘X┌╚[▌\И┌Y█И╚┘YH[▌\ИШ[[Ш┘KЙ╦╪Y[Щ╬И	╒█▄Ъ┌[Щ╚▌][▌\ИШ[[Ш┘xа)Й╦ШZ[YИ	╨█▌[Ы▌╪YЪY┌Ы▌╦ИX\┘HЮHY╪Z[ЛЙ╦И\Ь██Ш[И	╘\Ь██Ш[╚[▌\И┌\ЭИЪ\Э▌\И▄▌\ЯI╦\┌S[ЩNИ	┘\┌H█▄Щ▀I╦┘[Щ\Ш[И	╤┘[Щ\Ш[Ы▄И\╚┌Y█ЛИ▄ЩX]H[▌\И▌[ЩHЫ▄ИHYЩH▌ZYH]\╚\Ь██Ш[╚[▌KЙ╦\ШNИ	╓[▌\И▌\И┘^NИ▌\Ш_I╦И\ШSШ[Y\╬И╔╥Ш[ЫXI╦	╘╪[\]	╦	╒Ъ\]	╦	╥▄┌[XI╦	╘Ш]XZ╔╦	╘╪Y[ШI╦	╙ШZY[ШI╦	╙Z]ШI╦	╘\Ш[XHZ]ШI╫K\ШQYЩЩX▌И╔█ЩYY╚╪\ЩI╦	█Щ]]Ш[	╦	▄▌\▄Э]ЩI╫KИ[Ы╪┌╬И	╒XЬ╚┌]HЪY[╚X██И▄[ИYЭ\И█ЩH┌▄ЭYЫ▄И\╚┌Y█ИЫ▄ИHЩ\▌┘ИH^KЙ╦ИЫ▌NИ	╒█▄Ъ┘Y▌]ЬЫ█H[Щ]Ш[Ь┌]╚█▌[ЭYЬЫ█HH[██И┌Y█ЛИ▌ZY[Ш┘HЫ▄ИЩYЫX▌[█ЛЫ▌HЩYX▌[█ЛЙ╦И^И╚▌ЩNИ╔╤█╚┘[ЭKИ\▌[И[▄ЩH[Щ]Ы┌Y\▌H█▄Щ╦Й╦	╨H▌XYH▌Щ]┌И█X[▌Y┌Э[┘\▌\Щ\╚X]\И[▄▌Й╦	╒╪\Ы]██Y\╚X\┌[KИH██┘[YH╚┌\ЩH[▌\ИЩY[[Щ▄╦Й╫KИШ[Z[NИ╔╙Z\▌[Щ\Ь▌[Щ[Щ▄╚╪[И\Ъ\┘KИ▌^H╪[H[Щ┌]ЩH[▄H▄X┘KЙ╦	╙▄Щ[Ш\ЮH[Щ╪[KИ┘Y\[▌\ИЫ▌][Щ\╚[ЩЩH]Y[ЭЙ╦	╥█YHЩY[╚▌\▄Э]ЩKИ[YH┌]Ш[Z[HЩYЬЩ\┌\╚[▌KЙ╫KИX\ЬЪXY┘NИ╔╘]Y[Ш┘H[╦И▄▌█ЩHЪY╚X┌\┌[█Ь╚[Щ]Ы┌Y\Щ▌[Y[Э╦Й╦	╘▌XYKИ┌\ЩYЫ▌][Щ\╚┘Y\[Щ▄╚██YЫ▄ЭXЫKЙ╦	╒[Щ\Ь▌[Щ[Щ╚▄Ы▌▄╦ИH██┘[YHЫ▄И█Щ\▌╪\Ъ[Щ╚[╦Й╫KИ╪\ЩY\ОИ╔╘█▌╚[Щ[X[Щ[Щ╦И[И╪\ЩYЭ[H[Щ]Ы┌YЪ\┌▐H[▌Щ\╦Й╦	╘Ы┘▄Щ\▄╚\╚▌XYKИЫ╪▌\╚█И█ЩH\┌╚]H[YKЙ╦	╒█▄Ъ╚[▌Щ\╚┘[ИH██┘[YH╚Z┘H[Ъ]X]]ЩKЙ╫KИ┘X[И╔╨ЩH╪\ЩYЭ[┌]▄[Щ[Щ╦И]Ы┌Y[\[┌]ЩH\Ш┌\┘\╚▄И[Щ[Щ╦Й╦	╨Ш[[Ш┘YИШX┌╚[▌\И▄[Щ[Щ╚[Щ▌^HШX▌X╪[Й╦	╙[█Щ^HX]\Ь╚█┌╚▌\▄Э]ЩKИ██┘Ы▄И[ЫЪ[Щ╚[Щ╪]Ъ[Щ╦Й╫KИX[И╔╒Z┘H]X\▐KИЩ\▌┘[Ъ[Ъ╚╪]\И[Щ]Ы┌Y▌Щ\Щ┌[Щ╚[Щ▄╦Й╦	╤Ъ[ЩH▌Щ\Ш[И┘Y\╚ЩY▌[\ИYX[╚[ЩЩ\▌Й╦	╤[Щ\Щ▐H\╚██┘И┘Y\\^\Ш┌\┘H[Щ█Y\Й╫HHKИ┌Y█ЫX]┌И╚╪\ЩИ╔╘┌Y█ИX]┌	╦	╙X]┌[ЮH█╚[██И┌Y█Ь╔╫K]NИ	╘┌Y█ИX]┌	╦[▌NИ	╓[▌I╦\ЭЩ\ОИ	╘\ЭЩ\Й╦┌█▄┘NИ	╨┌█▄┘HH┌Y█Й╦XЬ╬И╔╙^H┌Y█Й╦	╘\ЭЩ\╕а&\╚┌Y█Й╫K┘YNИ	╘┘YH▌\ИX]┌	╦ИЩ\ЩX▌И╚^┘[[ЭИ	╤^┘[[ЭX]┌	╦██┘И	╤██┘X]┌	╦]Щ\ШY┘NИ	╨]Щ\ШY┘HX]┌	╦▌╬И	╙ЩYY╚]Y[Ш┘I╚KИ^И╚^┘[[ЭИ	╓[▌\И┌Y█Ь╚┘][█Щ╚Ш]\Ш[NИX\▐H[Щ\Ь▌[Щ[Щ╚[ЩH┌\ЩY▌]█┌╦Й╦██┘И	╨H██YЫ▄ЭXЫHZ\Ъ[Щ╦┌]HЩ]╚YЩЩ\Щ[Ш┘\╚╚YЭ\▌╦Й╦]Щ\ШY┘NИ	╘██YHYЩЩ\Щ[Ш┘\╚╚█▄Ъ╚█ЛИ]Y[Ш┘H[Щ[┌[Щ╚[Щ▄╚Ы▌Y┌[Й╦▌╬И	╘]Z]HYЩЩ\Щ[ЭШ]\Щ\╦И]╪[И█▄Ъ╚┌][Щ\Ь▌[Щ[Щ╚[ЩYЩЫ▄ЭЙ╚KИЬЪY[Щ┌\И	╙Z[Щ	ИЬЪY[Щ┌\	╦Ш[Z[NИ	╤Ш[Z[H	ИЫ▄▄\Ъ]I╦▄┌NИ	╒H█╚┌Y█Ь╚┌][ИHYЩЪX▌[▄┌][█ИЬЫ█HXX┌▌\И
+ЪZ██▌▄┌JKИX[ЮHШ[Z[Y\╚┌X┌╚\╚ЩYЫ▄ЩHHX\ЬЪXY┘KЙ╦ИЭ[И	╤Э[═Л\┌[Э▌[ЩHX]┌[Щ╔╦Ы▌NИ	╨Ш\┘Y█ИH█╚[██И┌Y█Ь╚█ЫKИ▌ZY[Ш┘HЫ▄ИЩYЫX▌[█ЛЫ▌HЩYX▌[█ЛЙ╦┌\ЩS[ЩNИ	▐╪_H
+╚╪ЯNИ▄\Ш┘[ЭIH┌Y█ИX]┌▌Щ\ЩX▌KЙ╚KИЭ[Y\Ы█┘▐NИ╚╪\ЩИ╔╙Э[Y\Ы█┘▐I╦	╓[▌\ИЭ[XЩ\Ь╚ЬЫ█HШ[YH	ИЪ\Э]I╫K]NИ	╙Э[Y\Ы█┘▐I╦[ЭЫ╬И	╓[▌\И[██[Ъ╦ЪY▐X[Ъ╚[ЩШ[YHЭ[XЩ\Л█▄Ъ┘Y▌]ЬЫ█H[▌\И]H┘ИЪ\Э[ЩШ[YKЙ╦И╪ОИ	╤]H┘ИЪ\Э	╦Ш[YNИ	╙Ш[YH
+[И[Щ█\┌]\Ь╩I╦┌▌╬И	╘┌▌╚^HЭ[XЩ\Ь╔╦ШYИ	╘X\┘H[Э\ИHШ[Y]H┘ИЪ\ЭЙ╦┌[Щ┘NИ	╨┌[Щ┘I╦И[██[Ъ╬И╔╙[██[Ъ╔╦	╨Ъ\ЭЭ[XЩ\И0н╚▌╚[▌H\ЩI╫KЪY▐X[Ъ╬И╔╨ЪY▐X[Ъ╔╦	╤\▌[ЮHЭ[XЩ\И0н╚┌\ЩHYЩHXY╔╫KШ[YSЭ[NИ╔╙Ш[YHЭ[XЩ\Й╦	╥▌╚▌\Ь╚┘YH[▌I╫KИЫ╙Ш[YNИ	╒\H[▌\ИШ[YH[И[Щ█\┌]\Ь╚╚┘YH[▌\ИШ[YHЭ[XЩ\ЛЙ╦[Щ]И	╘[Щ]	╦▌Щ[Щ▌╬И	╘▌Щ[Щ▌╔╦╪\ЩNИ	╒╪]┌▌]Ы▄Й╦И\Ы[█ЮQ██┘И	╓[▌\ИШ[YHЭ[XЩ\И[Щ[██[Ъ╚\ЩHЬЪY[ЩNИH██┘X]┌Й╦\Ы[█ЮSЩ]]Ш[И	╓[▌\ИШ[YHЭ[XЩ\И[Щ[██[Ъ╚\ЩHЩ]]Ш[╚XX┌▌\ЛЙ╦ИYX\ОИ	╓[▌\ИYX\И▐YX\ЯNИЭ[XЩ\И█ЯI╦X┌▐NИ	╙X┌▐HЫ▄И[▌I╦X┌▐SЭ[XЩ\Ь╬И	╙Э[XЩ\Ь╔╦X┌▐Q^\╬И	╤^\╔╦X┌▐P██▌\Ь╬И	╨██▌\Ь╔╦И\┌╨ZNИ	╨\┌╚RHXЫ▌]^HЭ[XЩ\Ь╔╦\┌╘NИ	╙^HЭ[Y\Ы█┘▐H[██[Ъ╚\╚█_H[ЩЪY▐X[Ъ╚\╚╪ЯKИ┌]╚\┘HЭ[XЩ\Ь╚╪^HXЫ▌]^H╪\ЩY\И[ЩЩ[][█Ь┌\╧╔╦┌\ЩNИ	╘┌\ЩI╦ИЫ▌NИ	╙Э[Y\Ы█┘▐H\╚HШY][█Ш[▐\▌[HЫ▄ИЩYЫX▌[█ЛЫ▌H┘\ЭZ[ЭKЙ╚KИY[ЭNИ╚]NИ	╙Y[ЭI╦▄[ОИ	╙▄[ИY[ЭI╦█▄┘NИ	╨█▄┘HY[ЭI╦█YNИ	╥█YI╦[Ш┌[Щ╬И	╒┘^xа&\╚[Ш┌[Щ╔╦\X\Ш[Ш┘NИ	╨\X\Ш[Ш┘I╦Ъ]ШX▐NИ	╘Ъ]ШX▐H[Щ\Ы\╔╦ШX┌╬И	╨ШX┌╔╦┌\ЩTЩXY[Щ╬И	╘┌\ЩI╦┌\ЩP\И	╘┌\ЩH\	╦Ш]P\И	╘Ш]H\	╦Э[СШX▌И	╤ХSИРP╒	╦\▌[ОИ	╙\▌[Й╦┌\╬И╚[NИ	╘ЩXY^H[I╦\Ы▌И	╘X┌╚\Ы▌╪\Щ╔╦YЩY▌ZYNИ	╙^HYЩH▌ZYI╦Э[XЩ\Ь╬И	╙^HЭ[XЩ\Ь╔╦┌Y█ЫX]┌И	╙X]┌█╚┌Y█Ь╔╚K┌\ЩS[ЩNИ	╓[▌\ИЩYX╚\▌Ы█┘┘\И[И[▌\И╪┌┘]И[Ш┌[Щ╦▌[ЩKШ\┌\[[H[Щ\Ы▌[И[▌\И[Щ▌XY┘KЙ╚KИ[NИ╚╪\ЩИ╔╘[HЩXY[Щ╔╦	╘╪╪[И[▌\И[H┌]H╪[Y\ШI╫K]NИ	╘[H[Ш[\┌\╔╦▌\И	╘▌\H0н╚X┌╚H[Щ	╦YЭИ	╙YЭ[I╦ЪY┌И	╘ЪY┌[I╦И\╒]NИ	╒\╚Ы▄ИH█X\И╪╪[Й╦\╬И╔╒\┘H█┘ЭЬЪY┌Y┌	╦	╥█[▌\И[HЫ]Ъ[Щ┘\Ь╚▄ЩXY	╦	╥┘Y\[▌\ИЭ[[Щ[Ь┌YHHЬШ[YI╫KИ╪╪[ОИ	╘╪╪[Й╦ЩXY[Щ╬И	╘ЩXY[Щ╚[▌\И[xа)Й╦Ы▌[NИ	╒┘H█▌[Ы▌┘YHH[H█X\ЫKИЮHY╪Z[И[ИЬЪY┌Y┌┌][▌\И┌█H[H[ИH▌╦Й╦И┘ЩОИ	╘[HЩXY[Щ╚\╚▌┌]┌Y┘ЩИЪY┌Ы▌╦Й╦ШZ[YИ	╨█▌[Ы▌ЩXYH[HЪY┌Ы▌╦ИX\┘HЮHY╪Z[И[ИH]H┌[KЙ╦И╪[NИ╚[ЭИ	╘X┘H[▌\И▄[И[H[Ь┌YHH▌][ЩI╦\Ъ╬И	╒█╚\Ъ╦И[▌ЩH╚ЬЪY┌\ИY┌[ЩЩ\▄╚Y╪Z[ЛЙ╦╪[\ЮNИ	╨┌█▄┘HH▌╔╦█▄┘NИ	╨█▄┘I╦█Ш\И	╒Z┘H▌╔╚KXЬ╬И╔╘[I╦	╙▌ЩI╦	╨╪\ЩY\Й╫K[Щ\╬И╚X\ЭИ	╥X\Э[ЩI╦XYИ	╥XY[ЩI╦YЩNИ	╙YЩH[ЩI╦Ш]NИ	╤Ш]H[ЩI╦▌[[X\ЮNИ	╓[▌\И[H╪^\╔╚KИЩXYNИ	╓[▌\И[H▌╚\╚ЩXYKЙ╦┘YNИ	°енИ┘YH^HЩXY[Щ╔╦Y╪Z[ОИ	╘╪╪[ИY╪Z[Й╦\┌╨ZNИ	╨\┌╚RHXЫ▌]^H[I╦┌\ЩNИ	╘┌\ЩI╦Ъ]ШX▐NИ	╓[▌\И▌╚\╚\┘Y█ЫHЫ▄И\╚ЩXY[Щ╚[Щ\╚Ы▌╪]ЩYЙ╦И\┌╘NИ	╙^H[HЩXY[Щ╚╪^\╬И8а'▄▌[[X\Ю_xа'H┌]┌▌[HЫ╪▌\╚█ИЫ▌╧╔╦ИЩZ┌SЫ▌NИ	╒\┘H[Щ\╚\ЩHHRxа&\╚Щ\▌▌Y\▄╚ЬЫ█H[▌\И▌╦┌▌█И\╚H▌ZYH8а%Ы▌[И^X▌ШX┘KЙ╚KИ\Ы▌И╚╪\ЩИ╔╒\Ы▌	╦	╨\┌╚H╪\Щ╚XЫ▌]▌ЩK╪\ЩY\Л[█Щ^xа)Й╫K]NИ	╒\Ы▌	╦\┌╬И	╒┌]╚[▌H╪[Э╚\┌╚H╪\Щ╧╔╦И▄X▄╬И╚▌ЩNИ	╙▌ЩI╦╪\ЩY\ОИ	╨╪\ЩY\Й╦[█Щ^NИ	╙[█Щ^I╦X[И	╥X[	╦X┌╬И	╙X┌╔╦Ш[Z[NИ	╤Ш[Z[I╚KИX┌╬И	╘X┌╚╚╪\Щ╔╦X┌┘YИ	▐█ЯH┘И╚┌▄┘[Й╦┌YЩЫNИ	╤Ы╪▌\╚█И[▌\И]Y\▌[█Л[ИX┌╚ЩYH╪\Щ╦Й╦И▄┌][█Ь╬И╔╘\▌	╦	╘Щ\┘[Э	╦	╤Э]\ЩI╫KЩ]Щ\Ь┘YИ	╘Щ]Щ\Ь┘Y	╦YЪX┘NИ	╙Y\▄╪Y┘HЫ▄И[▌I╦╪Y[Щ╬И	╘ЩXY[Щ╚[▌\И╪\Щ°а)Й╦И┘YNИ	°енИ┘YH^HЩXY[Щ╔╦Y╪Z[ОИ	╙Щ]╚ЩXY[Щ╔╦\┌╨ZNИ	╨\┌╚RHXЫ▌]\╔╦┌\ЩNИ	╘┌\ЩI╦Ш[ШX┌╨YЪX┘NИ	╒Z┘HHY\▄╪Y┘H┘ИHZYH╪\Щ╚X\Э┘^K[Щ[▌ЩH█ЩH█X[▌\]H[YKЙ╦И\┌╘NИ	╥HЩ]╚╪╪\Щ▀H[ИH▌▄X▀H\Ы▌ЩXY[Щ╦И┌]┘\╚]YX[ИЫ▄ИYO╔╚KИ[██ОИ╚╪\ЩИ╔╙[██И┌Y█Й╦	╓[▌\И┌[ЩШHШ\┌H	ИШ]\ЩI╫K]NИ	╙[██И┌Y█Й╦ШZ▄┌]ШNИ	╙ШZ▄┌]ШI╦YNИ	▄YI╦И\Ы▐И	╨\Ы▐[X]NИY[▌\ИЪ\Э[YHЫ▄И[И^X▌[██И┌Y█ЛЙ╦ЩYYИ	╨Y[▌\И]H┘ИЪ\Э╚┘YH[▌\И[██И┌Y█ЛЙ╦YИ	╨Y^HЪ\Э]Z[╔╦ИX┌╬И	╤^▄ЩH[ЮH┌Y█Й╦╪Y[Щ╬И	╘ЩXY[Щ╚H[██╕а)Й╦┌\ЩNИ	╘┌\ЩI╦Щ\▄ЭИ	╘Щ\▄Э	╦[▌\Ь╬И	╓[▌\Ь╔╦И┘X▌[█Ь╬И╚[[▌[█Ш[И	╤[[▌[█Ш[Ш]\ЩI╦▌ЩNИ	╙▌ЩH	ИШ[Z[I╦╪\ЩY\ОИ	╒█▄Ъ╚	И[█Щ^I╦┘[ЩZ[Щ╬И	╒┘[ЩZ[Щ╔╦Щ[YYNИ	╘┌[\HЩ[YYI╚KИШ]\ЩNИ╔╨Ы█[Щ]ZX┌╚╚X▌[▌HЩY[[Щ▄╚█Щ\▌H[ЩЩYYЫ██H╚ЩH[▌\Ь┘[ЛЙ╦	╘▌XYH[Щ▐X[[▌H▌ЩH██YЫ▄Э[ЩЩX]]H[Щ▌^H╪[H[Щ\ИЩ\▄▌\ЩKЙ╦И	╨▌\Ъ[▌\╚[Щ]ZX┌╦[Z[ЩY[▌H▌ЩH██ЭЩ\Ь╪][█И[ЩЩYYШ\ЪY]H╚ЩY[[]ЩKЙ╦	╨╪\Ъ[Щ╚[Щ┘[Ь┌]]ЩKШ[Z[HYX[Ь╚]Щ\Ю][Щ╚╚[▌H[Щ[▌\И[ЭZ][█И\╚▌Ы█Щ╦Й╦И	╒╪\ЫKZX\ЭY[Щ┘[Щ\Ы▌\╦[▌H┌[ЩH┌[И[▌HXY[Щ┌[И[▌\ИYЩЫ▄Э\╚┘Y[ЛЙ╦	╒▌Y┌Э[[Щ╪\ЩYЭ[[▌H▌ЩH╚[[ЩЪ[Щ╪[H[И▄Щ\И[Щ█X[Ы▌][Щ\╦Й╦И	╤┘[ЭH[ЩШZ\Л[Z[ЩY[▌H┘YZ╚\Ы[█ЮH[ЩЩY[\Y\▌[И██┘██\[ЮKЙ╦	╥[Э[Ь┘H[ЩЪ]Ш]K[▌H▌ЩHY\K▌^H▐X[[Щ]ЩH▌Ы█Щ╚┌[▌┘\ЛЙ╦И	╙▄[Z\▌X╚[Щ█Щ\▌[▌H▌ЩHX\ЫЪ[Щ╦Ш]Щ[[ЩHЪY╚X▌\ЩKЙ╦	╘ШX▌X╪[[Щ]Y[Э[▌H\ЩHЩ\▄█Ь┌XЫH[Щ]ZY]H[XЪ][▌\╦Й╦И	╥[Щ\[Щ[Э[Щ▌Y┌Э[[▌H\ЩHHЬЪY[ЩHZ[Щ┌╚╪\Щ\╚XЫ▌][▄KЙ╦	╤ЩX[^H[Щ┌[Щ[▌H\ЩH██\\▄┌[█Ш]K▄ЩX]]ЩH[ЩШ]\Ш[H▄\Ъ]X[Й╫HKИ┘X▌[█Ь╬И╚┌\ЭИ	╓[▌\И┌\Э	╦[NИ	╘[K\Ы▌	ИЭ[XЩ\Ь╔╦▌ЩNИ	╙▌ЩH	ИX]┌	╦[YNИ	╒[YH	ИЩ\▌]Ш[╔╚KZ[NИ	╤Z[I╦И▄ЩY]И╚[▄ЫЪ[Щ╬И	╤██┘[▄ЫЪ[Щ╔╦YЭ\ЫЫ██ОИ	╤██┘YЭ\ЫЫ██Й╦]Щ[Ъ[Щ╬И	╤██┘]Щ[Ъ[Щ╔╦ЪY┌И	╤██┘ЪY┌	╦[╬И	╙Ш[X\▌H<'цc╔╚KИZQ^YXЬЫ▌╬И	╨RH\▌Ы█┘┘\Й╦ЮP\┌┌[Щ╬И	╒ЮH\┌┌[Щ╔╦\Ь██ШNИ╚[╬И	╙Ш[X\▌^█Ш[Y_HH<'цc╚H[HЮ[▌\ЫX^XK[▌\И\▌Ы█┘┘\ЛИH╪[И▌ZYH[▌H█И▌ЩK╪\ЩY\Л[█Щ^KX[[Щ[▌\И^\╚ZXYЙ╚K[Ш┌[Щ╨╪\ЩИ╔╒┘^xа&\╚[Ш┌[Щ╔╦	╒]KШZH╪[[H	И]Z\Э\╔╫KИ██╬И╚Ш]Z╪[NИ╔╥Ш]Z╪[I╦	╓[▌\ИЪ\Э┌\Э	ИЩYX▌[█Ь╔╫KЩ\▌]Ш[╬И╔╤Щ\▌]Ш[╔╦	╒\██Z[Щ╚Щ\▌]Ш[╚	И█Y^\╔╫KX]┌И╔╥▌[ЩHX]┌[Щ╔╦	╤▌[ШHZ[[И▌]┘И═Й╫K▄┌\╬И╔╤▄┌\╔╦	╥▌ZШH▄┌H	И╪YH╪]I╫K\┌NИ╔╤\┌H\Ъ[┘╔╦	╒┌X┌[Щ]8а&\╚\Ъ[┘[▌H\ЩH[Й╫KШ\┌NИ╔╘Ш\┌\[	╦	╤^K┘YZ╦[█Э	╫K┌]И╔╨\┌╚RI╦	╘]Y\▌[█Ь╚XЫ▌][▌\ИYЩI╫HKИKИNИ┬ИЪY]▄╬И╚┌\ЭИ	°,&╕,%x,cx,,8, Й╦[Щ]╬И	°,%°,cx,,8,.x,/╕,,╕,`I╦\┌NИ	°,)╕,-Й╦▄┌\╬И	°,)╕,b°,-°,/╕,,╕,`I╦[Ш┌[Щ╬И	°,*╕, ╕,&╕,/╕, ╕,%°, Й╚KИ▌ZШU]NИ	°,%x,`x,'8,)╕,b°,-°, Й╦▌ZШVY\╬И	°,"x, ╕,)╕,/╔╦▌ZШSЫ╬И	°,,╕,a°,)╕,`I╦▌ZШU┌NИ	°,%x,`x,'8,`x,(x,`H8,,╕,%°,cx,*8, И8,*8,`x, ╕,(x,/╚█Y█Ш_x,-H8,!°, ╕,'°,cx,,╕,b╦8,&╕, ╕,)╕,cx,,8,`x,*8,/╚8,*8,`x, ╕,(x,/╚█[██Яx,-H8,!°, ╕,'°,cx,,╕,b╚8,"x,*8,cx,*8,/╕,(x,`KЙ╦И▌ZШTЩYX┘YИ	°,%x,`x,'8,`x,(x,`H8,.8,cx,-x,%x,cx,-°,a°,)8,cx,,8, И8,,╕,a°,)╕,/И8,"x,&╕,cx,&╕,,╕,b╚8,"x,*8,cx,*8, ╕,)╕,`x,*8,)╕,b°,-╚8,*╕,cx,,8,+x,/╕,-x, И8,)8,%°,cx,%°,`x,)8,`x, ╕,)╕,*8,/╚8,.8, ╕,*╕,cx,,8,)╕,/╕,+°, ЛЙ╦И╪YU]NИ	°,#°,,╕,/°,*8,/╕,'°,/╚8,-╕,*8,/╔╦\┘LNИ	°,!°,*╕,cx,*╕,`x,(x,`H8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╚8а%8,+╕,b╕,)╕,'°,/╚8,)╕,-И
+8,*╕,cx,,8,/╕,,8, ╕,+x, КI╦\┘LОИ	°,!°,*╕,cx,*╕,`x,(x,`H8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╚8а%8,,8,a╕, ╕,(x,-H8,)╕,-И
+8,)8,`8,-x,cx,,8,)╕,-КI╦\┘L╬И	°,!°,*╕,cx,*╕,`x,(x,`H8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╚8а%8,+╕,`╕,(x,-H8,)╕,-И
+8,+╕,`x,%°,/°, ╕,*╕,`JI╦И╪YSЫ╬И	°,!°,*╕,cx,*╕,`x,(x,`H8,*8,(x,-x,(x, И8,,╕,a°,)╕,`KЙ╦\Ъ[┘И	▐▄▌\ЭH8,*8,`x, ╕,(x,/╚┘[ЩH8,-x,,8,%x,`I╦╪YSЩ^И	°,)8,)╕,`x,*╕,,8,/╚8,#°,,╕,/°,*8,/╕,'°,/╚8,-╕,*8,/╬И▄▌\ЭH8,*8,`x, ╕,(x,/╚┘[ЩH8,-x,,8,%x,`I╦Ы▌╬И	°,!°,*╕,cx,*╕,`x,(x,`I╦И\┌[XNИ	°,!x,-°,cx,'°,+И8,-╕,*8,/╚
+8,&╕, ╕,)╕,cx,,8,`x,*8,/╚8,*8,`x, ╕,(x,/╚8,-H8,!°, ╕,'°,cx,,╕,b╚8,-╕,*8,/╩H┘[ЩH8,-x,,8,%x,`H8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╦Й╦\Щ\┌[XNИ	°,!x,,8,cx,)°,/╕,-°,cx,'°,+И8,-╕,*8,/╚
+8,&╕, ╕,)╕,cx,,8,`x,*8,/╚8,*8,`x, ╕,(x,/╚8,-H8,!°, ╕,'°,cx,,╕,b╚8,-╕,*8,/╩H┘[ЩH8,-x,,8,%x,`H8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╦Й╦И▄┌SЫ▌NИ	°,.8, ╕,*╕,cx,,8,)╕,/╕,+╚8,*8,/°,+°,+╕,/╕,,╕,`K8,*8,/°,*╕,`x,(°,`x,,И8,.8,+╕,`8,%x,cx,-╚8,*╕,b╕, ╕,)╕,,╕,a°,)╕,`KИ8,)8,a°,)╕,`8,,╕,`H8,.8,`x,+╕,/╕,,8,`x,%°,/ЛЙ╦▄┌U[Ш]ШZ[XЫNИ	°,"8,'8,/╕,)8,%x,/╕,*8,/°,%x,/╚8,)╕,b°,-╚8,-x,/°,-x,,8,/╕,,╕,`H8,!x, ╕,)╕,`x,+8,/╕,'°,`x,,╕,b╚8,,╕,a°,-x,`KЙ╦И┘^SXЩ[И	°,"8,,8,b°,'8,`H8,+╕,`8,%x,`I╦┘^Q██┘И	°,"8,,8,b°,'8,`H8,+╕,`8,%x,`H8,&╕, ╕,)╕,cx,,8,+8,,╕, Л8,)8,/╕,,8,/╕,+8,,╕, И8,,8,a╕, ╕,(x,`И8,!x,*8,`x,%x,`╕,,╕, И8а%8,+╕,`x,%╕,cx,+°,+╕,b8,*8,*╕,*8,`x,,╕,%x,`H8,+╕, ╕,&╕,/╚8,,8,b°,'8,`KЙ╦И┘^P╪\ЩNИ	°,"8,,8,b°,'8,`H8,&╕, ╕,)╕,cx,,8,`x,(x,`H8,+╕,`8,,8,/╕,-╕,/╚8,*8,`x, ╕,(x,/╚8,-H8,.8,cx,)x,/╕,*8, ╕,,╕,b╚8,"x,*8,cx,*8,/╕,(x,`H
+8,!x,-°,cx,'°,+И8,&╕, ╕,)╕,cx,,8,`x,(x,`JH8а%8,*8,a╕,+╕,cx,+╕,)╕,/°,%°,/И8,-x,a╕,,°,cx,,°, ╕,(x,/╦8,*╕,a╕,)╕,cx,)И8,*8,/°,,8,cx,(°,+°,/╕,,╕,`H8,-x,/╕,+°,/°,)╕,/И8,-x,a°,+°, ╕,(x,/╦Й╦И┘^SZ^YИ	°,"8,,8,b°,'8,`H8,+╕,`8,%x,`H8,+╕,/°,-╕,cx,,8,+И8,*°,,╕,/°,)8, И8а%8,,8,b°,'8,`x,-x,/╕,,8,`8,*╕,*8,`x,,╕,%x,`H8,.8,,8,a╬╚8,+╕,`x,%╕,cx,+°,+╕,b8,*8,!x,(x,`x,%°,`x,,╕,`H8,'8,/╕,%°,cx,,8,)8,cx,)8,%°,/И8,-x,a°,+°, ╕,(x,/╦Й╦┘^T]ZY]И	°,"8,,8,b°,'8,`H8,+╕,`8,%x,`H8,*8,a╕,+╕,cx,+╕,)╕,b8,*8,,8,b°,'8,`H8а%8,%x,b╕,)8,cx,)8,*╕,cx,,8,/╕,,8, ╕,+x,/╕,,И8,%x, ╕,'°,a╚8,,8,b°,'8,`x,-x,/╕,,8,`8,*╕,*8,`x,,╕,%x,`H8,+╕, ╕,&╕,/°,)╕,/╦Й╦И\┌╘X┘Z█\ОИ	°,#°,)╕,b8,*8,/И8,!x,(x,%°, ╕,(x,/╬И8,"x,)╕,cx,+°,b°,%°, Л8,*╕,a╕,,°,cx,,╕,/╦8,(x,+8,cx,+8,`xа)Й╦\┌╨Э]█ОИ	°,!x,(x,%°, ╕,(x,/╔╦▌[ЩP▌NИ	°,+╕,`8,"x,&╕,/°,)8,'8,/╕,)8,%x, И╠8,.8,a╕,%x,*8,cx,,╕,,╕,b╚8бдЙ╦ЩYY▌[ЩNИ	°,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚8,+╕,`8,'8,/╕,)8,%x, И8,,8,`╕,*╕,b╕, ╕,)╕,/°, ╕,&╕, ╕,(x,/╔╦И]ЩQ\┌NИ	°,!°,*╕,cx,*╕,`x,(x,`H█XZ_H8а$╚╪[Э\ЯH8,)╕,-Й╦]ЩQ\┌SXZNИ	°,!°,*╕,cx,*╕,`x,(x,`H█XZ_H8,)╕,-Й╦]ЩTШ\┌NИ	▐▄┌Y█ЯNИ8,"8,,8,b°,'8,`H8,*°,,╕, Й╦]ЩT╪YNИ	°,#°,,╕,/°,*8,/╕,'°,/╚8,-╕,*8,/╬И▄x,-H8,)╕,-И8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╔╦И]ЩQ▄┌NИ	°,%x,`x,'8,)╕,b°,-°, ОИ┌▀H0н╚8,#°,,╕,/°,*8,/╕,'°,/╚8,-╕,*8,/╬И▄▀I╦Y\╬И	°,"x, ╕,)╕,/╔╦Ы╬И	°,,╕,a°,)╕,`I╦ИЪ╨\┌╬И	°,+╕,`8,'8,/╕,)8,%x, И8,)8,a╕,,╕,`x,.8,`x,%x,b°,-x,/╕,,╕,*8,/╚8,"x, ╕,)╕,/П╔╦Ъ╘▌XОИ	°,+╕,`8,"x,&╕,/°,)8,'8,/╕,)8,%x, И8а%8,,╕,%°,cx,*8, Л8,,8,/╕,-╕,/╦8,*8,%x,cx,-°,)8,cx,,8, Л8,%°,cx,,8,.x,/╕,,╕,`K8,)╕,-Л8,)╕,b°,-°,/╕,,╕,`H8а%╠8,.8,a╕,%x,*8,cx,,╕,,╕,b╦Й╦ИЪ╨▄ЩX]NИ	°,*8,/И8,'8,/╕,)8,%x, И8,&╕,`╕,*╕,/°, ╕,&╕,`H8бдЙ╦Ъ╙Z[ЩNИ	°,*8,/И8,'8,/╕,)8,%x, Й╦Ъ╒ЪY]╬И	°,*╕,`╕,,8,cx,)8,/╚8,'8,/╕,)8,%x, И8,&╕,`╕,(x, ╕,(x,/╚8бдЙ╦Ъ╤\┌NИ	°,*╕,cx,,8,.8,cx,)8,`x,)8,)╕,-Й╦И█┌╬И╚]NИ	°,,8,`╕,*╕, Й╦[┘NИ	°,+╕,b°,(x,cI╦^\▌X╬И	°,+╕,/°,.8,cx,'°,/°,%x,cI╦Y┌И	°,,╕,b8,'°,cI╦\Ъ╬И	°,(x,/╕,,8,cx,%x,cI╦]]╬И	°,!╕,'°,b╔╦██▌\ОИ	°,,8, ╕,%°,`I╦█ЩNИ	°,.8,,8,a╔╦И╪YЩЬЫ█ОИ	°,%x,/╕,-°,/╕,+°, Й╦X[И	°,*╕,&╕,cx,&Й╦Ы▄┘NИ	°,%°,`x,,╕,/╕,+8,`	╦ЫYNИ	°,*8,`8,,╕, Й╦Э]█ОИ	°,,8,`╕,*╕, И8,+╕,/╕,,8,cx,&╕, ╕,(x,/╔╚KИЫ▌YЮNИ╚]NИ	°,,8,b°,'8,`x,-x,/╕,,8,`8,*8,b°,'°,/°,*°,/°,%x,a°,-°,*8,cx,,╕,`I╦[ЭЪ]NИ	°,*╕,cx,,8,)8,/╚8,"x,)╕,+°, И8,"8,,8,b°,'8,`H8,*╕, ╕,&╕,/╕, ╕,%°, Л8,+╕,`8,,8,b°,'8,`H8,#╕,,╕,/И8,"x, ╕,'°,`x, ╕,)╕,b╚8,*╕,b╕, ╕,)╕, ╕,(x,/╦Й╦█ОИ	°,!╕,*8,cH8,&╕,a°,+°, ╕,(x,/╔╦]\ОИ	°,)8,,8,cx,-x,/╕,)	╦И[YNИ	°,.8,+╕,+°, Й╦┘ЩОИ	°,!╕,*°,cH8,&╕,a°,+°, ╕,(x,/╔╦[ШXЫYИ	°,!╕,*8,cH8а%8,*╕,cx,,8,)8,/╚8,,8,b°,'8,`H▌[Y_x,%x,/╔╦\╪XЫYИ	°,!╕,*°,cI╦[ЪYYИ	°,*8,b°,'°,/°,*°,/°,%x,a°,-°,*8,cx,,╕,`H8,+8,cx,,╕,/╕,%x,cH8,!x,+°,cx,+°,/╕,+°,/╦И8,*°,b°,*8,cH8,.8,a╕,'°,cx,'°,/°, ╕,%°,cx,.8,cxа#8,,╕,b╚Ю[▌\ЫX^Xx,%x,/╚8,!x,*8,`x,+╕,)8,/╚8,!°,&╕,cx,&╕,/╚8,+╕,,°,cx,,°,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦И]Z\ЭNИ	°,-╕,`x,+H╚8,!x,-╕,`x,+H8,+╕,`x,.x,`╕,,8,cx,)8, И8,.x,a╕,&╕,cx,&╕,,8,/°,%x,,╕,`I╦И]Щ[Ъ[Щ╬И	°,.8,/╕,+°, ╕,)8,cx,,8, И8,+╕,`8,%x,b°,.8, И8,$╕,%H8,*╕,cx,,8,-╕,cx,*	╦]Щ[Ъ[Щ╒[YNИ	°,.8,/╕,+°, ╕,)8,cx,,8, И8,.8,+╕,+°, Й╦ИШZNИ	°,,8,/╕,.x,`H8,%x,/╕,,╕, Й╦Щ\▌И	№'ъе8,"8,,8,b°,'8,`H█Ш[Y_I╦Щ[▄[Х]NИ	№'у&H8,"8,-x,/╕,,8, И8,+╕,`8,%x,b°,.8, Й╦Щ[▄[РЫ┘NИ	°,"8,-x,/╕,,8, И8,*╕, ╕,&╕,/╕, ╕,%°, И8,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚Ю[▌\ЫX^XH8,)8,a╕,,8,-x, ╕,(x,/╦Й╦KИ[Ш\ОИ╚YX\ОИ	°,-╕,cx,,8,`▄▀H8,*8,/╕,+И8,.8, ╕,-x,)8,cx,.8,,8, Й╦[█ЭИ	▐█_H8,+╕,/╕,.8, Й╦YZ╪NИ	°,!x,)°,/°,%H█_I╚KИ╪\Щ╬И╚██┘И	°,-╕,`x,+H8,.8,+╕,+°,/╕,,╕,`I╦[Ш┌[Щ╬И	°,*╕, ╕,&╕,/╕, ╕,%°, Й╦]Щ[Э╬И	°,-╕,`x,+H8,+╕,`x,.x,`╕,,8,cx,)8,/╕,,╕,`I╦ШYИ	°,!x,-╕,`x,+H8,.8,+╕,+°,/╕,,╕,`I╦Ы█ЩNИ	°,"8,,8,b°,'8,`H8,-╕,`x,+H8,+╕,`x,.x,`╕,,8,cx,)8,/╕,,╕,`H8,,╕,a°,-x,`I╦ИY╪Z[ОИ	°,+╕,,8,,╕,/Й╦[\Ъ]NИ	°,!x,+╕,`°,)8,%x,/╕,,╕, Й╦\Ы]Z\Э[NИ	°,)╕,`x,,8,cx,+╕,`x,.x,`╕,,8,cx,)8, Й╦X\ЬЪXY┘NИ	°,-x,/°,-x,/╕,.x, Й╦▄ЭZ\Ш]Щ\╪[NИ	°,%°,`°,.x,*╕,cx,,8,-x,a°,-╕, Й╦ЩZX█NИ	°,-x,/╕,.x,*8, И8,%x,b╕,*8,`x,%°,b°,,╕,`I╦И]Щ[ЭЫ▌NИ	°,.8,/╕,)°,/╕,,8,(╚8,.8, ╕,*╕,cx,,8,)╕,/╕,+╚8,*╕,,8,/°,-╕,`8,,╕,*
+8,)8,/°,)x,/╦8,*8,%x,cx,-°,)8,cx,,8, Л8,-x,/╕,,8, Л8,+╕,/╕,.8, О╚8,,8,/╕,.x,`H8,%x,/╕,,╕, Л8,)╕,`x,,8,cx,+╕,`x,.x,`╕,,8,cx,)8, Л8,-x,,8,cx,'8,cx,+°, И8,+╕,/°,*8,.x,/КKИ8,*╕,a╕,,°,cx,,╕,/╦8,%°,`°,.x,*╕,cx,,8,-x,a°,-╕, И8,-x, ╕,'°,/╚8,-x,/╕,'°,/°,%x,/╚8,%╕,&╕,cx,&╕,/°,)8,+╕,b8,*8,+╕,`x,.x,`╕,,8,cx,)8,/╕,*8,cx,*8,/╚8,+╕,`8,*╕,`x,,8,b°,.x,/°,)8,`x,*8,/╚8,)╕,cx,-x,/╕,,8,/И8,*8,/°,,8,cx,)°,/╕,,8,/°, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦И┌\ЩNИ	°,"8,,8,b°,'8,`H8,*╕, ╕,&╕,/╕, ╕,%°, И┌]╨\8,,╕,b╚8,-°,a°,,8,cH8,&╕,a°,+°, ╕,(x,/╔╦Э[И	°,*╕,`╕,,8,cx,)8,/╚8,*╕, ╕,&╕,/╕, ╕,%╚8,*╕,'°,cx,'°,/°,%x,,╕,`I╦▌┌\NИ	°,+╕,,8,/°,*8,cx,*8,/╚8,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚8,.8,cx,-x,b8,*╕,cH8,&╕,a°,+°, ╕,(x,/╚8бдЙ╚KИШ\┌NИ╚X┌╬И	°,+╕,`8,,8,/╕,-╕,/°,*8,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╔╦Ъ[ЩИ	°,+╕,`8,,8,/╕,-╕,/╚8,)8,a╕,,╕,`x,.8,`x,%x,b°, ╕,(x,/╔╦Z[ЩPЭ]█ОИ	°,*8,/И8,,8,/╕,-╕,/╚8,&╕,`╕,*╕,/°, ╕,&╕,`I╦Z[ЩNИ	°,+╕,`8,)╕,/╔╦]NИ	▐▄┌Y█ЯH8,,8,/╕,-╕,/╚8,*°,,╕,/°,)8,/╕,,╕,`H
+┘]_JI╦[▄ЩNИ	°а)╕,+╕,,8,/°, ╕,)	╦\▄╬И	°,)8,%x,cx,%x,`x,-H8,&╕,`╕,*╕,`I╦И\┌╬И	°,*8,/И8,,8,b°,'8,`H8,%°,`x,,8,/°, ╕,&╕,/╚Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╦\┌╘NИ	°,"8,,8,b°,'8,`H8,*8,/И8,,8,/╕,-╕,/╚▄┌Y█Яx,%x,/╚8,#╕,,╕,/И8,"x, ╕,'°,`x, ╕,)╕,/╧╚8,*8,/И8,'8,/╕,)8,%x, И8,*╕,cx,,8,%x,/╕,,8, И8,&╕,a╕,*╕,cx,*╕, ╕,(x,/╦Й╦Э[И	°,*╕,`╕,,8,cx,)8,/╚8,'8,/╕,)8,%x, И8,)8,a╕,,╕,`x,.8,`x,%x,b°, ╕,(x,/╔╦┌\ЩNИ	╒┌]╨\8,,╕,b╚8,-°,a°,,8,cH8,&╕,a°,+°, ╕,(x,/╔╦И]Z[╬И	°,%°,cx,,8,.x,/╕,,И8,-x,/╕,,8,`8,%°,/И8,-x,/°,-x,,8,/╕,,╕,`I╦Ш[Ь┌]██┘И	°,!x,*8,`x,%x,`╕,,╕, Й╦Ш[Ь┌]╪\ЩNИ	°,'8,/╕,%°,cx,,8,)8,cx,)	╦Э[\И╚Ш[Ь┌]╬И	°,%°,cx,,8,.H8,.8, ╕,&╕,/╕,,8, Й╦Щ[YYY\╬И	°,*╕,,8,/°,.x,/╕,,8,/╕,,╕,`I╦Э[И	°,*╕,`╕,,8,cx,)8,/╚8,'8,/╕,)8,%x, Й╦\┌╬И	╨Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╚K[ЭИ	°,"8,,8,b°,'8,`H8,*°,,╕,/°,)8,/╕,,╕,`H8,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚8,*╕,b8,*8,+╕,`8,,8,/╕,-╕,/°,*8,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦И[Ы╪┌╬И	°енИ8,*8,a°,'°,/╚8,,8,/╕,-╕,/°,*°,,╕, И8,&╕,`╕,(x, ╕,(x,/╔╦[Ы╪┌╙Ы▌NИ	°,$╕,%H8,&╕,/°,*8,cx,*8,+°,/╕,(x,cH8,&╕,`╕,.8,cx,)8,a╚8,"8,,8,b°,'8,`H8,!x,*8,cx,*8,/╚8,,8,/╕,-╕,`x,,И8,*°,,╕,/╕,,╕,`H8,)8,a╕,,8,`x,&╕,`x,%x,`x, ╕,'°,/╕,+°,/╦Й╦ИX┌▐U]NИ	°,!x,)╕,`°,-°,cx,'╚8,.8,`╕,&╕,%H8,!x, ╕,-╕,/╕,,╕,`I╦X┌▐Q^NИ	°,,8, ╕,%°,`K8,)╕,/°,%x,cx,%x,`NИ8,"8,,8,b°,'8,`H8,!x,*8,cx,*8,/╚8,,8,/╕,-╕,`x,,╕,%x,`H8,$╕,%x,'°,a╚0н╚8,.8, ╕,%╕,cx,+°,,╕,`NИ8,+╕,`8,,8,/╕,-╕,/°,%x,/╔╦X┌▐T┌Y█ОИ	°,+╕,`8,,8,/╕,-╕,/°,%x,/╚8,*╕,cx,,8,)8,cx,+°,a°,%x, Й╦██▌\ОИ	°,,8, ╕,%°,`I╦Э[XЩ\Ь╬И	°,.8, ╕,%╕,cx,+°,,╕,`I╦\ЩX▌[█ОИ	°,)╕,/°,%x,cx,%x,`I╦И██▌\Ь╬И╚▌[ОИ	°,%x,/╕,-°,/╕,+°, Л8,#╕,,8,`x,*╕,`I╦[██ОИ	°,)8,a╕,,╕,`x,*╕,`K8,-x,a╕, ╕,(x,/╔╦X\Ь╬И	°,#╕,,8,`x,*╕,`K8,*╕,%°,(x,*╕,`H8,,8, ╕,%°,`I╦Y\Ш▌\ЮNИ	°,!╕,%x,`x,*╕,&╕,cx,&Й╦Э\]\ОИ	°,*╕,.8,`x,*╕,`K8,+8, ╕,%°,/╕,,8,`I╦Щ[Э\╬И	°,)8,a╕,,╕,`x,*╕,`K8,%°,`x,,╕,/╕,+8,`	╦╪]\ЫОИ	°,*8,`8,,╕, Л8,*8,,╕,`x,*╕,`I╦ШZNИ	°,+8,`╕,(x,/°,)И8,,8, ╕,%°,`I╦┘]NИ	°,%°,b°,)°,`x,+И8,,8, ╕,%°,`I╚KИ\ЩX▌[█Ь╬И╚▌[ОИ	°,)8,`╕,,8,cx,*╕,`I╦[██ОИ	°,-x,/╕,+°,`x,-x,cx,+°, Й╦X\Ь╬И	°,)╕,%x,cx,-°,/°,(°, Й╦Y\Ш▌\ЮNИ	°,"x,)8,cx,)8,,8, Й╦Э\]\ОИ	°,"8,-╕,/╕,*8,cx,+°, Й╦Щ[Э\╬И	°,!╕,%°,cx,*8,a°,+°, Й╦╪]\ЫОИ	°,*╕,-╕,cx,&╕,/°,+╕, Й╦ШZNИ	°,*8,b8,,8,`x,)8,/╔╦┘]NИ	°,-x,/╕,+°,`x,-x,cx,+°, Й╚HKИ]Z[]NИ	°,-x,/°,-x,,8,+╕,b8,*8,*╕, ╕,&╕,/╕, ╕,%°, Й╦Щ\▌]NИ	°,,8,/╕,+8,b°,+°,a╚8,*╕, ╕,(x,`x,%°,,╕,`I╦Щ\▌┘^NИ	°,"8,,8,b°,'8,`I╦Щ\▌█[▄ЬЫ▌╬И	°,,8,a°,*╕,`I╦Щ\▌[ОИ	▐█ЯH8,,8,b°,'8,`x,,╕,cx,,╕,b╔╦ИЩ\▌[▄ЩNИ	°,+╕,,8,/°,*8,cx,*8,/╚8,*╕, ╕,(x,`x,%°,,╕,`H8,&╕,`╕,*╕,`I╦Щ\▌\▄╬И	°,)8,%x,cx,%x,`x,-H8,&╕,`╕,*╕,`I╦Щ\▌Ы█ЩNИ	°,,8,/╕,+8,b°,+°,a╚8,%x,b╕,*8,cx,*8,/╚8,*8,a╕,,╕,,╕,cx,,╕,b╚8,*╕, ╕,(x,`x,%°,,╕,`H8,,╕,a°,-x,`KЙ╦Щ\▌╪Y[Щ╬И	°,*╕, ╕,(x,`x,%°,,╕,`H8,,╕,b°,(x,cH8,!x,-x,`x,)8,`x,*8,cx,*8,/╕,+°,/°а)Й╦И┌▄Э▌]╬И╚]NИ	°,+╕,`8,*8,%x,cx,-°,)8,cx,,8,/╕,,╕,`K8,$╕,%x,cx,%H8,'°,&╕,cxа#8,,╕,b╔╦^И	°,$╕,%H8,,8,`8,(x,/°, ╕,%°,cH8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦XЩ[╬И╔°,!x,,8,&╕,a°,+°,/╔╦	°,,8,/╕,-╕,/°,*°,,╕, Й╦	°,'°,/╕,,8,b╔╦	°,*╕,b╕, ╕,)8,*	╫K┌[ЫЩ[И	°,-°,/╕,,8,cx,'°,cxа#8,%x,'°,cxа#8,,╕,`I╦┘┘█NИ	°,*8,b°,'°,/°,*°,/°,%x,a°,-°,*8,cH8,+8,/╕,,8,cxа#8,,╕,b╚8,-°,/╕,,8,cx,'°,cxа#8,%x,'°,cxа#8,,╕,`I╚KИYЩY▌ZYNИ╚╪\ЩИ╔°,,╕,b8,*°,cH8,%°,b8,(x,cI╦	°,+╕,`8,,8,b°,'8,`x,-x,/╕,,8,`8,.8,+╕,)8,`x,,╕,cx,+°, ОИ8,*╕,cx,,8,a°,+Л8,*╕,*8,/╦8,(x,+8,cx,+8,`I╫K]NИ	°,,╕,b8,*°,cH8,%°,b8,(x,cI╦XЬ╬И╔°,*8,/°,*8,cx,*	╦	°,"8,,8,b°,'8,`I╦	°,,8,a°,*╕,`I╦	°,"8,*8,a╕,,Й╦	°,"8,.8, ╕,-x,)8,cx,.8,,8, Й╫KИШ[[Ш┘NИ╔°,*8,/°,*8,cx,*8,'°,/╚8,.8,+╕,)8,`x,,╕,cx,+°, Й╦	°,*8,a°,'°,/╚8,.8,+╕,)8,`x,,╕,cx,+°, Й╦	°,,8,a°,*╕,'°,/╚8,.8,+╕,)8,`x,,╕,cx,+°, Й╦	°,"8,*8,a╕,,И8,.8,+╕,)8,`x,,╕,cx,+°, Й╦	°,"8,.8, ╕,-x,)8,cx,.8,,8,.8,+╕,)8,`x,,╕,cx,+°, Й╫KИ\ЩX\╬И╚▌ЩNИ	°,*╕,cx,,8,a°,+Й╦Ш[Z[NИ	°,%x,`x,'°,`x, ╕,+8, Й╦X\ЬЪXY┘NИ	°,-x,/°,-x,/╕,.x, Й╦╪\ЩY\ОИ	°,"x,)╕,cx,+°,b°,%°, Й╦┘X[И	°,)°,*8, Й╦X[И	°,!╕,,8,b°,%°,cx,+°, Й╚KЮP\ЩXNИ	°,!x, ╕,-╕,/╕,,И8,-x,/╕,,8,`8,%°,/Й╦▌\▄ЭYИ	▐▄[Щ]▀H8,!x,*8,`x,%x,`╕,,╕, Й╦И[▌\Ф┌Y█ОИ	°,+╕,`8,,8,/╕,-╕,/╔╦┌[Щ┘NИ	°,+╕,/╕,,8,cx,&╕, ╕,(x,/╔╦X┌╬И	°,+╕,,8,b╚8,,8,/╕,-╕,/╚8,&╕,`╕,(x, ╕,(x,/╔╦X┌╤Ъ\Ь▌И	°,+╕,`8,.8,+╕,)8,`x,,╕,cx,+°, И8,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚8,+╕,`8,,8,/╕,-╕,/°,*8,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦╪Y[Щ╬И	°,+╕,`8,.8,+╕,)8,`x,,╕,cx,+°, И8,,╕,a╕,%x,cx,%x,/°,.8,cx,)8,`x,*8,cx,*8,/╕, ╕а)Й╦ШZ[YИ	°,!°,*╕,cx,*╕,`x,(x,`H8,,╕,b°,(x,cH8,%x,/╕,,╕,a°,)╕,`KИ8,)╕,+°,&╕,a°,.8,/╚8,+╕,,°,cx,,╕,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦И\Ь██Ш[И	°,+╕,`8,'8,/╕,)8,%x,/╕,*8,/°,%x,/╚8,*╕,cx,,8,)8,cx,+°,a°,%x, ОИ8,'8,*8,cx,+И8,*8,%x,cx,-°,)8,cx,,8, И▄▌\ЯI╦\┌S[ЩNИ	°,)╕,-И█▄Щ▀I╦┘[Щ\Ш[И	°,"8,,8,/╕,-╕,/°,%x,/╚8,.8,/╕,)°,/╕,,8,(╚8,*°,,╕,/°,)8, ЛИ8,+╕,`8,%x,`H8,*╕,cx,,8,)8,cx,+°,a°,%x,+╕,b8,*8,,╕,b8,*°,cH8,%°,b8,(x,cH8,%x,b°,.8, И8,+╕,`8,'8,/╕,)8,%x, И8,.8,`°,-°,cx,'°,/°, ╕,&╕, ╕,(x,/╦Й╦\ШNИ	°,"8,,8,b°,'8,`H8,+╕,`8,)8,/╕,,И▌\Ш_I╦И\ШSШ[Y\╬И╔°,'8,*8,cx,+Й╦	°,.8, ╕,*╕,)8,cI╦	°,-x,/°,*╕,)8,cI╦	°,%x,cx,-°,a°,+Й╦	°,*╕,cx,,8,)8,cx,+°,%x,cI╦	°,.8,/╕,)°,*	╦	°,*8,b8,)°,*	╦	°,+╕,/°,)8,cx,,	╦	°,*╕,,8,+И8,+╕,/°,)8,cx,,	╫K\ШQYЩЩX▌И╔°,'8,/╕,%°,cx,,8,)8,cx,)	╦	°,.8,/╕,)°,/╕,,8,(°, Й╦	°,!x,*8,`x,%x,`╕,,╕, Й╫KИ[Ы╪┌╬И	°,-x,`8,(x,/°,+°,b╚8,%°,`x,,8,cx,)8,`H8,"x,*8,cx,*8,'°,cx,+°,/╕,+8,cxа#8,,╕,`H8,$╕,%H8,&╕,/°,*8,cx,*8,*╕,cx,,8,%x,'°,*8,)8,,8,cx,-x,/╕,)8,"8,,8,/╕,-╕,/°,%x,/╚8,"8,,8,b°,'8, ╕,)8,/И8,)8,a╕,,8,`x,&╕,`x,%x,`x, ╕,'°,/╕,+°,/╦Й╦ИЫ▌NИ	°,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╚8,*8,`x, ╕,&╕,/╚8,%°,cx,,8,.H8,.8, ╕,&╕,/╕,,8,/╕,,И8,!╕,)°,/╕,,8, ╕,%°,/И8,,╕,a╕,%x,cx,%x,/°, ╕,&╕,/°,*8,)╕,/╦И8,!╕,,╕,b°,&╕,*8,%x,`H8,+╕,/╕,,8,cx,%°,)╕,,8,cx,-╕,*8, И8,+╕,/╕,)8,cx,,8,+╕,a╦8,'8,b°,.8,cx,+°, И8,%x,/╕,)╕,`KЙ╦И^И╚▌ЩNИ╔°,*8,/°,)╕,/╕,*8, ╕,%°,/И8,"x, ╕,(x, ╕,(x,/╦И8,#╕,%x,cx,%x,`x,-H8,-x,/°,*8, ╕,(x,/╦8,)8,b╕, ╕,)╕,,8,*╕,(x,/╚8,+╕,/╕,'°,cx,,╕,/╕,(x,%x, ╕,(x,/╦Й╦	°,*8,/°,,╕,%x,(x,%°,/И8,"x, ╕,'°,`x, ╕,)╕,/╦И8,&╕,/°,*8,cx,*8,&╕,/°,*8,cx,*8,-╕,cx,,8,)╕,cx,)°,,╕,a╚8,+╕,`x,%╕,cx,+°, ЛЙ╦	°,*╕,cx,,8,a°,+И8,+x,/╕,-x,/╕,,╕,`H8,.8,`x,,╕,+x, ╕,%°,/И8,*╕, ╕,&╕,`x,%x,b°,%°,,╕,,8,`KИ8,+╕,*8,.8,`x,,╕,b╚8,+╕,/╕,'╚8,&╕,a╕,*╕,cx,*╕,(x,/╕,*8,/°,%x,/╚8,+╕, ╕,&╕,/╚8,.8,+╕,+°, ЛЙ╫KИШ[Z[NИ╔°,!x,*╕,/╕,,8,cx,)x,/╕,,╕,`H8,,8,/╕,-x,&╕,cx,&╕,`KИ8,*╕,cx,,8,-╕,/╕, ╕,)8, ╕,%°,/И8,"x, ╕,(x,/╚8,!°,)8,,8,`x,,╕,%x,`H8,&╕,b°,'°,/°,-x,cx,-x, ╕,(x,/╦Й╦	°,.8,/╕,)°,/╕,,8,(°, ╕,%°,/Л8,*╕,cx,,8,-╕,/╕, ╕,)8, ╕,%°,/И8,"x, ╕,'°,`x, ╕,)╕,/╦И8,$°,*╕,/°,%x,%°,/И8,)╕,/°,*8,&╕,,8,cx,+╚8,*╕,/╕,'°,/°, ╕,&╕, ╕,(x,/╦Й╦	°,!°, ╕,'°,cx,,╕,b╚8,.8,.x,%x,/╕,,8, И8,+8,/╕,%°,`x, ╕,'°,`x, ╕,)╕,/╦И8,%x,`x,'°,`x, ╕,+8, ╕,)8,b╚8,%°,(x,*╕,(x, И8,"x,)8,cx,.8,/╕,.x,/╕,*8,cx,*8,/°,.8,cx,)8,`x, ╕,)╕,/╦Й╫KИX\ЬЪXY┘NИ╔°,$°,*╕,/°,%H8,!x,-x,.8,,8, ЛИ8,*╕,a╕,)╕,cx,)И8,*8,/°,,8,cx,(°,+°,/╕,,╕,`H8,-x,/╕,+°,/°,)╕,/И8,-x,a°,+°, ╕,(x,/╦8,-x,/╕,)╕,*8,,╕,`H8,-x,)╕,cx,)╕,`KЙ╦	°,*8,/°,,╕,%x,(x,%°,/И8,"x, ╕,'°,`x, ╕,)╕,/╦И8,%x,,╕,/°,.8,/╚8,&╕,a°,.8,a╚8,)╕,/°,*8,&╕,,8,cx,+°,,╕,`H8,.x,/╕,+°,/°,*8,/°,.8,cx,)8,/╕,+°,/╦Й╦	°,!x,-x,%°,/╕,.x,*8,*╕,a╕,,8,`x,%°,`x,)8,`x, ╕,)╕,/╦И8,+╕,*8,.8,`H8,-x,/°,*╕,cx,*╕,/╚8,+╕,/╕,'°,cx,,╕,/╕,(x,'°,/╕,*8,/°,%x,/╚8,+╕, ╕,&╕,/╚8,.8,+╕,+°, ЛЙ╫KИ╪\ЩY\ОИ╔°,*8,/°,)╕,/╕,*8, ╕,%°,/Л8,%x,-°,cx,'°, ╕,%°,/И8,"x, ╕,(x,-x,&╕,cx,&╕,`KИ8,'8,/╕,%°,cx,,8,)8,cx,)8,%°,/И8,*╕,cx,,8,(°,/╕,,°,/°,%H8,-x,a°,.8,`x,%x,b°, ╕,(x,/╦8,,8,/°,.8,cx,%x,cH8,-x,)╕,cx,)╕,`KЙ╦	°,*╕,`x,,8,b°,%°,)8,/╚8,*8,/°,,╕,%x,(x,%°,/И8,"x, ╕,'°,`x, ╕,)╕,/╦И8,$╕,%H8,*╕,*8,/°,*╕,b8,)╕,`°,-°,cx,'°,/╚8,*╕,a╕,'°,cx,'°, ╕,(x,/╦Й╦	°,*╕,*8,`x,,╕,`H8,+8,/╕,%°,/И8,.8,/╕,%°,`x,)8,/╕,+°,/╦И8,&╕,b╕,,8,-H8,)8,`8,.8,`x,%x,b°,-x,(x,/╕,*8,/°,%x,/╚8,+╕, ╕,&╕,/╚8,.8,+╕,+°, ЛЙ╫KИ┘X[И╔°,%╕,,8,cx,&╕,`x,,╕,cx,,╕,b╚8,'8,/╕,%°,cx,,8,)8,cx,)И8,)8,b╕, ╕,)╕,,8,*╕,/╕,'°,`H8,%x,b╕,*8,`x,%°,b°,,°,cx,,╕,`K8,!x,*╕,cx,*╕,`x,,╕,`H8,!°,-x,cx,-x,(x, И8,-x,)╕,cx,)╕,`KЙ╦	°,.8,+╕,)8,`x,,╕,cx,+°, ЛИ8,%╕,,8,cx,&╕,`x,,╕,`H8,%°,+╕,*8,/°, ╕,&╕, ╕,(x,/╦8,!╕,&╕,,8,(°,/╕,)8,cx,+╕,%x, ╕,%°,/И8,"x, ╕,(x, ╕,(x,/╦Й╦	°,!╕,,8,cx,)x,/°,%H8,-x,/°,-°,+°,/╕,,╕,`H8,!x,*8,`x,%x,`╕,,╕, ЛИ8,*╕,cx,,8,(°,/╕,,°,/°,%K8,*╕,b╕,)╕,`x,*╕,`x,%x,`H8,+╕, ╕,&╕,/╚8,.8,+╕,+°, ЛЙ╫KИX[И╔°,)8,a°,,╕,/°,%x,%°,/И8,)8,`8,.8,`x,%x,b°, ╕,(x,/╦И8,+8,/╕,%°,/И8,-x,/°,-╕,cx,,8,/╕, ╕,)8,/╦8,*8,`8,,°,cx,,╕,`H8,)8,/╕,%°, ╕,(x,/╦8,!x,)8,/°,%°,/И8,-╕,cx,,8,+╕,/°, ╕,&╕,%x, ╕,(x,/╦Й╦	°,+╕,b╕,)8,cx,)8, ╕,%°,/И8,+8,/╕,%°,`x, ╕,)╕,/╦И8,.8,+╕,+°,/╕,*8,/°,%x,/╚8,+x,b°,'8,*8, Л8,-x,/°,-╕,cx,,8,/╕, ╕,)8,/╚8,*╕,/╕,'°,/°, ╕,&╕, ╕,(x,/╦Й╦	°,-╕,%x,cx,)8,/╚8,+8,/╕,%°,`x, ╕,)╕,/╦И8,-x,cx,+°,/╕,+°,/╕,+╕, Л8,*8,/°,)╕,cx,,8,%x,b╕,*8,.8,/╕,%°,/°, ╕,&╕, ╕,(x,/╦Й╫HHKИ┌Y█ЫX]┌И╚╪\ЩИ╔°,,8,/╕,-╕,/╚8,*╕,b╕, ╕,)8,*	╦	°,#╚8,,8,a╕, ╕,(x,`H8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,`x,,И8,*╕,b╕, ╕,)8,*8,!x,+°,/°,*8,/Й╫K]NИ	°,,8,/╕,-╕,/╚8,*╕,b╕, ╕,)8,*	╦[▌NИ	°,+╕,`8,,8,`I╦\ЭЩ\ОИ	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╔╦┌█▄┘NИ	°,,8,/╕,-╕,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╔╦XЬ╬И╔°,*8,/И8,,8,/╕,-╕,/╔╦	°,+x,/╕,%°,.8,cx,-x,/╕,+╕,/╚8,,8,/╕,-╕,/╔╫K┘YNИ	°,+╕,/И8,*╕,b╕, ╕,)8,*8,&╕,`╕,(x, ╕,(x,/╔╦ИЩ\ЩX▌И╚^┘[[ЭИ	°,!x,)╕,cx,+x,`x,)8,+╕,b8,*8,*╕,b╕, ╕,)8,*	╦██┘И	°,+╕, ╕,&╕,/╚8,*╕,b╕, ╕,)8,*	╦]Щ\ШY┘NИ	°,.8,%°,'°,`H8,*╕,b╕, ╕,)8,*	╦▌╬И	°,$°,*╕,/°,%H8,!x,-x,.8,,8, Й╚KИ^И╚^┘[[ЭИ	°,+╕,`8,,8,/╕,-╕,`x,,╕,`H8,.8,.x,'8, ╕,%°,/И8,%x,,╕,`x,.8,cx,)8,/╕,+°,/╬И8,.8,`x,,╕,+x,+╕,b8,*8,!x,-x,%°,/╕,.x,*8,$╕,%x,a°,,╕,/╕, ╕,'°,/╚8,)╕,`°,%x,cx,*╕,)x, ЛЙ╦██┘И	°,.8,c8,%x,,8,cx,+°,-x, ╕,)8,+╕,b8,*8,'8, ╕,'╦8,%x,b╕,*8,cx,*8,/╚8,)8,a°,(x,/╕,,╕,%x,`H8,.8,,8,cx,)╕,`x,%x,`x,*╕,b°,-x,/╕,,╕,/╦Й╦]Щ\ШY┘NИ	°,%x,b╕,*8,cx,*8,/╚8,)8,a°,(x,/╕,,╕,*╕,b8,%x,`°,-°,/╚8,&╕,a°,+°,/╕,,╕,/╦И8,$°,*╕,/°,%K8,+╕,/╕,'°,cx,,╕,/╕,(x,`x,%x,b°,-x,(x, И8,.8,.x,/╕,+°,*╕,(x,)8,/╕,+°,/╦Й╦▌╬И	°,.8,cx,-x,+x,/╕,-x,/╕,,╕,`H8,&╕,/╕,,╕,/И8,+x,/°,*8,cx,*8, ЛИ8,!x,-x,%°,/╕,.x,*8,%x,`°,-°,/°,)8,b╚8,.8,/╕,%°,-x,&╕,cx,&╕,`KЙ╚KИЬЪY[Щ┌\И	°,+╕,*8,.8,`K8,.8,cx,*8,a°,.x, Й╦Ш[Z[NИ	°,%x,`x,'°,`x, ╕,+8, Л8,.8, ╕,*╕,)Й╦▄┌NИ	°,,8,a╕, ╕,(x,`H8,,8,/╕,-╕,`x,,╕,`H8,$╕,%x,)╕,/╕,*8,/°,%x,b╕,%x,'°,/╚8,%x,-°,cx,'°,+╕,b8,*8,.8,cx,)x,/╕,*8, ╕,,╕,b╚8,"x,*8,cx,*8,/╕,+°,/╚
+8,+x,%x,`╕,'╚8,)╕,b°,-°, КKИ8,&╕,/╕,,╕,/И8,%x,`x,'°,`x, ╕,+8,/╕,,╕,`H8,*╕,a╕,,°,cx,,╕,/°,%x,/╚8,+╕,`x, ╕,)╕,`H8,)╕,`8,*8,cx,*8,/╚8,&╕,`╕,.8,cx,)8,/╕,+°,/╦Й╦ИЭ[И	°,*╕,`╕,,8,cx,)8,/╚═И8,%°,`x,(°,/╕,,И8,'8,/╕,)8,%H8,*╕,b╕, ╕,)8,*	╦Ы▌NИ	°,,8,a╕, ╕,(x,`H8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,`x,,И8,!╕,)°,/╕,,8, ╕,%°,/И8,+╕,/╕,)8,cx,,8,+╕,a╦И8,!╕,,╕,b°,&╕,*8,%x,`H8,+╕,/╕,,8,cx,%°,)╕,,8,cx,-╕,*8, Л8,'8,b°,.8,cx,+°, И8,%x,/╕,)╕,`KЙ╦┌\ЩS[ЩNИ	▐╪_H
+╚╪ЯNИ▄\Ш┘[ЭIH8,,8,/╕,-╕,/╚8,*╕,b╕, ╕,)8,*▌Щ\ЩX▌KЙ╚KИЭ[Y\Ы█┘▐NИ╚╪\ЩИ╔°,.8, ╕,%╕,cx,+°,/И8,-╕,/╕,.8,cx,)8,cx,,8, Й╦	°,*╕,a°,,8,`K8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,*8,`x, ╕,&╕,/╚8,+╕,`8,.8, ╕,%╕,cx,+°,,╕,`I╫K]NИ	°,.8, ╕,%╕,cx,+°,/И8,-╕,/╕,.8,cx,)8,cx,,8, Й╦[ЭЫ╬И	°,+╕,`8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,*╕,a°,,8,`H8,!╕,)°,/╕,,8, ╕,%°,/И8,+╕,`8,+╕,`╕,,╕,/╕, ╕,%x, Л8,+x,/╕,%°,cx,+°,/╕, ╕,%x, Л8,*8,/╕,+И8,.8, ╕,%╕,cx,+╦Й╦И╪ОИ	°,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`	╦Ш[YNИ	°,*╕,a°,,8,`H
+8,!°, ╕,%°,cx,,╕,`8,-°,cH8,!x,%x,cx,-°,,8,/╕,,╕,cx,,╕,b╩I╦┌▌╬И	°,*8,/И8,.8, ╕,%╕,cx,+°,,╕,`H8,&╕,`╕,*╕,/°, ╕,&╕,`I╦ШYИ	°,)╕,+°,&╕,a°,.8,/╚8,.8,,8,b8,*8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,!°,-x,cx,-x, ╕,(x,/╦Й╦┌[Щ┘NИ	°,+╕,/╕,,8,cx,&╕, ╕,(x,/╔╦И[██[Ъ╬И╔°,+╕,`╕,,╕,/╕, ╕,%x, Й╦	°,'8,*8,cx,+И8,.8, ╕,%╕,cx,+╚0н╚8,+╕,`8,.8,cx,-x,+x,/╕,-x, Й╫KЪY▐X[Ъ╬И╔°,+x,/╕,%°,cx,+°,/╕, ╕,%x, Й╦	°,!x,)╕,`°,-°,cx,'╚8,.8, ╕,%╕,cx,+╚0н╚8,'8,`8,-x,/°,)8,+╕,/╕,,8,cx,%°, Й╫KШ[YSЭ[NИ╔°,*8,/╕,+И8,.8, ╕,%╕,cx,+╔╦	°,!°,)8,,8,`x,,╕,`H8,+╕,/°,+╕,cx,+╕,,╕,cx,*8,/╚8,#╕,,╕,/И8,&╕,`╕,.8,cx,)8,/╕,,8,`I╫KИЫ╙Ш[YNИ	°,*8,/╕,+И8,.8, ╕,%╕,cx,+╚8,%x,b°,.8, И8,+╕,`8,*╕,a°,,8,`x,*8,`H8,!°, ╕,%°,cx,,╕,`8,-°,cH8,!x,%x,cx,-°,,8,/╕,,╕,cx,,╕,b╚8,'°,b8,*╕,cH8,&╕,a°,+°, ╕,(x,/╦Й╦[Щ]И	°,%°,cx,,8,.x, Й╦▌Щ[Щ▌╬И	°,+8,,╕,/╕,,╕,`I╦╪\ЩNИ	°,'8,/╕,%°,cx,,8,)8,cx,)	╦И\Ы[█ЮQ██┘И	°,+╕,`8,*8,/╕,+И8,.8, ╕,%╕,cx,+╦8,+╕,`╕,,╕,/╕, ╕,%x, И8,+╕,/°,)8,cx,,8,.8, ╕,%╕,cx,+°,,╕,`NИ8,+╕, ╕,&╕,/╚8,*╕,b╕, ╕,)8,*Й╦\Ы[█ЮSЩ]]Ш[И	°,+╕,`8,*8,/╕,+И8,.8, ╕,%╕,cx,+╦8,+╕,`╕,,╕,/╕, ╕,%x, И8,$╕,%x,)╕,/╕,*8,/°,%x,b╕,%x,'°,/╚8,.8,+╕, И
+8,)8,'°,.8,cx,)x, КKЙ╦ИYX\ОИ	°,+╕,`▐YX\ЯH8,.8, ╕,-x,)8,cx,.8,,8, ОИ8,.8, ╕,%╕,cx,+╚█ЯI╦X┌▐NИ	°,+╕,`8,%x,`H8,!x,)╕,`°,-°,cx,'°, Й╦X┌▐SЭ[XЩ\Ь╬И	°,.8, ╕,%╕,cx,+°,,╕,`I╦X┌▐Q^\╬И	°,,8,b°,'8,`x,,╕,`I╦X┌▐P██▌\Ь╬И	°,,8, ╕,%°,`x,,╕,`I╦И\┌╨ZNИ	°,*8,/И8,.8, ╕,%╕,cx,+°,,И8,%°,`x,,8,/°, ╕,&╕,/╚Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╦\┌╘NИ	°,*8,/И8,+╕,`╕,,╕,/╕, ╕,%x, И█_K8,+x,/╕,%°,cx,+°,/╕, ╕,%x, И╪ЯKИ8,"8,.8, ╕,%╕,cx,+°,,╕,`H8,*8,/И8,"x,)╕,cx,+°,b°,%°, Л8,+8, ╕,)°,/╕,,И8,%°,`x,,8,/°, ╕,&╕,/╚8,#°, И8,&╕,a╕,+8,`x,)8,`x,*8,cx,*8,/╕,+°,/╧╔╦┌\ЩNИ	°,-°,a°,,8,cH8,&╕,a°,+°, ╕,(x,/╔╦ИЫ▌NИ	°,.8, ╕,%╕,cx,+°,/И8,-╕,/╕,.8,cx,)8,cx,,8, И8,!╕,,╕,b°,&╕,*8,%x,`H8,$╕,%H8,.8, ╕,*╕,cx,,8,)╕,/╕,+╚8,+╕,/╕,,8,cx,%°, И8,+╕,/╕,)8,cx,,8,+╕,a╦8,%╕,&╕,cx,&╕,/°,)8,+╕,b8,*8,)╕,/╚8,%x,/╕,)╕,`KЙ╚KИY[ЭNИ╚]NИ	°,+╕,a╕,*8,`Й╦▄[ОИ	°,+╕,a╕,*8,`И8,)8,a╕,,8,-x, ╕,(x,/╔╦█▄┘NИ	°,+╕,a╕,*8,`И8,+╕,`╕,.8,/°,-x,a°,+°, ╕,(x,/╔╦█YNИ	°,.x,b°,+╕,cI╦[Ш┌[Щ╬И	°,*8,a°,'°,/╚8,*╕, ╕,&╕,/╕, ╕,%°, Й╦\X\Ш[Ш┘NИ	°,,8,`╕,*╕, Й╦Ъ]ШX▐NИ	°,%°,b°,*╕,cx,+°,)8,*8,/°,+8, ╕,)°,*8,,╕,`I╦ШX┌╬И	°,-x,a╕,*8,`x,%x,%x,`I╦┌\ЩTЩXY[Щ╬И	°,-°,a°,,8,cI╦┌\ЩP\И	°,+°,/╕,*╕,cH8,-°,a°,,8,cH8,&╕,a°,+°, ╕,(x,/╔╦Ш]P\И	°,+°,/╕,*╕,cxа#8,%x,`H8,,8,a°,'°,/°, ╕,%°,cH8,!°,-x,cx,-x, ╕,(x,/╔╦Э[СШX▌И	°,)8,a╕,,╕,`x,.8,/П╔╦\▌[ОИ	°,-x,/°,*8, ╕,(x,/╔╦┌\╬И╚[NИ	°,*8,/И8,!x,,8,&╕,a°,)8,/╚8,,8,a°,%╕,,╕,`I╦\Ы▌И	°,'°,/╕,,8,b╚8,%x,/╕,,8,cx,(x,`x,,╕,`I╦YЩY▌ZYNИ	°,*8,/И8,,╕,b8,*°,cH8,%°,b8,(x,cI╦Э[XЩ\Ь╬И	°,*8,/И8,.8, ╕,%╕,cx,+°,,╕,`I╦┌Y█ЫX]┌И	°,,8,/╕,-╕,/╚8,*╕,b╕, ╕,)8,*	╚K┌\ЩS[ЩNИ	°,+╕,`8,'8,a°,+8,`x,,╕,b╚8,+╕,`8,-x,b8,)╕,/°,%H8,'8,cx,+°,b°,)8,/°,-°,cx,%x,`x,(x,`NИ8,*╕, ╕,&╕,/╕, ╕,%°, Л8,'8,/╕,)8,%x, Л8,,8,/╕,-╕,/╚8,*°,,╕,/╕,,╕,`K8,.x,.8,cx,)8,,8,a°,%╕,,╕,`K8,'°,/╕,,8,b╚8,+╕,`8,+x,/╕,-°,,╕,b╦Й╚KИ[NИ╚╪\ЩИ╔°,.x,.8,cx,)8,,8,a°,%╕,,╕,`I╦	°,%x,a╕,+╕,a╕,,8,/╕,)8,b╚8,+╕,`8,!x,,8,&╕,a°,)8,/°,*8,/╚8,.8,cx,%x,/╕,*8,cH8,&╕,a°,+°, ╕,(x,/╔╫K]NИ	°,.x,.8,cx,)8,,8,a°,%╕,/И8,-x,/°,-╕,cx,,╕,a°,-°,(╔╦▌\И	°,)╕,-ИH0н╚8,&╕,a°,+°,/╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╔╦YЭИ	°,#╕,(x,+И8,!x,,8,&╕,a°,+°,/╔╦ЪY┌И	°,%x,`x,(x,/╚8,!x,,8,&╕,a°,+°,/╔╦И\╒]NИ	°,.8,cx,*╕,-°,cx,'°,+╕,b8,*8,.8,cx,%x,/╕,*8,cH8,%x,b°,.8, Й╦\╬И╔°,+╕, ╕,&╕,/╚8,-x,a╕,,╕,`x,)8,`x,,8,`x,,╕,b╚8,)8,`8,+°, ╕,(x,/╔╦	°,!x,,8,&╕,a°,+°,/╚8,&╕,)╕,`x,*8,`x,%°,/Л8,-x,a°,,°,cx,,╕,`H8,-x,/°,(x,)╕,`8,.8,/╚8,"x, ╕,&╕, ╕,(x,/╔╦	°,*╕,`╕,,8,cx,)8,/╚8,&╕,a°,+°,/╚8,*°,cx,,8,a°,+╕,cxа#8,,╕,b╚8,"x, ╕,(x,/╕,,╕,/╔╫KИ╪╪[ОИ	°,.8,cx,%x,/╕,*8,cI╦ЩXY[Щ╬И	°,+╕,`8,!x,,8,&╕,a°,)8,/°,*8,/╚8,&╕,)╕,`x,-x,`x,)8,`x,*8,cx,*8,/╕, ╕а)Й╦Ы▌[NИ	°,!x,,8,&╕,a°,+°,/╚8,.8,cx,*╕,-°,cx,'°, ╕,%°,/И8,%x,*8,/°,*╕,/°, ╕,&╕,,╕,a°,)╕,`KИ8,+╕, ╕,&╕,/╚8,-x,a╕,,╕,`x,)8,`x,,8,`x,,╕,b╚8,*╕,`╕,,8,cx,)8,/╚8,!x,,8,&╕,a°,+°,/╚8,%x,*8,/°,*╕,/°, ╕,&╕,a°,,╕,/И8,+╕,,°,cx,,°,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦И┘ЩОИ	°,.x,.8,cx,)8,,8,a°,%╕,/И8,*╕,(8,*8, И8,*╕,cx,,8,.8,cx,)8,`x,)8, И8,!╕,*╕,/°,-x,a°,+°,+8,(x,/°, ╕,)╕,/╦Й╦ШZ[YИ	°,!°,*╕,cx,*╕,`x,(x,`H8,&╕,)╕,-x,,╕,a°,%x,*╕,b°,+°,/╕, ЛИ8,%x,/╕,.8,a°,*╕,'°,/╚8,)8,,8,cx,-x,/╕,)8,+╕,,°,cx,,°,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦И╪[NИ╚[ЭИ	°,+╕,`8,)8,a╕,,8,/°,&╕,/°,*8,!x,,8,&╕,a°,)8,/°,*8,/╚8,!x,-x,`x,'°,cxа#8,,╕,b8,*8,cH8,,╕,b°,*╕,,И8,"x, ╕,&╕, ╕,(x,/╔╦\Ъ╬И	°,&╕,/╕,,╕,/И8,&╕,`8,%x,'°,/°,%°,/И8,"x, ╕,)╕,/╦И8,#╕,%x,cx,%x,`x,-H8,-x,a╕,,╕,`x,)8,`x,,8,`x,,╕,b°,%x,/╚8,-x,a╕,,°,cx,,╕,/╚8,+╕,,°,cx,,╕,`8,*8,b╕,%x,cx,%x, ╕,(x,/╦Й╦╪[\ЮNИ	°,*°,b°,'°,b╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╔╦█▄┘NИ	°,+╕,`╕,.8,/°,-x,a°,+°, ╕,(x,/╔╦█Ш\И	°,*°,b°,'°,b╚8,)8,`8,+°, ╕,(x,/╔╚KXЬ╬И╔°,.x,.8,cx,)8, Й╦	°,*╕,cx,,8,a°,+Й╦	°,"x,)╕,cx,+°,b°,%°, Й╫K[Щ\╬И╚X\ЭИ	°,.x,`°,)╕,+╚8,,8,a°,%Й╦XYИ	°,+╕,.8,cx,)8,/°,-°,cx,%H8,,8,a°,%Й╦YЩNИ	°,'8,`8,-x,*8,,8,a°,%Й╦Ш]NИ	°,+x,/╕,%°,cx,+╚8,,8,a°,%Й╦▌[[X\ЮNИ	°,+╕,`8,!x,,8,&╕,a°,+°,/╚8,&╕,a╕,*╕,cx,*╕,a°,)╕,/╔╚KИЩXYNИ	°,+╕,`8,!x,,8,&╕,a°,+°,/╚8,*°,b°,'°,b╚8,.8,/°,)╕,cx,)°, ЛЙ╦┘YNИ	°енИ8,*8,/И8,,8,`8,(x,/°, ╕,%°,cH8,&╕,`╕,(x, ╕,(x,/╔╦Y╪Z[ОИ	°,+╕,,°,cx,,°,`8,.8,cx,%x,/╕,*8,cI╦\┌╨ZNИ	°,*8,/И8,!x,,8,&╕,a°,+°,/╚8,%°,`x,,8,/°, ╕,&╕,/╚Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╦┌\ЩNИ	°,-°,a°,,8,cI╦Ъ]ШX▐NИ	°,+╕,`8,*°,b°,'°,b╚8,"8,$╕,%x,cx,%H8,*╕,(8,*8,/╕,*8,/°,%x,a╚8,-x,/╕,(x,+8,(x,`x,)8,`x, ╕,)╕,/╦8,.8,a°,-x,cH8,&╕,a°,+°,+8,(x,)╕,`KЙ╦И\┌╘NИ	°,*8,/И8,.x,.8,cx,)8,,8,a°,%╕,/И8,*╕,(8,*8, И8,!°,,╕,/И8,&╕,a╕,*╕,cx,*╕,/°, ╕,)╕,/╬И8а'▄▌[[X\Ю_xа'H8,!°,*╕,cx,*╕,`x,(x,`H8,*8,a°,*8,`H8,)╕,a°,*8,/°,*╕,b8,)╕,`°,-°,cx,'°,/╚8,*╕,a╕,'°,cx,'°,/╕,,╕,/╧╔╦ИЩZ┌SЫ▌NИ	°,"8,%°,`8,)8,,╕,`H8,+╕,`8,*°,b°,'°,b╚8,*8,`x, ╕,(x,/╚RH8,!x, ╕,&╕,*8,/И8,-x,a°,.8,/°,*8,-x,/╦8,+╕,/╕,,8,cx,%°,)╕,,8,cx,-╕,*8, И8,%x,b°,.8, И8,+╕,/╕,)8,cx,,8,+╕,a╚8а%8,%╕,&╕,cx,&╕,/°,)8,+╕,b8,*8,,8,a°,%╕,,╕,`H8,%x,/╕,-x,`KЙ╚KИ\Ы▌И╚╪\ЩИ╔°,'°,/╕,,8,b╔╦	°,*╕,cx,,8,a°,+Л8,"x,)╕,cx,+°,b°,%°, Л8,(x,+8,cx,+8,`H8,%°,`x,,8,/°, ╕,&╕,/╚8,%x,/╕,,8,cx,(x,`x,,╕,*8,`H8,!x,(x,%°, ╕,(x,/╔╫K]NИ	°,'°,/╕,,8,b╔╦\┌╬И	°,%x,/╕,,8,cx,(x,`x,,╕,*8,`H8,#°,+╕,/╚8,!x,(x,%°,/╕,,╕,*8,`x,%x,`x, ╕,'°,`x,*8,cx,*8,/╕,,8,`O╔╦И▄X▄╬И╚▌ЩNИ	°,*╕,cx,,8,a°,+Й╦╪\ЩY\ОИ	°,"x,)╕,cx,+°,b°,%°, Й╦[█Щ^NИ	°,(x,+8,cx,+8,`I╦X[И	°,!╕,,8,b°,%°,cx,+°, Й╦X┌╬И	°,!x,)╕,`°,-°,cx,'°, Й╦Ш[Z[NИ	°,%x,`x,'°,`x, ╕,+8, Й╚KИX┌╬И	╠╚8,%x,/╕,,8,cx,(x,`x,,╕,`H8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╔╦X┌┘YИ	╠°,,╕,b╚█ЯH8,#╕, ╕,&╕,`x,%x,`x,*8,cx,*8,/╕,,8,`I╦┌YЩЫNИ	°,+╕,`8,*╕,cx,,8,-╕,cx,*8,*╕,b8,+╕,*8,.8,`H8,*8,/°,,╕,/°,*╕,/╦8,+╕,`╕,(x,`H8,%x,/╕,,8,cx,(x,`x,,╕,`H8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╦И▄┌][█Ь╬И╔°,%°,)8, Й╦	°,-x,,8,cx,)8,+╕,/╕,*8, Й╦	°,+x,-x,/°,-°,cx,+°,)8,cx,)8,`I╫KЩ]Щ\Ь┘YИ	°,)8,,╕,%x,/°, ╕,)╕,`x,,╕,`I╦YЪX┘NИ	°,+╕,`8,%x,b╚8,.8, ╕,)╕,a°,-╕, Й╦╪Y[Щ╬И	°,+╕,`8,%x,/╕,,8,cx,(x,`x,,╕,`H8,&╕,)╕,`x,-x,`x,)8,`x,*8,cx,*8,/╕, ╕а)Й╦И┘YNИ	°енИ8,*8,/И8,,8,`8,(x,/°, ╕,%°,cH8,&╕,`╕,(x, ╕,(x,/╔╦Y╪Z[ОИ	°,%x,b╕,)8,cx,)8,,8,`8,(x,/°, ╕,%°,cI╦\┌╨ZNИ	°,)╕,`8,*8,/╚8,%°,`x,,8,/°, ╕,&╕,/╚Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╦┌\ЩNИ	°,-°,a°,,8,cI╦Ш[ШX┌╨YЪX┘NИ	°,+╕,)°,cx,+╚8,%x,/╕,,8,cx,(x,`H8,.8, ╕,)╕,a°,-╕,/╕,*8,cx,*8,/╚8,"8,,8,b°,'8,`H8,%°,`x,,8,cx,)8,`x, ╕,&╕,`x,%x,b°, ╕,(x,/╬╚8,$╕,%x,cx,%x,b╚8,&╕,/°,*8,cx,*8,!x,(x,`x,%°,`H8,-x,a°,+°, ╕,(x,/╦Й╦И\┌╘NИ	▐▌▄X▀H8,'°,/╕,,8,b╚8,,8,`8,(x,/°, ╕,%°,cxа#8,,╕,b╚8,*8,/╕,%x,`H╪╪\Щ▀H8,-x,&╕,cx,&╕,/╕,+°,/╦И8,)╕,`8,*8,/╚8,!x,,8,cx,)x, И8,#°,+╕,/°,'°,/╧╔╚KИ[██ОИ╚╪\ЩИ╔°,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╔╦	°,+╕,`8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╚	И8,.8,cx,-x,+x,/╕,-x, Й╫K]NИ	°,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╔╦ШZ▄┌]ШNИ	°,*8,%x,cx,-°,)8,cx,,8, Й╦YNИ	°,*╕,/╕,)╕, Й╦И\Ы▐И	°,.8,`x,+╕,/╕,,8,`x,%°,/ОИ8,%╕,&╕,cx,&╕,/°,)8,+╕,b8,*8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╚8,%x,b°,.8, И8,*╕,`x,'°,cx,'°,/°,*8,.8,+╕,+°, И8,!°,-x,cx,-x, ╕,(x,/╦Й╦ЩYYИ	°,+╕,`8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╚8,&╕,`╕,(x,'°,/╕,*8,/°,%x,/╚8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,!°,-x,cx,-x, ╕,(x,/╦Й╦YИ	°,*╕,`x,'°,cx,'°,/°,*8,-x,/°,-x,,8,/╕,,╕,`H8,!°,-x,cx,-x, ╕,(x,/╔╦ИX┌╬И	°,#╚8,,8,/╕,-╕,/°,*8,b8,*8,/И8,&╕,`╕,(x, ╕,(x,/╔╦╪Y[Щ╬И	°,&╕, ╕,)╕,cx,,8,`x,(x,/°,*8,/╚8,&╕,)╕,`x,-x,`x,)8,`x,*8,cx,*8,/╕, ╕а)Й╦┌\ЩNИ	°,-°,a°,,8,cI╦Щ\▄ЭИ	°,,8,/°,*╕,b°,,8,cx,'°,cI╦[▌\Ь╬И	°,+╕,`8,)╕,/╔╦И┘X▌[█Ь╬И╚[[▌[█Ш[И	°,+x,/╕,-x,b°,)╕,cx,-x,a°,%╚8,.8,cx,-x,+x,/╕,-x, Й╦▌ЩNИ	°,*╕,cx,,8,a°,+И	И8,%x,`x,'°,`x, ╕,+8, Й╦╪\ЩY\ОИ	°,"x,)╕,cx,+°,b°,%°, И	И8,(x,+8,cx,+8,`I╦┘[ЩZ[Щ╬И	°,!╕,,8,b°,%°,cx,+°, И	И8,*╕,cx,,8,-╕,/╕, ╕,)8,)	╦Щ[YYNИ	°,.8,`x,,╕,+H8,*╕,,8,/°,.x,/╕,,8, Й╚KИШ]\ЩNИ╔°,)°,b8,,8,cx,+°, ╕,%°,/Л8,-x,a°,%°, ╕,%°,/И8,+╕,`x, ╕,)╕,(x,`x,%°,`H8,-x,a°,.8,cx,)8,/╕,,8,`N╚8,+╕,*8,.8,`x,,╕,b╚8,"x,*8,cx,*8,)╕,/╚8,*8,/°,'8,/╕,+°,/°,)8,`8,%°,/И8,&╕,a╕,*╕,cx,)8,/╕,,8,`K8,.8,cx,-x,a°,&╕,cx,&╚8,%x,/╕,-x,/╕,,╕,/╦Й╦	°,.8,cx,)x,/°,,8, ╕,%°,/Л8,*8,+╕,cx,+╕,%x, ╕,%°,/И8,"x, ╕,'°,/╕,,8,`N╚8,.8,c8,%x,,8,cx,+°, Л8,!x, ╕,)╕, И8,!°,-°,cx,'°, Л8,$╕,)8,cx,)8,/°,(x,/°,,╕,b°,*8,`И8,*╕,cx,,8,-╕,/╕, ╕,)8, ╕,%°,/И8,"x, ╕,'°,/╕,,8,`KЙ╦И	°,!╕,.8,%x,cx,)8,/╦8,&╕,`x,,8,`x,%x,b8,*8,+8,`x,)╕,cx,)°,/╬╚8,+╕,/╕,'°,cx,,╕,/╕,(x,'°, И8,!°,-°,cx,'°, Л8,%x,b╕,)8,cx,)8,)╕,*8, И8,%x,/╕,-x,/╕,,╕,/╦Й╦	°,*╕,cx,,8,a°,+╕,%°,/Л8,.8,`x,*8,cx,*8,/°,)8, ╕,%°,/И8,"x, ╕,'°,/╕,,8,`N╚8,%x,`x,'°,`x, ╕,+8,+╕,a╚8,.8,,8,cx,-x,.8,cx,-x, Л8,!x, ╕,)8,,8,cH8,)╕,`°,-°,cx,'°,/╚8,+8,,╕, ╕,%°,/И8,"x, ╕,'°,`x, ╕,)╕,/╦Й╦И	°,+╕, ╕,&╕,/╚8,+╕,*8,.8,`K8,)╕,/╕,)8,`°,)8,cx,-x, О╚8,*8,/╕,+°,%x,)8,cx,-x, ╕,,╕,b╦8,+╕,`8,%x,`°,-°,/╚8,%°,`x,,8,cx,)8,/°, ╕,*╕,`H8,*╕,b╕, ╕,)╕,/°,*8,*╕,cx,*╕,`x,(x,`H8,-x,a╕,,╕,`x,%°,`x,)8,/╕,,8,`KЙ╦	°,!╕,,╕,b°,&╕,*8,/╕,*╕,,8,`x,,╕,`K8,'8,/╕,%°,cx,,8,)8,cx,)8,*╕,,8,`x,,╕,`N╚8,.8,.x,/╕,+°, И8,&╕,a°,+°,(x, И8,!°,-°,cx,'°, Л8,%x,cx,,8,+╕,-╕,/°,%x,cx,-°,(°,,╕,b╚8,*╕,cx,,8,-╕,/╕, ╕,)8,)8,*╕,b╕, ╕,)╕,`x,)8,/╕,,8,`KЙ╦И	°,.8,c8,+╕,cx,+°, ╕,%°,/Л8,*8,cx,+°,/╕,+°, ╕,%°,/И8,"x, ╕,'°,/╕,,8,`N╚8,.8,/╕,+╕,,8,.8,cx,+°, И8,%x,b°,,8,`x,%x,`x, ╕,'°,/╕,,8,`K8,+╕, ╕,&╕,/╚8,.8,/╕, ╕,%°,)8,cx,+°, ╕,,╕,b╚8,!╕,*8, ╕,)╕, ╕,%°,/И8,"x, ╕,'°,/╕,,8,`KЙ╦	°,,╕,b°,)8,b8,*8,+x,/╕,-x,/╕,,╕,`K8,%°,b°,*╕,cx,+°,)╚8,%°,/╕,(╕, ╕,%°,/И8,*╕,cx,,8,a°,+╕,/°,.8,cx,)8,/╕,,8,`K8,-x,/°,)°,a°,+°,`x,,╕,`K8,.8, ╕,%x,,╕,cx,*И8,+8,,╕, И8,#╕,%x,cx,%x,`x,-KЙ╦И	°,!╕,-╕,/╕,-x,/╕,)╕,`x,,╕,`K8,*8,/°,'8,/╕,+°,/°,)8,`8,*╕,,8,`x,,╕,`N╚8,*8,a°,,8,cx,&╕,`x,%x,b°,-x,(x, Л8,*╕,cx,,8,+°,/╕,(°,/╕,,╕,`H8,!°,-°,cx,'°, ЛЙ╦	°,!╕,&╕,,8,(°,/╕,)8,cx,+╕,%x, ╕,%°,/Л8,$°,*╕,/°,%x,%°,/И8,"x, ╕,'°,/╕,,8,`N╚8,+8,/╕,)°,cx,+°,)8,%°,/Л8,*8,/°,-╕,cx,-╕,+8,cx,)╕, ╕,%°,/И8,#╕,)╕,`x,%°,`x,)8,/╕,,8,`KЙ╦И	°,.8,cx,-x,)8, ╕,)8,cx,,8,`x,,╕,`K8,!╕,,╕,b°,&╕,*8,/╕,*╕,,8,`x,,╕,`N╚8,.8,cx,*8,a°,.x,*╕,`╕,,8,cx,-x,%x, ╕,%°,/Л8,.8,+╕,/╕,'8, И8,%°,`x,,8,/°, ╕,&╕,/╚8,!╕,,╕,b°,&╕,/°,.8,cx,)8,/╕,,8,`KЙ╦	°,%x,,╕,,╕,`H8,%x,*8,a╚8,+╕,*8,.8,`K8,)╕,+╬╚8,%x,,8,`x,(╦8,.8,`°,'8,*8,/╕,)8,cx,+╕,%x,)8,!╕,)°,cx,+°,/╕,)8,cx,+╕,/°,%x,)8,.8,.x,'8, ЛЙ╫HKИ┘X▌[█Ь╬И╚┌\ЭИ	°,+╕,`8,'8,/╕,)8,%x, Й╦[NИ	°,.x,.8,cx,)8,,8,a°,%╕,,╕,`K8,'°,/╕,,8,b╚	И8,.8, ╕,%╕,cx,+°,,╕,`I╦▌ЩNИ	°,*╕,cx,,8,a°,+И	И8,*╕,b╕, ╕,)8,*	╦[YNИ	°,%x,/╕,,╕, И	И8,*╕, ╕,(x,`x,%°,,╕,`I╚KZ[NИ	°,,8,b°,'8,`x,-x,/╕,,8,`	╦И▄ЩY]И╚[▄ЫЪ[Щ╬И	°,-╕,`x,+x,b°,)╕,+°, Й╦YЭ\ЫЫ██ОИ	°,-╕,`x,+H8,+╕,)°,cx,+°,/╕,.x,cx,*8, Й╦]Щ[Ъ[Щ╬И	°,-╕,`x,+H8,.8,/╕,+°, ╕,)8,cx,,8, Й╦ЪY┌И	°,-╕,`x,+H8,,8,/╕,)8,cx,,8,/╔╦[╬И	°,*8,+╕,.8,cx,)8,a╚<'цc╔╚KИZQ^YXЬЫ▌╬И	╨RH8,'8,cx,+°,b°,)8,/°,-°,cx,%x,`x,(x,`I╦ЮP\┌┌[Щ╬И	°,!°,,╕,/И8,!x,(x,%°, ╕,(x,/╔╦\Ь██ШNИ╚[╬И	°,*8,+╕,.8,cx,)8,a▐█Ш[Y_HH<'цc╚8,*8,a°,*8,`H8,'8,cx,+°,b°,)8,/°,,8,cx,+╕,+╦8,+╕,`8,'8,cx,+°,b°,)8,/°,-°,cx,%x,`x,(x,/°,*8,/╦И8,*╕,cx,,8,a°,+Л8,"x,)╕,cx,+°,b°,%°, Л8,(x,+8,cx,+8,`K8,!╕,,8,b°,%°,cx,+°, Л8,,8,/╕,+8,b°,+°,a╚8,,8,b°,'8,`x,,И8,%°,`x,,8,/°, ╕,&╕,/╚8,&╕,a╕,*╕,cx,*╕,%°,,╕,*8,`KЙ╚K[Ш┌[Щ╨╪\ЩИ╔°,*8,a°,'°,/╚8,*╕, ╕,&╕,/╕, ╕,%°, Й╦	°,)8,/°,)x,/╦8,,8,/╕,.x,`H8,%x,/╕,,╕, Л8,+╕,`x,.x,`╕,,8,cx,)8,/╕,,╕,`I╫KИ██╬И╚Ш]Z╪[NИ╔°,'8,/╕,)8,%x, Й╦	°,+╕,`8,'8,*8,cx,+И8,%x,`x, ╕,(x,,╕,/╚	И8,*°,,╕,/°,)8,/╕,,╕,`I╫KЩ\▌]Ш[╬И╔°,*╕, ╕,(x,`x,%°,,╕,`I╦	°,,8,/╕,+8,b°,+°,a╚8,*╕, ╕,(x,`x,%°,,╕,`K8,.8,a╕,,╕,-x,`x,,╕,`I╫KX]┌И╔°,'8,/╕,)8,%H8,*╕,b╕, ╕,)8,*	╦	°,%°,`x,(╚8,+╕,a°,,°,*8, И═╕,%x,/╔╫K▄┌\╬И╔°,)╕,b°,-°,/╕,,╕,`I╦	°,%x,`x,'8,)╕,b°,-°, Л8,#°,,╕,/°,*8,/╕,'°,/╚8,-╕,*8,/╔╫K\┌NИ╔°,)╕,-╕,,╕,`I╦	°,!°,*╕,cx,*╕,`x,(x,`H8,#╚8,%°,cx,,8,.H8,)╕,-И8,*8,(x,`x,.8,cx,)8,b°, ╕,)╕,/╔╫KШ\┌NИ╔°,,8,/╕,-╕,/╚8,*°,,╕,/╕,,╕,`I╦	°,,8,b°,'8,`K8,-x,/╕,,8, Л8,*8,a╕,,Й╫K┌]И╔╨Rx,*8,/╚8,!x,(x,%°, ╕,(x,/╔╦	°,+╕,`8,'8,`8,-x,/°,)8, И8,%°,`x,,8,/°, ╕,&╕,/╚8,*╕,cx,,8,-╕,cx,*8,,╕,`I╫HKИKИNИ┬ИЪY]▄╬И╚┌\ЭИ	°)&╕)%x)cx),	╦[Щ]╬И	°)%°)cx),8).I╦\┌NИ	°))╕)-╕)/Й╦▄┌\╬И	°))╕)b°)-╔╦[Ш┌[Щ╬И	°)*╕) ╕)&╕)/╕) ╕)%╔╚KИ▌ZШU]NИ	°)+╕)/╕) ╕)%°),╕)/°)%H
+8)%x)`x)'8))╕)b°)-╩I╦▌ZШVY\╬И	°).x)b	╦▌ZШSЫ╬И	°)*8).x)`8) И8).x)b	╦▌ZШU┌NИ	°)+╕) ╕)%°),И8),╕)%°)cx)*8).8)a╚█Y█Ш_x)-x)a°) И8)+x)/╕)-H8)+╕)a°) И8)%8),8)&╕) ╕))╕)cx),8).8)a╚█[██Яx)-x)a°) И8)+x)/╕)-H8)+╕)a°) И8).x)b8)i	╦И▌ZШTЩYX┘YИ	°)+╕) ╕)%°),И8).8)cx)-x),8)/╕)-╕)/╚8)+°)/И8)"x)&╕)cx)&И8)%x)/И8).x)b╚8)*╕),8) ╕)*╕),8)/И8)%x)a╚8)!x)*8)`x).8)/╕),8)!°).8).8)a╚8))╕)b°)-╚8)%x)/И8)*╕)cx),8)+x)/╕)-H8)&8)'°))8)/И8).x)b8)i	╦И╪YU]NИ	°).8)/╕)(╕)/8)a°).8)/╕))8)`	╦\┘LNИ	°)!x)+x)`8)&╕),И8),8).x)`8).x)b8а%8)*╕).x),╕)/И8)&╕),8)(╚
+8)!╕),8) ╕)+JI╦\┘LОИ	°)!x)+x)`8)&╕),И8),8).x)`8).x)b8а%8))╕)`╕).8),8)/И8)&╕),8)(╚
+8)&╕),8)+КI╦\┘L╬И	°)!x)+x)`8)&╕),И8),8).x)`8).x)b8а%8))8)`8).8),8)/И8)&╕),8)(╚
+8)!x) ╕))
+I╦И╪YSЫ╬И	°)!x)+x)`8)*8).x)`8) И8)&╕),И8),8).x)`8)i	╦\Ъ[┘И	▐▄▌\ЭH8).8)a╚┘[ЩH8))8)%I╦╪YSЩ^И	°)!x)%°),╕)`8).8)/╕)(╕)/8)a°).8)/╕))8)`И▄▌\ЭH8).8)a╚┘[ЩH8))8)%I╦Ы▌╬И	°)!x)+x)`	╦И\┌[XNИ	°)!x)-°)cx)'°)+И8)-╕)*8)/╚
+8)&╕) ╕))╕)cx),8).8)a╚8)-x)a°) И8)+x)/╕)-H8)+╕)a°) И8)-╕)*8)/╩H┘[ЩH8))8)%H8)&╕),И8),8).x)/И8).x)b8)i	╦\Щ\┌[XNИ	°)(╕)b8)+°)/И
+8)&╕) ╕))╕)cx),8).8)a╚8)&╕)c8))x)a╚8)+x)/╕)-H8)+╕)a°) И8)-╕)*8)/╩H┘[ЩH8))8)%H8)&╕),И8),8).x)`8).x)b8)i	╦И▄┌SЫ▌NИ	°)*╕)/╕),8) ╕)*╕),8)/°)%H8)*8)/°)+°)+Л8)-x)/°)-╕)a°)-°)'8)cx)'И8).8)+╕)`8)%x)cx)-°)/И8)*8).x)`8) ╕)i8))8)/°))x)/°)+°)/╕) H8)!x)*8)`x)+╕)/╕)*8)/°))8).x)b8) ╕)i	╦▄┌U[Ш]ШZ[XЫNИ	°)!°).8)%x)`x) ╕)(x),╕)`8)%x)a╚8),╕)/°)#╚8))╕)b°)-╚8)-x)/°)-x),8)(╚8)"x)*╕),╕)+8)cx))╚8)*8).x)`8) И8).x)b8)i	╦И┘^SXЩ[И	°)!╕)'8)!╕)*╕)%x)a╚8),╕)/°)#╔╦┘^Q██┘И	°)!╕)'8)!╕)*╕)%x)a╚8),╕)/°)#╚8)&╕) ╕))╕)cx),8)+8),И8)%8),8))8)/╕),8)/╕)+8),И8))╕)b°)*8)b°) И8)!x)*8)`x)%x)`╕),И8).x)b8) И8а%8)+╕).x))8)cx)-x)*╕)`╕),8)cx)(╚8)%x)/╕)+╕)b°) И8)%x)a╚8),╕)/°)#╚8)!x)&╕)cx)&°)/И8))╕)/°)*8)i	╦И┘^P╪\ЩNИ	°)!╕)'8)&╕) ╕))╕)cx),8)+╕)/И8)!╕)*╕)%x)`8),8)/╕)-╕)/╚8).8)a╚8)-x)a°) И8)+x)/╕)-H8)+╕)a°) И8).x)b
+8)!x)-°)cx)'°)+И8)&╕) ╕))╕)cx),
+H8а%8))°)`8),8)a╚8)&╕),╕)a°) Л8)+8)(x)/8)a╚8)*8)/°),8)cx)(°)+╚8)'°)/╕),╕)a°) ╕)i	╦И┘^SZ^YИ	°)!╕)'8)!╕)*╕)%x)a╚8),╕)/°)#╚8)+╕)/°),╕)/Лx)'8)`x),╕)/И8))╕)/°)*8а%8),8)b°)'8)/8)%x)a╚8)%x)/╕)+╕)b°) И8)%x)a╚8),╕)/°)#╚8)(8)`8)%N╚8)+╕).x))8)cx)-x)*╕)`╕),8)cx)(╚8)%x))╕)+И8).8)b°)&Лx).8)+╕)'x)%x),8)"x)(8)/╕)#°) x)i	╦┘^T]ZY]И	°)!╕)'8)!╕)*╕)%x)a╚8),╕)/°)#╚8)-╕)/╕) ╕))8))╕)/°)*8а%8)*8)"8)-╕)`x),8)`x)!╕))8).8)a╚8)'8)/8)cx)+°)/╕))╕)/И8),8)b°)'8)/8)%x)a╚8)%x)/╕)+╕)b°) И8)%x)a╚8),╕)/°)#╚8)!x)&╕)cx)&°)/╕)i	╦И\┌╘X┘Z█\ОИ	°)%x)`x)&╚8)+x)`8)*╕)`╕)&°)a°) ОИ8)*8)c8)%x),8)`8)-╕)/╕))╕)`8)*╕)b8).8)/╕а)Й╦\┌╨Э]█ОИ	°)*╕)`╕)&°)a°) Й╦▌[ЩP▌NИ	╠╠8).8)a°)%x) ╕)(H8)+╕)a°) И8)!x)*╕)*8)`8)+╕)`x)*°)/8)cx))8)%x)`x) ╕)(x),╕)`8бдЙ╦ЩYY▌[ЩNИ	°))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚8)!x)*╕)*8)`8)%x)`x) ╕)(x),╕)`8)+8)*8)/╕)#°) I╦И]ЩQ\┌NИ	°)!x)+x)`█XZ_H8а$╚╪[Э\ЯH8))╕)-╕)/Й╦]ЩQ\┌SXZNИ	°)!x)+x)`█XZ_H8))╕)-╕)/Й╦]ЩTШ\┌NИ	▐▄┌Y█ЯNИ8)!╕)'8)%x)/И8)*°),Й╦]ЩT╪YNИ	°).8)/╕)(╕)/8)a°).8)/╕))8)`И▄H8)&╕),8)(╚8)&╕),И8),8).x)/И8).x)b	╦И]ЩQ▄┌NИ	°)+╕)/╕) ╕)%°),╕)/°)%NИ┌▀H0н╚8).8)/╕)(╕)/8)a°).8)/╕))8)`И▄▀I╦Y\╬И	°).x)/╕) I╦Ы╬И	°)*8).x)`8) Й╦ИЪ╨\┌╬И	°)!x)*╕)*8)`8)%x)`x) ╕)(x),╕)`8)'8)/╕)*8)*8)/И8)&╕)/╕).x))8)a╚8).x)b8) П╔╦Ъ╘▌XОИ	°)!╕)*╕)%x)`8)+╕)`x)*°)/8)cx))8)%x)`x) ╕)(x),╕)`8а%8),╕)%°)cx)*8),8)/╕)-╕)/╦8)*8)%x)cx)-°))8)cx),8)%°)cx),8).K8))╕)-╕)/И8)%8),8))╕)b°)-╚8а%╠8).8)a°)%x) ╕)(H8)+╕)a°) ╕)i	╦ИЪ╨▄ЩX]NИ	°)+╕)a°),8)`8)%x)`x) ╕)(x),╕)`8)+8)*8)/╕)#°) H8бдЙ╦Ъ╙Z[ЩNИ	°)+╕)a°),8)`8)%x)`x) ╕)(x),╕)`	╦Ъ╒ЪY]╬И	°)*╕)`╕),8)`8)%x)`x) ╕)(x),╕)`8))╕)a°)%╕)a°) И8бдЙ╦Ъ╤\┌NИ	°)-x),8)cx))8)+╕)/╕)*8))╕)-╕)/Й╦И█┌╬И╚]NИ	°),8)`╕)*Й╦[┘NИ	°)+╕)b°)(I╦^\▌X╬И	°)+╕)/°).8)cx)'°)/°)%I╦Y┌И	°),╕)/╕)!°)'╔╦\Ъ╬И	°)(x)/╕),8)cx)%I╦]]╬И	°)$x)'°)b╔╦██▌\ОИ	°),8) ╕)%╔╦█ЩNИ	°)(8)`8)%H8).x)b	╦И╪YЩЬЫ█ОИ	°)%x)a°).8),8)/°)+°)/Й╦X[И	°).x),8)/Лx)*8)`8),╕)/Й╦Ы▄┘NИ	°)%°)`x),╕)/╕)+8)`	╦ЫYNИ	°)*8)`8),╕)/Й╦Э]█ОИ	°),8)`╕)*И8)+8))╕),╕)a°) Й╚KИЫ▌YЮNИ╚]NИ	°),8)b°)'8)/8)/╕)*8)/И8).8)`╕)&╕)*8)/╕)#°) I╦[ЭЪ]NИ	°).x),8).8)`x)+8).H8)!╕)'8)%x)/И8)*╕) ╕)&╕)/╕) ╕)%╚8)%8),8)!╕)*╕)%x)/И8))╕)/°)*8)%x)b8).8)/И8),8).x)a°)%°)/Л8)*╕)/╕)#°) x)i	╦█ОИ	°)&╕)/╕),╕)`И8)%x),8)a°) Й╦]\ОИ	°)!x)+x)`8)*8).x)`8) Й╦И[YNИ	°).8)+╕)+╔╦┘ЩОИ	°)+8) ╕))И8)%x),8)a°) Й╦[ШXЫYИ	°)&╕)/╕),╕)`И8а%8).x),8))╕)/°)*▌[Y_H8)+8)'8)a╔╦\╪XЫYИ	°)+8) ╕))Й╦[ЪYYИ	°).8)`╕)&╕)*8)/╕)#°) H8)+8) ╕))И8).x)b8) ╕)i8)*°)/8)b°)*8)%x)`8).8)a°)'°)/°) ╕)%°)cx).8)+╕)a°) ИЮ[▌\ЫX^XH8)%x)b╚8)!x)*8)`x)+╕))8)/╚8))╕)a°) Л8)*°)/°),8))╕)b°)+8)/╕),8)/И8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦И]Z\ЭNИ	°)-╕)`x)+H╚8)!x)-╕)`x)+H8)+╕)`x).x)`╕),8)cx))8)%x)`8).8)`╕)&╕)*8)/Й╦И]Щ[Ъ[Щ╬И	°)-╕)/╕)+И8)%x)b╚8)!╕)*╕)%x)a╚8),╕)/°)#╚8)#°)%H8).8)-x)/╕),Й╦]Щ[Ъ[Щ╒[YNИ	°)-╕)/╕)+И8)%x)/И8).8)+╕)+╔╦ИШZNИ	°),8)/╕).x)`H8)%x)/╕),Й╦Щ\▌И	№'ъе8)!╕)'█Ш[Y_I╦Щ[▄[Х]NИ	№'у&H8)!╕)*╕)%x)/И8)!╕)*8)a╚8)-x)/╕),╕)/И8).8)*╕)cx))8)/╕).I╦Щ[▄[РЫ┘NИ	°)!°).8).8)*╕)cx))8)/╕).H8)%x)/И8)*╕) ╕)&╕)/╕) ╕)%╚8))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚Ю[▌\ЫX^XH8)%╕)b°),╕)a°) ╕)i	╦KИ[Ш\ОИ╚YX\ОИ	▐▄▀H8).8) ╕)-x))8)cx).8),	╦[█ЭИ	▐█_H8)+╕)/╕).	╦YZ╪NИ	°)!x))°)/°)%H█_I╚KИ╪\Щ╬И╚██┘И	°)-╕)`x)+H8).8)+╕)+╔╦[Ш┌[Щ╬И	°)*╕) ╕)&╕)/╕) ╕)%╔╦]Щ[Э╬И	°)-╕)`x)+H8)+╕)`x).x)`╕),8)cx))	╦ШYИ	°)!x)-╕)`x)+H8).8)+╕)+╔╦Ы█ЩNИ	°)!╕)'8)%x)b°)"8)-╕)`x)+H8)+╕)`x).x)`╕),8)cx))8)*8).x)`8) Й╦ИY╪Z[ОИ	°)*°)/°),	╦[\Ъ]NИ	°)!x)+╕)`°))8)%x)/╕),Й╦\Ы]Z\Э[NИ	°))╕)`x),8)cx)+╕)`x).x)`╕),8)cx))	╦X\ЬЪXY┘NИ	°)-x)/°)-x)/╕).I╦▄ЭZ\Ш]Щ\╪[NИ	°)%°)`°).H8)*╕)cx),8)-x)a°)-Й╦ЩZX█NИ	°)-x)/╕).x)*8)%╕)/8),8)`8))Й╦И]Щ[ЭЫ▌NИ	°).8),8),И8)*╕)/╕),8) ╕)*╕),8)/°)%H8)'8)/╕) x)&И
+8))8)/°))x)/╦8)*8)%x)cx)-°))8)cx),8)-x)/╕),8)%8),8)+╕)/╕).╚8),8)/╕).x)`H8)%x)/╕),Л8))╕)`x),8)cx)+╕)`x).x)`╕),8)cx))8)%8),8)-x),8)cx)'8)cx)+╚8)%x)b╚8)&°)b°)(x)/8)%x),
+x)i8)-x)/°)-x)/╕).H8)+°)/И8)%°)`°).H8)*╕)cx),8)-x)a°)-И8)%x)a╚8),╕)/°)#╚8).8)'°)`8)%H8)+╕)`x).x)`╕),8)cx))8)!x)*╕)*8)a╚8)*╕)`x),8)b°).x)/°))8).8)a╚8)*╕)%x)cx)%x)/И8)%x),8)a°) ╕)i	╦И┌\ЩNИ	°)!╕)'8)%x)/И8)*╕) ╕)&╕)/╕) ╕)%╚┌]╨\8)*╕),8)-╕)a°)+°),8)%x),8)a°) Й╦Э[И	°)*╕)`╕),8)`8)*╕) ╕)&╕)/╕) ╕)%╚8))8)/╕),╕)/°)%x)/╕)#°) I╦▌┌\NИ	°)%8),8))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚8).8)cx)-x)/╕)!°)*И8)%x),8)a°) И8бдЙ╚KИШ\┌NИ╚X┌╬И	°)!x)*╕)*8)`8),8)/╕)-╕)/╚8)&╕)`x)*8)a°) Й╦Ъ[ЩИ	°)!x)*╕)*8)`8),8)/╕)-╕)/╚8)'8)/╕)*8)a°) Й╦Z[ЩPЭ]█ОИ	°)+╕)a°),8)`8),8)/╕)-╕)/╚8))╕)/°)%╕)/╕)#°) I╦Z[ЩNИ	°)!╕)*╕)%x)`	╦]NИ	▐▄┌Y█ЯH8),8)/╕)-╕)/°)*°),И
+┘]_JI╦[▄ЩNИ	°а)╕)%8),8)*╕)(╕)/8)a°) Й╦\▄╬И	°)%x)+И8))╕)/°)%╕)/╕)#°) I╦И\┌╬И	°)+╕)a°),8)a╚8))╕)/°)*8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) ИRH8).8)a╚8)*╕)`╕)&°)a°) Й╦\┌╘NИ	°)!╕)'8)+╕)a°),8)`8),8)/╕)-╕)/╚▄┌Y█ЯH8)%x)a╚8),╕)/°)#╚8)%x)b8).8)/И8),8).x)a°)%°)/П╚8)+╕)a°),8)`8)%x)`x) ╕)(x),╕)`8)%x)a╚8)!x)*8)`x).8)/╕),8)+8))8)/╕)!°)#°)i	╦Э[И	°)+╕)a°),8)`8)*╕)`╕),8)`8)%x)`x) ╕)(x),╕)`8))╕)a°)%╕)a°) Й╦┌\ЩNИ	╒┌]╨\8)*╕),8)-╕)a°)+°),8)%x),8)a°) Й╦И]Z[╬И	°)%°)cx),8).Kx)-x)/╕),8)-x)/°)-x),8)(╔╦Ш[Ь┌]██┘И	°)!x)*8)`x)%x)`╕),Й╦Ш[Ь┌]╪\ЩNИ	°).8)/╕)-x))°)/╕)*8)`	╦Э[\И╚Ш[Ь┌]╬И	°)%°)cx),8).H8)%°)b°)&╕),	╦Щ[YYY\╬И	°)"x)*╕)/╕)+╔╦Э[И	°)*╕)`╕),8)`8)%x)`x) ╕)(x),╕)`	╦\┌╬И	╨RH8).8)a╚8)*╕)`╕)&°)a°) Й╚K[ЭИ	°)!╕)'8)%x)/И8),8)/╕)-╕)/°)*°),И8))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚8)"╕)*╕),8)!x)*╕)*8)`8),8)/╕)-╕)/╚8)&╕)`x)*8)a°) ╕)i	╦И[Ы╪┌╬И	°енИ8)!╕)'8)%x)/И8),8)/╕)-╕)/°)*°),И8))╕)a°)%╕)a°) Й╦[Ы╪┌╙Ы▌NИ	°)#°)%H8)&°)b°)'°)/И8)-x)/°)'8)cx)'╕)/╕)*╕)*8))╕)a°)%╕)a°) Л8)!╕)'8).8)+x)`8),8)/╕)-╕)/°)+°)b°) И8)%x)/И8),8)/╕)-╕)/°)*°),И8)%╕)`x),И8)'8)/╕)#°)%°)/╕)i	╦ИX┌▐U]NИ	°)-╕)`x)+H8).8) ╕)%x)a°))	╦X┌▐Q^NИ	°),8) ╕)%╚8)%8),8))╕)/°)-╕)/ОИ8)!╕)'8).8)+x)`8),8)/╕)-╕)/°)+°)b°) И8)%x)a╚8),╕)/°)#╚8)#°)%H0н╚8)!x) ╕)%NИ8)!╕)*╕)%x)`8),8)/╕)-╕)/╚8)%x)a╚8),╕)/°)#╔╦X┌▐T┌Y█ОИ	°)!╕)*╕)%x)`8),8)/╕)-╕)/╚8)%x)a╚8),╕)/°)#╚8)%╕)/╕).	╦██▌\ОИ	°),8) ╕)%╔╦Э[XЩ\Ь╬И	°)!x) ╕)%I╦\ЩX▌[█ОИ	°))╕)/°)-╕)/Й╦И██▌\Ь╬И╚▌[ОИ	°)%x)a°).8),8)/°)+°)/Л8),╕)/╕),Й╦[██ОИ	°).8)*°)/8)a°))Л8)&╕)/╕) x))╕)`	╦X\Ь╬И	°),╕)/╕),Л8)+╕)`╕) x)%°)/°)+°)/Й╦Y\Ш▌\ЮNИ	°).x),8)/Й╦Э\]\ОИ	°)*╕)`8),╕)/Л8).8)`x)*8).x),8)/Й╦Щ[Э\╬И	°).8)*°)/8)a°))Л8)%°)`x),╕)/╕)+8)`	╦╪]\ЫОИ	°)*8)`8),╕)/Л8)%x)/╕),╕)/Й╦ШZNИ	°).8)cx),╕)a°)'°)`	╦┘]NИ	°)+x)`╕),8)/Й╚KИ\ЩX▌[█Ь╬И╚▌[ОИ	°)*╕)`╕),8)cx)-I╦[██ОИ	°)-x)/╕)+°)-x)cx)+╔╦X\Ь╬И	°))╕)%x)cx)-°)/°)(╔╦Y\Ш▌\ЮNИ	°)"x))8)cx))8),	╦Э\]\ОИ	°)"8)-╕)/╕)*	╦Щ[Э\╬И	°)!╕)%°)cx)*8)a°)+╔╦╪]\ЫОИ	°)*╕)-╕)cx)&╕)/°)+Й╦ШZNИ	°)*8)b8)"°))8)cx)+╔╦┘]NИ	°)-x)/╕)+°)-x)cx)+╔╚HKИ]Z[]NИ	°)-x)/°).8)cx))8)`°))8)*╕) ╕)&╕)/╕) ╕)%╔╦Щ\▌]NИ	°)!╕)*8)a╚8)-x)/╕),╕)a╚8))8)cx)+°)b°).x)/╕),	╦Щ\▌┘^NИ	°)!╕)'	╦Щ\▌█[▄ЬЫ▌╬И	°)%x),Й╦Щ\▌[ОИ	▐█ЯH8))╕)/°)*8)+╕)a°) Й╦ИЩ\▌[▄ЩNИ	°)%8),8))8)cx)+°)b°).x)/╕),8))╕)/°)%╕)/╕)#°) I╦Щ\▌\▄╬И	°)%x)+И8))╕)/°)%╕)/╕)#°) I╦Щ\▌Ы█ЩNИ	°)!x)%°),╕)a╚8)%x)`x)&╚8)+╕).x)`8)*8)b°) И8)+╕)a°) И8)%x)b°)"8))8)cx)+°)b°).x)/╕),8)*8).x)`8) ╕)i	╦Щ\▌╪Y[Щ╬И	°))8)cx)+°)b°).x)/╕),8),╕)b°)(H8).x)b╚8),8).x)a╚8).x)b8) ╕а)Й╦И┌▄Э▌]╬И╚]NИ	°)!╕)*╕)%x)a╚8).8)/°))8)/╕),8)a╦8)+8).8)#°)%H8)'°)b8)*И8)*╕),	╦^И	°)%x)b°)"8),8)`8)(x)/°) ╕)%╚8)&╕)`x)*8)a°) ╕)i	╦XЩ[╬И╔°).x))x)a°),╕)`	╦	°),8)/╕)-╕)/°)*°),Й╦	°)'°)b8),8)b╔╦	°)+╕)/°),╕)/╕)*	╫K┌[ЫЩ[И	°)-╕)bx),8)cx)'°)%x)'╔╦┘┘█NИ	°)*8)b°)'°)/°)*°)/8)/°)%x)a°)-╕)*8)+8)/╕),8)+╕)a°) И8)-╕)bx),8)cx)'°)%x)'╔╚KИYЩY▌ZYNИ╚╪\ЩИ╔°),╕)/╕)!°)*°)/8)%°)/╕)!°)(I╦	°)!╕)*╕)%x)/И8),8)b°)'8)/8)%x)/И8).8) ╕))8)`x),╕)*И8)*╕)cx),8)a°)+Л8)%x)/╕)+Л8))°)*	╫K]NИ	°),╕)/╕)!°)*°)/8)%°)/╕)!°)(I╦XЬ╬И╔°)+8)`8))8)/И8)%x),Й╦	°)!╕)'	╦	°)!╕)*8)a╚8)-x)/╕),╕)/И8)%x),Й╦	°)!°).8)+╕)/╕).I╦	°)!°).8)-x),8)cx)-╔╫KИШ[[Ш┘NИ╔°)+8)`8))8)a╚8)%x),И8)%x)/И8).8) ╕))8)`x),╕)*	╦	°)!╕)'8)%x)/И8).8) ╕))8)`x),╕)*	╦	°)!╕)*8)a╚8)-x)/╕),╕)a╚8)%x),И8)%x)/И8).8) ╕))8)`x),╕)*	╦	°)!°).8)+╕)/╕).H8)%x)/И8).8) ╕))8)`x),╕)*	╦	°)!°).8)-x),8)cx)-╚8)%x)/И8).8) ╕))8)`x),╕)*	╫KИ\ЩX\╬И╚▌ЩNИ	°)*╕)cx),8)a°)+Й╦Ш[Z[NИ	°)*╕),8)/°)-x)/╕),	╦X\ЬЪXY┘NИ	°)-x)/°)-x)/╕).I╦╪\ЩY\ОИ	°)%x),8)/°)+°),	╦┘X[И	°))°)*	╦X[И	°).8)cx)-x)/╕).8)cx))x)cx)+╔╚KЮP\ЩXNИ	°)%x)cx)-°)a°))8)cx),8)%x)a╚8)!x)*8)`x).8)/╕),	╦▌\▄ЭYИ	▐▄[Щ]▀H8)%x)/И8).8)/╕))I╦И[▌\Ф┌Y█ОИ	°)!╕)*╕)%x)`8),8)/╕)-╕)/╔╦┌[Щ┘NИ	°)+8))╕),╕)a°) Й╦X┌╬И	°))╕)`╕).8),8)`8),8)/╕)-╕)/╚8))╕)a°)%╕)a°) Й╦X┌╤Ъ\Ь▌И	°)!x)*╕)*8)/И8).8) ╕))8)`x),╕)*8))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚8)!x)*╕)*8)`8),8)/╕)-╕)/╚8)&╕)`x)*8)a°) ╕)i	╦╪Y[Щ╬И	°)!╕)*╕)%x)/И8).8) ╕))8)`x),╕)*8)*8)/°)%x)/╕),И8),8).x)a╚8).x)b8) ╕а)Й╦ШZ[YИ	°)!x)+x)`8),╕)b°)(H8)*8).x)`8) И8).x)b╚8).8)%x)/╕)i8)%x)`°)*╕)+°)/И8)*°)/°),8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦И\Ь██Ш[И	°)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8)%x)a╚8)!x)*8)`x).8)/╕),И8)'8)*8)cx)+И8)*8)%x)cx)-°))8)cx),▄▌\ЯI╦\┌S[ЩNИ	°))╕)-╕)/И█▄Щ▀I╦┘[Щ\Ш[И	°)!°).8),8)/╕)-╕)/╚8)%x)a╚8),╕)/°)#╚8).8)/╕)+╕)/╕)*8)cx)+°)i8)!x)*╕)*8)a╚8),╕)/°)#╚8)%╕)/8)/╕).8),╕)/╕)!°)*°)/8)%°)/╕)!°)(H8)%x)a╚8),╕)/°)#╚8)!x)*╕)*8)`8)%x)`x) ╕)(x),╕)`8)+8)*8)/╕)#°) x)i	╦\ШNИ	°)!╕)'8)!╕)*╕)%x)`8))8)/╕),8)/ОИ▌\Ш_I╦И\ШSШ[Y\╬И╔°)'8)*8)cx)+Й╦	°).8) ╕)*╕))8)cI╦	°)-x)/°)*╕))8)cI╦	°)%x)cx)-°)a°)+Й╦	°)*╕)cx),8))8)cx)+°)%x)cI╦	°).8)/╕))°)*8)/Й╦	°)*8)b8))°)*	╦	°)+╕)/°))8)cx),	╦	°)*╕),8)+И8)+╕)/°))8)cx),	╫K\ШQYЩЩX▌И╔°).8)/╕)-x))°)/╕)*8)`	╦	°).8)/╕)+╕)/╕)*8)cx)+╔╦	°)!x)*8)`x)%x)`╕),Й╫KИ[Ы╪┌╬И	°)-x)`8)(x)/°)+°)b╚8)!╕)!°)%x)*8)-x)/╕),╕)a╚8)'°)b8)+8)#°)%H8)&°)b°)'°)a╚8)-x)/°)'8)cx)'╕)/╕)*╕)*8)%x)a╚8)+8)/╕))Л8)!°).8),8)/╕)-╕)/╚8)%x)a╚8),╕)/°)#╚8)!╕)'8)*╕)`╕),8)a╚8))╕)/°)*8)%╕)`x),И8)'8)/╕))8)a╚8).x)b8) ╕)i	╦ИЫ▌NИ	°)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8).8)a╚8)%°)cx),8).x)b°) И8)%x)a╚8)%°)b°)&╕),8)%x)a╚8)!╕))°)/╕),8)*╕),8)*8)/°)%x)/╕),╕)/И8)%°)+°)/╕)i8)&╕)/°) ╕))8)*8)%x)a╚8),╕)/°)#╚8)+╕)/╕),8)cx)%°))╕),8)cx)-╕)*8).x)b8)+x)-x)/°)-°)cx)+°)-x)/╕)(°)`8)*8).x)`8) ╕)i	╦И^И╚▌ЩNИ╔°))°)`8),8)a╚8)&╕),╕)a°) ╕)i8)'8)/8)cx)+°)/╕))╕)/И8).8)`x)*8)a°) Л8)'8),╕)cx))╕)+8)/╕)'8)/8)`8)+╕)a°) И8)*8)+8)b°),╕)a°) ╕)i	╦	°).8)cx))x)/°),8))╕)c8),8)i8)&°)b°)'°)`x)&°)b°)'°)`8)*╕),8)-x)/╕).H8).8)+8).8)a╚8)'8)/8),8)`╕),8)`8)i	╦	°)+x)/╕)-x)*8)/╕)#°) H8).8).x)'8)+8)/╕) x)'╚8)*╕)/╕)#°) x)%°)a°)i8)+╕)*8)%x)`8)+8)/╕))8)%x).x)*8)a╚8)%x)/И8)!x)&╕)cx)&°)/И8).8)+╕)+°)i	╫KИШ[Z[NИ╔°)%°),╕))8)*°)/8).x)+╕)`8).x)b╚8).8)%x))8)`8).x)b8)i8)-╕)/╕) ╕))8),8).x)a°) И8)%8),8))╕)`╕).8),8)b°) И8)%x)b╚8)'8)%°).H8))╕)a°) ╕)i	╦	°).8)/╕)+╕)/╕)*8)cx)+╚8)%8),8)-╕)/╕) ╕))8)i8))°)b8),8)cx)+╚8).8)a╚8))╕)/°)*8)&╕),8)cx)+°)/И8)*8)/°)+x)/╕)#°) x)i	╦	°)&8),8)+╕)a°) И8).8).x)+°)b°)%╚8),8).x)a°)%°)/╕)i8)*╕),8)/°)-x)/╕),8)%x)a╚8).8)/╕))H8).8)+╕)+╚8))8),8)b°))8)/╕)'8)/8)/И8)%x),8)a°)%°)/╕)i	╫KИX\ЬЪXY┘NИ╔°))°)b8),8)cx)+╚8),8)%╕)a°) ╕)i8)+8)(x)/8)a╚8)*°)/8)b8).8),╕)a╚8)'°)/╕),╕)a°) И8)%8),8)+8).x).8).8)a╚8)+8)&╕)a°) ╕)i	╦	°).8)cx))x)/°),8)i8).8)/╕))H8)%x)`8))╕)/°)*8)&╕),8)cx)+°)/И8).8)`x)%x)`╕)*8))╕)a°)%°)`8)i	╦	°).8)+╕)'H8)+8)(╕)/8)a°)%°)`8)i8)%╕)`x),╕)%x),8)*╕)cx)+°)/╕),8).8)a╚8)+8)/╕))8)%x),8)*8)a╚8)%x)/И8)!x)&╕)cx)&°)/И8).8)+╕)+°)i	╫KИ╪\ЩY\ОИ╔°))°)`8)+╕)/И8)%8),8)%x)(8)/°)*8).x)b╚8).8)%x))8)/И8).x)b8)i8).8)b°)&Лx).8)+╕)'x)%x),8)+°)b°)'8)*8)/И8)+8)*8)/╕)#°) K8)'8)b°)%╕)/°)+И8).8)a╚8)+8)&╕)a°) ╕)i	╦	°)*╕)cx),8)%°))8)/╚8).8)cx))x)/°),8).x)b8)i8)#°)%H8).8)+╕)+╚8)+╕)a°) И8)#°)%H8)%x)/╕)+И8)*╕),8))°)cx)+°)/╕)*8))╕)a°) ╕)i	╦	°)%x)/╕)+И8)!x)&╕)cx)&°)/И8)&╕),╕)a°)%°)/╕)i8)*╕).x),И8)%x),8)*8)a╚8)%x)/И8)!x)&╕)cx)&°)/И8).8)+╕)+°)i	╫KИ┘X[И╔°)%╕)/8),8)cx)&И8)+╕)a°) И8).8)/╕)-x))°)/╕)*8)`8)i8)'8),╕)cx))╕)+8)/╕)'8)/8)`8)%x)`8)%╕)/8),8)`8))И8)+°)/И8)"x))°)/╕),8).8)a╚8)+8)&╕)a°) ╕)i	╦	°).8) ╕))8)`x),╕)/°))8)i8)%╕)/8),8)cx)&И8)*╕),8)*8)'8)/8),8),8)%╕)a°) И8)%8),8)-x)cx)+°)/╕)-x).x)/╕),8)/°)%H8),8).x)a°) ╕)i	╦	°)*╕)b8).8)a╚8)%x)a╚8)+╕)/╕)+╕),╕)a╚8)!x)*8)`x)%x)`╕),╕)i8)+°)b°)'8)*8)/И8)%8),8)+8)&╕))8)%x)/И8)!x)&╕)cx)&°)/И8).8)+╕)+°)i	╫KИX[И╔°)!╕),8)/╕)+И8).8)a╚8)&╕),╕)a°) ╕)i8)!x)&╕)cx)&°)/И8)!╕),8)/╕)+И8)%x),8)a°) Л8)*╕)/╕)*8)`8)*╕)/°)#°) K8)!x))8)/╚8)*8)%x),8)a°) ╕)i	╦	°)%x)`x),И8)+╕)/°),╕)/╕)%x),8)(8)`8)%x)i8).8)+╕)+╚8)*╕),8)+x)b°)'8)*8)%8),8)!╕),8)/╕)+И8),8)%╕)a°) ╕)i	╦	°)"╕),8)cx)'8)/И8)!x)&╕)cx)&°)`8).x)b8)i8)-x)cx)+°)/╕)+°)/╕)+И8)%8),8)*8)`8) ╕))И8)+8)*8)/╕)#╚8),8)%╕)a°) ╕)i	╫HHKИ┌Y█ЫX]┌И╚╪\ЩИ╔°),8)/╕)-╕)/╚8)+╕)/°),╕)/╕)*	╦	°)%x)/°)*8)cx).x)`8) И8))╕)b╚8)&╕) ╕))╕)cx),8),8)/╕)-╕)/°)+°)b°) И8)%x)/И8)+╕)/°),╕)/╕)*	╫K]NИ	°),8)/╕)-╕)/╚8)+╕)/°),╕)/╕)*	╦[▌NИ	°)!╕)*Й╦\ЭЩ\ОИ	°).8)/╕))x)`	╦┌█▄┘NИ	°),8)/╕)-╕)/╚8)&╕)`x)*8)a°) Й╦XЬ╬И╔°)+╕)a°),8)`8),8)/╕)-╕)/╔╦	°).8)/╕))x)`8)%x)`8),8)/╕)-╕)/╔╫K┘YNИ	°).x)+╕)/╕),8)/И8)+╕)/°),╕)/╕)*8))╕)a°)%╕)a°) Й╦ИЩ\ЩX▌И╚^┘[[ЭИ	°)"x))8)cx))8)+И8)+╕)/°),╕)/╕)*	╦██┘И	°)!x)&╕)cx)&°)/И8)+╕)/°),╕)/╕)*	╦]Щ\ШY┘NИ	°)%8).8))8)+╕)/°),╕)/╕)*	╦▌╬И	°))°)b8),8)cx)+╚8)&╕)/╕).x)/°)#╔╚KИ^И╚^┘[[ЭИ	°)!╕)*╕)%x)`8),8)/╕)-╕)/°)+°)/╕) H8).8).x)'8)+╕)a°),И8)%╕)/╕))8)`8).x)b8) ОИ8)!╕).8)/╕)*8).8)+╕)'H8)%8),8)#°)%Kx).8)/И8)*8)'8)/8),8)/°)+°)/╕)i	╦██┘И	°)!╕),8)/╕)+╕))╕)/╕)+°)%H8)'8)b°)(x)/8)`8)%x)`x)&╚8)!x) ╕))8),8)%x)a╚8).8)/╕))H8))8)/╕),╕)+╕)a°),И8)+8)/°)(8)/╕)*8)/И8).x)b°)%°)/╕)i	╦]Щ\ШY┘NИ	°)%x)`x)&╚8)!x) ╕))8),8)*╕),8)%x)/╕)+И8)%x),8)*8)/И8).x)b°)%°)/╕)i8))°)b8),8)cx)+╚8)%8),8)+8)/╕))8)&╕)`8))8)+╕))╕))И8)%x),8)a°) ╕)%°)a°)i	╦▌╬И	°).8)cx)-x)+x)/╕)-H8)%x)/╕)*°)/8)`8)!x),╕)%╚8).x)b8) ╕)i8).8)+╕)'H8)%8),8)%x)b°)-╕)/°)-И8).8)a╚8)+8)/╕))8)+8)*8).8)%x))8)`8).x)b8)i	╚KИЬЪY[Щ┌\И	°)+╕)*8)%8),8)+╕)/°))8)cx),8))8)/Й╦Ш[Z[NИ	°)*╕),8)/°)-x)/╕),8)%8),8).8)+╕)`°))╕)cx))°)/╔╦▄┌NИ	°))╕)b°)*8)b°) И8),8)/╕)-╕)/°)+°)/╕) H8)#°)%Kx))╕)`╕).8),8)a╚8).8)a╚8)%x)(8)/°)*8).8)cx))x)/°))8)/╚8)+╕)a°) И8).x)b8) И
+8)+x)%x)`╕)'╚8))╕)b°)-╩x)i8)%x)"8)*╕),8)/°)-x)/╕),8)-x)/°)-x)/╕).H8).8)a╚8)*╕).x),╕)a╚8)!°).8)a╚8))╕)a°)%╕))8)a╚8).x)b8) ╕)i	╦ИЭ[И	°)*╕)`╕),8)/И═И8)%°)`x)(╚8)%x)`x) ╕)(x),╕)`8)+╕)/°),╕)/╕)*	╦Ы▌NИ	°)%x)a°)-x),И8))╕)b╚8)&╕) ╕))╕)cx),8),8)/╕)-╕)/°)+°)b°) И8)*╕),8)!╕))°)/╕),8)/°))8)i8)&╕)/°) ╕))8)*8)%x)a╚8),╕)/°)#╚8)+╕)/╕),8)cx)%°))╕),8)cx)-╕)*8)+x)-x)/°)-°)cx)+°)-x)/╕)(°)`8)*8).x)`8) ╕)i	╦┌\ЩS[ЩNИ	▐╪_H
+╚╪ЯNИ▄\Ш┘[ЭIH8),8)/╕)-╕)/╚8)+╕)/°),╕)/╕)*▌Щ\ЩX▌x)i	╚KИЭ[Y\Ы█┘▐NИ╚╪\ЩИ╔°)!x) ╕)%H8)'8)cx)+°)b°))8)/°)-╔╦	°)*8)/╕)+И8)%8),8)'8)*8)cx)+И8))8)/°))x)/╚8).8)a╚8)!╕)*╕)%x)a╚8)!x) ╕)%I╫K]NИ	°)!x) ╕)%H8)'8)cx)+°)b°))8)/°)-╔╦[ЭЫ╬И	°)!╕)*╕)%x)`8)'8)*8)cx)+И8))8)/°))x)/╚8)%8),8)*8)/╕)+И8).8)a╚8)!╕)*╕)%x)/И8)+╕)`╕),╕)/╕) ╕)%K8)+x)/╕)%°)cx)+°)/╕) ╕)%H8)%8),8)*8)/╕)+╕)/╕) ╕)%x)i	╦И╪ОИ	°)'8)*8)cx)+И8))8)/°))x)/╔╦Ш[YNИ	°)*8)/╕)+И
+8)!x) ╕)%°)cx),8)a°)'8)/8)`8)!x)%x)cx)-°),8)b°) И8)+╕)a°) КI╦┌▌╬И	°)+╕)a°),8)a╚8)!x) ╕)%H8))╕)/°)%╕)/╕)#°) I╦ШYИ	°)%x)`°)*╕)+°)/И8).8).x)`8)'8)*8)cx)+И8))8)/°))x)/╚8)(x)/╕),╕)a°) ╕)i	╦┌[Щ┘NИ	°)+8))╕),╕)a°) Й╦И[██[Ъ╬И╔°)+╕)`╕),╕)/╕) ╕)%I╦	°)'8)*8)cx)+И8)!x) ╕)%H0н╚8)!╕)*╕)%x)/И8).8)cx)-x)+x)/╕)-I╫KЪY▐X[Ъ╬И╔°)+x)/╕)%°)cx)+°)/╕) ╕)%I╦	°)+x)/╕)%°)cx)+╚8)!x) ╕)%H0н╚8)'8)`8)-x)*8)%x)`8))╕)/°)-╕)/Й╫KШ[YSЭ[NИ╔°)*8)/╕)+╕)/╕) ╕)%I╦	°))╕)`╕).8),8)a╚8)!╕)*╕)%x)b╚8)%x)b8).8)a╚8))╕)a°)%╕))8)a╚8).x)b8) Й╫KИЫ╙Ш[YNИ	°)*8)/╕)+╕)/╕) ╕)%H8)%x)a╚8),╕)/°)#╚8)!x)*╕)*8)/И8)*8)/╕)+И8)!x) ╕)%°)cx),8)a°)'8)/8)`8)!x)%x)cx)-°),8)b°) И8)+╕)a°) И8),╕)/°)%╕)a°) ╕)i	╦[Щ]И	°)%°)cx),8).I╦▌Щ[Щ▌╬И	°)%╕)`╕)+8)/°)+°)/╕) I╦╪\ЩNИ	°).8)/╕)-x))°)/╕)*8)`	╦И\Ы[█ЮQ██┘И	°)!╕)*╕)%x)/И8)*8)/╕)+╕)/╕) ╕)%H8)%8),8)+╕)`╕),╕)/╕) ╕)%H8)+╕)/°))8)cx),8).x)b8) ОИ8)!x)&╕)cx)&°)/И8)+╕)a°),╕)i	╦\Ы[█ЮSЩ]]Ш[И	°)!╕)*╕)%x)/И8)*8)/╕)+╕)/╕) ╕)%H8)%8),8)+╕)`╕),╕)/╕) ╕)%H8)#°)%Kx))╕)`╕).8),8)a╚8)%x)a╚8),╕)/°)#╚8).8)+И
+8))8)'°).8)cx))JH8).x)b8) ╕)i	╦ИYX\ОИ	°)!╕)*╕)%x)/И▐YX\ЯH8).8)/╕),ОИ8)!x) ╕)%H█ЯI╦X┌▐NИ	°)!╕)*╕)%x)a╚8),╕)/°)#╚8)-╕)`x)+I╦X┌▐SЭ[XЩ\Ь╬И	°)!x) ╕)%I╦X┌▐Q^\╬И	°))╕)/°)*	╦X┌▐P██▌\Ь╬И	°),8) ╕)%╔╦И\┌╨ZNИ	°)+╕)a°),8)a╚8)!x) ╕)%x)b°) И8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) ИRH8).8)a╚8)*╕)`╕)&°)a°) Й╦\┌╘NИ	°)+╕)a°),8)/И8)+╕)`╕),╕)/╕) ╕)%H█_H8)%8),8)+x)/╕)%°)cx)+°)/╕) ╕)%H╪ЯH8).x)b8)i8)+°)a╚8)!x) ╕)%H8)+╕)a°),8)a╚8)%x),8)/°)+°),8)%8),8),8)/°)-╕)cx))8)b°) И8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) И8)%x)cx)+°)/И8)%x).x))8)a╚8).x)b8) П╔╦┌\ЩNИ	°)-╕)a°)+°),8)%x),8)a°) Й╦ИЫ▌NИ	°)!x) ╕)%H8)'8)cx)+°)b°))8)/°)-╚8).8)b°)&╕)*8)a╚8)%x)/И8)#°)%H8)*╕)/╕),8) ╕)*╕),8)/°)%H8))8),8)`8)%x)/И8).x)b8)*8)/°)-╕)cx)&╕)/°))8))8)/И8)*8).x)`8) ╕)i	╚KИY[ЭNИ╚]NИ	°)+╕)a°)*8)`Й╦▄[ОИ	°)+╕)a°)*8)`И8)%╕)b°),╕)a°) Й╦█▄┘NИ	°)+╕)a°)*8)`И8)+8) ╕))И8)%x),8)a°) Й╦█YNИ	°).x)b°)+Й╦[Ш┌[Щ╬И	°)!╕)'8)%x)/И8)*╕) ╕)&╕)/╕) ╕)%╔╦\X\Ш[Ш┘NИ	°),8)`╕)*Й╦Ъ]ШX▐NИ	°)%°)b°)*╕)*8)`8)+°))8)/И8)%8),8)-╕),8)cx))8)a°) Й╦ШX┌╬И	°)-x)/╕)*╕).	╦┌\ЩTЩXY[Щ╬И	°)-╕)a°)+°),	╦┌\ЩP\И	°)$8)*И8)-╕)a°)+°),8)%x),8)a°) Й╦Ш]P\И	°)$8)*И8)%x)b╚8),8)a°)'╚8)%x),8)a°) Й╦Э[СШX▌И	°)%x)cx)+°)/И8)!╕)*И8)'8)/╕)*8))8)a╚8).x)b8) П╔╦\▌[ОИ	°).8)`x)*8)a°) Й╦┌\╬И╚[NИ	°)+╕)a°),8)`8).x))x)a°),╕)`8)*╕)(╕)/8)a°) Й╦\Ы▌И	°)'°)b8),8)b╚8)%x)/╕),8)cx)(H8)&╕)`x)*8)a°) Й╦YЩY▌ZYNИ	°)+╕)a°),8)`8),╕)/╕)!°)*°)/8)%°)/╕)!°)(I╦Э[XЩ\Ь╬И	°)+╕)a°),8)a╚8)!x) ╕)%I╦┌Y█ЫX]┌И	°),8)/╕)-╕)/╚8)+╕)/°),╕)/╕)*	╚K┌\ЩS[ЩNИ	°)!╕)*╕)%x)`8)'8)a°)+8)+╕)a°) И8)!╕)*╕)%x)/И8)-x)b8))╕)/°)%H8)'8)cx)+°)b°))8)/°)-°)`И8)*╕) ╕)&╕)/╕) ╕)%╦8)%x)`x) ╕)(x),╕)`8),8)/╕)-╕)/°)*°),Л8).x).8)cx))8),8)a°)%╕)/И8)%8),8)'°)b8),8)b╚8)!╕)*╕)%x)`8)+x)/╕)-°)/И8)+╕)a°) ╕)i	╚KИ[NИ╚╪\ЩИ╔°).x).8)cx))8),8)a°)%╕)/Й╦	°)%x)b8)+╕),8)a╚8).8)a╚8)!x)*╕)*8)`8).x))x)a°),╕)`8).8)cx)%x)b8)*8)%x),8)a°) Й╫K]NИ	°).x).8)cx))8),8)a°)%╕)/И8)-x)/°)-╕)cx),╕)a°)-°)(╔╦▌\И	°)&╕),8)(╚H0н╚8).x)/╕))H8)&╕)`x)*8)a°) Й╦YЭИ	°)+8)/╕)"8) И8).x))x)a°),╕)`	╦ЪY┌И	°))╕)/╕)"8) И8).x))x)a°),╕)`	╦И\╒]NИ	°).8)/╕)*°)/8).8)cx)%x)b8)*8)%x)a╚8),╕)/°)#╔╦\╬И╔°)!x)&╕)cx)&°)`8),8)b°)-╕)*8)`8)+╕)a°) И8),╕)a°) Й╦	°).x))x)a°),╕)`8).8)`8))°)`8)"x) x)%°),╕)/°)+°)/╕) H8)*°)b8),╕)/╕)%x),8),8)%╕)a°) Й╦	°)*╕)`╕),8)/И8).x)/╕))H8)*°)cx),8)a°)+И8)+╕)a°) И8),8)%╕)a°) Й╫KИ╪╪[ОИ	°).8)cx)%x)b8)*	╦ЩXY[Щ╬И	°)!╕)*╕)%x)`8).x))x)a°),╕)`8)*╕)(╕)/8),8).x)a╚8).x)b8) ╕а)Й╦Ы▌[NИ	°).x))x)a°),╕)`8).8)/╕)*°)/8)*8).x)`8) И8))╕)/°)%╕)`8)i8)!x)&╕)cx)&°)`8),8)b°)-╕)*8)`8)+╕)a°) И8)*╕)`╕),8)`8).x))x)a°),╕)`8))╕)/°)%╕)/╕))8)a╚8).x)`x)#╚8)*°)/°),8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦И┘ЩОИ	°).x).8)cx))8),8)a°)%╕)/И8)*╕)(8)*8)!x)+x)`8)+8) ╕))И8).x)b8)i	╦ШZ[YИ	°)!x)+x)`8)*╕)(╕)/8)*8).x)`8) И8)*╕)/╕)#°)i8))x)b°)(x)/8)`8))╕)a°),8)+8)/╕))И8)*°)/°),8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦И╪[NИ╚[ЭИ	°)!x)*╕)*8)`8)%╕)`x),╕)`8).x))x)a°),╕)`8)%x)b╚8)!╕)"x)'°),╕)/╕)!°)*8)%x)a╚8)!x) ╕))╕),8),8)%╕)a°) Й╦\Ъ╬И	°)+8).x)`x))8)!x) ╕))°)a°),8)/И8).x)b8)i8))8)a°)'8)/8),8)b°)-╕)*8)`8)+╕)a°) И8)'8)/╕)%x),8)*°)/°),8))╕)+8)/╕)#°) x)i	╦╪[\ЮNИ	°)*°)/8)b°)'°)b╚8)&╕)`x)*8)a°) Й╦█▄┘NИ	°)+8) ╕))И8)%x),8)a°) Й╦█Ш\И	°)*°)/8)b°)'°)b╚8),╕)a°) Й╚KXЬ╬И╔°).x))x)a°),╕)`	╦	°)*╕)cx),8)a°)+Й╦	°)%x),8)/°)+°),	╫K[Щ\╬И╚X\ЭИ	°).x)`°))╕)+╚8),8)a°)%╕)/Й╦XYИ	°)+╕).8)cx))8)/°)-°)cx)%H8),8)a°)%╕)/Й╦YЩNИ	°)'8)`8)-x)*8),8)a°)%╕)/Й╦Ш]NИ	°)+x)/╕)%°)cx)+╚8),8)a°)%╕)/Й╦▌[[X\ЮNИ	°)!╕)*╕)%x)`8).x))x)a°),╕)`8)%x).x))8)`8).x)b	╚KИЩXYNИ	°)!╕)*╕)%x)`8).x))x)a°),╕)`8)%x)`8)*°)/8)b°)'°)b╚8))8)b8)+°)/╕),8).x)b8)i	╦┘YNИ	°енИ8)+╕)a°),8)`8),8)`8)(x)/°) ╕)%╚8))╕)a°)%╕)a°) Й╦Y╪Z[ОИ	°)*°)/°),8).8)cx)%x)b8)*8)%x),8)a°) Й╦\┌╨ZNИ	°)+╕)a°),8)`8).x))x)a°),╕)`8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) ИRH8).8)a╚8)*╕)`╕)&°)a°) Й╦┌\ЩNИ	°)-╕)a°)+°),	╦Ъ]ШX▐NИ	°)!╕)*╕)%x)`8)*°)/8)b°)'°)b╚8).8)/°),8)cx)*°)/8)!°).8)`8)*╕)(8)*8)%x)a╚8),╕)/°)#╚8).x)b8)%8),8).8)a°)-H8)*8).x)`8) И8).x)b°))8)`8)i	╦И\┌╘NИ	°)+╕)a°),8)`8).x).8)cx))8),8)a°)%╕)/И8)*╕)(8)*8)%x).x))8)`8).x)bИ8а'▄▌[[X\Ю_xа'H8)!x)+8)+╕)`x)'x)a╚8)%x)/°).8)*╕),8))°)cx)+°)/╕)*8))╕)a°)*8)/И8)&╕)/╕).x)/°)#╧╔╦ИЩZ┌SЫ▌NИ	°)+°)a╚8),8)a°)%╕)/╕)#°) H8)!╕)*╕)%x)`8)*°)b°)'°)b╚8).8)a╚RH8)%x)a╚8)!x)*8)`x)+╕)/╕)*8)*╕),8)!╕))°)/╕),8)/°))8).x)b8) Л8)%x)a°)-x),И8)+╕)/╕),8)cx)%°))╕),8)cx)-╕)*8)%x)a╚8),╕)/°)#╚8а%8).8)'°)`8)%H8),8)a°)%╕)/╕)#°) H8)*8).x)`8) ╕)i	╚KИ\Ы▌И╚╪\ЩИ╔°)'°)b8),8)b╔╦	°)*╕)cx),8)a°)+Л8)%x),8)/°)+°),8)*╕)b8).8)a╚8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) И8)%x)/╕),8)cx)(H8).8)a╚8)*╕)`╕)&°)a°) Й╫K]NИ	°)'°)b8),8)b╔╦\┌╬И	°)!╕)*И8)%x)/╕),8)cx)(H8).8)a╚8)%x)cx)+°)/И8)*╕)`╕)&°)*8)/И8)&╕)/╕).x))8)a╚8).x)b8) П╔╦И▄X▄╬И╚▌ЩNИ	°)*╕)cx),8)a°)+Й╦╪\ЩY\ОИ	°)%x),8)/°)+°),	╦[█Щ^NИ	°)*╕)b8).8)/Й╦X[И	°).8)a°).x))	╦X┌╬И	°)+x)/╕)%°)cx)+╔╦Ш[Z[NИ	°)*╕),8)/°)-x)/╕),	╚KИX┌╬И	╠╚8)%x)/╕),8)cx)(H8)&╕)`x)*8)a°) Й╦X┌┘YИ	╠╚8)+╕)a°) И8).8)a╚█ЯH8)&╕)`x)*8)a╔╦┌YЩЫNИ	°)!x)*╕)*8)a╚8)*╕)cx),8)-╕)cx)*8)*╕),8))°)cx)+°)/╕)*8))╕)a°) Л8)*°)/°),8))8)`8)*8)%x)/╕),8)cx)(H8)&╕)`x)*8)a°) ╕)i	╦И▄┌][█Ь╬И╔°)!x))8)`8))	╦	°)-x),8)cx))8)+╕)/╕)*	╦	°)+x)-x)/°)-°)cx)+╔╫KЩ]Щ\Ь┘YИ	°)"x),╕)cx)'°)/Й╦YЪX┘NИ	°)!╕)*╕)%x)a╚8),╕)/°)#╚8).8) ╕))╕)a°)-Й╦╪Y[Щ╬И	°)!╕)*╕)%x)a╚8)%x)/╕),8)cx)(H8)*╕)(╕)/8),8).x)a╚8).x)b8) ╕а)Й╦И┘YNИ	°енИ8)+╕)a°),8)`8),8)`8)(x)/°) ╕)%╚8))╕)a°)%╕)a°) Й╦Y╪Z[ОИ	°)*8)"8),8)`8)(x)/°) ╕)%╔╦\┌╨ZNИ	°)!°).8)+8)/╕),8)a╚8)+╕)a°) ИRH8).8)a╚8)*╕)`╕)&°)a°) Й╦┌\ЩNИ	°)-╕)a°)+°),	╦Ш[ШX┌╨YЪX┘NИ	°)+8)`8)&И8)-x)/╕),╕)a╚8)%x)/╕),8)cx)(H8)%x)/И8).8) ╕))╕)a°)-И8)!╕)'8)+°)/╕))И8),8)%╕)a°) О╚8)#°)%Kx)#°)%H8)&°)b°)'°)/И8)%x))╕)+И8)+8)(╕)/8)/╕)#°) x)i	╦И\┌╘NИ	▐▌▄X▀H8)'°)b8),8)b╚8),8)`8)(x)/°) ╕)%╚8)+╕)a°) И8)+╕)`x)'x)a╚╪╪\Щ▀H8)+╕)/°),╕)a°)i8)!°).8)%x)/И8)+╕)a°),8)a╚8),╕)/°)#╚8)%x)cx)+°)/И8)!x),8)cx))H8).x)b╔╚KИ[██ОИ╚╪\ЩИ╔°)&╕) ╕))╕)cx),8),8)/╕)-╕)/╔╦	°)!╕)*╕)%x)`8)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8)%8),8).8)cx)-x)+x)/╕)-I╫K]NИ	°)&╕) ╕))╕)cx),8),8)/╕)-╕)/╔╦ШZ▄┌]ШNИ	°)*8)%x)cx)-°))8)cx),	╦YNИ	°)&╕),8)(╔╦И\Ы▐И	°)!x)*8)`x)+╕)/╕)*8)/°))И8).8)'°)`8)%H8)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8)%x)a╚8),╕)/°)#╚8)'8)*8)cx)+И8).8)+╕)+╚8)'8)b°)(x)/8)a°) ╕)i	╦ЩYYИ	°)!x)*╕)*8)`8)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8))╕)a°)%╕)*8)a╚8)%x)a╚8),╕)/°)#╚8)'8)*8)cx)+И8))8)/°))x)/╚8)'8)b°)(x)/8)a°) ╕)i	╦YИ	°)'8)*8)cx)+И8)-x)/°)-x),8)(╚8)'8)b°)(x)/8)a°) Й╦ИX┌╬И	°)%x)b°)"8)+x)`8),8)/╕)-╕)/╚8))╕)a°)%╕)a°) Й╦╪Y[Щ╬И	°)&╕) ╕))╕)cx),8)+╕)/И8)*╕)(╕)/8),8).x)a╚8).x)b8) ╕а)Й╦┌\ЩNИ	°)-╕)a°)+°),	╦Щ\▄ЭИ	°),8)/°)*╕)b°),8)cx)'╔╦[▌\Ь╬И	°)!╕)*╕)%x)`	╦И┘X▌[█Ь╬И╚[[▌[█Ш[И	°)+x)/╕)-x)*8)/╕))8)cx)+╕)%H8).8)cx)-x)+x)/╕)-I╦▌ЩNИ	°)*╕)cx),8)a°)+И8)%8),8)*╕),8)/°)-x)/╕),	╦╪\ЩY\ОИ	°)%x)/╕)+И8)%8),8)*╕)b8).8)/Й╦┘[ЩZ[Щ╬И	°).8)a°).x))8)%8),8).8)`x)%x)`╕)*	╦Щ[YYNИ	°).8),8),И8)"x)*╕)/╕)+╔╚KИШ]\ЩNИ╔°).8)/╕).x).8)`8)%8),8))8)`x),8) ╕))8)%x))╕)+И8)"x)(8)/╕)*8)a╚8)-x)/╕),╕)a╬╚8)+╕)*8)%x)`8)+8)/╕))8)"8)+╕)/╕)*8))╕)/╕),8)`8).8)a╚8)%x).x))8)a╚8).x)b8) Л8)!╕)'8)/8)/╕))╕)`8)&╕)/╕).x)/°)#°)i	╦	°).8)cx))x)/°),8)%8),8)-x)*°)/8)/╕))╕)/╕),╚8)!╕),8)/╕)+И8)%8),8).8)`x) ╕))╕),8))8)/И8)*╕).8) ╕))Л8))╕)+8)/╕)-H8)+╕)a°) И8)+x)`8)-╕)/╕) ╕))8)i	╦И	°)'8)/°)'8)cx)'╕)/╕).8)`H8)%8),8))8)a°)'8)/8))╕)/°)+╕)/╕)%╬╚8)+8)/╕))8)&╕)`8))8)*╕).8) ╕))Л8)*8)+°)/╕)*╕)*8)&╕)/╕).x)/°)#°)i	╦	°))╕)a°)%╕)+x)/╕),И8)%x),8)*8)a╚8)-x)/╕),╕)a╚8)%8),8).8) ╕)-x)a°))╕)*8)-╕)`8),О╚8)*╕),8)/°)-x)/╕),8).8)+8)%x)`x)&╚8).x)b8)!x) ╕))8),8)cx)'8)cx)'╕)/╕)*8)+╕)'8)/8)+8)`╕))8)i	╦И	°)"x))╕)/╕),8)%8),8)%°),8)cx)+╕)'8)b°)-╕)`8)+x),8)a╬╚8)*8)a°))8)`°))8)cx)-H8)+╕)a°) И8)%8),8)+╕)a°).x)*8))8)%x)`8)*╕).x)&╕)/╕)*8)+╕)/°),╕)*8)a╚8)*╕),8)&╕)+╕)%x))8)a╚8).x)b8) ╕)i	╦	°)-x)/°)&╕)/╕),8)-╕)`8),И8)%8),8).8)/╕)-x))°)/╕)*╚8)+╕))╕))И8)%x),8)*8)/И8)*╕).8) ╕))Л8)-x)cx)+°)-x).8)cx))x)/И8)+╕)a°) И8).8)`x)%x)`╕)*8)*╕)/╕))8)a╚8).x)b8) ╕)i	╦И	°).8)c8)+╕)cx)+╚8)%8),8)*8)cx)+°)/╕)+°)*╕)cx),8)/°)+╬╚8).8)/╕)+╕) ╕)'8).8)cx)+╚8)&╕)/╕).x))8)a╚8).x)b8) Л8)!x)&╕)cx)&°)a╚8).8)/╕))H8)+╕)a°) И8).8)+8).8)a╚8)%╕)`x)-╕)i	╦	°)%°).x),8)a╚8)%8),8)*8)/°)'8)`╚8)%°).x),8)/╕)"8).8)a╚8)*╕)cx),8)a°)+И8)%x),8))8)a╚8).x)b8) Л8)-x)*°)/8)/╕))╕)/╕),8)!°)&╕)cx)&°)/╕)-╕)%x)cx))8)/╚8)*╕)cx),8)+8),╕)i	╦И	°)!╕)-╕)/╕)-x)/╕))╕)`8)%8),8)"8)+╕)/╕)*8))╕)/╕),╚8).8)`8)%╕)*8)/Л8)+°)/╕))8)cx),8)/И8)%8),8)+8)(x)/8)`8).8)b°)&И8)*╕).8) ╕))╕)i	╦	°)-x)cx)+°)/╕)-x).x)/╕),8)/°)%H8)%8),8))°)b8),8)cx)+°)-x)/╕)*╚8)'8)/8)/°)+╕)cx)+╕)a°))╕)/╕),8)%8),8)&╕)`x)*╕)&╕)/╕)*И8)+╕).x))8)cx)-x)/╕)%x)/╕) ╕)%x)cx)-°)`8)i	╦И	°).8)cx)-x))8) ╕))8)cx),8)%8),8)-x)/°)&╕)/╕),8)-╕)`8),О╚8)+╕)/°),╕)*8).8)/╕),8),╕)b°)%°)b°) И8)%x)`8)*╕),8)-x)/╕).H8)%x),8))8)a╚8).x)b8) ╕)i	╦	°).8)cx)-x)*╕)cx)*8)/°),И8)%8),8))╕)+°)/╕),╕)`N╚8)%x),8)`x)(°)/╕)+╕)+╦8),8)&╕)*8)/╕))8)cx)+╕)%H8)%8),8).8)cx)-x)+x)/╕)-H8).8)a╚8)!╕))°)cx)+°)/╕))8)cx)+╕)/°)%x)i	╫HKИ┘X▌[█Ь╬И╚┌\ЭИ	°)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`	╦[NИ	°).x).8)cx))8),8)a°)%╕)/Л8)'°)b8),8)b╚8)%8),8)!x) ╕)%I╦▌ЩNИ	°)*╕)cx),8)a°)+И8)%8),8)+╕)/°),╕)/╕)*	╦[YNИ	°).8)+╕)+╚8)%8),8))8)cx)+°)b°).x)/╕),	╚KZ[NИ	°),8)b°)'8)/8)/╕)*8)/Й╦И▄ЩY]И╚[▄ЫЪ[Щ╬И	°).8)`x)*╕)cx),8)+x)/╕))	╦YЭ\ЫЫ██ОИ	°)-╕)`x)+H8))╕)b°)*╕).x),	╦]Щ[Ъ[Щ╬И	°)-╕)`x)+H8).8) ╕))°)cx)+°)/Й╦ЪY┌И	°)-╕)`x)+H8),8)/╕))8)cx),8)/╔╦[╬И	°)*8)+╕).8)cx))8)a╚<'цc╔╚KИZQ^YXЬЫ▌╬И	╨RH8)'8)cx)+°)b°))8)/°)-°)`	╦ЮP\┌┌[Щ╬И	°)$8).8)a╚8)*╕)`╕)&°)a°) Й╦\Ь██ШNИ╚[╬И	°)*8)+╕).8)cx))8)a▐█Ш[Y_HH<'цc╚8)+╕)b8) И8)'8)cx)+°)b°))8)/°),8)cx)+╕)+╚8).x)`╕) K8)!╕)*╕)%x)/И8)'8)cx)+°)b°))8)/°)-°)`8)i8)*╕)cx),8)a°)+Л8)%x),8)/°)+°),8)*╕)b8).8)/Л8).8)a°).x))8)%8),8)!╕)*8)a╚8)-x)/╕),╕)a╚8))╕)/°)*8)b°) И8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) И8)+8))8)/И8).8)%x))8)/И8).x)`╕) x)i	╚K[Ш┌[Щ╨╪\ЩИ╔°)!╕)'8)%x)/И8)*╕) ╕)&╕)/╕) ╕)%╔╦	°))8)/°))x)/╦8),8)/╕).x)`H8)%x)/╕),И8)%8),8)+╕)`x).x)`╕),8)cx))	╫KИ██╬И╚Ш]Z╪[NИ╔°)'8)*8)cx)+И8)%x)`x) ╕)(x),╕)`	╦	°)!╕)*╕)%x)/И8)'8)*8)cx)+И8)&╕)/╕),8)cx)'╚8)%8),8)*°),Й╫KЩ\▌]Ш[╬И╔°))8)cx)+°)b°).x)/╕),	╦	°)!╕)*8)a╚8)-x)/╕),╕)a╚8))8)cx)+°)b°).x)/╕),8)%8),8)&°)`x)'°)cx)'°)/°)+°)/╕) I╫KX]┌И╔°)%x)`x) ╕)(x),╕)`8)+╕)/°),╕)/╕)*	╦	╠═И8)+╕)a°) И8).8)a╚8)%°)`x)(╔╫K▄┌\╬И╔°))╕)b°)-╔╦	°)+╕)/╕) ╕)%°),╕)/°)%H8)%8),8).8)/╕)(╕)/8)a°).8)/╕))8)`	╫K\┌NИ╔°))╕)-╕)/Й╦	°)!x)+x)`8)%x)/°).8)%°)cx),8).H8)%x)`8))╕)-╕)/И8).x)b	╫KШ\┌NИ╔°),8)/╕)-╕)/°)*°),Й╦	°))╕)/°)*8).8)*╕)cx))8)/╕).K8)+╕).x)`8)*8)/Й╫K┌]И╔╨RH8).8)a╚8)*╕)`╕)&°)a°) Й╦	°)'8)`8)-x)*8)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) И8)*╕)cx),8)-╕)cx)*	╫HKИKИN┬И╦╚Щ]┘\И╪▄ЩY[Ь╚┘Y\Z\И█▄Щ╚[И^╦╧█┘OЛЪЬ╚
+█▌ЩK██╦X\┘\Л[▄ЩKШX▌▀JKИH[Щ▌XY┘H┌]▌]]╚▌█И█▄Щ┬И╦╚Ы▄ЬЫ▌▄╚]╚█▄┘\▌Щ[]]ЩI▄╚
+[ЩHЫ▄ИH]Ш[ШY╪\ЪH[Щ▌XY┘\╩K[И[Щ█\┌ВИ██Ь▌V╤РSРP╥╚H╚\ОИ	┌I╦ЩNИ	┌I╦╪NИ	┌I╦█┌╬И	┌I╦XZNИ	┌I╦\╬И	╪ЫЙ╚N┬ИЭ[Ш▌[█И█▄QЫ▄КXЫK┘X▌[█КH┬И██Ь▌^ШHH
+\[┘И┌[Щ▌╚OOH	▌[ЩYЪ[ЩY	╚	ЙИ┌[Щ▌╦ТЮ[▌\┌U^╩H▀N┬И]█┘HH▌]KЫ[Щ╬┬ИЫ▄И
+]▄H╚▄╚	ЙИ█┘N╚▄
+╧HJH┬ИYИ
+XЫV╪█┘WJHЩ]\ЫИXЫV╪█┘WN┬ИYИ
+^ШV╪█┘WH	ЙИ^ШV╪█┘WV▄┘X▌[█ЧJHЩ]\ЫИ^ШV╪█┘WV▄┘X▌[█ЧN┬И█┘HHV╤РSРP╥╓╪█┘WH	┘[Й╬┬ИBИЩ]\ЫИXЫKЩ[О┬ИBИ██Ь▌▌ЩU^H
 
-  // Home: the next festivals from today, read from this month's and the next two months' calendars.
-  const FEST_MONTHS = 3, FEST_SHOWN = 6;
-  async function loadFestivals() {
-    const city = state.city, today = state.todayIso;
-    if (!city || !/^\d{4}-\d{2}-\d{2}$/.test(today || '')) return;
-    const key = `${city}|${today}`;
-    if (state.festivals && state.festivals.key === key) { renderFestivals(); return; }
-    state.festivals = { key, events: null };
-    renderFestivals();
-    const months = [];
-    for (let step = 0; step < FEST_MONTHS; step += 1) {
-      const target = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1 + step, 1));
-      months.push({ year: target.getUTCFullYear(), month: target.getUTCMonth() + 1 });
-    }
-    const events = [];
-    try {
-      const replies = await Promise.all(months.map(item => post('/api/month-calendar', { ...item, place: city }).catch(() => null)));
-      for (const reply of replies) if (reply && reply.ok && reply.body && Array.isArray(reply.body.events)) events.push(...reply.body.events);
-    } catch (_error) { /* shown as none */ }
-    if (!state.festivals || state.festivals.key !== key) return;
-    state.festivals.events = events.filter(event => typeof event.date === 'string' && event.date >= today).sort((a, b) => a.date.localeCompare(b.date));
-    renderFestivals();
-    void scheduleNotifications();
-  }
-  function renderFestivals() {
-    const copy = toolText(), list = $('festival-list'), more = $('festival-more');
-    list.replaceChildren(); more.hidden = true;
-    const data = state.festivals;
-    renderTools();
-    if (!data || !data.events) { list.appendChild(el('p', 'muted-note', copy.festLoading)); return; }
-    if (!data.events.length) { list.appendChild(el('p', 'muted-note', copy.festNone)); return; }
-    const today = Date.UTC(Number(state.todayIso.slice(0, 4)), Number(state.todayIso.slice(5, 7)) - 1, Number(state.todayIso.slice(8, 10)));
-    const shown = state.festivalsAll ? data.events : data.events.slice(0, FEST_SHOWN);
-    for (const event of shown) {
-      const days = Math.round((Date.UTC(Number(event.date.slice(0, 4)), Number(event.date.slice(5, 7)) - 1, Number(event.date.slice(8, 10))) - today) / 86400000);
-      const when = days === 0 ? copy.festToday : days === 1 ? copy.festTomorrow : fill(copy.festIn, { n: days });
-      const row = el('button', `fest-row${event.holiday ? ' holiday' : ''}${days === 0 ? ' today' : ''}`); row.type = 'button';
-      const date = el('span', 'fest-date');
-      date.append(el('b', null, event.date.slice(8, 10).replace(/^0/, '')), el('small', null, calendarUI.monthName(state.lang, Number(event.date.slice(5, 7)) - 1, 'short')));
-      const text = el('span', 'fest-text');
-      text.append(el('b', null, eventName(event)), el('small', null, `${calendarUI.weekdayName(state.lang, new Date(`${event.date}T12:00:00Z`).getUTCDay())} ┬╖ ${when}`));
-      row.append(date, text);
-      if (event.holiday) row.appendChild(el('em', 'tag debilitated', t('holidayTag')));
-      row.addEventListener('click', () => openDay(event.date));
-      list.appendChild(row);
-    }
-    if (data.events.length > FEST_SHOWN) {
-      more.hidden = false; more.textContent = state.festivalsAll ? copy.festLess : copy.festMore;
-    }
-  }
-  $('festival-more').addEventListener('click', () => { state.festivalsAll = !state.festivalsAll; renderFestivals(); });
+HOИ█▄QЫ▄КСSUS╙Ф╥T╨╙╘K	█▌ЩI╩N┬И██Ь▌██^H
 
-  /* ---- Appearance: mystic (plum, the default) / light / dark / auto, and an accent colour, remembered on this device ---- */
-  const LOOK_KEY = 'jyotisha.appearance.v2';   // v2: everyone starts on the mystic plum look once
-  const ACCENTS = { saffron: ['#f6b04a', '#f08a3a'], teal: ['#4cc7ae', '#1f9d8a'], rose: ['#ef93aa', '#d95478'], blue: ['#86aef2', '#4a7fd8'] };
-  const MODES = ['mystic', 'light', 'dark', 'auto'];
-  function loadLook() {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(LOOK_KEY)) || {};
-      return { mode: MODES.includes(saved.mode) ? saved.mode : 'mystic', accent: Object.hasOwn(ACCENTS, saved.accent) ? saved.accent : 'saffron' };
-    } catch (_error) { return { mode: 'mystic', accent: 'saffron' }; }
-  }
-  const look = loadLook();
-  const systemDark = () => { try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (_error) { return false; } };
-  function applyLook() {
-    const mystic = look.mode === 'mystic';
-    const dark = mystic || look.mode === 'dark' || (look.mode === 'auto' && systemDark());
-    const root = document.documentElement;
-    if (root.setAttribute) {
-      root.setAttribute('data-mode', dark ? 'dark' : 'light');
-      root.setAttribute('data-accent', mystic ? 'mystic' : look.accent);
-      root.setAttribute('data-skin', mystic ? 'mystic' : 'plain');
-    }
-    const barColor = mystic ? '#1a0b24' : dark ? '#1c1f25' : '#fff7e8';
-    try { const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', barColor); } catch (_error) { /* optional */ }
-    // In the Android app the phone's status and navigation bars take the same colour (light icons on dark bars).
-    try {
-      const bars = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SystemBars;
-      if (bars && bars.set) void Promise.resolve(bars.set({ color: barColor, light: !dark })).catch(() => {});
-    } catch (_error) { /* older app: bars keep the built-in colour */ }
-    try { window.localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (_error) { /* not remembered */ }
-  }
-  function renderLookPanel() {
-    const copy = toolText().look, panel = $('theme-panel');
-    $('theme-btn').setAttribute('aria-label', copy.button);
-    panel.replaceChildren();
-    const title = el('h3', null, `ЁЯОи ${copy.title}`); title.id = 'theme-title';
-    const modes = el('div', 'seg'); modes.setAttribute('role', 'group');
-    for (const mode of MODES) {
-      const button = el('button', mode === look.mode ? 'on' : '', `${{ mystic: 'ЁЯФо', light: 'тШАя╕П', dark: 'ЁЯМЩ', auto: 'ЁЯУ▒' }[mode]} ${copy[mode]}`); button.type = 'button';
-      button.setAttribute('aria-pressed', mode === look.mode ? 'true' : 'false');
-      button.addEventListener('click', () => { look.mode = mode; applyLook(); renderLookPanel(); });
-      modes.appendChild(button);
-    }
-    const swatches = el('div', 'swatches');
-    for (const [name, [a, b]] of Object.entries(ACCENTS)) {
-      const button = el('button', `swatch${name === look.accent ? ' on' : ''}`); button.type = 'button';
-      button.setAttribute('aria-pressed', name === look.accent ? 'true' : 'false');
-      const dot = el('i'); dot.setAttribute('style', `--sa:${a};--sb:${b}`);
-      button.append(dot, el('span', null, copy[name]));
-      button.addEventListener('click', () => { look.accent = name; applyLook(); renderLookPanel(); });
-      swatches.appendChild(button);
-    }
-    const done = el('button', 'theme-done', copy.done); done.type = 'button';
-    done.addEventListener('click', () => { panel.hidden = true; });
-    panel.append(title, el('span', 'label', copy.mode), modes);
-    if (look.mode !== 'mystic') panel.append(el('span', 'label', copy.colour), swatches);   // the mystic look has its own colours
-    // Notifications work on their own; their schedule is not shown to users.
-    panel.appendChild(done);
-  }
-  $('theme-btn').addEventListener('click', () => { const panel = $('theme-panel'); renderLookPanel(); panel.hidden = !panel.hidden; });
-  try { if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (look.mode === 'auto') applyLook(); }); } catch (_error) { /* older browsers */ }
-  applyLook();
+HOИ█▄QЫ▄К╙╙╫╨╙╘K	▌██╔╩N┬И██Ь▌Ъ[H
+^Ш[Y\╩HOИ╪ЪЩX▌Щ[ЭЪY\╩Ш[Y\╩KЬЩYX┘J
+▌]┌┘^KШ[YWJHOИ▌]ЬЩ\X┘J╔┌┘^__XШ[YJK^
+N┬И╦╚ММОLИИOИСЩXЬЭX\ЮHМОИ[ИH┌▄┘[И[Щ▌XY┘N╚Э[
+Щ^[█ЩH╪╪[ЫЩYYX\Ь╩HOИ╕а%ЛВИ██Ь▌[█Э^HШ[YHOИ
+\[┘ИШ[YHOOH	▄▌Ъ[Щ╔╚	ЙИ╫Ч═KW╠ЯI╦Э\▌
+Ш[YJBИ╚╪[[Щ\ХRKЫ[█Э]JЭ[XЩ\КШ[YKЬ█X┘J
+JKЭ[XЩ\КШ[YKЬ█X┘JK╩JK▌]KЫ[Щ╩HИ	°а%	╩N┬ВИЭ[Ш▌[█И▄[█Р╪\Щ
+X██Л]K▌XЛ█Р█X┌╦X▌]ЩJH┬И██Ь▌╪\ЩH[
+	╪Э]█Й╦▄[█ЛX╪\Щ	╪X▌]ЩH╚	╚█Й╚И	╔▀X
+N┬И╪\ЩЭ\HH	╪Э]█Й╬┬И╪\ЩШ\[Щ
+[
+	▄▄[Й╦	█▄[█ЛZX██Й╦X██КK[
+	╪Й╦Э[]JK[
+	▄█X[	╦Э[▌XКJN┬И╪\ЩЬ┘]]ЪXЭ]J	╪\ЪXK\Щ\▄┘Y	╦X▌]ЩH╚	▌ЭYI╚И	┘Ш[┘I╩N┬И╪\ЩШY]Щ[Э\▌[Щ\К	╪█X┌╔╦█Р█X┌╩N┬ИЩ]\ЫИ╪\Щ┬ИBИЭ[Ш▌[█ИЩ[Щ\ФЩ[][█Ь┌\
 
-  /* ---- Daily notifications (Android app only): scheduled on the phone, no server or account needed ---- */
-  const NOTIFY_KEY = 'jyotisha.notify.v1', NOTIFY_FIRST_ID = 7100, NOTIFY_DAYS = 7, NOTIFY_ACTION = 'JYOTI_OPEN';
-  const notifier = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.LocalNotifications ? cap.Plugins.LocalNotifications : null; };
-  function loadNotify() {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(NOTIFY_KEY)) || {};
-      return { on: saved.on === true, asked: saved.asked === true, time: /^\d{2}:\d{2}$/.test(saved.time || '') ? saved.time : '07:00',
-        evening: saved.evening !== false, muhurta: saved.muhurta !== false, shortcuts: saved.shortcuts !== false, teasers: saved.teasers !== false, eveningTime: /^\d{2}:\d{2}$/.test(saved.eveningTime || '') ? saved.eveningTime : '19:30' };
-    } catch (_error) { return { on: false, asked: false, time: '07:00', evening: true, muhurta: true, shortcuts: true, teasers: true, eveningTime: '19:30' }; }
-  }
-  const notify = loadNotify();
-  const saveNotify = () => { try { window.localStorage.setItem(NOTIFY_KEY, JSON.stringify(notify)); } catch (_error) { /* not remembered */ } };
-  let notifyBusy = false, notifyAgain = false, notifyNote = '', notifyInfo = null;   // notifyInfo.blocked: allowed once, since turned off in phone settings
-  async function scheduleNotifications() {
-    const plugin = notifier();
-    if (!plugin || !state.city) return;
-    if (notifyBusy) { notifyAgain = true; return; }   // run once more when the current run ends
-    notifyBusy = true;
-    try {
-      const pending = await plugin.getPending().catch(() => ({ notifications: [] }));
-      const ours = (pending.notifications || []).filter(item => (item.id >= NOTIFY_FIRST_ID && item.id < NOTIFY_FIRST_ID + 50) || (item.id >= TEASE_FIRST_ID && item.id < TEASE_FIRST_ID + TEASE_MAX) || (item.id >= MORE_FIRST_ID && item.id < MORE_FIRST_ID + MORE_MAX)).map(item => ({ id: item.id }));
-      if (ours.length) await plugin.cancel({ notifications: ours });
-      if (!notify.on) { notifyInfo = null; return; }
-      const permission = await plugin.checkPermissions().catch(() => ({ display: 'granted' }));
-      if (permission.display !== 'granted') { notifyInfo = { blocked: true }; return; }
-      const copy = toolText().notify, [hour, minute] = notify.time.split(':').map(Number), now = new Date();
-      const festivals = (state.festivals && state.festivals.events) || [];
-      const list = [], days = {}, moreSeen = { keys: new Set(), ids: 0 };
-      aiBatches = {};
-      try {   // fresh AI-written copy for this language; the built-in messages are used for any day without it
-        const { ok, body } = await post('/api/nudges', { language: state.lang, from: localIso(now), days: NOTIFY_DAYS });
-        if (ok && body && body.batches && typeof body.batches === 'object') aiBatches = body.batches;
-      } catch (_error) { /* offline: built-in messages */ }
-      for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
-        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
-        const iso = localIso(at);
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, 21, 30, 0);
-        if (endOfDay <= now) continue;
-        let day = null;
-        try { const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city }); if (ok && body && body.day) day = body.day; } catch (_error) { /* skip the day */ }
-        if (!day) continue;
-        days[iso] = day;
-        // Each part on its own: one bad day or message must never stop the rest from being scheduled.
-        try { list.push(...muhurtaAlerts(day, iso, offset, now)); } catch (error) { console.warn('muhurta alerts', iso, error); }
-        try { list.push(...moreAlerts(day, iso, now, moreSeen)); } catch (error) { console.warn('more alerts', iso, error); }
-        if (at <= now) continue;
-        try {
-        const atText = `${iso}T${notify.time}`;
-        const pick = items => items.find(item => item.starts_at <= atText && atText < item.ends_at) || items[0];
-        const festival = festivals.find(event => event.date === iso);
-        const weekday = calendarUI.weekdayName(state.lang, new Date(`${iso}T12:00:00Z`).getUTCDay());
-        const title = festival ? fill(copy.fest, { name: eventName(festival) }) : `ЁЯМЕ ${weekday} ┬╖ ${names.tithiName(pick(day.tithi).index, state.lang)}`;
-        const rahu = day.timings && day.timings.rahu_kalam;
-        const lines = [`${names.nakshatraName(pick(day.nakshatra).index, state.lang)}${rahu ? ` ┬╖ ${copy.rahu} ${clock(rahu[0], iso)}тАУ${clock(rahu[1], iso)}` : ''}`];
-        const personal = dayForYou(day, atText);
-        if (personal) lines.push(`тЬи ${personal}`);
-        const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');   // no direction marks: some phones draw them as boxes
-        list.push({ id: NOTIFY_FIRST_ID + offset, title, body: text, largeBody: text, schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
-        } catch (error) { console.warn('morning notification', iso, error); }
-      }
-      // After the scheduled week, one reminder to open the app (which schedules the next week).
-      const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + NOTIFY_DAYS, hour, minute, 0);
-      list.push({ id: NOTIFY_FIRST_ID + NOTIFY_DAYS, title: copy.reopenTitle, body: copy.reopenBody, schedule: { at: last, allowWhileIdle: true } });
-      try { list.push(...eveningNotifications(now, days)); } catch (error) { console.warn('evening notifications', error); }
-      try { list.push(...teaserNotifications(now)); } catch (error) { console.warn('reading reminders', error); }
-      // A button under each reading reminder and timing alert (like "Reveal it"), opening the same screen as a tap.
-      const button = { en: 'See now', te: 'р░Зр░кр▒Нр░кр▒Бр░бр▒З р░Ър▒Вр░бр░Вр░бр░┐', hi: 'рдЕрднреА рджреЗрдЦреЗрдВ' }[state.lang] || 'See now';
-      try { if (plugin.registerActionTypes) await plugin.registerActionTypes({ types: [{ id: NOTIFY_ACTION, actions: [{ id: 'open', title: button, foreground: true }] }] }); } catch (_error) { /* older plugin: no button */ }
-      for (const item of list) if (item.extra && item.extra.page && item.extra.page !== 'home') item.actionTypeId = NOTIFY_ACTION;
-      await plugin.schedule({ notifications: list });
-      notifyInfo = null;
-    } catch (error) {
-      console.warn('notifications', error);
-    } finally {
-      notifyBusy = false; refreshNotifySettings(); void syncShortcuts();
-      if (notifyAgain) { notifyAgain = false; void scheduleNotifications(); }
-    }
-  }
-  /* ---- Reading reminders: short, tempting (but true) notifications every hour or so in the day, each opening a feature.
-     How often and between which hours comes from the admin panel; the user can switch them off under ЁЯОи. ---- */
-  const TEASE_FIRST_ID = 7300, TEASE_MAX = 190, TEASE_DAYS = 7, TEASE_KEY = 'jyotisha.teasers.v1';
-  const TEASER_COPY = {
-    en: { toggle: 'Reading reminders (every few hours)', items: {
-      palm: ['тЬЛ Your palm is waiting to be read', 'Your heart, head and life lines have a story. Scan your palm and see it in seconds.'],
-      tarot: ['ЁЯГП Your cards are shuffled', 'Three cards are waiting for your question about love, career or money. Pick yours now.'],
-      rashi: ['ЁЯФо {sign}: todayтАЩs reading is ready', 'Your luck, colour and best time for today. Tap to see what the day holds.'],
-      rashiAny: ['ЁЯФо TodayтАЩs Rashiphal is ready', 'Find your rashi and see what today holds for you.'],
-      kundli: ['ЁЯУЬ Your Jathakam is ready', 'Your chart, dasha and doshas are waiting. See what this period means for you.'],
-      kundliNew: ['ЁЯУЬ Your Jathakam is 30 seconds away', 'Add your birth time and see your Lagna, Rashi, Nakshatra and dasha.'],
-      moon: ['ЁЯМЩ What does your Moon say about you?', 'Your Moon sign shows your feelings, love and nature. Tap to read it.'],
-      numbers: ['ЁЯФв Your lucky numbers are ready', 'Your Moolank, Bhagyank, lucky days and colours, from your birth date.'],
-      chat: ['ЁЯТм Ask Jyotirmaya anything', 'Career, marriage or money: get an answer from your own chart.'],
-      match: ['ЁЯТЮ Is your match written in the stars?', 'Check Guna Milan out of 36 in under a minute.'] } },
-    te: { toggle: 'р░░р▒Ар░бр░┐р░Вр░Чр▒Н р░░р░┐р░ор▒Ир░Вр░бр░░р▒Нр░▓р▒Б (р░кр▒Нр░░р░др░┐ р░Хр▒Кр░ир▒Нр░ир░┐ р░Чр░Вр░Яр░▓р░Хр▒Б)', items: {
-      palm: ['тЬЛ р░ор▒А р░╣р░╕р▒Нр░д р░░р▒Зр░Цр░▓р▒Б р░ор▒А р░Хр▒Лр░╕р░В р░Ор░жр▒Бр░░р▒Бр░Ър▒Вр░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░пр░┐', 'р░ор▒А р░╣р▒Гр░жр░п, р░ор░╕р▒Нр░др░┐р░╖р▒Нр░Х, р░Ьр▒Ар░╡р░и р░░р▒Зр░Цр░▓р▒Б р░Пр░В р░Ър▒Жр░мр▒Бр░др▒Бр░ир▒Нр░ир░╛р░пр▒Л р░Ър▒Вр░бр░Вр░бр░┐. р░Ер░░р░Ър▒Зр░др░┐р░ир░┐ р░╕р▒Нр░Хр░╛р░ир▒Н р░Ър▒Зр░пр░Вр░бр░┐.'],
-      tarot: ['ЁЯГП р░ор▒А р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б р░╕р░┐р░жр▒Нр░зр░Вр░Чр░╛ р░Йр░ир▒Нр░ир░╛р░пр░┐', 'р░кр▒Нр░░р▒Зр░о, р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░бр░мр▒Нр░мр▒Б: р░ор▒А р░кр▒Нр░░р░╢р▒Нр░ир░Хр▒Б р░ор▒Вр░бр▒Б р░Хр░╛р░░р▒Нр░бр▒Бр░▓р▒Б р░Ор░жр▒Бр░░р▒Бр░Ър▒Вр░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░пр░┐. р░Зр░кр▒Нр░кр▒Бр░бр▒З р░Ор░Вр░Ър▒Бр░Хр▒Лр░Вр░бр░┐.'],
-      rashi: ['ЁЯФо {sign}: р░И р░░р▒Лр░Ьр▒Б р░лр░▓р░┐р░др░В р░╕р░┐р░жр▒Нр░зр░В', 'р░И р░░р▒Лр░Ьр▒Б р░ор▒А р░Ер░жр▒Гр░╖р▒Нр░Яр░В, р░░р░Вр░Чр▒Б, р░ор░Вр░Ър░┐ р░╕р░ор░пр░В. р░░р▒Лр░Ьр▒Б р░Ор░▓р░╛ р░Йр░Вр░жр▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      rashiAny: ['ЁЯФо р░И р░░р▒Лр░Ьр▒Б р░░р░╛р░╢р░┐ р░лр░▓р░╛р░▓р▒Б р░╕р░┐р░жр▒Нр░зр░В', 'р░ор▒А р░░р░╛р░╢р░┐ р░Ор░Вр░Ър▒Бр░Хр▒Бр░ир░┐ р░И р░░р▒Лр░Ьр▒Б р░ор▒Ар░Хр▒Б р░Ор░▓р░╛ р░Йр░Вр░жр▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      kundli: ['ЁЯУЬ р░ор▒А р░Ьр░╛р░др░Хр░В р░╕р░┐р░жр▒Нр░зр░Вр░Чр░╛ р░Йр░Вр░жр░┐', 'р░ор▒А р░Ър░Хр▒Нр░░р░В, р░жр░╢, р░жр▒Лр░╖р░╛р░▓р▒Б р░ор▒А р░Хр▒Лр░╕р░В р░Ор░жр▒Бр░░р▒Бр░Ър▒Вр░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░пр░┐. р░И р░Хр░╛р░▓р░В р░ор▒Ар░Хр▒Б р░Пр░В р░Ър▒Жр░мр▒Бр░др▒Бр░Вр░жр▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      kundliNew: ['ЁЯУЬ р░ор▒А р░Ьр░╛р░др░Хр░В 30 р░╕р▒Жр░Хр░ир▒Нр░▓ р░жр▒Вр░░р░Вр░▓р▒Л', 'р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░╕р░ор░пр░В р░Зр░Ър▒Нр░Ър░┐ р░ор▒А р░▓р░Чр▒Нр░ир░В, р░░р░╛р░╢р░┐, р░ир░Хр▒Нр░╖р░др▒Нр░░р░В, р░жр░╢ р░Ър▒Вр░бр░Вр░бр░┐.'],
-      moon: ['ЁЯМЩ р░ор▒А р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐ р░ор▒А р░Чр▒Бр░░р░┐р░Вр░Ър░┐ р░Пр░В р░Ър▒Жр░мр▒Бр░др▒Лр░Вр░жр░┐?', 'р░ор▒А р░нр░╛р░╡р░╛р░▓р▒Б, р░кр▒Нр░░р▒Зр░о, р░╕р▒Нр░╡р░нр░╛р░╡р░В р░ор▒А р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐р░▓р▒Л р░Йр░ир▒Нр░ир░╛р░пр░┐. р░Ър░жр░╡р░Вр░бр░┐.'],
-      numbers: ['ЁЯФв р░ор▒А р░Ер░жр▒Гр░╖р▒Нр░Я р░╕р░Вр░Цр▒Нр░пр░▓р▒Б р░╕р░┐р░жр▒Нр░зр░В', 'р░ор▒А р░ор▒Вр░▓р░╛р░Вр░Хр░В, р░нр░╛р░Чр▒Нр░пр░╛р░Вр░Хр░В, р░Ер░жр▒Гр░╖р▒Нр░Я р░░р▒Лр░Ьр▒Бр░▓р▒Б, р░░р░Вр░Чр▒Бр░▓р▒Б: р░ор▒А р░кр▒Бр░Яр▒Нр░Яр░┐р░и р░др▒Зр░жр▒А р░ир▒Бр░Вр░Ър░┐.'],
-      chat: ['ЁЯТм р░Ьр▒Нр░пр▒Лр░др░┐р░░р▒Нр░ор░пр░ир▒Б р░Пр░жр▒Ир░ир░╛ р░Ер░бр░Чр░Вр░бр░┐', 'р░Йр░жр▒Нр░пр▒Лр░Чр░В, р░кр▒Жр░│р▒Нр░▓р░┐, р░бр░мр▒Нр░мр▒Б: р░ор▒А р░Ьр░╛р░др░Хр░В р░Жр░зр░╛р░░р░Вр░Чр░╛ р░╕р░ор░╛р░зр░╛р░ир░В р░кр▒Кр░Вр░жр░Вр░бр░┐.'],
-      match: ['ЁЯТЮ р░ор▒А р░Ьр░Вр░Я р░ир░Хр▒Нр░╖р░др▒Нр░░р░╛р░▓р▒Нр░▓р▒Л р░░р░╛р░╕р░┐ р░Йр░Вр░жр░╛?', 'р░Тр░Хр▒Нр░Х р░ир░┐р░ор░┐р░╖р░Вр░▓р▒Л 36р░Хр░┐ р░Чр▒Бр░г р░ор▒Зр░│р░ир░В р░Ър▒Вр░бр░Вр░бр░┐.'] } },
-    hi: { toggle: 'рд░реАрдбрд┐рдВрдЧ рд░рд┐рдорд╛рдЗрдВрдбрд░ (рд╣рд░ рдХреБрдЫ рдШрдВрдЯреЛрдВ рдореЗрдВ)', items: {
-      palm: ['тЬЛ рдЖрдкрдХреА рд╣рдереЗрд▓реА рдХреА рд░реЗрдЦрд╛рдПрдБ рдЗрдВрддрдЬрд╝рд╛рд░ рдХрд░ рд░рд╣реА рд╣реИрдВ', 'рдЖрдкрдХреА рд╣реГрджрдп, рдорд╕реНрддрд┐рд╖реНрдХ рдФрд░ рдЬреАрд╡рди рд░реЗрдЦрд╛ рдХреНрдпрд╛ рдХрд╣рддреА рд╣реИ? рд╣рдереЗрд▓реА рд╕реНрдХреИрди рдХрд░реЗрдВ рдФрд░ рджреЗрдЦреЗрдВред'],
-      tarot: ['ЁЯГП рдЖрдкрдХреЗ рдХрд╛рд░реНрдб рддреИрдпрд╛рд░ рд╣реИрдВ', 'рдкреНрд░реЗрдо, рдХрд░рд┐рдпрд░ рдпрд╛ рдкреИрд╕рд╛: рдЖрдкрдХреЗ рд╕рд╡рд╛рд▓ рдХреЗ рд▓рд┐рдП рддреАрди рдХрд╛рд░реНрдб рдЗрдВрддрдЬрд╝рд╛рд░ рдХрд░ рд░рд╣реЗ рд╣реИрдВред рдЕрднреА рдЪреБрдиреЗрдВред'],
-      rashi: ['ЁЯФо {sign}: рдЖрдЬ рдХрд╛ рд░рд╛рд╢рд┐рдлрд▓ рддреИрдпрд╛рд░ рд╣реИ', 'рдЖрдЬ рдЖрдкрдХрд╛ рднрд╛рдЧреНрдп, рд░рдВрдЧ рдФрд░ рд╢реБрдн рд╕рдордпред рджреЗрдЦреЗрдВ рдЖрдЬ рдХрд╛ рджрд┐рди рдХреИрд╕рд╛ рд╣реИред'],
-      rashiAny: ['ЁЯФо рдЖрдЬ рдХрд╛ рд░рд╛рд╢рд┐рдлрд▓ рддреИрдпрд╛рд░ рд╣реИ', 'рдЕрдкрдиреА рд░рд╛рд╢рд┐ рдЪреБрдиреЗрдВ рдФрд░ рджреЗрдЦреЗрдВ рдЖрдЬ рдЖрдкрдХреЗ рд▓рд┐рдП рдХреНрдпрд╛ рд╣реИред'],
-      kundli: ['ЁЯУЬ рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рддреИрдпрд╛рд░ рд╣реИ', 'рдЖрдкрдХрд╛ рдЪрд╛рд░реНрдЯ, рджрд╢рд╛ рдФрд░ рджреЛрд╖ рдЗрдВрддрдЬрд╝рд╛рд░ рдХрд░ рд░рд╣реЗ рд╣реИрдВред рджреЗрдЦреЗрдВ рдпрд╣ рд╕рдордп рдЖрдкрдХреЗ рд▓рд┐рдП рдХреНрдпрд╛ рдХрд╣рддрд╛ рд╣реИред'],
-      kundliNew: ['ЁЯУЬ рдЖрдкрдХреА рдХреБрдВрдбрд▓реА рдмрд╕ 30 рд╕реЗрдХрдВрдб рджреВрд░', 'рдЬрдиреНрдо рд╕рдордп рдбрд╛рд▓реЗрдВ рдФрд░ рдЕрдкрдирд╛ рд▓рдЧреНрди, рд░рд╛рд╢рд┐, рдирдХреНрд╖рддреНрд░ рдФрд░ рджрд╢рд╛ рджреЗрдЦреЗрдВред'],
-      moon: ['ЁЯМЩ рдЖрдкрдХреА рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рдЖрдкрдХреЗ рдмрд╛рд░реЗ рдореЗрдВ рдХреНрдпрд╛ рдХрд╣рддреА рд╣реИ?', 'рдЖрдкрдХреА рднрд╛рд╡рдирд╛рдПрдБ, рдкреНрд░реЗрдо рдФрд░ рд╕реНрд╡рднрд╛рд╡ рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐ рдореЗрдВ рдЫрд┐рдкреЗ рд╣реИрдВред рдкрдврд╝реЗрдВред'],
-      numbers: ['ЁЯФв рдЖрдкрдХреЗ рд╢реБрдн рдЕрдВрдХ рддреИрдпрд╛рд░ рд╣реИрдВ', 'рдЖрдкрдХрд╛ рдореВрд▓рд╛рдВрдХ, рднрд╛рдЧреНрдпрд╛рдВрдХ, рд╢реБрдн рджрд┐рди рдФрд░ рд░рдВрдЧ: рдЖрдкрдХреА рдЬрдиреНрдо рддрд┐рдерд┐ рд╕реЗред'],
-      chat: ['ЁЯТм рдЬреНрдпреЛрддрд┐рд░реНрдордп рд╕реЗ рдХреБрдЫ рднреА рдкреВрдЫреЗрдВ', 'рдХрд░рд┐рдпрд░, рд╢рд╛рджреА рдпрд╛ рдкреИрд╕рд╛: рдЕрдкрдиреА рдХреБрдВрдбрд▓реА рд╕реЗ рдЬрд╡рд╛рдм рдкрд╛рдПрдБред'],
-      match: ['ЁЯТЮ рдХреНрдпрд╛ рдЖрдкрдХреА рдЬреЛрдбрд╝реА рд╕рд┐рддрд╛рд░реЛрдВ рдореЗрдВ рд▓рд┐рдЦреА рд╣реИ?', 'рдПрдХ рдорд┐рдирдЯ рдореЗрдВ 36 рдореЗрдВ рд╕реЗ рдЧреБрдг рдорд┐рд▓рд╛рди рджреЗрдЦреЗрдВред'] } },
-  };
-  const teaserCopy = () => copyFor(TEASER_COPY, 'teaser');
-  // The server's setting, remembered so the first scheduling after a start already has it.
-  function loadTeaserConfig() { try { const value = JSON.parse(window.localStorage.getItem(TEASE_KEY)); return value && value.every_hours ? value : null; } catch (_error) { return null; } }
-  let teaserConfig = loadTeaserConfig();
-  function setTeaserConfig(value) {
-    const next = value && Number.isInteger(value.every_hours) && value.every_hours > 0 ? { every_hours: value.every_hours, from: value.from, to: value.to } : null;
-    if (JSON.stringify(next) === JSON.stringify(teaserConfig)) return;
-    teaserConfig = next;
-    try { window.localStorage.setItem(TEASE_KEY, JSON.stringify(next)); } catch (_error) { /* optional */ }
-    void scheduleNotifications();
-  }
-  // Which reminders fit this user: true ones only ("ready" only when it really is).
-  function teaserChoices() {
-    const items = teaserCopy().items, moon = ownMoon(), choices = [];
-    const sign = moon ? signName(moon.sign) : '';
-    choices.push(moon ? { key: 'rashi', page: 'rashi', sign, text: items.rashi.map(line => fill(line, { sign })) } : { key: 'rashiAny', page: 'rashi', text: items.rashiAny });
-    choices.push({ key: 'palm', page: 'palm', text: items.palm });
-    choices.push(state.chart ? { key: 'kundli', page: 'kundli', text: items.kundli } : { key: 'kundliNew', page: 'kundli', text: items.kundliNew });
-    choices.push({ key: 'tarot', page: 'tarot', text: items.tarot });
-    if (numberDob()) choices.push({ key: 'numbers', page: 'numbers', text: items.numbers });
-    choices.push({ key: 'moon', page: 'moon', text: items.moon });
-    choices.push({ key: 'chat', page: 'chat', text: items.chat });
-    choices.push({ key: 'match', page: 'relationship', text: items.match });
-    return choices;
-  }
-  // The day's AI-written lines for a feature (fresh wording every day), plus the built-in line. "kundliNew" and
-  // "rashiAny" have no AI lines: the AI's Jathakam/Rashiphal lines assume a chart / a known sign.
-  function teaserOptions(choice, iso) {
-    const ai = aiBatches[iso] && aiBatches[iso].teasers && aiBatches[iso].teasers[choice.key];
-    const fresh = Array.isArray(ai) ? ai.filter(item => item && typeof item.t === 'string' && typeof item.b === 'string')
-      .map(item => [fill(item.t, { sign: choice.sign || '' }), fill(item.b, { sign: choice.sign || '' })]) : [];
-    return [...fresh, choice.text];
-  }
-  function teaserNotifications(now) {
-    const config = teaserConfig;
-    if (!notify.teasers || !config) return [];
-    const choices = teaserChoices(), list = [], used = {};
-    let turn = now.getDate() % choices.length;   // a different first reminder each day
-    for (let offset = 0; offset < TEASE_DAYS && list.length < TEASE_MAX; offset += 1) {
-      for (let hour = config.from; hour <= config.to && list.length < TEASE_MAX; hour += config.every_hours) {
-        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, 0, 0);
-        if (at <= now) continue;   // every hour, even when another alert is due around then
-        const choice = choices[turn % choices.length]; turn += 1;
-        const options = teaserOptions(choice, localIso(at));
-        const [title, body] = options[(used[choice.key] = (used[choice.key] || 0) + 1) % options.length];
-        const text = body.replace(/[тБж-тБй]/g, '');
-        list.push({ id: TEASE_FIRST_ID + list.length, title: title.replace(/[тБж-тБй]/g, ''), body: text, largeBody: text,
-          schedule: { at, allowWhileIdle: true }, extra: { page: choice.page } });
-      }
-    }
-    return list;
-  }
-  /* ---- The pinned "Shortcuts" notification (Android app): four buttons that open Palm, Rashiphal, Tarot and Match ---- */
-  const shortcutsPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Shortcuts) || null;
-  async function syncShortcuts() {
-    const plugin = shortcutsPlugin();
-    if (!plugin) return;
-    try {
-      if (!notify.on || notify.shortcuts === false || !state.onboarded) { await plugin.hide(); return; }
-      const copy = toolText().shortcuts || TOOLS_COPY.en.shortcuts;
-      await plugin.show({ title: copy.title, text: copy.text, labels: copy.labels, pages: ['palm', 'rashi', 'tarot', 'match'], channelName: copy.channel });
-    } catch (_error) { /* optional */ }
-  }
-  function openShortcut(page) {
-    if (!state.onboarded) return;
-    if (page === 'palm') openPalm();
-    else if (page === 'tarot') openTarot();
-    else if (page === 'match') { state.loveMode = 'match'; renderRelationship(); showPage('relationship'); }
-    else if (page === 'rashi') showPage('rashi');
-    else showPage('home');
-  }
-  try {
-    const plugin = shortcutsPlugin();
-    // A tap that opened the app arrives right after start-up: wait a moment so Home has settled first.
-    if (plugin && plugin.addListener) plugin.addListener('shortcut', event => { setTimeout(() => openShortcut(event && event.page), 300); });
-  } catch (_error) { /* optional */ }
-  function refreshNotifySettings() {
-    try { const panel = $('theme-panel'); if (panel && !panel.hidden) renderLookPanel(); } catch (_error) { /* not open */ }
-  }
+H┬И██Ь▌█▄HH▌ЩU^
 
-  async function turnNotifications(on) {
-    const plugin = notifier(), copy = toolText().notify;
-    notify.asked = true; notifyNote = '';
-    if (on && plugin) {
-      let status = await plugin.checkPermissions().catch(() => ({ display: 'denied' }));
-      if (status.display !== 'granted') status = await plugin.requestPermissions().catch(() => ({ display: 'denied' }));
-      if (status.display !== 'granted') { notify.on = false; notifyNote = copy.denied; saveNotify(); renderNotify(); renderLookPanel(); return; }
-    }
-    notify.on = !!on; saveNotify(); renderNotify(); renderLookPanel();
-    await scheduleNotifications();
-  }
-  let notifyAsking = Promise.resolve();   // the first-start permission prompt, so the loading screen can wait for it
-  // On the first start in the Android app, ask the phone's own "Allow notifications?" straight away (once, no extra card).
-  function renderNotify() {
-    const box = $('notify-card');
-    box.replaceChildren(); box.hidden = true;
-    if (notifier() && !notify.asked) notifyAsking = turnNotifications(true);
-  }
-  function notifySettings() {
-    if (!notifier()) return null;
-    const copy = toolText().notify, wrap = el('div', 'notify-settings');
-    const row = el('div', 'notify-row');
-    const status = el('span', 'notify-status', notify.on ? fill(copy.enabled, { time: notify.time }) : copy.disabled);
-    const toggle = el('button', notify.on ? 'notify-later' : 'notify-on', notify.on ? copy.off : copy.on); toggle.type = 'button';
-    toggle.addEventListener('click', () => { void turnNotifications(!notify.on); });
-    row.append(status, toggle);
-    const time = el('input'); time.type = 'time'; time.value = notify.time; time.setAttribute('aria-label', copy.time);
-    time.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(time.value)) { notify.time = time.value; saveNotify(); renderLookPanel(); void scheduleNotifications(); } });
-    const timeRow = el('label', 'notify-time'); timeRow.append(el('span', null, copy.time), time);
-    const evening = el('label', 'notify-time');
-    const eveningBox = el('input'); eveningBox.type = 'checkbox'; eveningBox.checked = notify.evening; eveningBox.style.width = 'auto';
-    eveningBox.addEventListener('change', () => { notify.evening = eveningBox.checked; saveNotify(); void scheduleNotifications(); });
-    const eveningTime = el('input'); eveningTime.type = 'time'; eveningTime.value = notify.eveningTime; eveningTime.setAttribute('aria-label', copy.eveningTime);
-    eveningTime.addEventListener('change', () => { if (/^\d{2}:\d{2}$/.test(eveningTime.value)) { notify.eveningTime = eveningTime.value; saveNotify(); void scheduleNotifications(); } });
-    const eveningLabel = el('span'); eveningLabel.append(eveningBox, document.createTextNode(` ${copy.evening}`));
-    evening.append(eveningLabel, eveningTime);
-    wrap.append(el('span', 'label', `ЁЯФФ ${copy.title}`), row, timeRow);
-    const muhurta = el('label', 'notify-time');
-    const muhurtaBox = el('input'); muhurtaBox.type = 'checkbox'; muhurtaBox.checked = notify.muhurta; muhurtaBox.style.width = 'auto';
-    muhurtaBox.addEventListener('change', () => { notify.muhurta = muhurtaBox.checked; saveNotify(); void scheduleNotifications(); });
-    const muhurtaLabel = el('span'); muhurtaLabel.append(muhurtaBox, document.createTextNode(` ${copy.muhurta}`));
-    muhurta.appendChild(muhurtaLabel);
-    const shortcuts = el('label', 'notify-time');
-    if (shortcutsPlugin()) {
-      const shortcutsBox = el('input'); shortcutsBox.type = 'checkbox'; shortcutsBox.checked = notify.shortcuts !== false; shortcutsBox.style.width = 'auto';
-      shortcutsBox.addEventListener('change', () => { notify.shortcuts = shortcutsBox.checked; saveNotify(); void syncShortcuts(); });
-      const shortcutsLabel = el('span'); shortcutsLabel.append(shortcutsBox, document.createTextNode(` ${(toolText().shortcuts || TOOLS_COPY.en.shortcuts).toggle}`));
-      shortcuts.appendChild(shortcutsLabel);
-    }
-    const teasers = el('label', 'notify-time');
-    const teasersBox = el('input'); teasersBox.type = 'checkbox'; teasersBox.checked = notify.teasers !== false; teasersBox.style.width = 'auto';
-    teasersBox.addEventListener('change', () => { notify.teasers = teasersBox.checked; saveNotify(); void scheduleNotifications(); });
-    const teasersLabel = el('span'); teasersLabel.append(teasersBox, document.createTextNode(` ${teaserCopy().toggle}`));
-    teasers.appendChild(teasersLabel);
-    if (notify.on) wrap.append(evening, muhurta);
-    if (notify.on && teaserConfig) wrap.append(teasers);
-    if (notify.on && shortcutsPlugin()) wrap.append(shortcuts);
-    if (notify.on && notifyInfo && notifyInfo.blocked) wrap.appendChild(el('p', 'notify-next', copy.denied));   // only a problem is shown
-    if (notifyNote) wrap.appendChild(el('p', 'muted-note', notifyNote));
-    return wrap;
-  }
-  /* ---- Unique daily notifications: built from each day's sky for this user, with a no-repeat memory ---- */
-  const nudgeTexts = window.JyotishaNudges;
-  const NUDGE_FIRST_ID = 7120, MUHURTA_GOOD_ID = 7130, MUHURTA_BAD_ID = 7140;
-  const NUDGE_HISTORY_KEY = 'jyotisha.nudges.v1', NO_REPEAT_DAYS = 21;
-  let aiBatches = {};   // date -> AI-written copy for the current language
-  const dayNumberOf = date => Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
-  const isoMinusDays = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); };
-  // Muhurta alerts: when Abhijit (auspicious, not on Wednesdays) and Rahu Kalam (inauspicious) start, 5 AM to 9 PM.
-  // Three wordings each, rotated by date, so the text changes from day to day.
-  function muhurtaAlerts(day, iso, offset, now) {
-    if (!notify.muhurta || !day.timings || !nudgeTexts) return [];
-    const texts = nudgeTexts.pick(nudgeTexts.MUHURTA, state.lang), variant = dayNumberOf(new Date(`${iso}T12:00:00`)), result = [];
-    const add = (id, span, options) => {
-      if (!Array.isArray(span) || typeof span[0] !== 'string') return;
-      const at = new Date(`${span[0]}:00`);
-      const hour = at.getHours() + at.getMinutes() / 60;
-      if (Number.isNaN(at.getTime()) || at <= now || hour < ALERT_FROM || hour > ALERT_TO) return;
-      const end = clock(span[1], iso).replace(/[тБж-тБй]/g, '');
-      const ai = aiBatches[iso] && aiBatches[iso][id === MUHURTA_GOOD_ID ? 'good' : 'bad'];
-      const choices = Array.isArray(ai) && ai.length ? ai.map(item => [item.t, item.b]) : options;
-      const [title, body] = choices[variant % choices.length];
-      result.push({ id: id + offset, title: fill(title, { end }), body: fill(body, { end }), largeBody: fill(body, { end }), schedule: { at, allowWhileIdle: true }, extra: { page: 'home' } });
-    };
-    if (new Date(`${iso}T12:00:00Z`).getUTCDay() !== 3) add(MUHURTA_GOOD_ID, day.timings.abhijit, texts.good);
-    add(MUHURTA_BAD_ID, day.timings.rahu_kalam, texts.bad);
-    return result;
-  }
-  // More timing alerts: Vijaya muhurta starts, Rahu Kalam is over, Yamagandam and Varjyam start, and the user's own rashi:
-  // when Chandrabalam turns good for them, and when Ashtama Chandra starts. Each invites them to open the app.
-  const MORE_FIRST_ID = 7200, MORE_MAX = 100, ALERT_FROM = 5, ALERT_TO = 21;   // alerts only from 5 AM to 9 PM
-  const MORE_COPY = {
-    en: {
-      vijaya: ['ЁЯПЖ Vijaya muhurta has started', 'The тАЬvictoryтАЭ time is on till {end}. Good for starting something you want to win. See todayтАЩs full timings in the app.'],
-      rahuEnd: ['тЬЕ Rahu Kalam is over', 'You can go ahead with important work now. See todayтАЩs next good time in the app.'],
-      yama: ['тЪая╕П Yamagandam has started', 'Avoid starting new work till {end}. Open the app to see when the next good time is.'],
-      varjyam: ['тЫФ Varjyam has started', 'Not a good time for new beginnings till {end}. Check the best hours in the app.'],
-      rashiGood: ['тЬи {sign}: your good time starts now', 'Chandrabalam is strong for you till {end}. A good stretch for important work. See your best hours in the app.'],
-      rashiCare: ['ЁЯМШ {sign}: go slow till {end}', 'Ashtama Chandra is running for your rashi. Keep big decisions for later. See your day in the app.'] },
-    te: {
-      vijaya: ['ЁЯПЖ р░╡р░┐р░Ьр░п р░ор▒Бр░╣р▒Вр░░р▒Нр░др░В р░ор▒Кр░жр░▓р▒Ир░Вр░жр░┐', '{end} р░╡р░░р░Хр▒Б р░╡р░┐р░Ьр░п р░╕р░ор░пр░В. р░Чр▒Жр░▓р░╡р░╛р░▓р░ир▒Бр░Хр▒Бр░ир▒З р░кр░ир░┐ р░ор▒Кр░жр░▓р▒Бр░кр▒Жр░Яр▒Нр░Яр░бр░╛р░ир░┐р░Хр░┐ р░ор░Вр░Ър░┐р░жр░┐. р░И р░░р▒Лр░Ьр▒Б р░кр▒Вр░░р▒Нр░др░┐ р░╕р░ор░пр░╛р░▓р▒Б р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      rahuEnd: ['тЬЕ р░░р░╛р░╣р▒Бр░Хр░╛р░▓р░В р░ор▒Бр░Чр░┐р░╕р░┐р░Вр░жр░┐', 'р░Зр░кр▒Нр░кр▒Бр░бр▒Б р░ор▒Бр░Цр▒Нр░пр░ор▒Ир░и р░кр░ир▒Бр░▓р▒Б р░ор▒Кр░жр░▓р▒Бр░кр▒Жр░Яр▒Нр░Яр░╡р░Ър▒Нр░Ър▒Б. р░др░жр▒Бр░кр░░р░┐ р░ор░Вр░Ър░┐ р░╕р░ор░пр░В р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      yama: ['тЪая╕П р░пр░ор░Чр░Вр░бр░В р░ор▒Кр░жр░▓р▒Ир░Вр░жр░┐', '{end} р░╡р░░р░Хр▒Б р░Хр▒Кр░др▒Нр░д р░кр░ир▒Бр░▓р▒Б р░ор▒Кр░жр░▓р▒Бр░кр▒Жр░Яр▒Нр░Яр░Хр░Вр░бр░┐. р░др░жр▒Бр░кр░░р░┐ р░ор░Вр░Ър░┐ р░╕р░ор░пр░В р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      varjyam: ['тЫФ р░╡р░░р▒Нр░Ьр▒Нр░пр░В р░ор▒Кр░жр░▓р▒Ир░Вр░жр░┐', '{end} р░╡р░░р░Хр▒Б р░╢р▒Бр░нр░Хр░╛р░░р▒Нр░пр░╛р░▓р░Хр▒Б р░ор░Вр░Ър░┐ р░╕р░ор░пр░В р░Хр░╛р░жр▒Б. р░ор░Вр░Ър░┐ р░Чр░Вр░Яр░▓р▒Б р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      rashiGood: ['тЬи {sign}: р░ор▒А р░ор░Вр░Ър░┐ р░╕р░ор░пр░В р░ор▒Кр░жр░▓р▒Ир░Вр░жр░┐', '{end} р░╡р░░р░Хр▒Б р░ор▒Ар░Хр▒Б р░Ър░Вр░жр▒Нр░░р░мр░▓р░В р░мр░╛р░Чр▒Бр░Вр░жр░┐. р░ор▒Бр░Цр▒Нр░пр░ор▒Ир░и р░кр░ир▒Бр░▓р░Хр▒Б р░Ер░ир▒Бр░Хр▒Вр░▓р░В. р░ор░Вр░Ър░┐ р░Чр░Вр░Яр░▓р▒Б р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'],
-      rashiCare: ['ЁЯМШ {sign}: {end} р░╡р░░р░Хр▒Б р░ир░┐р░жр░╛р░ир░Вр░Чр░╛', 'р░ор▒А р░░р░╛р░╢р░┐р░Хр░┐ р░Ер░╖р▒Нр░Яр░о р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б р░ир░бр▒Бр░╕р▒Нр░др▒Бр░ир▒Нр░ир░╛р░бр▒Б. р░кр▒Жр░жр▒Нр░ж р░ир░┐р░░р▒Нр░гр░пр░╛р░▓р▒Б р░др░░р▒Нр░╡р░╛р░др░Хр▒Б р░Йр░Вр░Ър░Вр░бр░┐. р░ор▒А р░░р▒Лр░Ьр▒Б р░пр░╛р░кр▒НтАМр░▓р▒Л р░Ър▒Вр░бр░Вр░бр░┐.'] },
-    hi: {
-      vijaya: ['ЁЯПЖ рд╡рд┐рдЬрдп рдореБрд╣реВрд░реНрдд рд╢реБрд░реВ рд╣реЛ рдЧрдпрд╛', '{end} рддрдХ рд╡рд┐рдЬрдп рдХрд╛ рд╕рдордп рд╣реИред рдЬреАрддрдиреЗ рд╡рд╛рд▓реЗ рдХрд╛рдо рд╢реБрд░реВ рдХрд░рдиреЗ рдХреЗ рд▓рд┐рдП рдЕрдЪреНрдЫрд╛ред рдЖрдЬ рдХрд╛ рдкреВрд░рд╛ рд╕рдордп рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'],
-      rahuEnd: ['тЬЕ рд░рд╛рд╣реБрдХрд╛рд▓ рдЦрддреНрдо рд╣реБрдЖ', 'рдЕрдм рдЬрд╝рд░реВрд░реА рдХрд╛рдо рдЖрдЧреЗ рдмрдврд╝рд╛ рд╕рдХрддреЗ рд╣реИрдВред рдЕрдЧрд▓рд╛ рд╢реБрдн рд╕рдордп рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'],
-      yama: ['тЪая╕П рдпрдордЧрдВрдб рд╢реБрд░реВ рд╣реЛ рдЧрдпрд╛', '{end} рддрдХ рдирдпрд╛ рдХрд╛рдо рд╢реБрд░реВ рди рдХрд░реЗрдВред рдЕрдЧрд▓рд╛ рд╢реБрдн рд╕рдордп рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'],
-      varjyam: ['тЫФ рд╡рд░реНрдЬреНрдп рд╢реБрд░реВ рд╣реЛ рдЧрдпрд╛', '{end} рддрдХ рд╢реБрдн рд╢реБрд░реБрдЖрдд рдХреЗ рд▓рд┐рдП рдЕрдЪреНрдЫрд╛ рд╕рдордп рдирд╣реАрдВред рд╢реБрдн рдШрдбрд╝рд┐рдпрд╛рдБ рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'],
-      rashiGood: ['тЬи {sign}: рдЖрдкрдХрд╛ рдЕрдЪреНрдЫрд╛ рд╕рдордп рд╢реБрд░реВ', '{end} рддрдХ рдЖрдкрдХрд╛ рдЪрдВрджреНрд░рдмрд▓ рдордЬрд╝рдмреВрдд рд╣реИред рдЬрд╝рд░реВрд░реА рдХрд╛рдореЛрдВ рдХреЗ рд▓рд┐рдП рдЕрдиреБрдХреВрд▓ред рд╢реБрдн рдШрдбрд╝рд┐рдпрд╛рдБ рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'],
-      rashiCare: ['ЁЯМШ {sign}: {end} рддрдХ рдзреАрд░реЗ рдЪрд▓реЗрдВ', 'рдЖрдкрдХреА рд░рд╛рд╢рд┐ рдХреЗ рд▓рд┐рдП рдЕрд╖реНрдЯрдо рдЪрдВрджреНрд░ рдЪрд▓ рд░рд╣рд╛ рд╣реИред рдмрдбрд╝реЗ рдлрд╝реИрд╕рд▓реЗ рдмрд╛рдж рдореЗрдВ рд▓реЗрдВред рдЕрдкрдирд╛ рджрд┐рди рдРрдк рдореЗрдВ рджреЗрдЦреЗрдВред'] },
-  };
-  // seen: start times already used (a Moon-sign period shows up in two days' data), and the running count of ids.
-  function moreAlerts(day, iso, now, seen) {
-    if (!notify.muhurta || !day) return [];
-    const copy = copyFor(MORE_COPY, 'more'), result = [];
-    const clean = text => text.replace(/[тБж-тБй]/g, '');
-    // Only between ALERT_FROM and ALERT_TO o'clock. A rashi period that began in the night is told at ALERT_FROM.
-    const add = (key, startText, endText, page, values = {}, moveFromNight = false) => {
-      if (typeof startText !== 'string' || typeof endText !== 'string' || seen.ids >= MORE_MAX) return;
-      let at = new Date(`${startText}:00`);
-      const end = new Date(`${endText}:00`);
-      if (Number.isNaN(at.getTime()) || Number.isNaN(end.getTime())) return;
-      if (at.getHours() < ALERT_FROM) {
-        if (!moveFromNight) return;
-        at = new Date(at.getFullYear(), at.getMonth(), at.getDate(), ALERT_FROM, 0, 0);
-        if (at >= end) return;
-      }
-      if (at <= now || at.getHours() * 60 + at.getMinutes() > ALERT_TO * 60) return;
-      const mark = `${key}@${at.getTime()}`;
-      if (seen.keys.has(mark)) return;
-      seen.keys.add(mark);
-      const filled = { ...values, end: clean(clock(endText, iso)) };
-      const [title, body] = copy[key].map(line => clean(fill(fill(line, filled), filled)));
-      result.push({ id: MORE_FIRST_ID + seen.ids, title, body, largeBody: body, schedule: { at, allowWhileIdle: true }, extra: { page } });
-      seen.ids += 1;
-    };
-    const timings = day.timings || {};
-    if (Array.isArray(timings.vijaya_muhurta)) add('vijaya', timings.vijaya_muhurta[0], timings.vijaya_muhurta[1], 'panchang');
-    if (Array.isArray(timings.rahu_kalam)) add('rahuEnd', timings.rahu_kalam[1], timings.rahu_kalam[1], 'panchang');
-    if (Array.isArray(timings.yamaganda)) add('yama', timings.yamaganda[0], timings.yamaganda[1], 'panchang');
-    for (const item of Array.isArray(day.varjyam) ? day.varjyam : []) {
-      if (item && String(item.starts_at).startsWith(iso)) add('varjyam', item.starts_at, item.ends_at, 'panchang');
-    }
-    // The user's own rashi (from the chart, or the approximate Moon sign from the date of birth).
-    const mine = ownMoon();
-    if (mine && Array.isArray(day.moon_rashi)) {
-      const sign = signName(mine.sign);
-      day.moon_rashi.forEach((item, index) => {
-        const good = list => Array.isArray(list && list.good_chandrabalam_rashis) && list.good_chandrabalam_rashis.includes(mine.sign);
-        if (good(item) && !good(day.moon_rashi[index - 1])) add('rashiGood', item.starts_at, item.ends_at, 'rashi', { sign }, true);
-        if (item.ashtama_chandra_rashi === mine.sign) add('rashiCare', item.starts_at, item.ends_at, 'rashi', { sign }, true);
-      });
-    }
-    return result;
-  }
-  // Every message this user could get on a given evening, each with a key used by the no-repeat memory.
-  function nudgeCandidates(day, iso, atText) {
-    const lang = state.lang, details = state.details, chart = state.chart;
-    const dashaInfo = details && details.dasha;
-    const sub = dashaInfo && (dashaInfo.antardasha || []).find(item => item.current);
-    const dasha = dashaInfo && dashaInfo.current_mahadasha ? `${bodyName(dashaInfo.current_mahadasha)}${sub ? ' тАУ ' + bodyName(sub.lord) : ''}` : '';
-    const sade = !!(details && details.doshas && details.doshas.saturn && details.doshas.saturn.sade_sati && details.doshas.saturn.sade_sati.active);
-    const make = (key, [t, b, ask], page) => ({ key, t, b, ask: ask || '', page: ask ? 'chat' : (page || 'home') });
-    const current = list => (Array.isArray(list) && list.find(item => item.starts_at <= atText && atText < item.ends_at)) || (Array.isArray(list) ? list[0] : null);
-    const special = [], sky = [];
-    const tithi = day && current(day.tithi), tithiKey = tithi && nudgeTexts.TITHI_KEYS[tithi.index];
-    if (tithiKey) special.push(make(`tithi-${tithiKey}`, nudgeTexts.pick(nudgeTexts.TITHIS, lang)[tithiKey]));
-    const moon = day && current(day.moon_rashi);
-    if (chart && moon) {
-      const house = (moon.index - chart.positions.Moon.rashi_index + 12) % 12 + 1;
-      sky.push(make(`house-${house}`, nudgeTexts.pick(nudgeTexts.HOUSES, lang)[house - 1]));
-    }
-    const weekday = new Date(`${iso}T12:00:00Z`).getUTCDay();
-    sky.push(make(`weekday-${weekday}`, nudgeTexts.pick(nudgeTexts.WEEKDAYS, lang)[weekday]));
-    const fits = item => !item.need || (item.need === 'nochart' && !chart) || (item.need === 'dasha' && dasha) || (item.need === 'sade' && sade);
-    const questions = nudgeTexts.pick(nudgeTexts.QUESTIONS, lang)
-      .map((item, index) => ({ item, index })).filter(({ item }) => fits(item))
-      .map(({ item, index }) => make(`q-${index}`, [fill(item.t, { dasha }), fill(item.b, { dasha }), item.ask ? fill(item.ask, { dasha }) : ''], item.page));
-    // Fresh AI-written lines for this date (keys are unique per date, so they never repeat).
-    const ai = aiBatches[iso], fresh = [];
-    if (ai) {
-      const filled = (item, values) => ({ t: fill(item.t, values), b: fill(item.b, values), ask: fill(item.ask, values) });
-      const usable = item => !/[{}]/.test(item.t + item.b + item.ask);
-      const signName = chart ? chartUI.signName(chart.positions.Moon.rashi_index, lang) : '';
-      if (dasha) (ai.dasha || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-d${i}`, ...filled(item, { dasha }) }));
-      if (signName) (ai.sign || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-s${i}`, ...filled(item, { sign: signName }) }));
-      (ai.questions || []).forEach((item, i) => fresh.push({ key: `ai-${iso}-q${i}`, ...filled(item, {}) }));
-      for (let i = fresh.length - 1; i >= 0; i -= 1) if (!usable(fresh[i]) || !fresh[i].ask) fresh.splice(i, 1);
-      fresh.forEach(item => { item.page = 'chat'; });
-    }
-    // Festive tithis first; then the order rotates by date between sky-based and life questions.
-    const shift = dayNumberOf(new Date(`${iso}T12:00:00`));
-    const rotated = questions.length ? questions.map((_, i) => questions[(i + shift * 7) % questions.length]) : [];
-    // Fresh AI lines come first (a different one each day: personal ones on alternate days), then the built-in library.
-    const freshOrdered = fresh.length ? fresh.map((_, i) => fresh[(i + shift) % fresh.length]) : [];
-    const library = shift % 2 ? [...sky, ...rotated] : [...rotated, ...sky];
-    return [...special, ...freshOrdered, ...library];
-  }
-  function loadNudgeHistory() {
-    try { const saved = JSON.parse(window.localStorage.getItem(NUDGE_HISTORY_KEY)); return saved && typeof saved === 'object' ? saved : {}; } catch (_error) { return {}; }
-  }
-  // One message per evening; the same message never comes back within NO_REPEAT_DAYS (falls back to the least recent).
-  function eveningNotifications(now, days) {
-    if (!notify.evening || !nudgeTexts) return [];
-    const history = loadNudgeHistory(), today = localIso(now), result = [];
-    for (const date of Object.keys(history)) if (date >= today || date < isoMinusDays(today, 45)) delete history[date];   // future days are planned again
-    const [hour, minute] = notify.eveningTime.split(':').map(Number);
-    for (let offset = 0; offset < NOTIFY_DAYS; offset += 1) {
-      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hour, minute, 0);
-      if (at <= now) continue;
-      const iso = localIso(at), from = isoMinusDays(iso, NO_REPEAT_DAYS);
-      const lastUsed = {};
-      for (const [date, key] of Object.entries(history)) if (date < iso && (!lastUsed[key] || date > lastUsed[key])) lastUsed[key] = date;
-      const candidates = nudgeCandidates(days[iso], iso, `${iso}T${notify.eveningTime}`);
-      if (!candidates.length) continue;
-      const choice = candidates.find(item => !lastUsed[item.key] || lastUsed[item.key] < from)
-        || candidates.slice().sort((a, b) => (lastUsed[a.key] || '').localeCompare(lastUsed[b.key] || ''))[0];
-      history[iso] = choice.key;
-      result.push({ id: NUDGE_FIRST_ID + offset, title: choice.t, body: choice.b, largeBody: choice.b, schedule: { at, allowWhileIdle: true },
-        extra: { page: choice.page, ask: choice.ask } });
-    }
-    try { window.localStorage.setItem(NUDGE_HISTORY_KEY, JSON.stringify(history)); } catch (_error) { /* not remembered */ }
-    return result;
-  }
-  // Tapping a notification: open its screen, and for a question, ask Jyotirmaya AstroChat straight away.
-  // When a notification opens the app, its question waits until the saved Kundli is restored and the AI is known to be on,
-  // so the chat is not reset under it and the reply comes from Jyotirmaya AstroChat, not the offline answers.
-  const startup = { profile: false, readiness: false, pending: null };
-  let markReadiness = () => {};
-  const readinessSeen = new Promise(resolve => { markReadiness = resolve; });   // the server's settings (ads etc.) have arrived
-  function startupDone(part) {
-    if (part === 'readiness') markReadiness();
-    startup[part] = true;
-    if (startup.profile && startup.readiness && startup.pending) {
-      const question = startup.pending; startup.pending = null;
-      showPage('chat'); ask(question, question, true);
-    }
-  }
-  function openFromNotification(extra) {
-    const page = extra && typeof extra.page === 'string' && (Object.hasOwn(pages, extra.page) || extra.page === 'panchang') ? extra.page : 'home';
-    // Features with their own start screen are opened the way their Home card opens them.
-    const openers = { panchang: openToday, palm: openPalm, tarot: openTarot, moon: openMoonSign, numbers: openNumerology, kundli: openJathakam, relationship: () => openTool('relationship') };
-    if (openers[page]) openers[page](); else showPage(page);
-    const question = extra && typeof extra.ask === 'string' ? extra.ask.trim().slice(0, 300) : '';
-    if (!question) return;
-    showPage('chat');
-    if (startup.profile && startup.readiness) ask(question, question, true);
-    else startup.pending = question;
-  }
-  try { const plugin = notifier(); if (plugin) plugin.addListener('localNotificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.extra)); } catch (_error) { /* optional */ }
+N┬ИЫ▄И
+██Ь▌┌Y┘^WH┘И╓╔▄Щ[][█Ь┌\[Ш]Й╦	█Ш]Й╫K╔▄Щ[][█Ь┌\Y^YXЬЫ▌╔╦	┘^YXЬЫ▌╔╫K╔▄Щ[][█Ь┌\]]I╦	▌]I╫KИ╔▄Щ[][█Ь┌\Z[ЭЫ╔╦	┌[ЭЫ╔╫K╔▄Щ[][█Ь┌\\ЩXY[Щ╔╦	█▄ЩXY[Щ╔╫K╔▄Щ[][█Ь┌\X██\\ЩK]]I╦	╪██\\ЩI╫KИ╔▄Щ[][█Ь┌\\▌XЫZ]	╦	▄▌XЫZ]	╫K╔▄Щ[][█Ь┌\[Ы▌I╦	█Ы▌I╫K╔▄\ЭЩ\Л\Ы█K[XЩ[	╦	┌P[I╫WJH	
+Y
+KЭ^██Э[ЭH█▄V┌┘^WN┬И██Ь▌[┘HH▌]KЫ▌ЩS[┘N┬И	
+	█▌ЩK[▄[█Ь╔╩KЬЩ\X┘P┌[Щ[КИ▄[█Р╪\Щ
+	№'фзЙ╦█▄KЫ▄X]┌█▄KЫ▄X]┌▌XЛ
 
-  /* ---- Messages sent from the admin panel (Firebase): subscribe to "all" and to this phone's language ---- */
-  const PUSH_KEY = 'jyotisha.push.v1';
-  const messenger = () => { const cap = window.Capacitor; return cap && cap.Plugins && cap.Plugins.FirebaseMessaging ? cap.Plugins.FirebaseMessaging : null; };
-  async function syncPushTopics() {
-    const plugin = messenger();
-    if (!plugin) return;
-    let saved = null;
-    try { saved = window.localStorage.getItem(PUSH_KEY); } catch (_error) { /* storage unavailable */ }
-    const wanted = `lang-${state.lang}`;
-    if (saved === wanted) return;
-    try {
-      await plugin.subscribeToTopic({ topic: 'all' });
-      if (saved && saved !== wanted) await plugin.unsubscribeFromTopic({ topic: saved }).catch(() => {});
-      await plugin.subscribeToTopic({ topic: wanted });
-      try { window.localStorage.setItem(PUSH_KEY, wanted); } catch (_error) { /* subscribe again next time */ }
-    } catch (_error) { /* no network or no Firebase config: try again next start */ }
-  }
-  try {
-    const plugin = messenger();
-    if (plugin) {
-      // Tapping a message opens the screen chosen in the admin panel.
-      plugin.addListener('notificationActionPerformed', event => openFromNotification(event && event.notification && event.notification.data));
-      // While the app is open Android does not show the message itself, so show it as a local notification.
-      plugin.addListener('notificationReceived', event => {
-        const message = event && event.notification, local = notifier();
-        if (message && local) void local.schedule({ notifications: [{ id: 7900 + Math.floor(Math.random() * 90), title: message.title || '', body: message.body || '' }] }).catch(() => {});
-      });
-    }
-  } catch (_error) { /* optional */ }
+HOИ╚▌]KЫ▌ЩS[┘HH	█X]┌	╬╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* ------------------------------------------------------------- language */
-  const choice = $('language-choice');
-  const switcher = $('language-switch');
-  for (const item of calendarUI.LANGUAGES) {
-    const full = el('option'); full.value = item.code; full.textContent = item.code === 'en' ? item.native : `${item.native} ┬╖ ${item.english}`; choice.appendChild(full);
-    const short = el('option'); short.value = item.code; short.textContent = item.native; switcher.appendChild(short);
-  }
-  // First start: the languages as a list of cards (native name, English name, a тЬУ) instead of a dropdown.
-  const firstLetter = text => {
-    try { if (typeof Intl.Segmenter === 'function') { const first = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)[Symbol.iterator]().next(); if (!first.done) return first.value.segment; } } catch (_error) { /* fall back */ }
-    return Array.from(text)[0] || '';
-  };
-  function renderLanguageList() {
-    const box = $('language-list');
-    if (!box) return;
-    box.replaceChildren(...calendarUI.LANGUAGES.map(item => {
-      const on = item.code === state.lang;
-      const row = el('button', `lang-item${on ? ' on' : ''}`); row.type = 'button';
-      row.setAttribute('role', 'radio'); row.setAttribute('aria-checked', on ? 'true' : 'false');
-      const text = el('span', 'lang-text');
-      text.append(el('b', null, item.native), el('small', null, item.english.toLowerCase() === item.native.toLowerCase() ? '' : item.english));
-      row.append(el('span', 'lang-badge', firstLetter(item.native)), text, el('span', 'lang-check', on ? 'тЬУ' : ''));
-      row.addEventListener('click', () => { applyLanguage(item.code); });
-      return row;
-    }));
-  }
-  function applyLanguage(value) {
-    state.lang = calendarUI.language(value);
-    document.documentElement.lang = state.lang;
-    document.documentElement.dir = calendarUI.direction(state.lang);
-    choice.value = state.lang; switcher.value = state.lang;
-    document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); });
-    document.querySelectorAll('[data-i18n-aria]').forEach(node => node.setAttribute('aria-label', t(node.dataset.i18nAria)));
-    document.querySelectorAll('.place-options').forEach(node => node.setAttribute('aria-label', t('matchingCitiesAria')));
-    $('chat-question').placeholder = t('questionPlaceholder');
-    $('dp-note').textContent = t('dpNote');
-    try { document.documentElement.style.setProperty('--free-label', JSON.stringify(t('freeBadge'))); } catch (_error) { /* optional */ }
-    renderHome();
-    renderTools();
-    renderTodayStrip();
-    renderLanguageList();
-    renderWheels();
-    renderLookPanel();
-    showKundliView(state.kundliView);
-    renderRelationship();
-    if (pages.moon && !pages.moon.hidden) renderMoonSign();
-    if (pages.tarot && !pages.tarot.hidden) renderTarot();
-    if (pages.palm && !pages.palm.hidden) renderPalm();
-    if (pages.numbers && !pages.numbers.hidden) renderNumerology();
-    if (pages.lifeguide && !pages.lifeguide.hidden) { renderLifeGuide(); void loadLifeGuideText(); }
-    if (pages.signmatch && !pages.signmatch.hidden) renderSignMatch();
-    if (state.chart) { renderChart(); resetChat(t('chartReady')); } else startIntake();
-    saveSettings();
-    void scheduleNotifications();   // notification text follows the language
-    void syncPushTopics();
-  }
-  switcher.addEventListener('change', event => applyLanguage(event.target.value));
-  choice.addEventListener('change', event => applyLanguage(event.target.value));
+N╚K[┘HOOH	█X]┌	╩KИ▄[█Р╪\Щ
+	№'фе╔╦█▄KЫ▄ЩXY[Щ╦█▄KЫ▄ЩXY[Щ╘▌XЛ
 
-  /* ----------------------------------------------------------- onboarding */
-  let onboardingStep = 'welcome';
-  function showOnboardingStep(step) {
-    onboardingStep = step;
-    void onboardingBanner(step === 'language' || step === 'profile');
-    document.body.classList.add('onboarding-active');
-    $('welcome-screen').hidden = false;
-    for (const name of ['welcome', 'language', 'location', 'profile']) $(`step-${name}`).hidden = name !== step;
-    if (step === 'profile') renderWheels();   // drawn while visible, so each wheel can scroll to its value
-  }
-  $('welcome-next').addEventListener('click', () => showOnboardingStep('language'));
-  // First start: a short loading screen ("Aligning your starsтАж"); the phone's notification prompt appears meanwhile
-  // (renderNotify asks once at start), then a full-screen ad if the server switched it on, then the language step.
-  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-  // Waits for a promise, but at most `ms`; the timer is cleared as soon as the promise settles. Resolves to the
-  // promise's value, or to `fallback` on timeout.
-  const within = (promise, ms, fallback) => new Promise(resolve => {
-    const timer = setTimeout(() => resolve(fallback), ms);
-    Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); }, () => { clearTimeout(timer); resolve(fallback); });
-  });
-  async function runSplash() {
-    const fill = $('splash-fill'), pct = $('splash-pct');
-    for (let n = 0; n <= 100; n += 2) {          // about 3.5 seconds
-      if (onboardingStep !== 'welcome' || state.onboarded) return;
-      if (fill.style) fill.style.width = `${n}%`;
-      pct.textContent = `${n}%`;
-      await wait(70);
-    }
-    await notifyAsking;          // let the notification prompt finish first
-    await onboardingAd();
-    if (onboardingStep === 'welcome' && !state.onboarded) showOnboardingStep('language');
-  }
-  // Each later opening of the Android app: the loading screen, then one full-screen ad, then Home. Only when switched
-  // on in the admin panel; the setting is remembered from the last start so the screen never flashes when it is off.
-  const LAUNCH_AD_KEY = 'jyotisha.launch-ad.v1';
-  const launchAdWanted = () => { try { return window.localStorage.getItem(LAUNCH_AD_KEY) === '1'; } catch (_error) { return false; } };
-  function rememberLaunchAd(config) {
-    try { window.localStorage.setItem(LAUNCH_AD_KEY, config && adUnitOk(config.launch_interstitial_id) ? '1' : '0'); } catch (_error) { /* optional */ }
-  }
-  const nativeApp = () => !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-  // Each later opening of the Android app: the loading screen stays until today's Panchang is ready (at most ~6 s), so
-  // Home never opens with empty details; then one full-screen ad if switched on in the admin panel; then Home.
-  // With today's Panchang already saved on the phone (and no ad) Home opens straight away.
-  async function launchSplash() {
-    const ad = !!admobPlugin() && launchAdWanted();
-    if (!nativeApp() || (!ad && state.day)) return;
-    appAds.launching = true;
-    showOnboardingStep('welcome');
-    $('welcome-next').hidden = true;
-    const fill = $('splash-fill'), pct = $('splash-pct'), started = Date.now();
-    let ready = false;
-    void within(dayReady, 6000).then(() => { ready = true; });
-    for (let n = 0; ;) {
-      if (fill.style) fill.style.width = `${n}%`;
-      pct.textContent = `${n}%`;
-      if (n >= 100) break;
-      await wait(50);
-      if (!ready && Date.now() - started > 6500) ready = true;
-      n = ready ? Math.min(100, n + 10) : Math.min(90, n + 2);   // up to 90% while loading, then finishes quickly
-    }
-    try { if (ad) await onboardingAd('launch_interstitial_id'); } finally {
-      appAds.launching = false; onboardingStep = '';
-      $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
-      if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }
-    }
-  }
-  // Android app: if the Play Store has a newer versionCode than what is installed, show a small "update available"
-  // popup once the app is settled on Home. "Later" is remembered for this version so it does not nag on every open;
-  // a later update (a higher availableVersionCode) is asked about again.
-  const UPDATE_DISMISS_KEY = 'jyotisha.update-dismissed.v1';
-  function appUpdatePlugin() { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppUpdate) || null; }
-  async function maybeOfferUpdate() {
-    const plugin = appUpdatePlugin();
-    if (!nativeApp() || !plugin) return;
-    let info;
-    try { info = await plugin.getAppUpdateInfo(); } catch (_error) { return; }
-    if (!info || info.updateAvailability !== 2 || !info.availableVersionCode) return;
-    let dismissed = '';
-    try { dismissed = window.localStorage.getItem(UPDATE_DISMISS_KEY) || ''; } catch (_error) { /* optional */ }
-    if (dismissed === String(info.availableVersionCode)) return;
-    const copy = { title: t('updateAvailableTitle'), body: t('updateAvailableBody'), now: t('updateNow'), later: t('updateLater') };
-    const overlay = el('div', 'update-popup');
-    const card = el('div', 'update-popup-card');
-    const later = el('button', 'link-btn'); later.type = 'button'; later.textContent = copy.later;
-    const now = el('button', 'btn'); now.type = 'button'; now.textContent = copy.now;
-    const actions = el('div', 'update-popup-actions'); actions.append(later, now);
-    card.append(el('strong', 'update-popup-title', copy.title), el('p', 'update-popup-body', copy.body), actions);
-    overlay.appendChild(card);
-    const dismiss = () => { try { overlay.remove(); } catch (_error) { /* gone */ } };
-    later.addEventListener('click', () => {
-      try { window.localStorage.setItem(UPDATE_DISMISS_KEY, String(info.availableVersionCode)); } catch (_error) { /* optional */ }
-      dismiss();
-    });
-    now.addEventListener('click', () => { void plugin.openAppStore().catch(() => {}); dismiss(); });
-    document.body.appendChild(overlay);
-  }
-  $('language-next').addEventListener('click', () => {
-    applyLanguage(choice.value);
-    if (state.onboarded) { $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active'); }
-    else showOnboardingStep('location');
-  });
-  /* ------------------------------------------------------------- settings */
-  // Language and city are remembered on this device, so onboarding only runs on a fresh install.
-  const STORE_KEY = 'jyotisha.settings.v1';
-  function loadSettings() {
-    try {
-      const raw = window.localStorage && window.localStorage.getItem(STORE_KEY);
-      const value = raw ? JSON.parse(raw) : null;
-      if (value && typeof value === 'object' && typeof value.city === 'string' && value.city.trim()) {
-        return { lang: calendarUI.language(value.lang), city: value.city.trim().slice(0, 200), useLocation: value.useLocation === true,
-          name: typeof value.name === 'string' ? value.name.slice(0, 40) : '', dob: /^\d{4}-\d{2}-\d{2}$/.test(value.dob || '') ? value.dob : '' };
-      }
-    } catch (_error) { /* storage unavailable or corrupt: behave like a first visit */ }
-    return null;
-  }
-  function saveSettings() {
-    if (!state.onboarded) return;
-    const data = { lang: state.lang, city: state.city, useLocation: state.useLocation };
-    if (state.userName) data.name = state.userName;
-    if (state.userDob) data.dob = state.userDob;
-    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (_error) { /* not persisted */ }
-  }
-  // The birth details of the last chart are kept on this device only (never on the server) so they need not be typed again.
-  const PROFILE_KEY = 'jyotisha.profile.v1';
-  function loadProfile() {
-    try {
-      const raw = window.localStorage && window.localStorage.getItem(PROFILE_KEY);
-      const value = raw ? JSON.parse(raw) : null;
-      if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.dob) && /^\d{2}:\d{2}$/.test(value.tob) && typeof value.pob === 'string' && value.pob.trim().length >= 2) {
-        return { dob: value.dob, pob: value.pob.trim().slice(0, 200), tob: value.tob };
-      }
-    } catch (_error) { /* unreadable: treat as none */ }
-    return null;
-  }
-  function saveProfile(profile) {
-    try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ dob: profile.dob, pob: profile.pob, tob: profile.tob })); } catch (_error) { /* not persisted */ }
-  }
-  function forgetProfile() {
-    try { window.localStorage.removeItem(PROFILE_KEY); } catch (_error) { /* nothing to remove */ }
-  }
-  async function restoreProfile() {
-    const profile = loadProfile();
-    try {
-      if (!profile) return;
-      const { ok, body } = await post('/api/birth-chart', profile);
-      if (ok && body && body.chart) { applyChart(body, profile); intake.step = null; resetChat(t('chartReady')); }
-    } catch (_error) { /* offline or unavailable: the chat simply asks for the details again */ }
-    finally { startupDone('profile'); }
-  }
-  // Today's Panchang is kept on the phone: a later opening on the same day shows it at once (then quietly refreshes).
-  const TODAY_KEY = 'jyotisha.today.v1';
-  function cachedToday() {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(TODAY_KEY));
-      return saved && saved.city === state.city && saved.day && saved.day.date === localIso(new Date()) ? saved.day : null;
-    } catch (_error) { return null; }
-  }
-  function keepToday(day) { try { window.localStorage.setItem(TODAY_KEY, JSON.stringify({ city: state.city, day })); } catch (_error) { /* optional */ } }
-  let markDayReady = () => {};
-  const dayReady = new Promise(resolve => { markDayReady = resolve; });   // today's Panchang is on screen (or failed)
-  function startHome() {
-    const today = localIso(new Date());
-    state.todayIso = today; state.selectedDate = today;
-    state.view = { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) };
-    state.month = null; state.day = null;
-    showPage('home');
-    renderHome();
-    const saved = cachedToday();
-    if (saved) {
-      state.day = saved;
-      try { $('dp-date').value = saved.date; renderDay(); } catch (error) { console.warn('saved panchang', error); }
-      markDayReady();
-    }
-    void loadMonth();
-    void loadDay(today, true, !!saved);
-    void loadFestivals();
-  }
+HOИ╚▌]KЫ▌ЩS[┘HH	▄ЩXY[Щ╔╬╚▌]KЬ┌▌╙▌ЩTЩXY[Щ╚HЭYN╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* -------------------------------------------------------------- location */
-  // The browser shows its own allow-while-using / allow-once / do-not-allow prompt and remembers the answer,
-  // so the app never asks again by itself: it only reads the position when the user taps a location
-  // button, or on later visits when permission was already granted.
-  function locate(onCity, onFail) {
-    if (!navigator.geolocation) { onFail('locationUnavailable'); return; }
-    navigator.geolocation.getCurrentPosition(async position => {
-      try {
-        const { ok, body } = await post('/api/nearby-place', { latitude: position.coords.latitude, longitude: position.coords.longitude });
-        if (!ok || !body || !body.candidate) { onFail('locationNoMatch'); return; }
-        onCity(body.candidate.value);
-      } catch (_error) { onFail('locationUnavailable'); }
-    }, () => onFail('locationDenied'), { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
-  }
-  async function refreshCityFromLocation() {
-    if (!navigator.geolocation || !navigator.permissions || !navigator.permissions.query) return;
-    try {
-      const permission = await navigator.permissions.query({ name: 'geolocation' });
-      if (permission.state !== 'granted') return;
-    } catch (_error) { return; }
-    locate(city => { if (city !== state.city) { state.city = city; saveSettings(); startHome(); } }, () => {});
-  }
-  $('allow-location').addEventListener('click', () => {
-    const status = $('location-status');
-    status.textContent = t('locationChecking');
-    locate(city => {
-      $('welcome-city').value = city; state.pendingLocation = true;
-      status.textContent = `ЁЯУН ${city}`;
-      // The city comes from the location, so there is nothing more to ask: go straight on.
-      setTimeout(() => { if (!state.onboarded && onboardingStep === 'location') toProfileStep(); }, 700);
-    }, key => { state.pendingLocation = false; status.textContent = t(key); });
-  });
-  $('welcome-form').addEventListener('submit', event => {
-    event.preventDefault();
-    if (onboardingStep === 'profile') void finishProfile(); else toProfileStep();
-  });
-  function toProfileStep() {
-    if (!$('welcome-city').value.trim()) return;
-    showOnboardingStep('profile');
-  }
-  // Name and birth date (time optional): the name personalises greetings; with a time the Kundli is made straight away.
-  let profileBusy = false;
-  /* ---- Scroll wheels for the date and time of birth (like a phone's own pickers). They fill the hidden inputs only
-     once the user has turned them, so an untouched wheel never saves a made-up birth date. ---- */
-  const WHEEL_ROW = 44;
-  function wheel(values, index, onPick) {
-    const box = el('div', 'wheel');
-    const list = el('div', 'wheel-list');
-    values.forEach((value, i) => {
-      const item = el('div', `wheel-item${i === index ? ' on' : ''}`, value);
-      item.addEventListener('click', () => { list.scrollTop = i * WHEEL_ROW; settle(i); });
-      list.appendChild(item);
-    });
-    let timer = null, current = index;
-    const settle = i => {
-      if (i === current) return;
-      current = i;
-      Array.from(list.children).forEach((item, n) => { item.className = `wheel-item${n === i ? ' on' : ''}`; });
-      onPick(i);
-    };
-    list.addEventListener('scroll', () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => settle(Math.max(0, Math.min(values.length - 1, Math.round((list.scrollTop || 0) / WHEEL_ROW)))), 90);
-    });
-    box.appendChild(list);
-    setTimeout(() => { list.scrollTop = index * WHEEL_ROW; }, 0);
-    return box;
-  }
-  const pad2 = n => String(n).padStart(2, '0');
-  const wheelState = { y: 2000, m: 1, d: 1, hh: 12, mm: 0, dobTouched: false, tobTouched: false };
-  function renderWheels() {
-    const dobBox = $('dob-wheels'), tobBox = $('tob-wheels');
-    if (!dobBox || !tobBox) return;
-    const thisYear = new Date().getFullYear(), years = [];
-    for (let y = 1930; y <= thisYear; y += 1) years.push(y);
-    const days = new Date(Date.UTC(wheelState.y, wheelState.m, 0)).getUTCDate();
-    if (wheelState.d > days) wheelState.d = days;
-    const writeDob = () => { wheelState.dobTouched = true; $('welcome-dob').value = `${wheelState.y}-${pad2(wheelState.m)}-${pad2(wheelState.d)}`; };
-    const writeTob = () => { wheelState.tobTouched = true; $('welcome-tob').value = `${pad2(wheelState.hh)}:${pad2(wheelState.mm)}`; };
-    dobBox.replaceChildren(
-      wheel(Array.from({ length: days }, (_, i) => pad2(i + 1)), wheelState.d - 1, i => { wheelState.d = i + 1; writeDob(); }),
-      wheel(Array.from({ length: 12 }, (_, i) => calendarUI.monthName(state.lang, i)), wheelState.m - 1, i => { wheelState.m = i + 1; writeDob(); renderWheels(); }),
-      wheel(years.map(String), years.indexOf(wheelState.y), i => { wheelState.y = years[i]; writeDob(); renderWheels(); }));
-    const colon = el('span', 'wheel-colon', ':');
-    tobBox.replaceChildren(
-      wheel(Array.from({ length: 24 }, (_, i) => pad2(i)), wheelState.hh, i => { wheelState.hh = i; writeTob(); }),
-      colon,
-      wheel(Array.from({ length: 60 }, (_, i) => pad2(i)), wheelState.mm, i => { wheelState.mm = i; writeTob(); }));
-  }
+N╚K[┘HOOH	▄ЩXY[Щ╔╩KИ▄[█Р╪\Щ
+	°з*	╦█▄KЫ▄ШZ]╦█▄KЫ▄ШZ]╘▌XЛ
 
-  /* ---- An ad box (300 x 250) under the language and birth-date steps, in the Android app (admin switch). ---- */
-  let onbBannerOn = false;
-  async function onboardingBanner(show) {
-    const admob = admobPlugin(), config = appAds.waiting || appAds.config;
-    const root = document.documentElement;
-    if (!show) {
-      if (!onbBannerOn) return;
-      onbBannerOn = false;
-      try { root.style.setProperty('--onb-ad', '0px'); } catch (_error) { /* optional */ }
-      try { await admob.removeBanner(); } catch (_error) { /* gone */ }
-      return;
-    }
-    if (onbBannerOn || state.onboarded || !admob || !config || config.onboarding_banner !== true || !adUnitOk(config.banner_id)) return;
-    onbBannerOn = true;
-    try {
-      await within(ensureAdmob(admob, config), 6000);
-      if (!onbBannerOn) return;
-      await admob.showBanner({ adId: config.banner_id, adSize: 'MEDIUM_RECTANGLE', position: 'BOTTOM_CENTER', margin: 8, isTesting: config.testing === true });
-      if (!onbBannerOn) { try { await admob.removeBanner(); } catch (_error) { /* gone */ } return; }   // the step was left meanwhile
-      try { root.style.setProperty('--onb-ad', '270px'); } catch (_error) { /* optional */ }
-    } catch (_error) { onbBannerOn = false; }
-  }
-  // Onboarding: once date, time and place of birth are in, a short animated screen draws the chart being built
-  // (a wheel of the 12 signs, each planet settling into its real sign) while the real calculation runs on the server,
-  // ending on the Sun sign. Resolves to the same shape as post('/api/birth-chart', ...); never throws.
-  async function chartBuildOverlay(profile) {
-    const overlay = el('div', 'chart-build');
-    const card = el('div', 'chart-build-card');
-    const title = el('h3', 'chart-build-title', t('placingLights'));
-    const recap = el('p', 'chart-build-recap', [profile.dob, profile.tob, profile.pob].filter(Boolean).join(' ┬╖ '));
-    const hint = el('p', 'chart-build-hint', t('chartBuildHint'));
-    const svg = svgEl('svg', { class: 'chart-build-wheel', viewBox: '0 0 200 200', 'aria-hidden': 'true' });
-    svg.append(svgEl('circle', { cx: 100, cy: 100, r: 90, class: 'chart-build-ring' }), svgEl('circle', { cx: 100, cy: 100, r: 62, class: 'chart-build-ring' }));
-    const angleOf = signIndex => (Math.PI / 180) * (-90 + signIndex * 30 + 15);
-    RASHI_GLYPHS.forEach((glyph, index) => {
-      const angle = angleOf(index);
-      svg.appendChild(svgEl('text', { x: 100 + 82 * Math.cos(angle), y: 100 + 82 * Math.sin(angle), class: 'chart-build-sign' })).textContent = glyph;
-    });
-    card.append(title, svg, recap, hint);
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-    const start = Date.now();
-    let result;
-    try { result = await post('/api/birth-chart', profile); } catch (_error) { result = { ok: false, body: null }; }
-    const elapsed = Date.now() - start;
-    if (elapsed < 900) await wait(900 - elapsed);   // the wheel is visible for a moment even when the server answers at once
-    if (result.ok && result.body && result.body.chart) {
-      const chart = result.body.chart;
-      for (const name of PLANET_ORDER) {
-        const position = chart.positions[name];
-        if (!position) continue;
-        const angle = angleOf(position.rashi_index - 1);   // rashi_index is 1-12 (Aries..Pisces); the wheel is drawn 0-11
-        const dot = svgEl('circle', { cx: 100 + 62 * Math.cos(angle), cy: 100 + 62 * Math.sin(angle), r: 6, class: 'chart-build-dot' });
-        dot.style.fill = PLANET_COLORS[name] || '#fff';
-        svg.appendChild(dot);
-        await wait(140);
-      }
-      title.textContent = `${signName(chart.positions.Sun.rashi_index)} ${bodyName('Sun')}`;
-      card.removeChild(hint);
-      await wait(900);
-    }
-    try { document.body.removeChild(overlay); } catch (_error) { /* gone */ }
-    return result;
-  }
-  async function finishProfile(skip = false) {
-    if (profileBusy) return;
-    profileBusy = true;
-    const name = skip ? '' : $('welcome-name').value.trim().slice(0, 40);
-    const dob = skip ? '' : $('welcome-dob').value, tob = skip ? '' : $('welcome-tob').value;
-    state.userName = name;
-    state.userDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : '';
-    const pob = $('welcome-city').value.trim();
-    if (state.userDob && /^\d{2}:\d{2}$/.test(tob)) saveProfile({ dob: state.userDob, pob, tob });
-    await onboardingBanner(false);
-    await onboardingAd();
-    if (state.userDob && tob) {
-      const { ok, body } = await chartBuildOverlay({ dob: state.userDob, pob, tob });
-      if (ok && body && body.chart) { applyChart(body, { dob: state.userDob, pob, tob }); intake.step = null; resetChat(t('chartReady')); }
-    }
-    finishWelcome();
-    profileBusy = false;
-    if (state.userDob && !tob) { try { document.querySelector('[name="dob"]').value = state.userDob; } catch (_error) { /* optional */ } }
-  }
-  $('profile-next').addEventListener('click', () => { void finishProfile(); });
-  $('profile-skip').addEventListener('click', () => { void finishProfile(true); });
-  function finishWelcome() {
-    if (onbBannerOn) void onboardingBanner(false);
-    if (!$('welcome-city').value.trim()) return;
-    applyLanguage(choice.value);
-    state.city = $('welcome-city').value.trim();
-    state.useLocation = state.pendingLocation; state.pendingLocation = false;
-    state.onboarded = true;
-    $('welcome-screen').hidden = true;
-    document.body.classList.remove('onboarding-active');
-    saveSettings();
-    startHome();
-    if (appAds.waiting) { const config = appAds.waiting; appAds.waiting = null; void startAppAds(config); }   // the banner only after the welcome steps
-    void scheduleNotifications();   // now that the city is known
-    void wait(1500).then(maybeOfferUpdate);
-  }
+HOИ╚▌]KЫ▌ЩS[┘HH	▌ШZ]╔╬╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* ----------------------------------------------------- change city (Home) */
-  const cityPanel = $('city-panel');
-  $('dp-city').addEventListener('click', () => {
-    cityPanel.hidden = !cityPanel.hidden;
-    if (!cityPanel.hidden) { $('city-input').value = state.city; $('city-status').textContent = ''; state.pendingLocation = false; $('city-input').focus(); }
-  });
-  $('city-location').addEventListener('click', () => {
-    $('city-status').textContent = t('locationChecking');
-    locate(city => {
-      $('city-input').value = city; state.pendingLocation = true;
-      $('city-status').textContent = t('confirmCity').replace('{city}', city);
-    }, key => { $('city-status').textContent = t(key); });
-  });
-  $('city-save').addEventListener('click', () => {
-    const city = $('city-input').value.trim();
-    if (city.length < 2) return;
-    state.city = city; state.useLocation = state.pendingLocation; state.pendingLocation = false;
-    cityPanel.hidden = true;
-    saveSettings();
-    startHome();
-  });
+N╚K[┘HOOH	▌ШZ]╔╩JN┬И	
+	█▌ЩK[X]┌	╩KЪY[ИH[┘HOOH	█X]┌	╬┬И	
+	█▌ЩK\ЩXY[Щ╔╩KЪY[ИH[┘HOOH	▄ЩXY[Щ╔╬┬И	
+	█▌ЩK]ШZ]╔╩KЪY[ИH[┘HOOH	▌ШZ]╔╬┬И██Ь▌ШZ]╚H	
+	▄Щ[][█Ь┌\]ШZ]╦\Щ\▌[	╩N╚ШZ]╦ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+[┘HOOH	▌ШZ]╔╩H┬ИYИ
+\▌]KШ┌\Э
+H┬ИШZ]╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЫЩYY┌\Э
+JN┬И██Ь▌Ы▄ЫHH[
+	┘Ы▄ЫI╦	▌ШZ]╦XЪ\ЭYЫ▄ЫI╩N┬И██Ь▌╪Т[Ь]H[
+	┌[Ь]	╩N╚╪Т[Ь]Э\HH	┘]I╬╚╪Т[Ь]ЫZ[ИH	╠NLKLI╬╚╪Т[Ь]ЫX^H	╠МLLLЛL╠I╬╚╪Т[Ь]ЬЩ\]Z\ЩYHЭYN╚╪Т[Ь]Ь┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦
+	┘╪Й╩JN┬И██Ь▌╪Т[Ь]H[
+	┌[Ь]	╩N╚╪Т[Ь]Э\HH	▌^	╬╚╪Т[Ь]Ь┘]]ЪXЭ]J	█\▌	╦	▄X┘K\▌Y┘┘\▌[█Ь╔╩N╚╪Т[Ь]ЫX^[Щ▌HМ╚╪Т[Ь]Ш]]╪██\]HH	█┘ЩЙ╬╚╪Т[Ь]ЬЩ\]Z\ЩYHЭYN╚╪Т[Ь]ЬX┘Z█\ИH
+	▄X┘TX┘Z█\Й╩N╚╪Т[Ь]Ь┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦
+	▄╪Й╩JN┬И██Ь▌╪Т[Ь]H[
+	┌[Ь]	╩N╚╪Т[Ь]Э\HH	▌[YI╬╚╪Т[Ь]Ь▌\HМ╚╪Т[Ь]ЬЩ\]Z\ЩYHЭYN╚╪Т[Ь]Ь┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦
+	▌╪Й╩JN┬И██Ь▌▌]\╘H[
+	▄	╦	█]]Y[Ы▌I╩N┬И██Ь▌▌XЫZ]ЭИH[
+	╪Э]█Й╦	▄[K\╪╪[Й╦█▄KЭШZ]╙XZ┘R▌[ЩPЭКN╚▌XЫZ]ЭЛЭ\HH	▄▌XЫZ]	╬┬ИЫ▄ЫKШ\[Щ
+╪Т[Ь]╪Т[Ь]╪Т[Ь]▌XЫZ]ЭЛ▌]\╘
+N┬И┌\ЩTX┘T▌Y┘┘\▌[█Ь╩╪Т[Ь]
+N┬ИЫ▄ЫKШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦\▐[Ш╚]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
 
-  /* ------------------------------------------------------ place suggestions */
-  const datalist = $('place-suggestions');
-  function wirePlaceSuggestions(input) {
-    const options = el('div', 'place-options'); options.hidden = true;
-    options.setAttribute('role', 'group'); options.setAttribute('aria-label', t('matchingCitiesAria'));
-    input.insertAdjacentElement('afterend', options);
-    let timer = null, request = 0;
-    input.addEventListener('input', () => {
-      clearTimeout(timer);
-      const query = input.value.trim(), current = ++request;
-      options.replaceChildren(); options.hidden = true; datalist.replaceChildren();
-      if (query.length < 2) return;
-      timer = setTimeout(async () => {
-        try {
-          const { ok, body } = await post('/api/places', { query });
-          if (current !== request || input.value.trim() !== query) return;
-          if (!ok || !body || !Array.isArray(body.suggestions)) return;
-          for (const item of body.suggestions) {
-            const option = el('option'); option.value = item.value; option.label = item.label; datalist.appendChild(option);
-            const button = el('button', null, item.label); button.type = 'button';
-            button.addEventListener('click', () => { input.value = item.value; options.hidden = true; options.replaceChildren(); input.focus(); });
-            options.appendChild(button);
-          }
-          if (!body.suggestions.length) options.appendChild(el('p', null, t('noMatch')));
-          options.hidden = false;
-        } catch (_error) { if (current === request) options.hidden = true; }
-      }, 250);
-    });
-  }
-  document.querySelectorAll('input[list="place-suggestions"]').forEach(wirePlaceSuggestions);
+N┬ИYИ
+J]╪Z]Щ]╪\ЩY╪]J
+JJHЩ]\ЫО┬И▌]\╘Э^██Э[ЭH
+	╪┌X┌┌[Щ╔╩N┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦╚╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YHJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШ┌\Э
+H╚\P┌\Э
+Ы┘K╚╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YHJN╚╪]ЩTЫ┘Ъ[J╚╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YK╪ОИ╪Т[Ь]ЭШ[YHJN╚BИ[┘H▌]\╘Э^██Э[ЭH
+	╪┌\ЭШZ[Y	╩N┬ИH╪]┌
+┘\ЬЫ▄КH╚▌]\╘Э^██Э[ЭH
+	▄┘\ЭЪX┘U[Ш]ШZ[XЫI╩N╚BИJN┬ИШZ]╦Ш\[Щ┌[
+Ы▄ЫJN┬И██Ь▌┌]ЭИH[
+	╪Э]█Й╦	▄[K\╪╪[Й╦█▄KЭШZ]╨\┌╥[Р┌]
+N┬И┌]ЭЛЭ\HH	╪Э]█Й╬┬И┌]ЭЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-  /* ------------------------------------------------------------ time text */
-  function clock(iso, baseDate) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || '');
-    if (!match) return '';
-    const [year, month, day, hour, minute] = match.slice(1).map(Number);
-    const stamp = new Date(Date.UTC(year, month - 1, day, hour, minute));
-    let text = new Intl.DateTimeFormat(calendarUI.LOCALES[state.lang], { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC', numberingSystem: 'latn' }).format(stamp);
-    if (iso.slice(0, 10) !== baseDate) text += ', ' + calendarUI.formatDate(state.lang, iso.slice(0, 10), 'dayMonth');
-    return `тБж${text}тБй`; // keep digits and AM/PM together inside right-to-left text
-  }
-  const duration = minutes => `${Math.floor(minutes / 60)} ${t('hours')} ${minutes % 60} ${t('mins')}`;
-  const moonEmoji = tithi => tithi === 15 ? 'ЁЯМХ' : tithi === 30 ? 'ЁЯМС' : tithi <= 4 ? 'ЁЯМТ' : tithi <= 11 ? 'ЁЯМУ' : tithi <= 14 ? 'ЁЯМФ' : tithi <= 19 ? 'ЁЯМЦ' : tithi <= 26 ? 'ЁЯМЧ' : 'ЁЯМШ';
+HOИ╚┌▌╘Y┘J	╪┌]	╩N╚\┌╩█▄KЫ▄ШZ]╦█▄KЫ▄ШZ]╦ЭYJN╚JN┬ИШZ]╦Ш\[Щ┌[
+┌]ЭКN┬ИH[┘H┬ИЮH┬И██Ь▌ЩXYH┌\ЭRKЬ\ЭЩ\ХШZ]╩▌]KШ┌\Э▌]KЫ[Щ╩N┬ИШZ]╦Ш\[Щ
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЭШZ]╥[ЭЫ╩KИ[
+	▄	╦Э[Ъ[
+█▄KЭШZ]╥▌\┘K╚┌Y█ОИЩXYЪ▌\┘M╘┌Y█Л▄ЩИЩXYЪ▌\┘M╙▄ЩШZ]ИЩXYЪ▌\┘M╒ШZ]JJKИ[
+	▄	╦Э[Ъ[
+█▄KЭШZ]╒Щ[Э\╦╚┌Y█ОИЩXYЭЩ[Э\╘┌Y█ЛШZ]ИЩXYЭЩ[Э\╒ШZ]JJJN┬И██Ь▌H▌]KЬ\ЭЩ\Ф▄ЭШZ]┬ИYИ
+Ь▌]\╚OOH	█╪Y[Щ╔╩H┬ИYИ
+Ъ[XY┘JH┬И██Ь▌[Y╚H[
+	┌[Y╔╦	▌ШZ]╦\▄ЭШZ]	╩N╚[Y╦Ь▄Ш╚H]NЙ▄Ъ[XY┘KЫZ[Y_N╪Ш\┘MН	▄Ъ[XY┘KЩ]_X╚[Y╦Ш[H█▄KЭШZ]╘▄ЭШZ]ЭО┬ИШZ]╦Ш\[Щ┌[
+[Y╩N┬ИBИШZ]╦Ш\[Щ┌[
+╪Y\К█▄KЭШZ]╘▄ЭШZ]╪Y[Щ╩JN┬ИBИ[┘H┬ИYИ
+Ь▌]\╚OOH	█┌╔╚	ЙИЪ[XY┘JH┬И██Ь▌[Y╚H[
+	┌[Y╔╦	▌ШZ]╦\▄ЭШZ]	╩N╚[Y╦Ь▄Ш╚H]NЙ▄Ъ[XY┘KЫZ[Y_N╪Ш\┘MН	▄Ъ[XY┘KЩ]_X╚[Y╦Ш[H█▄KЭШZ]╘▄ЭШZ]ЭО┬ИШZ]╦Ш\[Щ┌[
+[Y╩N┬ИH[┘HYИ
+Ь▌]\╚OOH	█┘ЩЙ╩HШZ]╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЭШZ]╘▄ЭШZ]┘ЩКJN┬И[┘HYИ
+Ь▌]\╚OOH	▌[Ш]ШZ[XЫI╩HШZ]╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЭШZ]╘▄ЭШZ][Ш]ШZ[XЫJJN┬ИYИ
+ЫЫ▌X┘HOOH	█[Z]	╩HШZ]╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌H▄ЭШZ][[Z]	╦\ЭЩ\У[Z]^
 
-  /* ---------------------------------------------------------- Home: sections */
-  function section(title, rows, kind) {
-    const box = el('section', `dp-sec${kind ? ' ' + kind : ''}`);
-    box.appendChild(el('h3', null, title));
-    for (const [label, lines] of rows) {
-      if (!lines || !lines.length) continue;
-      const row = el('div', 'dp-row'), value = el('div', 'dp-value');
-      row.appendChild(el('div', 'dp-label', label));
-      for (const line of lines) {
-        const entry = el('div');
-        entry.appendChild(el('span', 't', line.text));
-        if (line.note) entry.appendChild(el('span', 'dp-upto', line.note));
-        value.appendChild(entry);
-      }
-      row.appendChild(value); box.appendChild(row);
-    }
-    return box;
-  }
-  function clearDay() {
-    $('dp-tables').replaceChildren(); $('dp-sun-strip').replaceChildren(); $('dp-key').replaceChildren();
-    $('day-cards').replaceChildren(); $('share-day').hidden = true; $('day-cards-hint').textContent = '';
-    for (const id of ['dp-date-title', 'dp-subtitle', 'dp-place']) $(id).textContent = '';
-    $('dp-moon').textContent = 'ЁЯМЩ';
-  }
-  const tinted = tone => (tone === 'good' ? 'ЁЯЯв' : tone === 'caution' ? 'ЁЯФ┤' : 'ЁЯЯб');
-  const dayLabel = iso => { const label = calendarUI.weekdayName(state.lang, new Date(`${iso}T12:00:00Z`).getUTCDay(), 'short'); return label; };
-  function areaBlock(areas) {
-    const box = el('div', 'rashi-areas');
-    for (const item of areas) { const row = el('p', null); row.append(el('strong', null, `${tinted(item.tone)} ${item.name}: `), item.text); box.appendChild(row); }
-    return box;
-  }
-  function remedyBlock(card, lines) {
-    if (!lines || !lines.length) return null;
-    const head = el('h4', null, chartUI.remedyHead(state.lang));
-    card.appendChild(head);
-    const list = el('ul', 'rashi-planets remedies');
-    for (const line of lines) list.appendChild(el('li', null, line));
-    card.appendChild(list);
-    card.appendChild(el('p', 'muted-note', chartUI.remedyNote(state.lang)));
-    return head;
-  }
-  /* ---- Palm reading: pick a hand, take a photo (the phone's camera), the AI reads the lines ---- */
-  const palmCopy = () => toolText().palm || TOOLS_COPY.en.palm;
-  const REKHA_COLORS = { heart: '#ff5fc4', head: '#5fb4ff', life: '#5fe0a0', fate: '#ffd24a' };
-  // Draws the AI's line points (0..1 fractions of the photo) over the photo once its real size is known, so the
-  // traced lines land on the actual palm and not on the letterboxed edges of a differently shaped crop.
-  function drawRekhaOverlay(svg, points, width, height) {
-    svg.replaceChildren();
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    for (const line of ['life', 'fate', 'head', 'heart']) {   // draw order only; stable regardless of key order from the AI
-      const path = points[line];
-      if (!path || path.length < 2) continue;
-      const d = path.map((p, i) => `${i ? 'L' : 'M'}${(p[0] * width).toFixed(1)} ${(p[1] * height).toFixed(1)}`).join(' ');
-      svg.appendChild(svgEl('path', { d, class: `rekha-line rekha-${line}`, stroke: REKHA_COLORS[line], 'stroke-width': 3, 'pathLength': 1 }));
-    }
-  }
-  // The photo plus, when the AI traced any lines, a same-size SVG over it; 'contain' (not the plain preview's 'cover')
-  // so the overlay's 0..1 fractions always match the whole photo, with nothing cropped off before the lines are drawn.
-  function palmPhotoBox(src, points) {
-    const wrap = el('div', 'palm-photo');
-    const photo = el('img', 'palm-preview'); photo.src = src; photo.alt = '';
-    wrap.appendChild(photo);
-    const usable = points && Object.keys(points).some(line => points[line] && points[line].length >= 2);
-    if (usable) {
-      wrap.classList.add('has-rekha');
-      const svg = svgEl('svg', { class: 'rekha-overlay', viewBox: '0 0 1 1', preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true' });
-      const draw = () => drawRekhaOverlay(svg, points, photo.naturalWidth || 1, photo.naturalHeight || 1);
-      if (photo.complete && photo.naturalWidth) draw(); else photo.addEventListener('load', draw, { once: true });
-      wrap.appendChild(svg);
-    }
-    return { box: wrap, usable };
-  }
-  const palmState = { hand: 'right', step: 'pick', reading: null, status: '', tab: 0, preview: null };
-  function openPalm() { palmState.step = 'pick'; palmState.reading = null; palmState.status = ''; palmState.tab = 0; palmState.preview = null; showPage('palm'); renderPalm(); }
-  // The photo is made smaller on the phone (longest side 1024 px, JPEG) before it is sent; it is never stored.
-  function shrinkPhoto(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('read'));
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('image'));
-        img.onload = () => {
-          const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.82));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-  async function readPalm(image) {
-    palmState.step = 'reading'; renderPalm();
-    try {
-      const { ok, body } = await post('/api/palm', { hand: palmState.hand, language: state.lang, image });
-      palmState.status = ok && body ? body.status : 'unavailable';
-      palmState.reading = ok && body && body.reading ? body.reading : null;
-    } catch (_error) { palmState.status = 'unavailable'; palmState.reading = null; }
-    palmState.step = 'result'; renderPalm();
-  }
-  // A photo is ready (from the camera or the gallery): shrink it if needed, then read it (behind a тЦ╢ button when the ad is on).
-  async function handlePalmPhoto(photo) {
-    try {
-      palmState.preview = photo;   // shown on the result; kept in memory only
-      // With "watch an ad to see the reading" on, the photo waits behind a тЦ╢ button (the camera must open first:
-      // Android only opens it straight from a tap, not after an ad).
-      if (rewardedFor('palm')) { palmState.photo = photo; palmState.step = 'ready'; renderPalm(); } else await readPalm(photo);
-    } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
-  }
-  // The phone's own camera app (or the gallery): works everywhere.
-  function choosePalmPhoto() {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
-    input.addEventListener('change', async () => {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      try { await handlePalmPhoto(await shrinkPhoto(file)); } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); }
-    });
-    input.click();
-  }
-  // The in-app camera: a hand outline to line the palm up with, a shutter, and the gallery. If the camera cannot be
-  // opened here (older app, no permission, a browser without it), the phone's camera app is used instead.
-  const camCopy = () => palmCopy().cam || TOOLS_COPY.en.palm.cam;
-  const SVG_PHOTOS = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="2" fill="currentColor"/><path d="M4 18l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-  function handOutline() {
-    const svg = svgEl('svg', { viewBox: '0 0 200 260', preserveAspectRatio: 'xMidYMid meet', class: 'cam-outline', 'aria-hidden': 'true' });
-    const shapes = [['rect', { x: 55, y: 120, width: 90, height: 108, rx: 30 }], ['rect', { x: 58, y: 46, width: 21, height: 92, rx: 10.5 }], ['rect', { x: 83, y: 30, width: 21, height: 108, rx: 10.5 }],
-      ['rect', { x: 108, y: 42, width: 21, height: 96, rx: 10.5 }], ['rect', { x: 133, y: 70, width: 19, height: 76, rx: 9.5 }], ['rect', { x: 22, y: 128, width: 23, height: 78, rx: 11.5, transform: 'rotate(-32 33 167)' }]];
-    // Only the ring around the hand's silhouette is drawn: the shapes grown by a stroke, minus the shapes themselves.
-    const mask = svgEl('mask', { id: 'cam-ring' });
-    const grown = svgEl('g', { fill: '#fff', stroke: '#fff', 'stroke-width': 7 }), inner = svgEl('g', { fill: '#000' });
-    for (const [tag, attrs] of shapes) { grown.appendChild(svgEl(tag, attrs)); inner.appendChild(svgEl(tag, attrs)); }
-    mask.append(grown, inner);
-    svg.append(mask, svgEl('rect', { width: 200, height: 260, fill: '#fff', mask: 'url(#cam-ring)' }));
-    return svg;
-  }
-  function frameIsDark(canvas) {
-    try {
-      const small = document.createElement('canvas'); small.width = 32; small.height = 32;
-      const ctx = small.getContext('2d'); ctx.drawImage(canvas, 0, 0, 32, 32);
-      const data = ctx.getImageData(0, 0, 32, 32).data; let sum = 0;
-      for (let i = 0; i < data.length; i += 4) sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      return sum / (data.length / 4) < 45;
-    } catch (_error) { return false; }
-  }
-  async function startPalmScan() {
-    const media = navigator.mediaDevices;
-    if (!media || typeof media.getUserMedia !== 'function') { choosePalmPhoto(); return; }
-    let stream;
-    try { stream = await media.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false }); } catch (_error) { choosePalmPhoto(); return; }
-    const copy = camCopy(), overlay = el('div', 'cam');
-    const video = el('video', 'cam-video'); video.setAttribute('playsinline', ''); video.muted = true; video.autoplay = true; video.srcObject = stream;
-    const hint = el('div', 'cam-hint', copy.hint);
-    const close = el('button', 'cam-btn cam-close', 'тЬХ'); close.type = 'button'; close.setAttribute('aria-label', copy.close);
-    const gallery = el('button', 'cam-btn cam-gallery'); gallery.type = 'button'; gallery.innerHTML = SVG_PHOTOS; gallery.setAttribute('aria-label', copy.gallery);
-    const shutter = el('button', 'cam-shutter'); shutter.type = 'button'; shutter.setAttribute('aria-label', copy.snap); shutter.appendChild(el('i'));
-    const bar = el('div', 'cam-bar'); bar.append(gallery, shutter, el('span'));
-    overlay.append(video, handOutline(), hint, close, bar);
-    let warned = false;
-    const stop = () => { try { stream.getTracks().forEach(track => track.stop()); } catch (_error) { /* gone */ } try { overlay.remove(); } catch (_error) { /* gone */ } setBannerHidden('camera', false); };
-    close.addEventListener('click', stop);
-    gallery.addEventListener('click', () => { stop(); const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
-      input.addEventListener('change', async () => { const file = input.files && input.files[0]; if (file) { try { await handlePalmPhoto(await shrinkPhoto(file)); } catch (_error) { palmState.step = 'result'; palmState.status = 'unavailable'; renderPalm(); } } });
-      input.click(); });
-    shutter.addEventListener('click', async () => {
-      const width = video.videoWidth || 720, height = video.videoHeight || 960, scale = Math.min(1, 1024 / Math.max(width, height));
-      const canvas = document.createElement('canvas'); canvas.width = Math.round(width * scale); canvas.height = Math.round(height * scale);
-      let photo;
-      try { canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); photo = canvas.toDataURL('image/jpeg', 0.82); } catch (_error) { stop(); choosePalmPhoto(); return; }
-      if (!warned && frameIsDark(canvas)) { warned = true; hint.textContent = copy.dark; hint.className = 'cam-hint warn'; return; }   // once; the second try goes ahead
-      stop();
-      await handlePalmPhoto(photo);
-    });
-    setBannerHidden('camera', true);
-    document.body.appendChild(overlay);
-    try { await video.play(); } catch (_error) { /* shown anyway */ }
-  }
-  function renderPalm() { renderPalmBody(); decorate($('palmread'), palmCopy().title); }
-  function renderPalmBody() {
-    const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
-    box.replaceChildren();
-    if (palmState.step === 'pick') {
-      box.appendChild(el('p', 'tarot-ask', copy.step));
-      const hands = el('div', 'palm-hands');
-      for (const hand of ['left', 'right']) {
-        const tile = el('button', `palm-hand ${hand}${palmState.hand === hand ? ' on' : ''}`); tile.type = 'button';
-        const pic = el('span', 'palm-pic'); if (art) pic.innerHTML = art.palm();
-        tile.append(pic, el('b', null, copy[hand]));
-        tile.addEventListener('click', () => { palmState.hand = hand; renderPalm(); });
-        hands.appendChild(tile);
-      }
-      box.appendChild(hands);
-      const tips = el('div', 'palm-tips');
-      tips.appendChild(el('h4', null, copy.tipsTitle));
-      for (const tip of copy.tips) tips.appendChild(el('p', null, `тЬУ ${tip}`));
-      tips.appendChild(el('small', null, `ЁЯФТ ${copy.privacy}`));
-      box.appendChild(tips);
-      const scan = el('button', 'palm-scan', `ЁЯУ╖ ${copy.scan}`); scan.type = 'button';
-      scan.addEventListener('click', () => { void startPalmScan(); });
-      box.appendChild(scan);
-      return;
-    }
-    if (palmState.step === 'ready') {
-      const pic = el('div', 'palm-scanning'); if (art) pic.innerHTML = art.palm();
-      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
-      see.addEventListener('click', async () => {
-        if (!(await watchForResult())) return;
-        const photo = palmState.photo; palmState.photo = null;
-        void readPalm(photo);
-      });
-      box.append(pic, el('p', 'palm-wait', copy.ready), see);
-      return;
-    }
-    if (palmState.step === 'reading') {
-      box.appendChild(loader(copy.reading));
-      return;
-    }
-    const reading = palmState.reading, lines = [];
-    if (!reading) {
-      box.appendChild(el('p', 'palm-wait', palmState.status === 'not_palm' ? copy.notPalm : palmState.status === 'off' ? copy.off : copy.failed));
-    } else {
-      // The user's own photo (kept in memory only, never stored), then tabs: Palm (life line + overview), Love (heart line),
-      // Career (head and fate lines). All three panels are in the page; only the chosen one is shown.
-      if (palmState.preview) {
-        const { box: photoBox, usable } = palmPhotoBox(palmState.preview, reading.points);
-        box.appendChild(photoBox);
-        if (usable) {
-          const legend = el('div', 'rekha-legend');
-          for (const key of ['heart', 'head', 'life', 'fate']) {
-            if (!reading.points[key] || reading.points[key].length < 2) continue;
-            const chip = el('span', 'rekha-chip'), dot = el('i'); dot.style.background = REKHA_COLORS[key];
-            chip.append(dot, document.createTextNode(copy.lines[key]));
-            legend.appendChild(chip);
-          }
-          box.append(legend, el('small', 'muted-note rekha-note', copy.rekhaNote || TOOLS_COPY.en.palm.rekhaNote));
-        }
-      }
-      const tabNames = copy.tabs || TOOLS_COPY.en.palm.tabs;
-      const groups = [['life', 'summary'], ['heart'], ['head', 'fate']];
-      const icons = { heart: 'тЭдя╕П', head: 'ЁЯза', life: 'ЁЯМ▒', fate: 'тнР', summary: 'тЬи' };
-      const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
-      const panels = groups.map((keys, index) => {
-        const panel = el('div', 'palm-panel'); panel.hidden = index !== palmState.tab;
-        for (const key of keys) {
-          const sec = el('section', `palm-sec${key === 'summary' ? ' summary' : ''}`);
-          sec.append(el('h4', null, `${icons[key]} ${copy.lines[key]}`), el('p', null, reading[key]));
-          panel.appendChild(sec);
-          lines.push(`${icons[key]} ${copy.lines[key]}\n${reading[key]}`);
-        }
-        return panel;
-      });
-      tabNames.forEach((name, index) => {
-        const button = el('button', index === palmState.tab ? 'on' : '', name); button.type = 'button';
-        button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', index === palmState.tab ? 'true' : 'false');
-        button.addEventListener('click', () => {
-          palmState.tab = index;
-          Array.from(tabs.children).forEach((tab, n) => { tab.className = n === index ? 'on' : ''; tab.setAttribute('aria-selected', n === index ? 'true' : 'false'); });
-          panels.forEach((panel, n) => { panel.hidden = n !== index; });
-        });
-        tabs.appendChild(button);
-      });
-      box.appendChild(tabs);
-      panels.forEach(panel => box.appendChild(panel));
-    }
-    const actions = el('div', 'tarot-actions');
-    if (reading) {
-      const askAi = el('button', 'rashi-ask', `тЬи ${copy.askAi}`); askAi.type = 'button';
-      askAi.addEventListener('click', () => {
-        const question = fill(copy.askQ, { summary: reading.summary.slice(0, 180) }).slice(0, 290);
-        showPage('chat'); ask(question, question, true);
-      });
-      const share = el('button', 'chip-btn', `тЖЧ ${copy.share}`); share.type = 'button';
-      share.addEventListener('click', () => { void shareText(`тЬЛ ${copy.title}`, lines.join('\n\n')); });
-      actions.append(askAi, share);
-    }
-    const again = el('button', 'chip-btn', `тЖ╗ ${copy.again}`); again.type = 'button';
-    again.addEventListener('click', () => { palmState.step = 'pick'; palmState.tab = 0; palmState.preview = null; renderPalm(); });
-    actions.appendChild(again);
-    box.appendChild(actions);
-  }
-  /* ---- Shared screen pieces (Palm-AI style): a page header, and a loading screen with a % bar and a fun fact ---- */
-  const SVG_BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const SVG_HOME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-  const SVG_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  function goBack() {
-    try { if (window.history && typeof window.history.back === 'function' && window.history.length > 1) { window.history.back(); return; } } catch (_error) { /* fall through */ }
-    showPage('home');
-  }
-  const textOf = node => (node.textContent || '').trim() || (node.children ? Array.from(node.children).map(textOf).filter(Boolean).join('\n') : '');
-  // Text of every reading section on a page, for the share icon.
-  function pageShareText(box) {
-    const parts = [];
-    const walk = node => {
-      if (!node || !node.children) return;
-      for (const child of node.children) {
-        if (/(^| )(palm-sec|num-sec|tarot-sec|moon-sec|lg-aspect|sm-result)( |$)/.test(child.className || '')) parts.push(textOf(child));
-        else walk(child);
-      }
-    };
-    walk(box);
-    return parts.filter(Boolean).join('\n\n');
-  }
-  // [тЖР back] [title] [ЁЯПа] [share]; the share icon only shows when there is a reading to share.
-  function pageHeader(title, box) {
-    const menu = toolText().menu || TOOLS_COPY.en.menu;
-    const head = el('div', 'page-head');
-    const back = el('button', 'ph-btn ph-back'); back.type = 'button'; back.innerHTML = SVG_BACK; back.setAttribute('aria-label', menu.back || 'Back');
-    back.addEventListener('click', goBack);
-    const right = el('span', 'ph-right');
-    const home = el('button', 'ph-btn'); home.type = 'button'; home.innerHTML = SVG_HOME; home.setAttribute('aria-label', menu.home);
-    home.addEventListener('click', () => showPage('home'));
-    right.appendChild(home);
-    const text = box ? pageShareText(box) : '';
-    if (text) {
-      const share = el('button', 'ph-btn'); share.type = 'button'; share.innerHTML = SVG_SHARE; share.setAttribute('aria-label', menu.shareReading || 'Share');
-      share.addEventListener('click', () => { void shareText(title, text); });
-      right.appendChild(share);
-    }
-    head.append(back, el('h2', 'ph-title', title), right);
-    return head;
-  }
-  // Put the header on top of a page that has just been drawn.
-  function decorate(box, title) { box.replaceChildren(pageHeader(title, box), ...Array.from(box.children)); }
-  // Fun facts shown while a reading is prepared (true, general Vedic facts).
-  const FUN_FACTS = {
-    en: ['Vedic astrology uses 27 nakshatras, the тАЬlunar mansionsтАЭ the Moon passes through.', 'A tithi is a lunar day: there are 30 in every lunar month.', 'The Moon stays about 2┬╝ days in each rashi.', 'тАЬPanchangтАЭ means five limbs: tithi, vara, nakshatra, yoga and karana.', 'Abhijit muhurta is the lucky window around midday.', 'Palmistry traditionally reads the heart, head, life and fate lines.', 'Your Moon sign (Janma Rashi) is the base of most Indian horoscopes.', 'Rahu Kalam lasts about 90 minutes each day and changes with the weekday.'],
-    te: ['р░╡р▒Ир░жр░┐р░Х р░Ьр▒Нр░пр▒Лр░др░┐р░╖р▒Нр░пр░Вр░▓р▒Л р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б р░╕р░Вр░Ър░░р░┐р░Вр░Ър▒З 27 р░ир░Хр▒Нр░╖р░др▒Нр░░р░╛р░▓р▒Б р░Йр░ир▒Нр░ир░╛р░пр░┐.', 'р░др░┐р░ер░┐ р░Ер░Вр░Яр▒З р░Ър░╛р░Вр░жр▒Нр░░р░ор░╛р░и р░жр░┐р░ир░В: р░Тр░Х р░Ър░╛р░Вр░жр▒Нр░░р░ор░╛р░╕р░Вр░▓р▒Л 30 р░др░┐р░ер▒Бр░▓р▒Б р░Йр░Вр░Яр░╛р░пр░┐.', 'р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б р░Тр░Хр▒Нр░Хр▒Л р░░р░╛р░╢р░┐р░▓р▒Л р░╕р▒Бр░ор░╛р░░р▒Б 2┬╝ р░░р▒Лр░Ьр▒Бр░▓р▒Б р░Йр░Вр░Яр░╛р░бр▒Б.', 'тАЬр░кр░Вр░Ър░╛р░Вр░Чр░ВтАЭ р░Ер░Вр░Яр▒З р░Рр░жр▒Б р░Ер░Вр░Чр░╛р░▓р▒Б: р░др░┐р░ер░┐, р░╡р░╛р░░р░В, р░ир░Хр▒Нр░╖р░др▒Нр░░р░В, р░пр▒Лр░Чр░В, р░Хр░░р░гр░В.', 'р░Ер░нр░┐р░Ьр░┐р░др▒Н р░ор▒Бр░╣р▒Вр░░р▒Нр░др░В р░ор░зр▒Нр░пр░╛р░╣р▒Нр░ир░В р░╡р▒Зр░│ р░Йр░Вр░бр▒З р░╢р▒Бр░н р░╕р░ор░пр░В.', 'р░╣р░╕р▒Нр░д р░╕р░╛р░ор▒Бр░жр▒Нр░░р░┐р░Хр░В р░╣р▒Гр░жр░п, р░ор░╕р▒Нр░др░┐р░╖р▒Нр░Х, р░Ьр▒Ар░╡р░и, р░нр░╛р░Чр▒Нр░п р░░р▒Зр░Цр░▓р░ир▒Б р░Ър░жр▒Бр░╡р▒Бр░др▒Бр░Вр░жр░┐.', 'р░ор▒А р░Ьр░ир▒Нр░о р░░р░╛р░╢р░┐ (р░Ър░Вр░жр▒Нр░░ р░░р░╛р░╢р░┐) р░Ър░╛р░▓р░╛ р░нр░╛р░░р░др▒Ар░п р░Ьр░╛р░др░Хр░╛р░▓р░Хр▒Б р░Жр░зр░╛р░░р░В.', 'р░░р░╛р░╣р▒Бр░Хр░╛р░▓р░В р░░р▒Лр░Ьр▒В р░╕р▒Бр░ор░╛р░░р▒Б 90 р░ир░┐р░ор░┐р░╖р░╛р░▓р▒Б, р░╡р░╛р░░р░╛р░ир▒Нр░ир░┐ р░мр░Яр▒Нр░Яр░┐ р░ор░╛р░░р▒Бр░др▒Бр░Вр░жр░┐.'],
-    hi: ['рд╡реИрджрд┐рдХ рдЬреНрдпреЛрддрд┐рд╖ рдореЗрдВ рдЪрдВрджреНрд░рдорд╛ 27 рдирдХреНрд╖рддреНрд░реЛрдВ рд╕реЗ рд╣реЛрдХрд░ рдЧреБрдЬрд╝рд░рддрд╛ рд╣реИред', 'рддрд┐рдерд┐ рдЪрдВрджреНрд░ рджрд┐рд╡рд╕ рд╣реИ: рдПрдХ рдЪрдВрджреНрд░ рдорд╛рд╕ рдореЗрдВ 30 рддрд┐рдерд┐рдпрд╛рдБ рд╣реЛрддреА рд╣реИрдВред', 'рдЪрдВрджреНрд░рдорд╛ рд╣рд░ рд░рд╛рд╢рд┐ рдореЗрдВ рд▓рдЧрднрдЧ 2┬╝ рджрд┐рди рд░рд╣рддрд╛ рд╣реИред', 'тАЬрдкрдВрдЪрд╛рдВрдЧтАЭ рдХрд╛ рдЕрд░реНрде рд╣реИ рдкрд╛рдБрдЪ рдЕрдВрдЧ: рддрд┐рдерд┐, рд╡рд╛рд░, рдирдХреНрд╖рддреНрд░, рдпреЛрдЧ рдФрд░ рдХрд░рдгред', 'рдЕрднрд┐рдЬрд┐рдд рдореБрд╣реВрд░реНрдд рджреЛрдкрд╣рд░ рдХреЗ рдЖрд╕рдкрд╛рд╕ рдХрд╛ рд╢реБрдн рд╕рдордп рд╣реИред', 'рд╣рд╕реНрдд рд░реЗрдЦрд╛ рд╢рд╛рд╕реНрддреНрд░ рд╣реГрджрдп, рдорд╕реНрддрд┐рд╖реНрдХ, рдЬреАрд╡рди рдФрд░ рднрд╛рдЧреНрдп рд░реЗрдЦрд╛ рдкрдврд╝рддрд╛ рд╣реИред', 'рдЖрдкрдХреА рдЬрдиреНрдо рд░рд╛рд╢рд┐ (рдЪрдВрджреНрд░ рд░рд╛рд╢рд┐) рдЕрдзрд┐рдХрддрд░ рднрд╛рд░рддреАрдп рдХреБрдВрдбрд▓рд┐рдпреЛрдВ рдХрд╛ рдЖрдзрд╛рд░ рд╣реИред', 'рд░рд╛рд╣реБрдХрд╛рд▓ рд░реЛрдЬрд╝ рд▓рдЧрднрдЧ 90 рдорд┐рдирдЯ рдХрд╛ рд╣реЛрддрд╛ рд╣реИ рдФрд░ рд╡рд╛рд░ рдХреЗ рдЕрдиреБрд╕рд╛рд░ рдмрджрд▓рддрд╛ рд╣реИред'],
-  };
-  const funFacts = () => copyFor(FUN_FACTS, 'facts');
-  // The loading screen: a glowing orb, the label, a bar that creeps towards 90% (it ends by itself), and a fun fact.
-  function loader(label) {
-    const wrap = el('div', 'loader');
-    const orb = el('div', 'loader-orb'); if (window.JyotishaArt) orb.innerHTML = window.JyotishaArt.orb();
-    const bar = el('div', 'loader-bar'), fill = el('i'), pct = el('span', 'loader-pct', '0%');
-    bar.appendChild(fill);
-    const facts = funFacts(), start = Math.floor(Math.random() * facts.length);
-    const fact = el('div', 'loader-fact'); fact.append(el('small', null, (toolText().menu || TOOLS_COPY.en.menu).funFact || 'FUN FACT'), el('p', null, facts[start]));
-    wrap.append(orb, el('h3', 'loader-label', label), el('div', 'loader-row'), fact);
-    wrap.children[2].append(bar, pct);
-    let n = 0;
-    const tick = () => {
-      n += 1;
-      const value = Math.min(90, Math.round(90 * (1 - Math.exp(-n / 14))));
-      if (fill.style) fill.style.width = `${value}%`;
-      pct.textContent = `${value}%`;
-      if (n % 12 === 0) fact.children[1].textContent = facts[(start + n / 12) % facts.length];
-      if (n < 80) setTimeout(tick, 250);   // bounded: stops after about 20 seconds
-    };
-    setTimeout(tick, 250);
-    return wrap;
-  }
+JJN┬И[┘HYИ
+ЫЫ▌X┘HOOH	┘ШZ[Y	╚	ЙИЪ[XY┘JHШZ]╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЭШZ]╘▄ЭШZ][Ш]ШZ[XЫJJN┬И╦╚H┘[Щ\И┌┌X┘H[ЩH┘[Щ\Ш]HЭ]█И▌^H]ШZ[XЫHYЭ\ИHЩ\▌[█╦█╚ЮZ[Щ╚Y╪Z[И
+BИ╦╚YЩЩ\Щ[Э┘[Щ\Л▄ИH╪[YH█ЩJHЩ]Щ\ИЩYY╚X]Ъ[Щ╚\╚╪\ЩВИYИ
+\▌]KЬ\ЭЩ\С┘[Щ\КH▌]KЬ\ЭЩ\С┘[Щ\ИH▌]KЫ^TЫ█HOOH	╪ЬЪYI╚╚	█X[Й╚И	▌██X[Й╬┬И██Ь▌┘[Щ\ФЫ▌╚H[
+	┘]Й╦	▄┘Y╔╩N┬И╓╔▌██X[Й╦█▄KЭШZ]╤┘[Щ\Х██X[ЧK╔█X[Й╦█▄KЭШZ]╤┘[Щ\УX[ЧWKЩЫ▄СXX┌
 
-  /* ---- Side menu (тШ░): every feature in one list, opened from the header ---- */
-  let menuHistory = false;   // the open menu added a history step (so the phone's Back closes it)
-  function menuItems() {
-    const text = toolText(), copy = text.tools, menu = text.menu || TOOLS_COPY.en.menu;
-    return [
-      ['home', 'ЁЯПа', menu.home, () => showPage('home')],
-      ['chat', 'ЁЯТм', copy.chat[0], () => showPage('chat')],
-      ['kundli', 'ЁЯУЬ', copy.jathakam[0], openJathakam],
-      ['lifeguide', 'тЪЦя╕П', lgCopy().card[0], openLifeGuide],
-      ['rashi', 'ЁЯФо', copy.rashi[0], () => showPage('rashi')],
-      ['moon', 'ЁЯМЩ', moonCopy().card[0], openMoonSign],
-      ['palm', 'тЬЛ', palmCopy().card[0], openPalm],
-      ['tarot', 'ЁЯГП', tarotCopy().card[0], openTarot],
-      ['numbers', 'ЁЯФв', numCopy().card[0], openNumerology],
-      ['relationship', 'ЁЯТЮ', copy.match[0], () => openTool('relationship')],
-      ['signmatch', 'ЁЯТС', smCopy().card[0], openSignMatch],
-      ['doshas', 'ЁЯз┐', copy.doshas[0], () => openTool('kundli', 'doshas')],
-      ['dasha', 'тП│', copy.dasha[0], () => openTool('kundli', 'dasha')],
-      ['calendar', 'ЁЯкФ', copy.festivals[0], () => showPage('calendar')],
-      ['panchang', 'ЁЯМЕ', menu.panchang, toPanchang],
-      ['look', 'ЁЯОи', menu.appearance, () => { renderLookPanel(); $('theme-panel').hidden = false; }],
-      ['share', 'ЁЯУд', menu.shareApp || TOOLS_COPY.en.menu.shareApp, shareApp],
-      ['rate', 'тнР', menu.rateApp || TOOLS_COPY.en.menu.rateApp, rateApp],
-      ['privacy', 'ЁЯФТ', menu.privacy, () => { try { window.location.href = '/privacy'; } catch (_error) { /* optional */ } }],
-    ];
-  }
-  const PLAY_URL = 'https://play.google.com/store/apps/details?id=store.karthiktraders.jyotisha';
-  function shareApp() { void shareText('Jyotirmaya AstroChat', `${(toolText().menu || TOOLS_COPY.en.menu).shareLine || TOOLS_COPY.en.menu.shareLine}\n${PLAY_URL}`); }
-  function rateApp() { try { window.open(PLAY_URL, '_blank'); } catch (_error) { /* optional */ } }
-  function renderMenu() {
-    const menu = toolText().menu || TOOLS_COPY.en.menu;
-    $('side-title').textContent = menu.title;
-    $('menu-btn').setAttribute('aria-label', menu.open);
-    $('side-close').setAttribute('aria-label', menu.close);
-    $('side-list').replaceChildren(...menuItems().map(([key, icon, label, go]) => {
-      const item = el('button', `side-item${key === currentPage ? ' on' : ''}`); item.type = 'button';
-      item.append(el('span', 'side-icon', icon), el('span', null, label));
-      item.addEventListener('click', () => chooseFromMenu(go));
-      return item;
-    }));
-  }
-  function hideMenu() {
-    $('side-menu').hidden = true;
-    $('menu-btn').setAttribute('aria-expanded', 'false');
-    if (document.body && document.body.classList) document.body.classList.remove('menu-open');
-  }
-  function openMenu() {
-    renderMenu();
-    $('side-menu').hidden = false;
-    $('menu-btn').setAttribute('aria-expanded', 'true');
-    if (document.body && document.body.classList) document.body.classList.add('menu-open');
-    menuHistory = false;
-    try {
-      if (window.history && typeof window.history.pushState === 'function') { window.history.pushState({ page: currentPage, menu: true }, '', `#${currentPage}`); menuHistory = true; }
-    } catch (_error) { /* history is optional */ }
-  }
-  // Closing with тЬХ or a tap outside also removes the menu's history step, so Back is not needed twice.
-  function closeMenu() {
-    if ($('side-menu').hidden) return;
-    hideMenu();
-    if (menuHistory) { menuHistory = false; try { window.history.back(); } catch (_error) { /* optional */ } }
-  }
-  function chooseFromMenu(go) {
-    hideMenu();
-    const before = currentPage, stepped = menuHistory;
-    replaceNext = stepped;
-    try { go(); } finally { replaceNext = false; menuHistory = false; }
-    if (stepped && currentPage === before) { try { window.history.back(); } catch (_error) { /* optional */ } }   // nothing new opened
-  }
-  $('menu-btn').addEventListener('click', openMenu);
-  $('today-strip').addEventListener('click', openToday);
-  $('side-close').addEventListener('click', closeMenu);
-  $('side-scrim').addEventListener('click', closeMenu);
+▌Ш[YKXЩ[JHOИ┬И██Ь▌▄[█ИH[
+	╪Э]█Й╦Ш[YHOOH▌]KЬ\ЭЩ\С┘[Щ\И╚	██Й╚И	╔╦XЩ[
+N┬И▄[█ЛЭ\HH	╪Э]█Й╬┬И▄[█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-  /* ---- Numerology: Moolank, Bhagyank, name number and personal year, worked out on the phone (no AI) ---- */
-  const numCopy = () => toolText().numerology || TOOLS_COPY.en.numerology;
-  const numState = { dob: '', name: '', editing: false, error: '' };
-  const numberDob = () => numState.dob || state.userDob || (loadProfile() || {}).dob || '';
-  function numberLine() {
-    const tool = window.JyotishaNumerology, dob = numberDob(), copy = numCopy();
-    if (!tool || !tool.parse(dob)) return '';
-    return `${copy.moolank[0]} ${tool.moolank(dob)} ┬╖ ${copy.bhagyank[0]} ${tool.bhagyank(dob)}`;
-  }
-  function openNumerology() { numState.editing = false; numState.error = ''; showPage('numbers'); renderNumerology(); }
-  function numberForm(copy, dob, name) {
-    const form = el('form', 'num-form');
-    const dobInput = el('input'); dobInput.type = 'date'; dobInput.id = 'num-dob'; dobInput.max = '2100-12-31'; dobInput.value = dob;
-    const nameInput = el('input'); nameInput.type = 'text'; nameInput.id = 'num-name'; nameInput.maxLength = 60; nameInput.autocomplete = 'name'; nameInput.value = name;
-    const field = (label, input) => { const box = el('label', 'num-field'); box.append(el('span', null, label), input); return box; };
-    const go = el('button', `palm-scan${rewardedFor('numbers') ? ' reward-btn' : ''}`, `ЁЯФв ${copy.show}`); go.type = 'submit';
-    form.append(field(copy.dob, dobInput), field(copy.name, nameInput), go);
-    if (numState.error) form.appendChild(el('p', 'num-error', numState.error));
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      const tool = window.JyotishaNumerology;
-      if (!tool || !tool.parse(dobInput.value)) { numState.error = copy.bad; renderNumerology(); return; }
-      if (rewardedFor('numbers') && !(await watchForResult())) return;
-      Object.assign(numState, { dob: dobInput.value, name: nameInput.value.trim().slice(0, 60), editing: false, error: '' });
-      renderNumerology();
-      renderTools();
-    });
-    return form;
-  }
-  function renderNumerology() { renderNumerologyBody(); decorate($('numerology'), numCopy().title); }
-  function renderNumerologyBody() {
-    const copy = numCopy(), box = $('numerology'), art = window.JyotishaArt, tool = window.JyotishaNumerology;
-    const hero = el('div', 'num-hero'); if (art && art.numerology) hero.innerHTML = art.numerology();
-    box.replaceChildren(hero);
-    const dob = numberDob(), name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
-    const result = tool && !numState.editing && dob ? tool.report(dob, name, state.lang, year) : null;
-    if (!result) { box.append(el('p', 'tarot-ask', copy.intro), numberForm(copy, dob, name)); return; }
-    let dateText = dob;
-    try { dateText = new Intl.DateTimeFormat(state.lang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${dob}T12:00:00Z`)); } catch (_error) { /* keep ISO */ }
-    const who = el('div', 'num-who');
-    const change = el('button', 'chip-btn', `тЬО ${copy.change}`); change.type = 'button';
-    change.addEventListener('click', () => { numState.editing = true; renderNumerology(); });
-    who.append(el('span', null, [name, dateText].filter(Boolean).join(' ┬╖ ')), change);
-    const tiles = el('div', 'num-tiles');
-    const tile = (n, label) => { const item = el('div', 'num-tile'); item.append(el('b', 'num-digit', String(n)), el('strong', null, label[0]), el('small', null, label[1])); return item; };
-    tiles.append(tile(result.moolank.number, copy.moolank), tile(result.bhagyank.number, copy.bhagyank));
-    if (result.name) tiles.appendChild(tile(result.name.number, copy.nameNum));
-    box.append(who, tiles);
-    const lines = [`ЁЯФв ${copy.title}${name ? ` ┬╖ ${name}` : ''}`];
-    const section = (label, info, extra) => {
-      const sec = el('section', 'num-sec');
-      const heading = `${label} ${info.number} ┬╖ ${info.title}`;
-      sec.append(el('h4', null, heading), el('p', 'num-planet', `ЁЯкР ${copy.planet}: ${bodyName(info.planet)}`), el('p', null, info.nature),
-        el('p', null, `ЁЯТк ${copy.strengths}: ${info.strengths}`), el('p', null, `тЪая╕П ${copy.care}: ${info.care}`));
-      if (extra) sec.appendChild(el('p', 'num-harmony', extra));
-      lines.push(`${heading}\n${info.nature}`);
-      return sec;
-    };
-    box.appendChild(section(copy.moolank[0], result.moolank));
-    box.appendChild(section(copy.bhagyank[0], result.bhagyank));
-    if (result.name) box.appendChild(section(copy.nameNum[0], result.name, result.harmony ? `тЬУ ${copy.harmonyGood}` : `тАв ${copy.harmonyNeutral}`));
-    else box.appendChild(el('p', 'num-note', copy.noName));
-    const yearBox = el('section', 'num-sec num-year');
-    const yearTitle = `ЁЯУЕ ${fill(copy.year, { year, n: result.year.number })}`;
-    yearBox.append(el('h4', null, yearTitle), el('p', null, result.year.text));
-    lines.push(`${yearTitle}\n${result.year.text}`);
-    const colours = ((toolText().rashi || TOOLS_COPY.en.rashi).colours || TOOLS_COPY.en.rashi.colours)[result.lucky.planet];
-    const days = result.lucky.days.map(day => calendarUI.weekdayName(state.lang, day, 'long')).join(', ');
-    const lucky = el('section', 'num-lucky');
-    lucky.appendChild(el('h4', null, `ЁЯНА ${copy.lucky}`));
-    for (const [label, value] of [[copy.luckyNumbers, result.lucky.numbers.join(', ')], [copy.luckyDays, days], [copy.luckyColours, colours]]) {
-      const row = el('p'); row.append(el('span', null, label), el('b', null, value)); lucky.appendChild(row);
-    }
-    box.append(yearBox, lucky);
-    const actions = el('div', 'tarot-actions');
-    const askAi = el('button', 'rashi-ask', `тЬи ${copy.askAi}`); askAi.type = 'button';
-    askAi.addEventListener('click', () => {
-      const question = fill(copy.askQ, { m: result.moolank.number, b: result.bhagyank.number });
-      showPage('chat'); ask(question, question, true);
-    });
-    const share = el('button', 'chip-btn', `тЖЧ ${copy.share}`); share.type = 'button';
-    share.addEventListener('click', () => { void shareText(`ЁЯФв ${copy.title}`, lines.join('\n\n')); });
-    actions.append(askAi, share);
-    box.append(actions, el('p', 'num-note', copy.note));
-  }
-  // Numerology, asked straight in chat: the same Moolank/Bhagyank/name-number report, as a compact chat message.
-  async function chatNumerology() {
-    const tool = window.JyotishaNumerology, dob = numberDob(), copy = numCopy();
-    if (!tool || !tool.parse(dob)) { addMessage('assistant', copy.bad); return; }
-    if (rewardedFor('numbers') && !(await watchForResult())) return;
-    const name = numState.dob ? numState.name : (state.userName || ''), year = new Date().getFullYear();
-    const result = tool.report(dob, name, state.lang, year);
-    const entry = el('div', 'chat-message assistant');
-    entry.appendChild(el('p', null, `ЁЯФв ${copy.title}${name ? ` ┬╖ ${name}` : ''}`));
-    const section = (label, info) => entry.append(el('p', null, `${label} ${info.number} ┬╖ ${info.title}`), el('p', null, info.nature));
-    section(copy.moolank[0], result.moolank);
-    section(copy.bhagyank[0], result.bhagyank);
-    if (result.name) section(copy.nameNum[0], result.name);
-    entry.appendChild(el('p', null, `ЁЯУЕ ${fill(copy.year, { year, n: result.year.number })} ${result.year.text}`));
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  /* ---- Life Guide: six balance bars (Love, Family, Marriage, Career, Wealth, Health out of 10) for yesterday, today,
-     tomorrow, this month and this year, worked out on the server from planet transits and the lunar day (no AI). ---- */
-  const lgCopy = () => toolText().lifeguide || TOOLS_COPY.en.lifeguide;
-  const LG_AREAS = ['love', 'family', 'marriage', 'career', 'wealth', 'health'];
-  const LG_ICONS = { love: 'ЁЯТЧ', family: 'ЁЯПб', marriage: 'ЁЯТН', career: 'ЁЯТ╝', wealth: 'ЁЯкЩ', health: 'ЁЯМ┐' };
-  const LG_TABS = ['yesterday', 'today', 'tomorrow', 'month', 'year'];
-  const lg = { sign: 0, tab: 'today', picking: false, cache: {}, info: {}, text: {}, busy: '', failed: false };
-  // One rewarded ad opens all tabs of a sign for the rest of the day (Today stays free); remembered on the phone.
-  const LG_UNLOCK_KEY = 'jyotisha.lg-unlock.v1';
-  function lgUnlocked(sign) {
-    try { const saved = JSON.parse(window.localStorage.getItem(LG_UNLOCK_KEY)); return !!(saved && saved.day === localIso(new Date()) && Array.isArray(saved.signs) && saved.signs.includes(sign)); } catch (_error) { return false; }
-  }
-  function lgUnlock(sign) {
-    try {
-      const today = localIso(new Date()), saved = JSON.parse(window.localStorage.getItem(LG_UNLOCK_KEY));
-      const signs = saved && saved.day === today && Array.isArray(saved.signs) ? saved.signs : [];
-      window.localStorage.setItem(LG_UNLOCK_KEY, JSON.stringify({ day: today, signs: [...signs, sign] }));
-    } catch (_error) { /* optional */ }
-  }
-  const lgLocked = tab => tab !== 'today' && rewardedFor('lifeguide') && !lgUnlocked(lg.sign);
-  function openLifeGuide() {
-    lg.tab = 'today'; lg.failed = false; lg.picking = false;
-    if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
-    showPage('lifeguide'); renderLifeGuide();
-    void loadLifeGuide();
-    void loadLifeGuideText();
-  }
-  // With the user's own chart and their own Moon sign, the Life Guide is personal: the birth star and the running dasha
-  // lords (and the natal house of each) are sent, never the birth date, time or place.
-  function lgPersonal() {
-    const chart = state.chart;
-    if (!chart || !chart.positions || !chart.positions.Moon || lg.sign !== chart.positions.Moon.rashi_index) return null;
-    const star = chart.panchanga_at_birth && chart.panchanga_at_birth.nakshatra_index;
-    if (!Number.isInteger(star) || star < 1 || star > 27) return null;
-    const dasha = state.details && state.details.dasha, planets = (state.details && state.details.planets) || {}, lords = [];
-    if (dasha && dasha.current_mahadasha) lords.push(dasha.current_mahadasha);
-    const sub = dasha && (dasha.antardasha || []).find(item => item.current);
-    if (sub) lords.push(sub.lord);
-    return { nakshatra: star, dasha: lords.filter(lord => planets[lord] && Number.isInteger(planets[lord].whole_sign_bhava)).map(lord => ({ lord, house: planets[lord].whole_sign_bhava })) };
-  }
-  const lgKey = () => { const personal = lgPersonal(); return `${lg.sign}:${state.todayIso || localIso(new Date())}:${personal ? personal.nakshatra : 0}`; };
-  async function loadLifeGuide() {
-    const sign = lg.sign, day = state.todayIso || localIso(new Date()), key = lgKey(), personal = lgPersonal();
-    if (!sign || lg.cache[key] || lg.busy === key) return;
-    lg.busy = key; lg.failed = false; renderLifeGuide();
-    try {
-      const { ok, body } = await post('/api/life-guide', personal ? { sign, date: day, personal } : { sign, date: day });
-      if (ok && body && body.reading) { lg.cache[key] = body.reading; lg.info[key] = body.personal || null; } else lg.failed = true;
-    } catch (_error) { lg.failed = true; }
-    lg.busy = '';
-    if (pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
-  }
-  // The AI-written wording of the day (four sentences per area and band, once a day per language, shared by everyone).
-  // Until it arrives, or if the AI is off, the built-in sentences are shown.
-  async function loadLifeGuideText() {
-    const day = state.todayIso || localIso(new Date()), key = `${state.lang}:${day}`;
-    if (lg.text[key] !== undefined) return;
-    lg.text[key] = null;
-    try {
-      const { ok, body } = await post('/api/life-guide-text', { language: state.lang, date: day });
-      lg.text[key] = ok && body && body.variants ? body.variants : null;
-    } catch (_error) { lg.text[key] = null; }
-    if (lg.text[key] && pages.lifeguide && !pages.lifeguide.hidden) renderLifeGuide();
-  }
-  const lgWords = () => lg.text[`${state.lang}:${state.todayIso || localIso(new Date())}`] || null;
-  const lgBand = score => (score >= 7 ? 2 : score >= 5 ? 1 : 0);
-  function renderLifeGuide() { renderLifeGuideBody(); decorate($('lifeguide'), lgCopy().title); }
-  function renderLifeGuideBody() {
-    const copy = lgCopy(), box = $('lifeguide'), art = window.JyotishaArt;
-    box.replaceChildren();
-    const hero = el('div', 'lg-hero'); if (art && art.lifeguide) hero.innerHTML = art.lifeguide();
-    box.appendChild(hero);
-    const key = lgKey(), data = lg.sign ? lg.cache[key] : null, personal = lgPersonal(), info = lg.info[key], words = lgWords();
-    // Which sign: the user's own Moon sign, or any sign chosen below.
-    if (lg.sign) {
-      const row = el('div', 'lg-sign');
-      row.append(el('span', 'lg-sign-name', `${RASHI_ICONS[lg.sign - 1]} ${copy.yourSign}: ${signName(lg.sign)}`));
-      const change = el('button', 'chip-btn', copy.change); change.type = 'button';
-      change.addEventListener('click', () => { lg.picking = !lg.picking; renderLifeGuide(); });
-      row.appendChild(change);
-      box.appendChild(row);
-      if (personal) {
-        const lords = personal.dasha.map(item => bodyName(item.lord)).join(' тАУ ');
-        box.appendChild(el('p', 'lg-personal', `тЬи ${fill(copy.personal, { star: names.nakshatraName(personal.nakshatra, state.lang) })}${lords ? ` ┬╖ ${fill(copy.dashaLine, { lords })}` : ''}`));
-        if (info && info.tara && lg.tab === 'today') {
-          box.appendChild(el('p', 'lg-personal lg-tara', `${fill(copy.tara, { tara: copy.taraNames[info.tara - 1] })}: ${copy.taraEffect[info.shift + 1]}`));
-        }
-      } else {
-        box.appendChild(el('p', 'lg-personal lg-general', copy.general));
-      }
-    } else {
-      box.appendChild(el('p', 'tarot-ask', copy.pickFirst));
-    }
-    if (lg.sign) {
-      const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
-      LG_TABS.forEach((tab, i) => {
-        const locked = lgLocked(tab);
-        const button = el('button', `${tab === lg.tab ? 'on' : ''}${locked ? ' locked' : ''}`.trim(), copy.tabs[i]); button.type = 'button';
-        button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', tab === lg.tab ? 'true' : 'false');
-        button.addEventListener('click', async () => {
-          if (lgLocked(tab)) { if (!(await watchForResult())) return; lgUnlock(lg.sign); }   // the video icon on the tab says an ad comes first
-          lg.tab = tab; renderLifeGuide();
-        });
-        tabs.appendChild(button);
-      });
-      box.appendChild(tabs);
-      if (LG_TABS.some(lgLocked)) box.appendChild(el('p', 'lg-unlock-note', copy.unlock));
-      if (!data) {
-        if (lg.failed) {
-          box.appendChild(el('p', 'palm-wait', copy.failed));
-          const retry = el('button', 'chip-btn', 'тЖ╗'); retry.type = 'button'; retry.addEventListener('click', () => { void loadLifeGuide(); });
-          box.appendChild(retry);
-        } else box.appendChild(loader(copy.loading));
-      } else {
-        const period = data[lg.tab];
-        box.appendChild(el('h4', 'home-h lg-balance-h', copy.balance[LG_TABS.indexOf(lg.tab)]));
-        const bars = el('div', 'lg-bars');
-        for (const area of LG_AREAS) {
-          const score = period[area].score;
-          const col = el('div', `lg-col lg-${area}`);
-          const track = el('div', 'lg-track'), fill = el('i'); if (fill.style) fill.style.height = `${score * 10}%`;
-          track.appendChild(fill);
-          col.append(el('b', null, `${score}/10`), track, el('small', null, copy.areas[area]));
-          bars.appendChild(col);
-        }
-        box.appendChild(bars);
-        box.appendChild(el('h4', 'home-h lg-balance-h', copy.byArea));
-        for (const area of LG_AREAS) {
-          const { score, support } = period[area];
-          const item = el('section', `lg-aspect lg-${area}`);
-          const head = el('div', 'lg-aspect-head');
-          head.append(el('span', 'lg-ico', LG_ICONS[area]), el('h4', null, copy.areas[area]), el('span', 'lg-score', String(score)));
-          // The day, the tab, the area and the user's own star pick which of the day's wordings to show.
-          const pool = words && words[area] && words[area][['low', 'mid', 'high'][lgBand(score)]];
-          const line = pool && pool.length ? pool[(dayNumberOf(new Date()) + LG_AREAS.indexOf(area) + LG_TABS.indexOf(lg.tab) * 2 + (personal ? personal.nakshatra : 0)) % pool.length] : copy.text[area][lgBand(score)];
-          item.append(head, el('p', null, line));
-          if (support && support.length) item.appendChild(el('small', null, fill(copy.supported, { planets: support.map(bodyName).join(', ') })));
-          box.appendChild(item);
-        }
-        box.appendChild(el('p', 'num-note', copy.note));
-      }
-    }
-    // Any sign: twelve small tiles (also how a visitor without a Kundli starts).
-    if (lg.picking || !lg.sign) {
-      box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
-      const grid = el('div', 'moon-pick');
-      for (let n = 1; n <= 12; n += 1) {
-        const tile = el('button', `moon-tile${n === lg.sign ? ' on' : ''}`); tile.type = 'button';
-        tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
-        tile.addEventListener('click', () => { lg.sign = n; lg.picking = false; renderLifeGuide(); void loadLifeGuide(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
-        grid.appendChild(tile);
-      }
-      box.appendChild(grid);
-    }
-  }
-  // Life Guide, asked straight in chat: today's balance (the free tab) for your own Moon sign, as a compact message.
-  async function chatLifeGuide() {
-    if (!lg.sign) { const own = ownMoon(); if (own) lg.sign = own.sign; }
-    const copy = lgCopy();
-    if (!lg.sign) { addMessage('assistant', copy.pickFirst); return; }
-    lg.tab = 'today';
-    if (!lg.cache[lgKey()]) await loadLifeGuide();
-    const data = lg.cache[lgKey()];
-    if (!data) { addMessage('assistant', copy.failed); return; }
-    const period = data.today;
-    const entry = el('div', 'chat-message assistant');
-    entry.appendChild(el('p', null, `тЪЦя╕П ${copy.balance[1]} ┬╖ ${signName(lg.sign)}`));
-    for (const area of LG_AREAS) entry.appendChild(el('p', null, `${LG_ICONS[area]} ${copy.areas[area]}: ${period[area].score}/10`));
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
+HOИ╚▌]KЬ\ЭЩ\С┘[Щ\ИHШ[YN╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* ---- Sign match: any two Moon signs; Graha Maitri + Bhakoot (12 points) from matchUI.signMatch ---- */
-  const smCopy = () => toolText().signmatch || TOOLS_COPY.en.signmatch;
-  const sm = { first: 0, second: 0, slot: 'first', shown: false };
-  function openSignMatch() {
-    sm.slot = 'first'; sm.shown = false;
-    if (!sm.first) { const own = ownMoon(); if (own) { sm.first = own.sign; sm.slot = 'second'; } }
-    showPage('signmatch'); renderSignMatch();
-  }
-  function renderSignMatch() { renderSignMatchBody(); decorate($('signmatch'), smCopy().title); }
-  function renderSignMatchBody() {
-    const copy = smCopy(), box = $('signmatch'), art = window.JyotishaArt, tool = window.matchUI;
-    box.replaceChildren();
-    const hero = el('div', 'lg-hero'); if (art && art.signmatch) hero.innerHTML = art.signmatch();
-    box.appendChild(hero);
-    // The two circles: You and Partner, with a heart between.
-    const slots = el('div', 'sm-slots');
-    const slot = (key, label) => {
-      const value = sm[key], on = sm.slot === key;
-      const button = el('button', `sm-slot${on ? ' on' : ''}`); button.type = 'button';
-      button.append(el('span', 'sm-circle', value ? RASHI_ICONS[value - 1] : 'я╝Л'), el('b', null, value ? signName(value) : copy.choose), el('small', null, label));
-      button.addEventListener('click', () => { sm.slot = key; sm.shown = false; renderSignMatch(); });
-      return button;
-    };
-    slots.append(slot('first', copy.you), el('span', 'sm-heart', 'ЁЯТЧ'), slot('second', copy.partner));
-    box.appendChild(slots);
-    const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
-    ['first', 'second'].forEach((key, i) => {
-      const button = el('button', sm.slot === key ? 'on' : '', copy.tabs[i]); button.type = 'button';
-      button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', sm.slot === key ? 'true' : 'false');
-      button.addEventListener('click', () => { sm.slot = key; renderSignMatch(); });
-      tabs.appendChild(button);
-    });
-    box.appendChild(tabs);
-    const grid = el('div', 'moon-pick');
-    for (let n = 1; n <= 12; n += 1) {
-      const tile = el('button', `moon-tile${n === sm[sm.slot] ? ' on' : ''}`); tile.type = 'button';
-      tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
-      tile.addEventListener('click', () => {
-        sm[sm.slot] = n; sm.shown = false;
-        if (!sm[sm.slot === 'first' ? 'second' : 'first']) sm.slot = sm.slot === 'first' ? 'second' : 'first';   // on to the other circle
-        renderSignMatch();
-      });
-      grid.appendChild(tile);
-    }
-    box.appendChild(grid);
-    const ready = !!(sm.first && sm.second && tool);
-    if (sm.shown && ready) {
-      const result = tool.signMatch(sm.first, sm.second);
-      const out = el('section', 'sm-result');
-      const verdict = copy.verdict[result.verdict];
-      out.append(el('div', 'sm-percent', `${result.percent}%`), el('h4', null, verdict), el('p', null, copy.text[result.verdict]));
-      const row = (label, points, max) => { const line = el('p', 'sm-row'); line.append(el('span', null, label), el('b', null, `${points} / ${max}`)); return line; };
-      out.append(row(copy.friendship, result.maitri, 5), row(copy.family, result.bhakoot, 7));
-      if (result.bhakootDosha) out.appendChild(el('p', 'num-note', copy.dosha));
-      box.appendChild(out);
-      const full = el('button', 'chip-btn', `${copy.full} тА║`); full.type = 'button';
-      full.addEventListener('click', () => openTool('relationship'));
-      box.append(full, el('p', 'num-note', copy.note));
-    }
-    // The main button, grey until both signs are chosen; a video icon marks the ad before the result.
-    const see = el('button', `palm-scan${rewardedFor('signmatch') ? ' reward-btn' : ''}${ready ? '' : ' is-off'}`, copy.see); see.type = 'button'; see.disabled = !ready;
-    see.addEventListener('click', async () => {
-      if (!ready) return;
-      if (!sm.shown && rewardedFor('signmatch') && !(await watchForResult())) return;
-      sm.shown = true; renderSignMatch();
-      try { const result = Array.from(box.children).find(item => item.className === 'sm-result'); if (result && result.scrollIntoView) result.scrollIntoView({ block: 'center' }); } catch (_error) { /* optional */ }
-    });
-    box.appendChild(see);
-  }
+N╚JN┬И┘[Щ\ФЫ▌╦Ш\[Щ┌[
+▄[█КN┬ИJN┬ИШZ]╦Ш\[Щ
+[
+	▄█X[	╦	█]]Y[Ы▌I╦█▄KЭШZ]╤┘[Щ\УXЩ[
+K┘[Щ\ФЫ▌╩N┬И██Ь▌ЭИH[
+	╪Э]█Й╦[K\╪╪[Й▄Щ]╪\ЩYЫ▄К	▄\ЭЩ\Й╩H╚	╚Щ]╪\ЩXЭЙ╚И	╔▀XЬ▌]\╚OOH	█┌╔╚╚█▄KЭШZ]╘▄ЭШZ]Y╪Z[РЭИИ█▄KЭШZ]╘▄ЭШZ]ЭКN┬ИЭЛЭ\HH	╪Э]█Й╬┬ИЭЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-  /* ---- Tarot: pick a topic, pick 3 of 12 face-down cards, see past / present / future and the AI's reading ---- */
-  // The 22 Major Arcana: English name, upright and reversed meaning (traditional), and the names in Telugu and Hindi.
-  const TAROT = [
-    ['The Fool', 'new beginnings, trust and a fresh start', 'hesitation and careless choices', 'р░ор▒Вр░░р▒Нр░Цр▒Бр░бр▒Б', 'рдореВрд░реНрдЦ'],
-    ['The Magician', 'skill, focus and making things happen', 'scattered energy and unused talent', 'р░ор░╛р░Вр░др▒Нр░░р░┐р░Хр▒Бр░бр▒Б', 'рдЬрд╛рджреВрдЧрд░'],
-    ['The High Priestess', 'intuition, inner wisdom and patience', 'ignoring your inner voice', 'р░кр▒Нр░░р░зр░╛р░и р░кр▒Вр░Ьр░╛р░░р░┐р░гр░┐', 'рдорд╣рд╛рдкреБрдЬрд╛рд░рд┐рди'],
-    ['The Empress', 'care, abundance and creativity', 'neglecting yourself or others', 'р░╕р░╛р░ор▒Нр░░р░╛р░Ьр▒Нр░Юр░┐', 'рд╕рдореНрд░рд╛рдЬреНрдЮреА'],
-    ['The Emperor', 'structure, stability and leadership', 'rigidity and control', 'р░Ър░Хр▒Нр░░р░╡р░░р▒Нр░др░┐', 'рд╕рдореНрд░рд╛рдЯ'],
-    ['The Hierophant', 'tradition, guidance and learning', 'breaking from convention', 'р░Чр▒Бр░░р▒Бр░╡р▒Б', 'рдЧреБрд░реБ'],
-    ['The Lovers', 'love, harmony and true choices', 'imbalance and doubt in a choice', 'р░кр▒Нр░░р▒Зр░ор░┐р░Хр▒Бр░▓р▒Б', 'рдкреНрд░реЗрдореА'],
-    ['The Chariot', 'determination and moving forward', 'lost direction and delays', 'р░░р░ер░В', 'рд░рде'],
-    ['Strength', 'courage, kindness and inner strength', 'self-doubt and impatience', 'р░мр░▓р░В', 'рд╢рдХреНрддрд┐'],
-    ['The Hermit', 'reflection, solitude and wisdom', 'isolation and withdrawal', 'р░╕р░ир▒Нр░пр░╛р░╕р░┐', 'рд╕рд╛рдзреБ'],
-    ['Wheel of Fortune', 'change, cycles and good timing', 'resistance to change', 'р░Ер░жр▒Гр░╖р▒Нр░Я р░Ър░Хр▒Нр░░р░В', 'рднрд╛рдЧреНрдп рдЪрдХреНрд░'],
-    ['Justice', 'fairness, truth and balance', 'imbalance and avoiding responsibility', 'р░ир▒Нр░пр░╛р░пр░В', 'рдиреНрдпрд╛рдп'],
-    ['The Hanged Man', 'pause, new perspective and surrender', 'stalling and indecision', 'р░╡р▒Зр░▓р░╛р░бр▒З р░ор░ир░┐р░╖р░┐', 'рд▓рдЯрдХрд╛ рд╣реБрдЖ рд╡реНрдпрдХреНрддрд┐'],
-    ['Death', 'endings that open new beginnings', 'fear of change and holding on', 'р░кр░░р░┐р░╡р░░р▒Нр░др░и', 'рдкрд░рд┐рд╡рд░реНрддрди'],
-    ['Temperance', 'balance, patience and moderation', 'excess and impatience', 'р░╕р░Вр░пр░ор░ир░В', 'рд╕рдВрдпрдо'],
-    ['The Devil', 'attachments and temptations to notice', 'breaking free from what binds you', 'р░мр░Вр░зр░ир░╛р░▓р▒Б', 'рдмрдВрдзрди'],
-    ['The Tower', 'sudden change that clears the way', 'avoiding a needed change', 'р░Чр▒Лр░кр▒Бр░░р░В', 'рдореАрдирд╛рд░'],
-    ['The Star', 'hope, healing and renewal', 'losing faith for a while', 'р░ир░Хр▒Нр░╖р░др▒Нр░░р░В', 'рддрд╛рд░рд╛'],
-    ['The Moon', 'dreams, intuition and uncertainty', 'confusion clearing up', 'р░Ър░Вр░жр▒Нр░░р▒Бр░бр▒Б', 'рдЪрдВрджреНрд░рдорд╛'],
-    ['The Sun', 'joy, success and warmth', 'temporary clouds over happiness', 'р░╕р▒Вр░░р▒Нр░пр▒Бр░бр▒Б', 'рд╕реВрд░реНрдп'],
-    ['Judgement', 'awakening and a fresh calling', 'self-doubt and old regrets', 'р░Ьр░╛р░Чр▒Гр░др░┐', 'рдЬрд╛рдЧреГрддрд┐'],
-    ['The World', 'completion, fulfilment and wholeness', 'unfinished business', 'р░кр▒Нр░░р░кр░Вр░Ър░В', 'рд╕рдВрд╕рд╛рд░'],
-  ];
-  const TAROT_TOPICS = [['love', 'ЁЯТЮ'], ['career', 'ЁЯТ╝'], ['money', 'ЁЯкЩ'], ['health', 'ЁЯМ┐'], ['luck', 'ЁЯНА'], ['family', 'ЁЯПб']];
-  const tarotCopy = () => toolText().tarot || TOOLS_COPY.en.tarot;
-  const tarotName = index => (state.lang === 'te' ? TAROT[index][3] : state.lang === 'hi' ? TAROT[index][4] : TAROT[index][0]);
-  const randomInt = n => { try { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] % n; } catch (_error) { return Math.floor(Math.random() * n); } };
-  const tarot = { step: 'topic', topic: '', spread: [], chosen: [], reading: undefined };
-  function openTarot() { tarot.step = 'topic'; tarot.topic = ''; tarot.chosen = []; tarot.reading = undefined; showPage('tarot'); renderTarot(); }
-  function startTarotDraw(topic) {
-    const deck = TAROT.map((_, i) => i);
-    for (let i = deck.length - 1; i > 0; i -= 1) { const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }   // shuffle
-    tarot.topic = topic; tarot.step = 'draw'; tarot.chosen = []; tarot.reading = undefined;
-    tarot.spread = deck.slice(0, 12).map(id => ({ id, reversed: randomInt(4) === 0 }));                                   // about 1 in 4 reversed
-    renderTarot();
-  }
-  async function loadTarotReading() {
-    const cards = tarot.chosen.map(n => tarot.spread[n]);
-    tarot.reading = null;   // loading
-    try {
-      const { ok, body } = await post('/api/tarot', { topic: tarot.topic, language: state.lang, cards });
-      tarot.reading = ok && body && body.reading ? body.reading : false;
-    } catch (_error) { tarot.reading = false; }
-    if (tarot.step === 'result') renderTarot();
-  }
-  function renderTarot() { renderTarotBody(); decorate($('tarot'), tarotCopy().title); }
-  function renderTarotBody() {
-    const copy = tarotCopy(), box = $('tarot'), art = window.JyotishaArt;
-    box.replaceChildren();
-    if (tarot.step === 'topic') {
-      box.appendChild(el('p', 'tarot-ask', copy.ask));
-      const grid = el('div', 'tarot-topics');
-      for (const [key, icon] of TAROT_TOPICS) {
-        const tile = el('button', 'tarot-topic'); tile.type = 'button';
-        tile.append(el('span', 'tarot-topic-icon', icon), el('b', null, copy.topics[key]));
-        tile.addEventListener('click', () => startTarotDraw(key));
-        grid.appendChild(tile);
-      }
-      box.appendChild(grid);
-      return;
-    }
-    if (tarot.step === 'draw') {
-      box.append(el('p', 'tarot-ask', `${copy.topics[tarot.topic]} ┬╖ ${copy.pick}`), el('p', 'tarot-hint', copy.shuffle),
-        el('p', 'tarot-count', fill(copy.picked, { n: tarot.chosen.length })));
-      const grid = el('div', 'tarot-spread');
-      tarot.spread.forEach((_card, n) => {
-        const back = el('button', `tarot-back${tarot.chosen.includes(n) ? ' on' : ''}`); back.type = 'button';
-        if (art) back.innerHTML = art.tarotBack();
-        back.addEventListener('click', () => {
-          if (tarot.chosen.includes(n) || tarot.chosen.length >= 3) return;
-          tarot.chosen.push(n);
-          if (tarot.chosen.length === 3) {
-            if (rewardedFor('tarot')) tarot.step = 'locked';   // the three cards wait face down behind "тЦ╢ See my reading"
-            else { tarot.step = 'result'; void loadTarotReading(); }
-          }
-          renderTarot();
-        });
-        grid.appendChild(back);
-      });
-      box.appendChild(grid);
-      return;
-    }
-    if (tarot.step === 'locked') {
-      box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
-      const row = el('div', 'tarot-row');
-      copy.positions.forEach(position => {
-        const face = el('div', 'tarot-face');
-        const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotBack();
-        face.append(el('small', 'tarot-pos', position), pic);
-        row.appendChild(face);
-      });
-      const see = el('button', 'palm-scan reward-btn', copy.see); see.type = 'button';
-      see.addEventListener('click', async () => {
-        if (!(await watchForResult())) return;   // closed the ad early: the cards stay face down
-        tarot.step = 'result'; void loadTarotReading(); renderTarot();
-      });
-      box.append(row, see);
-      return;
-    }
-    // Result: the three cards face up, then the reading (AI, or the built-in meanings).
-    const cards = tarot.chosen.map(n => tarot.spread[n]);
-    box.appendChild(el('p', 'tarot-ask', copy.topics[tarot.topic]));
-    const row = el('div', 'tarot-row');
-    cards.forEach((card, i) => {
-      const face = el('div', `tarot-face${card.reversed ? ' reversed' : ''}`);
-      const pic = el('div', 'tarot-pic'); if (art) pic.innerHTML = art.tarotCard(card.id);
-      face.append(el('small', 'tarot-pos', copy.positions[i]), pic, el('b', null, tarotName(card.id)));
-      if (card.reversed) face.appendChild(el('span', 'tarot-rev', copy.reversed));
-      row.appendChild(face);
-    });
-    box.appendChild(row);
-    const reading = tarot.reading, lines = [];
-    ['past', 'present', 'future'].forEach((key, i) => {
-      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
-      const text = reading ? reading[key] : reading === null ? copy.loading : `${tarotName(card.id)}: ${meaning}.`;
-      const sec = el('section', `tarot-sec${reading === null ? ' loading' : ''}`);
-      sec.append(el('h4', null, `${copy.positions[i]} ┬╖ ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}`), el('p', null, text));
-      box.appendChild(sec);
-      lines.push(`${copy.positions[i]} ┬╖ ${tarotName(card.id)}: ${text}`);
-    });
-    if (reading !== null) {
-      const advice = reading ? reading.advice : copy.fallbackAdvice;
-      const sec = el('section', 'tarot-sec advice');
-      sec.append(el('h4', null, `тЬи ${copy.advice}`), el('p', null, advice));
-      box.appendChild(sec);
-      lines.push(`тЬи ${advice}`);
-    }
-    const actions = el('div', 'tarot-actions');
-    const askAi = el('button', 'rashi-ask', `тЬи ${copy.askAi}`); askAi.type = 'button';
-    askAi.addEventListener('click', () => {
-      const question = fill(copy.askQ, { cards: cards.map(card => tarotName(card.id)).join(', '), topic: copy.topics[tarot.topic] });
-      showPage('chat'); ask(question, question, true);
-    });
-    const share = el('button', 'chip-btn', `тЖЧ ${copy.share}`); share.type = 'button';
-    share.addEventListener('click', () => { void shareText(`ЁЯГП ${copy.title}: ${copy.topics[tarot.topic]}`, lines.join('\n\n')); });
-    const again = el('button', 'chip-btn', `тЖ╗ ${copy.again}`); again.type = 'button';
-    again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
-    actions.append(askAi, share, again);
-    box.appendChild(actions);
-  }
-  // Tarot, asked straight in chat: a fresh three-card draw and reading for the matched topic, shown as a message.
-  function matchTarotTopic(query) {
-    const text = String(query || '').toLowerCase(), copy = tarotCopy();
-    for (const [key] of TAROT_TOPICS) if (text.includes(key) || (copy.topics[key] && text.includes(copy.topics[key].toLowerCase()))) return key;
-    return null;
-  }
-  let chatTarotAwaitingTopic = false;
-  async function chatTarot(topicKey) {
-    const copy = tarotCopy();
-    startTarotDraw(topicKey);
-    tarot.chosen = [0, 1, 2];
-    if (rewardedFor('tarot') && !(await watchForResult())) { tarot.step = 'topic'; return; }
-    const pending = el('div', 'chat-message assistant', copy.loading);
-    chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
-    await loadTarotReading();
-    chatLog.removeChild(pending);
-    const cards = tarot.chosen.map(n => tarot.spread[n]), reading = tarot.reading;
-    const entry = el('div', 'chat-message assistant');
-    entry.appendChild(el('p', null, `ЁЯГП ${copy.topics[tarot.topic]}`));
-    ['past', 'present', 'future'].forEach((key, i) => {
-      const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
-      const text = reading ? reading[key] : `${tarotName(card.id)}: ${meaning}.`;
-      entry.appendChild(el('p', null, `${copy.positions[i]} ┬╖ ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}: ${text}`));
-    });
-    entry.appendChild(el('p', null, `тЬи ${reading ? reading.advice : copy.fallbackAdvice}`));
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  /* ---- Moon Sign page: a big moon, your Vedic Moon sign (with nakshatra) and five warm sections ---- */
-  state.moonText = {}; state.moonPick = 0; state.moonApprox = null;
-  const MOON_SECTIONS = [['emotional', 'ЁЯМ╕'], ['love', 'ЁЯТЮ'], ['career', 'ЁЯТ╝'], ['wellbeing', 'ЁЯМ┐'], ['remedy', 'ЁЯкФ']];
-  const moonCopy = () => toolText().moon || TOOLS_COPY.en.moon;
-  function ownMoon() {
-    if (state.chart) {
-      const birth = state.chart.panchanga_at_birth || {};
-      return { sign: state.chart.positions.Moon.rashi_index, star: birth.nakshatra_index, pada: birth.nakshatra_pada, approx: false };
-    }
-    return state.moonApprox;
-  }
-  // Only a birth date (no time): the Moon at noon that day, marked as approximate (it can change sign within the day).
-  async function loadApproxMoon() {
-    if (state.chart || state.moonApprox || state.moonApproxBusy || !state.userDob || !state.city) return;
-    state.moonApproxBusy = true;
-    try {
-      const { ok, body } = await post('/api/birth-chart', { dob: state.userDob, pob: state.city, tob: '12:00' });
-      if (ok && body && body.chart) state.moonApprox = { sign: body.chart.positions.Moon.rashi_index, approx: true };
-    } catch (_error) { /* offline: ask for details instead */ }
-    state.moonApproxBusy = false;
-    if (!pages.moon.hidden) renderMoonSign();
-  }
-  async function loadMoonText(sign) {
-    const key = `${sign}|${state.lang}`;
-    if (key in state.moonText) return;
-    state.moonText[key] = null;   // loading
-    try {
-      const { ok, body } = await post('/api/moon-sign', { sign, language: state.lang });
-      state.moonText[key] = ok && body && body.readings ? body.readings : false;
-    } catch (_error) { state.moonText[key] = false; }
-    if (!pages.moon.hidden) renderMoonSign();
-  }
-  function openMoonSign() { state.moonPick = 0; showPage('moon'); renderMoonSign(); }
-  function renderMoonSign() { renderMoonSignBody(); decorate($('moonsign'), moonCopy().title); }
-  function renderMoonSignBody() {
-    const copy = moonCopy(), box = $('moonsign'), own = ownMoon();
-    if (!own) void loadApproxMoon();
-    const sign = state.moonPick || (own ? own.sign : 0);
-    box.replaceChildren();
-    const art = el('div', 'moon-art');
-    if (window.JyotishaArt) art.innerHTML = window.JyotishaArt.moon();
-    box.appendChild(art);
-    if (!sign) {
-      box.appendChild(el('p', 'moon-need', copy.need));
-      const add = el('button', 'moon-add', `${copy.add} тА║`); add.type = 'button';
-      add.addEventListener('click', () => { showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } });
-      box.appendChild(add);
-    } else {
-      box.appendChild(el('h3', 'moon-sign', `тЬж ${signName(sign)} тЬж`));
-      if (own && sign === own.sign) {
-        if (own.star) box.appendChild(el('p', 'moon-star', `${copy.nakshatra}: ${names.nakshatraName(own.star, state.lang)}${own.pada ? ` ┬╖ ${copy.pada} ${own.pada}` : ''}`));
-        if (own.approx) box.appendChild(el('p', 'moon-approx', copy.approx));
-      }
-      const key = `${sign}|${state.lang}`;
-      if (!(key in state.moonText)) void loadMoonText(sign);
-      const text = state.moonText[key];
-      const lines = [];
-      for (const [name, icon] of MOON_SECTIONS) {
-        const body = text ? text[name] : (name === 'emotional' ? copy.nature[sign - 1] : '');
-        if (!body && text !== null) continue;
-        const card = el('section', `moon-sec${text === null && name !== 'emotional' ? ' loading' : ''}`);
-        card.append(el('span', 'moon-icon', icon), el('h4', null, copy.sections[name]), el('p', null, body || copy.loading));
-        box.appendChild(card);
-        if (body) lines.push(`${icon} ${copy.sections[name]}\n${body}`);
-      }
-      // Sharing is the share icon in the page header; only the report link stays here.
-      if (state.contactEmail) {
-        const tools = el('div', 'moon-tools');
-        const report = el('a', 'chip-btn', `тЪС ${copy.report}`);
-        report.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent(`Report: Moon sign ${sign} (${state.lang})`)}`;
-        tools.appendChild(report);
-        box.appendChild(tools);
-      }
-    }
-    // Explore any sign: twelve small tiles.
-    box.appendChild(el('h4', 'home-h moon-pick-h', copy.pick));
-    const grid = el('div', 'moon-pick');
-    for (let n = 1; n <= 12; n += 1) {
-      const tile = el('button', `moon-tile${n === sign ? ' on' : ''}`); tile.type = 'button';
-      tile.append(el('span', null, RASHI_ICONS[n - 1]), el('small', null, signName(n)));
-      if (own && n === own.sign) tile.appendChild(el('i', null, `тШЕ ${copy.yours}`));
-      tile.addEventListener('click', async () => {
-        if (rewardedFor('moon') && !(own && n === own.sign) && !(await watchForResult())) return;   // your own sign stays free
-        state.moonPick = n; renderMoonSign(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ }
-      });
-      grid.appendChild(tile);
-    }
-    box.appendChild(grid);
-  }
-  /* ---- Rashiphal: pick your sign, read today's paragraph, share or ask the AI ---- */
-  const RASHI_KEY = 'jyotisha.rashi.v1';
-  const RASHI_ICONS = ['ЁЯРП', 'ЁЯРВ', 'ЁЯСл', 'ЁЯжА', 'ЁЯжБ', 'ЁЯСз', 'тЪЦя╕П', 'ЁЯжВ', 'ЁЯП╣', 'ЁЯРР', 'ЁЯП║', 'ЁЯРЯ'];
-  const RASHI_GLYPHS = ['тЩИ', 'тЩЙ', 'тЩК', 'тЩЛ', 'тЩМ', 'тЩН', 'тЩО', 'тЩП', 'тЩР', 'тЩС', 'тЩТ', 'тЩУ'];
-  state.rashiPick = (() => { try { const value = Number(window.localStorage.getItem(RASHI_KEY)); return value >= 1 && value <= 12 ? value : 0; } catch (_error) { return 0; } })();
-  state.rashiAI = {};
-  state.rashiLucky = {};
-  // With a Kundli, Rashiphal opens on the user's own Moon sign (set whenever the chart is made or restored).
-  function useOwnRashi() {
-    if (!state.chart) return;
-    state.rashiPick = state.chart.positions.Moon.rashi_index;
-    try { window.localStorage.setItem(RASHI_KEY, String(state.rashiPick)); } catch (_error) { /* not remembered */ }
-    try { renderRashi(); } catch (_error) { /* the page is not ready yet */ }
-  }
-  function pickRashi(rashi) {
-    state.rashiPick = rashi;
-    try { window.localStorage.setItem(RASHI_KEY, String(rashi)); } catch (_error) { /* not remembered */ }
-    renderRashi();
-  }
-  function renderRashiPicker() {
-    const copy = toolText().rashi, mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
-    if (!state.rashiPick && mine) state.rashiPick = mine;   // your own sign once there is a Kundli
-    $('rashi-picker').replaceChildren(...RASHI_ICONS.map((icon, index) => {
-      const rashi = index + 1, tile = el('button', `rashi-tile${rashi === state.rashiPick ? ' on' : ''}`);
-      tile.type = 'button'; tile.setAttribute('aria-pressed', rashi === state.rashiPick ? 'true' : 'false');
-      tile.append(el('span', 'rashi-icon', icon), el('b', null, signName(rashi)), el('small', null, rashi === mine ? `тШЕ ${copy.mine}` : RASHI_GLYPHS[index]));
-      tile.addEventListener('click', () => pickRashi(rashi));
-      return tile;
-    }));
-    const find = $('rashi-find');
-    find.textContent = `${state.chart ? copy.mineButton : copy.find} тА║`;
-    find.onclick = () => {
-      if (state.chart) { pickRashi(state.chart.positions.Moon.rashi_index); return; }
-      showPage('kundli'); try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ }
-    };
-    if (!state.rashiPick) $('rashi-reading').replaceChildren(el('p', 'rashi-hint', copy.hint));
-  }
-  async function loadRashiAI(date) {
-    const key = `${date}|${state.lang}`;
-    if (key in state.rashiAI) return;
-    state.rashiAI[key] = null;   // loading
-    try {
-      const { ok, body } = await post('/api/rashiphal', { date, language: state.lang });
-      state.rashiAI[key] = ok && body && body.readings ? body.readings : false;
-      state.rashiLucky[key] = ok && body && body.lucky ? body.lucky : null;
-    } catch (_error) { state.rashiAI[key] = false; }
-    if (state.rashiMode === 'day') renderRashi();
-  }
-  // Today's paragraph for the chosen sign: the AI-written one when available, otherwise the rule-based reading.
-  function renderRashiReading(item, detail, day) {
-    const copy = toolText().rashi, key = `${day.date}|${state.lang}`;
-    if (!(key in state.rashiAI)) void loadRashiAI(day.date);
-    const ai = state.rashiAI[key] && state.rashiAI[key][String(item.rashi)];
-    const sentence = part => (/[.!?ред]$/.test(part.trim()) ? part.trim() : `${part.trim()}.`);
-    const text = ai || [detail && detail.verdict, item.kind, item.area].filter(Boolean).map(sentence).join(' ');
-    const box = $('rashi-reading'); box.replaceChildren();
-    const title = fill(copy.title, { sign: item.name, date: calendarUI.formatDate(state.lang, day.date, 'long') });
-    box.appendChild(el('h3', 'rashi-reading-title', `${RASHI_ICONS[item.rashi - 1]} ${title}`));
-    const askAboutDay = () => { const question = fill(copy.askQ, { sign: item.name }); showPage('chat'); ask(question, question, true); };
-    const openJathakam = () => { showPage('kundli'); if (!state.chart) { try { document.querySelector('[name="dob"]').focus(); } catch (_error) { /* optional */ } } };
-    // Quick links at the top, so people know the transits and remedies further down exist.
-    const jumps = el('div', 'rashi-jumps');
-    const jump = (label, action) => { const b = el('button', 'rashi-jump', label); b.type = 'button'; b.addEventListener('click', action); jumps.appendChild(b); };
-    if (detail && detail.rows && detail.rows.length) jump(`ЁЯкР ${copy.jump.transits}`, () => jumpToRashiSection('transits'));
-    if (detail && detail.remedies && detail.remedies.length) jump(`ЁЯЩП ${copy.jump.remedies}`, () => jumpToRashiSection('remedies'));
-    jump(`ЁЯУЬ ${copy.jump.full}`, openJathakam);
-    jump(`тЬи ${copy.jump.ask}`, askAboutDay);
-    box.appendChild(jumps);
-    const body = el('p', 'rashi-text clamp', text);
-    box.appendChild(body);
-    if (text.length > 260) {
-      const more = el('button', 'link-btn', copy.more); more.type = 'button';
-      more.addEventListener('click', () => { const open = body.classList.contains('clamp'); body.classList.toggle('clamp', !open); more.textContent = open ? copy.less : copy.more; });
-      box.appendChild(more);
-    } else body.classList.remove('clamp');
-    // Lucky colour, numbers and direction (calculated: the weekday's lord and the sign's lord; plus the sign's best transit).
-    const lucky = state.rashiLucky[key] && state.rashiLucky[key][String(item.rashi)];
-    let luckyText = '';
-    if (lucky && copy.colours[lucky.planet]) {
-      const box2 = el('div', 'rashi-lucky');
-      box2.appendChild(el('h4', null, `ЁЯНА ${copy.luckyTitle}`));
-      // Colour and direction follow the weekday lord (the same for every sign); numbers add the sign lord's. The sign's own
-      // colour and direction (its best transit) are added when they differ.
-      const own = lucky.sign_planet && lucky.sign_planet !== lucky.planet && copy.colours[lucky.sign_planet] ? lucky.sign_planet : null;
-      if (own) box2.appendChild(el('small', 'lucky-sub', copy.luckyDay));
-      const chips = el('div', 'lucky-chips');
-      const chip = (icon, label, value) => { const c = el('span', 'lucky-chip'); c.append(el('small', null, `${icon} ${label}`), el('b', null, value)); return c; };
-      chips.append(chip('ЁЯОи', copy.colour, copy.colours[lucky.planet]), chip('ЁЯФв', copy.numbers, lucky.numbers.join(', ')), chip('ЁЯзн', copy.direction, copy.directions[lucky.planet]));
-      box2.appendChild(chips);
-      luckyText = `\n\nЁЯНА ${copy.luckyTitle}\nЁЯОи ${copy.colour}: ${copy.colours[lucky.planet]} ┬╖ ЁЯФв ${copy.numbers}: ${lucky.numbers.join(', ')} ┬╖ ЁЯзн ${copy.direction}: ${copy.directions[lucky.planet]}`;
-      if (own) {
-        const special = el('div', 'lucky-sign');
-        special.append(el('small', 'lucky-sub', `тЬи ${copy.luckySign}`), el('b', null, `ЁЯОи ${copy.colours[own]} ┬╖ ЁЯзн ${copy.directions[own]}`));
-        box2.appendChild(special);
-        luckyText += `\nтЬи ${copy.luckySign}: ЁЯОи ${copy.colours[own]} ┬╖ ЁЯзн ${copy.directions[own]}`;
-      }
-      box.appendChild(box2);
-    }
-    const actions = el('div', 'rashi-actions');
-    const askButton = el('button', 'rashi-ask', `тЬи ${copy.ask}`); askButton.type = 'button';
-    askButton.addEventListener('click', askAboutDay);
-    const share = waLabel(el('button', 'wa-btn'), copy.share); share.type = 'button';
-    share.addEventListener('click', () => {
-      const message = `${RASHI_ICONS[item.rashi - 1]} ${title}\n\n${text}${luckyText}\n\nтАФ Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`;
-      try { window.open(`https://wa.me/?text=${encodeURIComponent(message.replace(/[\u2066-\u2069]/g, ''))}`, '_blank'); } catch (_error) { /* no browser */ }
-    });
-    const full = el('button', 'link-btn', `${copy.full} тА║`); full.type = 'button';
-    full.addEventListener('click', openJathakam);
-    actions.append(askButton, share, full);
-    box.appendChild(actions);
-    box.appendChild(el('h4', 'rashi-details-head', copy.details));
-  }
-  // Planet transits as cards (symbol, name, house, favourable or not, what it brings), favourable ones first.
-  const PLANET_GLYPHS = Object.freeze({ Sun: 'тШЙ', Moon: 'тШ╜', Mars: 'тЩВ', Mercury: 'тШ┐', Jupiter: 'тЩГ', Venus: 'тЩА', Saturn: 'тЩД', Rahu: 'тШК', Ketu: 'тШЛ' });
-  function transitCards(rows) {
-    const copy = toolText().rashi;
-    const grid = el('div', 'transit-grid');
-    const sorted = [...rows.filter(row => row.good), ...rows.filter(row => !row.good)];
-    for (const row of sorted) {
-      const card = el('div', `transit-card ${row.good ? 'ok' : 'no'}`);
-      const glyph = el('span', 'transit-glyph', PLANET_GLYPHS[row.name] || 'тАв');
-      glyph.style.background = PLANET_COLORS[row.name] || '#888';
-      const head = el('div', 'transit-head');
-      const names = el('div', 'transit-names');
-      names.append(el('b', null, row.body || row.name), el('small', null, row.houseText || ''));
-      head.append(glyph, names, el('span', `transit-tag ${row.good ? 'ok' : 'no'}`, row.good ? `тЬФ ${copy.transitGood}` : `тЪа ${copy.transitCare}`));
-      card.append(head, el('p', 'transit-phrase', row.phrase || row.text));
-      grid.appendChild(card);
-    }
-    return grid;
-  }
-  function jumpToRashiSection(name) {
-    const spot = state.rashiJump || {};
-    if (!spot.card || !spot[name]) return;
-    spot.card.open = true;                       // the details card is folded; open it, then scroll to the section
-    try { spot[name].scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* older browsers */ }
-  }
-  function renderRashiDay() {
-    const day = state.day;
-    if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
-    $('rashi-moon').textContent = `${calendarUI.formatDate(state.lang, day.date, 'full')} ┬╖ ${t('moonsign')}: ${signName(day.moon_rashi[0].index)}`;
-    const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
-    const detail = chartUI.gocharaOutlook(day, state.lang), moonCards = chartUI.rashiOutlook(day, state.lang);
-    for (const item of moonCards) {
-      const more = detail[item.rashi - 1];
-      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
-      const tone = more ? more.tone : item.tone;
-      const card = el('details', `rashi-card ${tone}${item.rashi === mine ? ' mine' : ''}`);
-      if (item.rashi === mine && !state.rashiPick) card.open = true;
-      if (state.rashiPick) renderRashiReading(item, more, day);
-      const head = el('summary', null);
-      head.appendChild(el('strong', null, `${tinted(tone)} ${item.name}`));
-      if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
-      if (more) head.appendChild(el('span', 'rashi-count', more.count));
-      card.appendChild(head);
-      if (more) card.appendChild(el('p', 'rashi-verdict', more.verdict));
-      if (more) card.appendChild(areaBlock(more.areas));
-      card.appendChild(el('p', null, item.kind));
-      card.appendChild(el('p', 'muted-note', item.area));
-      if (more) {
-        const transitsHead = el('h4', null, chartUI.gocharaHead(state.lang));
-        card.appendChild(transitsHead);
-        card.appendChild(transitCards(more.rows));
-        const remediesHead = remedyBlock(card, more.remedies);
-        if (state.rashiPick) state.rashiJump = { card, transits: transitsHead, remedies: remediesHead };
-      }
-      $('rashi-list').appendChild(card);
-    }
-  }
-  async function loadWeek() {
-    const start = state.selectedDate, key = `${state.city}|${start}`;
-    if (!start || !state.city || state.weekLoading === key) return;
-    state.weekLoading = key;
-    const dates = Array.from({ length: 7 }, (_unused, n) => shiftIso(start, n));
-    const days = await Promise.all(dates.map(async iso => {
-      const cached = state.weekCache[`${state.city}|${iso}`];
-      if (cached) return cached;
-      try {
-        const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city });
-        if (ok && body && body.day) { state.weekCache[`${state.city}|${iso}`] = body.day; return body.day; }
-      } catch (_error) { /* a missing day is skipped */ }
-      return null;
-    }));
-    if (state.weekLoading !== key) return;
-    state.week = { key, days: days.filter(Boolean) };
-    state.weekLoading = null;
-    renderRashi();
-  }
-  function renderRashiWeek() {
-    const key = `${state.city}|${state.selectedDate}`;
-    if (!state.week || state.week.key !== key) { $('rashi-moon').textContent = t('dpLoading'); void loadWeek(); return; }
-    const days = state.week.days;
-    if (!days.length) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
-    const range = `${calendarUI.formatDate(state.lang, days[0].date, 'dayMonth')} тАУ ${calendarUI.formatDate(state.lang, days[days.length - 1].date, 'dayMonth')}`;
-    $('rashi-moon').textContent = `${t('viewWeek')}: ${range}`;
-    const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
-    for (const item of chartUI.weekOutlook(days, state.lang, dayLabel)) {
-      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
-      const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
-      if (item.rashi === mine) card.open = true;
-      const head = el('summary', null);
-      head.appendChild(el('strong', null, `${tinted(item.tone)} ${item.name}`));
-      if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
-      head.appendChild(el('span', 'rashi-count', range));
-      card.appendChild(head);
-      card.appendChild(el('p', 'rashi-verdict', item.verdict));
-      const strip = el('div', 'week-strip');
-      for (const day of item.strip) { const cell = el('span', `week-day ${day.tone}`); cell.append(el('b', null, day.label), el('small', null, String(day.day)), el('i', null, tinted(day.tone))); strip.appendChild(cell); }
-      card.appendChild(strip);
-      card.appendChild(el('p', null, item.best)); card.appendChild(el('p', null, item.care));
-      card.appendChild(el('h4', null, chartUI.weekHead(state.lang))); card.appendChild(areaBlock(item.areas));
-      card.appendChild(el('h4', null, chartUI.slowHead(state.lang)));
-      const planets = el('ul', 'rashi-planets');
-      for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
-      card.appendChild(planets);
-      remedyBlock(card, item.remedies);
-      $('rashi-list').appendChild(card);
-    }
-  }
-  function renderRashiMonth() {
-    const month = state.month;
-    if (!month || month.year !== state.view.year || month.month !== state.view.month) { $('rashi-moon').textContent = t('dpLoading'); return; }
-    const days = month.days.filter(row => row.moon_rashi_index && row.planet_rashis).map(row => ({ date: row.date, moon_rashi: [{ index: row.moon_rashi_index }], planet_rashis: row.planet_rashis }));
-    if (!days.length) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
-    $('rashi-moon').textContent = `${t('viewMonth')}: ${calendarUI.monthTitle(month.year, month.month, state.lang)}`;
-    const dayNumber = iso => String(Number(iso.slice(8)));
-    const moves = el('div', 'rashi-moves');
-    moves.appendChild(el('h4', null, chartUI.monthMovesHead(state.lang)));
-    const list = el('ul', 'rashi-planets');
-    for (const line of chartUI.planetMoves(days, state.lang, iso => calendarUI.formatDate(state.lang, iso, 'dayMonth'))) list.appendChild(el('li', null, line));
-    moves.appendChild(list);
-    $('rashi-list').appendChild(moves);
-    const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
-    for (const item of chartUI.monthOutlook(days, state.lang, dayNumber)) {
-      if (state.rashiPick && item.rashi !== state.rashiPick) continue;
-      const card = el('details', `rashi-card ${item.tone}${item.rashi === mine ? ' mine' : ''}`);
-      if (item.rashi === mine) card.open = true;
-      const head = el('summary', null);
-      head.appendChild(el('strong', null, `${tinted(item.tone)} ${item.name}`));
-      if (item.rashi === mine) head.appendChild(el('span', 'tag now', t('janmaRashi')));
-      card.appendChild(head);
-      card.appendChild(el('p', 'rashi-verdict', item.verdict));
-      const grid = el('div', 'month-strip');
-      for (const day of item.strip) { const cell = el('span', `month-day ${day.tone}`); cell.append(el('b', null, day.label), el('i', null, tinted(day.tone))); grid.appendChild(cell); }
-      card.appendChild(grid);
-      card.appendChild(el('p', null, item.best)); card.appendChild(el('p', null, item.care));
-      card.appendChild(areaBlock(item.areas));
-      card.appendChild(el('h4', null, chartUI.slowHead(state.lang)));
-      const planets = el('ul', 'rashi-planets');
-      for (const row of item.slowRows) planets.appendChild(el('li', row.good ? 'ok' : 'no', row.text));
-      card.appendChild(planets);
-      remedyBlock(card, item.remedies);
-      $('rashi-list').appendChild(card);
-    }
-  }
-  function renderRashi() {
-    $('rashi-list').replaceChildren();
-    state.rashiJump = null;
-    $('rashi-reading').replaceChildren();
-    renderRashiPicker();
-    $('rashi-title').textContent = t('rashiphal');
-    document.querySelectorAll('#rashi-mode button').forEach(button => button.classList.toggle('on', button.dataset.rmode === state.rashiMode));
-    const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
-    $('rashi-prev').textContent = unit ? `тА╣ ${unit}` : t('previousDay');
-    $('rashi-next').textContent = unit ? `${unit} тА║` : t('nextDay');
-    if (state.rashiPick && rewardedFor('rashiphal') && !rashiUnlocked()) {   // once a day: one ad opens the readings
-      const copy = toolText().rashi, box = $('rashi-reading');
-      $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
-      const see = el('button', 'palm-scan reward-btn', copy.unlock || TOOLS_COPY.en.rashi.unlock); see.type = 'button';
-      see.addEventListener('click', async () => {
-        if (!(await watchForResult())) return;
-        try { window.localStorage.setItem(RASHI_UNLOCK_KEY, localIso(new Date())); } catch (_error) { /* not remembered: asks again next time */ }
-        renderRashi();
-      });
-      box.replaceChildren(el('h3', 'rashi-reading-title', `${RASHI_ICONS[state.rashiPick - 1]} ${signName(state.rashiPick)}`), el('p', 'rashi-hint', copy.unlockNote || TOOLS_COPY.en.rashi.unlockNote), see);
-      return;
-    }
-    if (!state.rashiPick) {   // nothing picked yet: just the sign grid and a hint
-      $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
-      return;
-    }
-    if (state.rashiMode === 'week') renderRashiWeek(); else if (state.rashiMode === 'month') renderRashiMonth(); else renderRashiDay();
-  }
-  document.querySelectorAll('#rashi-mode button').forEach(button => button.addEventListener('click', () => { state.rashiMode = button.dataset.rmode; renderRashi(); }));
-  const rashiStep = days => { if (state.rashiMode === 'month') moveMonth(days); else selectDate(shiftIso(state.selectedDate || localIso(new Date()), state.rashiMode === 'week' ? days * 7 : days)); };
-  $('rashi-prev').addEventListener('click', () => rashiStep(-1));
-  $('rashi-next').addEventListener('click', () => rashiStep(1));
-  $('rashi-today').addEventListener('click', () => selectDate(state.todayIso || localIso(new Date())));
-  function renderDay() {
-    renderRashi();
-    renderHomeAi();
-    const day = state.day;
-    if (!day) { clearDay(); return; }
-    const date = day.date;
-    const one = text => [{ text }];
-    const upto = iso => t('upto').replace('{time}', clock(iso, date));
-    const segments = (list, nameOf) => list.map(item => ({ text: nameOf(item.index) || String(item.index), note: item.ends_at ? upto(item.ends_at) : '' }));
-    const span = pair => one(`${clock(pair[0], date)} тАУ ${clock(pair[1], date)}`);
-    const moonEvent = iso => one(iso ? clock(iso, date) : t('noMoonEvent'));
-    const sign = index => signName(index) || String(index);
-    const nameList = (indices, nameOf) => indices.map(nameOf).join(', ');
-    const tithiName = index => names.tithiName(index, state.lang);
-    const nakshatraName = index => names.nakshatraName(index, state.lang);
+HOИ╚Ы┌Y┘[Щ\Ш]T\ЭЩ\Ф▄ЭШZ]
+ЩXYЪ▌\┘M╘Ш\┌KЩXYЭЩ[Э\╘Ш\┌K▌]KЬ\ЭЩ\С┘[Щ\КN╚JN┬ИШZ]╦Ш\[Щ┌[
+ЭКN┬ИBИH╪]┌
+┘\ЬЫ▄КH╚ШZ]╦Ш\[Щ┌[
+[
+	▄	╦Э[█▄KЩ\ЬЫ▄КJN╚BИBИBИYИ
+	
+	▄\ЭЩ\Л\Ы█I╩KЬ]Y\ЮT┘[X▌▄Р[
+H	
+	▄\ЭЩ\Л\Ы█I╩KЬ]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩KЩЫ▄СXX┌
+Э]█ИOИ┬ИЭ]█ЛЭ^██Э[ЭH█▄V╪Э]█ЛЩ]\┘]ЬЫ█WN╚Э]█ЛШ█\▄╙\▌Э┘┘█J	██Й╦Э]█ЛЩ]\┘]ЬЫ█HOOH▌]KЫ^TЫ█JN┬ИJN┬И██Ь▌▌\Ь╚H▌]KЫX]┌┌╚OOH	█▌\Ь╔╬┬И	
+	█X]┌]┌╦[XЩ[	╩KЭ^██Э[ЭH█▄KЭ┌╬┬И	
+	█X]┌]┌╔╩KЬЩ\X┘P┌[Щ[КЛЛЦ╔█YI╦	█▌\Ь╔╫KЫX\
+┌╚OИ┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦┌╚OOH▌]KЫX]┌┌╚╚	██Й╚И	╔╦┌╚OOH	█YI╚╚█▄KЭ┌╙YHИ█▄KЭ┌╙▌\Ь╩N┬ИЭ]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-    if (day.date === state.todayIso) { state.today = day; renderTodayStrip(); }
-    $('dp-moon').textContent = moonEmoji(day.tithi[0].index);
-    $('dp-date-title').textContent = calendarUI.formatDate(state.lang, date, 'full');
-    $('dp-subtitle').textContent = `${names.pakshaName(day.paksha, state.lang)}, ${tithiName(day.tithi[0].index)}`;
-    $('dp-place').textContent = `${day.place}, ${day.country_code}`;
+HOИ┬И▌]KЫX]┌┌╚H┌╬┬И▌]KЬ\ЭЩ\Р┌\ЭHЭ[╚▌]KЬ\ЭЩ\С]Z[╚HЭ[╚▌]KЩЪ\Ь▌┌\ЭHЭ[╚▌]KЩЪ\Ь▌]Z[╚HЭ[┬И	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH	╔╬╚Щ[Щ\ФЩ[][█Ь┌\
 
-    const strip = $('dp-sun-strip'); strip.replaceChildren();
-    for (const [icon, label, iso] of [['ЁЯМЕ', t('sunrise'), day.sunrise], ['ЁЯМЗ', t('sunset'), day.sunset], ['ЁЯМЩ', t('moonrise'), day.moonrise], ['ЁЯМШ', t('moonset'), day.moonset]]) {
-      const tile = el('div', 'sun-tile');
-      tile.append(el('span', 'ic', icon), el('small', null, label), el('b', null, iso ? clock(iso, date) : t('noMoonEvent')));
-      strip.appendChild(tile);
-    }
-    const keys = $('dp-key'); keys.replaceChildren();
-    for (const [color, label, list, nameOf] of [
-      ['#f2c14e', t('tithi'), day.tithi, tithiName], ['#2fc4a8', t('nakshatra'), day.nakshatra, nakshatraName],
-      ['#9b7bff', t('yoga'), day.yoga, index => names.yogaName(index, state.lang)], ['#ff6b8a', t('dpKarana'), day.karana_half_tithi, index => names.karanaName(index, state.lang)]]) {
-      const chip = el('div', 'key-chip');
-      chip.setAttribute('style', `--c:${color}`);
-      chip.append(el('small', null, label), el('b', null, nameOf(list[0].index) || ''), el('span', null, upto(list[0].ends_at)));
-      keys.appendChild(chip);
-    }
-    const weekday = calendarUI.weekdayName(state.lang, new Date(`${date}T12:00:00Z`).getUTCDay());
-    const balamRows = [
-      [t('goodChandrabalam'), day.moon_rashi.map(item => ({ text: nameList(item.good_chandrabalam_rashis, sign), note: upto(item.ends_at) }))],
-      [t('ashtamaChandra'), day.moon_rashi.map(item => ({ text: sign(item.ashtama_chandra_rashi), note: upto(item.ends_at) }))],
-      [t('goodTarabalam'), day.nakshatra.map(item => ({ text: nameList(item.good_tara_nakshatras, nakshatraName), note: upto(item.ends_at) }))],
-    ];
-    const timings = day.timings;
-    $('dp-tables').replaceChildren(
-      section(t('dpSunMoon'), [[t('sunrise'), one(clock(day.sunrise, date))], [t('sunset'), one(clock(day.sunset, date))], [t('moonrise'), moonEvent(day.moonrise)], [t('moonset'), moonEvent(day.moonset)]]),
-      section(t('dpPanchang'), [
-        [t('tithi'), segments(day.tithi, tithiName)], [t('nakshatra'), segments(day.nakshatra, nakshatraName)],
-        [t('yoga'), segments(day.yoga, index => names.yogaName(index, state.lang))], [t('dpKarana'), segments(day.karana_half_tithi, index => names.karanaName(index, state.lang))],
-        [t('vara'), one(weekday)], [t('paksha'), one(names.pakshaName(day.paksha, state.lang))]]),
-      section(t('dpRashi'), [[t('moonsign'), segments(day.moon_rashi, sign)], [t('sunsign'), one(sign(day.sun_rashi_index))]], 'calm'),
-      section(t('dpBalam'), balamRows, 'calm'),
-      section(t('dpAuspicious'), [
-        [t('pratahSandhya'), span(timings.pratah_sandhya)], [t('brahma'), span(timings.brahma_muhurta)], [t('abhijit'), span(timings.abhijit)],
-        [t('vijaya'), span(timings.vijaya_muhurta)], [t('sayahnaSandhya'), span(timings.sayahna_sandhya)], [t('nishita'), span(timings.nishita_muhurta)],
-        ...((day.amrita_kalam || []).length ? [[toolText().cards.amrita, day.amrita_kalam.map(item => ({ text: `${clock(item.starts_at, date)} тАУ ${clock(item.ends_at, date)}`, note: nakshatraName(item.nakshatra_index) }))]] : [])], 'good'),
-      section(t('dpInauspicious'), [
-        [t('rahu'), span(timings.rahu_kalam)], [t('yamaganda'), span(timings.yamaganda)], [t('gulika'), span(timings.gulika_kalam)],
-        ...((day.durmuhurtam || []).length ? [[toolText().cards.durmuhurtam, day.durmuhurtam.map(([start, end]) => ({ text: `${clock(start, date)} тАУ ${clock(end, date)}` }))]] : []),
-        [t('varjyam'), day.varjyam.map(item => ({ text: `${clock(item.starts_at, date)} тАУ ${clock(item.ends_at, date)}`, note: nakshatraName(item.nakshatra_index) }))]], 'bad'),
-      section(t('dpDay'), [[t('dinamana'), one(duration(day.dinamana_minutes))], [t('ratrimana'), one(duration(day.ratrimana_minutes))], [t('madhyahna'), one(clock(day.madhyahna, date))]]));
-    renderDayCards(day);
-  }
-  // The day at a glance: swipeable cards like a printed calendar's boxes, plus a WhatsApp share of the day.
-  function renderDayCards(day) {
-    const copy = toolText().cards, date = day.date, host = $('day-cards');
-    const range = (start, end) => `${clock(start, date)} тАУ ${clock(end, date)}`;
-    const dateLabel = calendarUI.formatDate(state.lang, date, 'short');
-    const card = (kind, title, rows) => {
-      const box = el('article', `day-card ${kind}`);
-      const head = el('header'); head.append(el('h3', null, title), el('small', null, dateLabel));
-      const list = el('ul');
-      for (const [label, values] of rows) {
-        if (!values || !values.length) continue;
-        const item = el('li'); item.appendChild(el('b', null, `${label}: `));
-        values.forEach((value, i) => { if (i) item.appendChild(el('span', 'again', ` ${copy.again} `)); item.appendChild(el('span', null, value)); });
-        list.appendChild(item);
-      }
-      box.append(head, list);
-      return box;
-    };
-    const timings = day.timings || {};
-    const segments = (items, nameOf) => (items || []).map(item => `${nameOf(item.index)} (${range(item.starts_at, item.ends_at)})`);
-    const good = card('good', copy.good, [
-      [t('abhijit'), timings.abhijit ? [range(...timings.abhijit)] : []],
-      [copy.amrita, (day.amrita_kalam || []).map(item => range(item.starts_at, item.ends_at))],
-      [t('brahma'), timings.brahma_muhurta ? [range(...timings.brahma_muhurta)] : []],
-      [t('vijaya'), timings.vijaya_muhurta ? [range(...timings.vijaya_muhurta)] : []],
-    ]);
-    const lunar = day.samvatsara_index && day.lunar_month ? lunarLine([{ samvatsara_index: day.samvatsara_index, lunar_month: day.lunar_month, adhika_month: day.adhika_month }]) : '';
-    const panchang = card('panchang', copy.panchang, [
-      [t('tithi'), segments(day.tithi, index => names.tithiName(index, state.lang))],
-      [t('nakshatra'), segments(day.nakshatra, index => names.nakshatraName(index, state.lang))],
-      [t('yoga'), segments(day.yoga, index => names.yogaName(index, state.lang))],
-    ]);
-    if (lunar) { const [head, list] = [...panchang.children]; panchang.replaceChildren(head, el('p', 'lunar', lunar), list); }
-    const events = day.event_muhurtas || {};
-    const eventRows = ['marriage', 'gruhapravesam', 'vehicle'].map(name => [copy[name], (events[name] || []).map(([start, end]) => range(start, end))]);
-    const muhurtas = card('events', copy.events, eventRows);
-    if (!eventRows.some(([, values]) => values.length)) muhurtas.appendChild(el('p', 'empty', copy.none));
-    muhurtas.appendChild(el('p', 'muted-note', copy.eventNote));
-    const bad = card('bad', copy.bad, [
-      [t('rahu'), timings.rahu_kalam ? [range(...timings.rahu_kalam)] : []],
-      [t('yamaganda'), timings.yamaganda ? [range(...timings.yamaganda)] : []],
-      [t('gulika'), timings.gulika_kalam ? [range(...timings.gulika_kalam)] : []],
-      [copy.durmuhurtam, (day.durmuhurtam || []).map(([start, end]) => range(start, end))],
-      [t('varjyam'), (day.varjyam || []).map(item => range(item.starts_at, item.ends_at))],
-    ]);
-    host.replaceChildren(good, panchang, muhurtas, bad);
-    $('day-cards-hint').textContent = copy.swipe;
-    $('dp-full-title').textContent = copy.full;
-    const share = $('share-day'); share.hidden = false; waLabel(share, copy.share);
-    share.onclick = () => shareDayOnWhatsApp(day);
-  }
-  function shareDayOnWhatsApp(day) {
-    const copy = toolText().cards, date = day.date, timings = day.timings || {};
-    const range = span => (Array.isArray(span) ? `${clock(span[0], date)} тАУ ${clock(span[1], date)}` : '');
-    const first = (items, nameOf) => (items && items[0] ? `${nameOf(items[0].index)} (тЖТ ${clock(items[0].ends_at, date)})` : '');
-    const lunar = day.samvatsara_index && day.lunar_month ? lunarLine([{ samvatsara_index: day.samvatsara_index, lunar_month: day.lunar_month, adhika_month: day.adhika_month }]) : '';
-    const festivals = eventsOn(date).map(eventName).join(', ');
-    const lines = [
-      `ЁЯЧУя╕П ${calendarUI.formatDate(state.lang, date, 'full')} ┬╖ ${day.place}`,
-      lunar,
-      festivals ? `ЁЯкФ ${festivals}` : '',
-      `ЁЯМЕ ${t('sunrise')} ${clock(day.sunrise, date)} ┬╖ ЁЯМЗ ${t('sunset')} ${clock(day.sunset, date)}`,
-      `ЁЯУ┐ ${t('tithi')}: ${first(day.tithi, index => names.tithiName(index, state.lang))}`,
-      `тнР ${t('nakshatra')}: ${first(day.nakshatra, index => names.nakshatraName(index, state.lang))}`,
-      `тЬЕ ${t('abhijit')}: ${range(timings.abhijit)}`,
-      (day.amrita_kalam || []).length ? `тЬи ${copy.amrita}: ${day.amrita_kalam.map(item => range([item.starts_at, item.ends_at])).join(', ')}` : '',
-      `тЪая╕П ${t('rahu')}: ${range(timings.rahu_kalam)}`,
-      `тЪая╕П ${t('yamaganda')}: ${range(timings.yamaganda)}`,
-      (day.durmuhurtam || []).length ? `тЫФ ${copy.durmuhurtam}: ${day.durmuhurtam.map(range).join(', ')}` : '',
-    ].filter(Boolean);
-    lines.push('', `тАФ Jyotirmaya AstroChat: ${window.location && window.location.origin ? window.location.origin : ''}`);
-    const text = lines.join('\n').replace(/[\u2066-\u2069]/g, '');
-    try { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); } catch (_error) { /* no browser */ }
-  }
-  // A slim "today" card at the top of Home: date, weekday and year, and the tithi and nakshatra running now.
-  // A tap opens today's full Panchang below (like the Jathakam card opens the chart).
-  function renderTodayStrip() {
-    const box = $('today-strip'), day = state.today;
-    if (!box) return;
-    if (!day || !Array.isArray(day.tithi) || !day.tithi.length) { box.hidden = true; return; }
-    const iso = day.date, now = `${localIso(new Date())}T${new Date().toTimeString().slice(0, 5)}`;
-    const pick = items => (Array.isArray(items) && items.length ? items.find(item => item.starts_at <= now && now < item.ends_at) || items[0] : null);
-    const tithi = pick(day.tithi), star = pick(day.nakshatra), date = new Date(`${iso}T12:00:00Z`);
-    const when = `${date.getUTCDate()} ${calendarUI.monthName(state.lang, date.getUTCMonth(), 'short')} | ${t('dpTitle')} ┬╖ ${calendarUI.weekdayName(state.lang, date.getUTCDay())}, ${date.getUTCFullYear()}`;
-    const what = [names.tithiName(tithi.index, state.lang), star ? names.nakshatraName(star.index, state.lang) : ''].filter(Boolean).join(' ┬╖ ');
-    box.replaceChildren(el('b', 'ts-when', when), el('span', 'ts-what', `${moonEmoji(tithi.index)} ${what} тА║`));
-    box.hidden = false;
-  }
-  function openToday() {
-    if (state.todayIso && state.day && state.day.date !== state.todayIso) selectDate(state.todayIso);
-    toPanchang();
-  }
-  async function loadDay(iso, followToday = false, quiet = false) {
-    const request = ++state.dayRequest, status = $('dp-status');
-    if (!state.city) { status.textContent = t('selectCity'); markDayReady(); return; }
-    if (!quiet) status.textContent = t('dpLoading');   // quiet: the saved Panchang is already showing
-    try {
-      const { ok, body } = await post('/api/day-panchang', { date: iso, place: state.city });
-      if (request !== state.dayRequest) return;
-      if (!ok || !body || !body.day) {
-        markDayReady();
-        if (quiet && state.day) return;   // keep the saved one
-        state.day = null; clearDay(); status.textContent = t('dpUnavailable'); return;
-      }
-      state.todayIso = body.day.today_local_date;
-      if (followToday && body.day.today_local_date !== body.day.date) { selectDate(body.day.today_local_date); return; }
-      state.day = body.day; status.textContent = '';
-      $('dp-date').value = state.day.date;
-      renderDay(); renderCalendar(); renderDayEvents();
-      if (state.day.date === state.todayIso) keepToday(state.day);
-      markDayReady();
-    } catch (_error) {
-      markDayReady();
-      if (request === state.dayRequest && !(quiet && state.day)) { state.day = null; clearDay(); status.textContent = t('dpUnavailable'); }
-    }
-  }
+N┬ИJN┬ИЩ]\ЫИЭ]█О┬ИJJN┬И	
+	┘Ъ\Ь▌XЫ╪┌╔╩KЪY[ИH[▌\Ь╬╚	
+	▄Ы█K\Ы▌╔╩KЪY[ИH▌\Ь╬┬И	
+	┘Ъ\Ь▌]]I╩KЭ^██Э[ЭH█▄KШЫ▐U]N╚	
+	▄┘X██Щ]]I╩KЭ^██Э[ЭH█▄KЩ┌\Ы]N┬И	
+	▄Щ[][█Ь┌\X██\\ЩK]]I╩KЪY[ИH▌\Ь╬┬И	
+	▄Щ[][█Ь┌\\ЩXY[Щ╔╩KЩ\╪XЫYH\▌]KШ┌\Э┬ИYИ
+\▌]KШ┌\Э	ЙИ[┘H	ЙИJ[┘HOOH	█X]┌	╚	ЙИ▌\Ь╩JH	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH█▄KЫЩYY┌\Э┬И██Ь▌ЩXY[Щ╚H	
+	▄Щ[][█Ь┌\\ЩXY[Щ╦\Щ\▌[	╩N╚ЩXY[Щ╦ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+[┘HOOH	▄ЩXY[Щ╔╚	ЙИ\▌]KШ┌\Э
+HЩXY[Щ╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЫЩYY┌\Э
+JN┬ИYИ
+▌]KШ┌\Э	ЙИ▌]KЬ┌▌╙▌ЩTЩXY[Щ╩H┬ИЮH┬И██Ь▌[Щ\╚H┌\ЭRKЬЩXYYЩJ▌]KШ┌\Э▌]KЩ]Z[╦	█X\ЬЪXY┘I╦▌]KЫ[Щ╦Э[
+N┬ИЫ▄И
+██Ь▌[ЩH┘И[Щ\╩HЩXY[Щ╦Ш\[Щ┌[
+[
+	▄	╦Э[[ЩJJN┬ИH╪]┌
+┘\ЬЫ▄КH╚ЩXY[Щ╦Ш\[Щ┌[
+[
+	▄	╦Э[█▄KЩ\ЬЫ▄КJN╚BИBИ██Ь▌Щ\▌[H	
+	▄Щ[][█Ь┌\\Щ\▌[	╩N╚Щ\▌[ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌Ъ\Ь▌H▌\Ь╚╚▌]KЩЪ\Ь▌┌\ЭИ▌]KШ┌\ЭЪ\Ь▌[ЩЫ╚H▌\Ь╚╚▌]KЩЪ\Ь▌]Z[╚И▌]KЩ]Z[╬┬ИYИ
+[┘HOOH	█X]┌	╚YЪ\Ь▌\▌]KЬ\ЭЩ\Р┌\Э
+HЩ]\ЫО┬ИЮH┬И██Ь▌Z[ЩHHЪ\Ь▌Ь▄┌][█Ь╦У[██ЛЬ┌Y\ЩX[██Щ┌]YKZ\Ь╚H▌]KЬ\ЭЩ\Р┌\ЭЬ▄┌][█Ь╦У[██ЛЬ┌Y\ЩX[██Щ┌]YN┬И██Ь▌X]┌H▌\Ь╚▌]KЫ^TЫ█HOOH	╪ЬЪYI╚╚X]┌RKЩ▌[ШSZ[[КZ[ЩKZ\Ь╩HИX]┌RKЩ▌[ШSZ[[КZ\Ь╦Z[ЩJN┬И██Ь▌╪█▄ЩHH[
+	┘]Й╦Щ[][█Ь┌\\╪█▄ЩHX]┌I█X]┌ЭЩ\ЩX▌X
+N┬И╪█▄ЩKШ\[Щ
+[
+	▄▄[Й╦Э[█▄KЬ╪█▄ЩJK[
+	▄▌Ы█Щ╔╦Э[	█X]┌Э▌[H╚	█X]┌ЫX^X
+JN┬И██Ь▌Ш\ИH[
+	▄Ы┘▄Щ\▄╔╩N╚Ш\ЛЫX^HX]┌ЫX^╚Ш\ЛЭШ[YHHX]┌Э▌[┬ИШ\ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦█▄KЬ╪█▄ЩJN╚╪█▄ЩKШ\[Щ┌[
+Ш\КN┬И╪█▄ЩKШ\[Щ┌[
+[
+	▄█X[	╦Э[█▄V█X]┌ЭЩ\ЩX▌JJN┬ИЩ\▌[Ш\[Щ┌[
+╪█▄ЩJN┬ИЫ▄И
+██Ь▌┘ЫY╦┘^WH┘И╓█X]┌ЫШYQ▄┌K	█ШYQ▄┌I╫K█X]┌ШЪZ██▌▄┌K	╪ЪZ██▌▄┌I╫WJHYИ
+ЫY╩HЩ\▌[Ш\[Щ┌[
+[
+	▄	╦	┘▄┌KYЫY╔╦█▄V┌┘^WJJN┬И██Ь▌▌ZШHH]Z[╚OИ]Z[╚	ЙИ]Z[╦Щ▄┌\╚	ЙИ]Z[╦Щ▄┌\╦Ъ▌ZШH╚]Z[╦Щ▄┌\╦Ъ▌ZШKЬЩ\┘[ЭИЭ[┬И██Ь▌YHH▌ZШJЪ\Ь▌[ЩЫ╩K[HH▌ZШJ▌]KЬ\ЭЩ\С]Z[╩N┬ИYИ
+YHOOHЭ[	ЙИ[HOOHЭ[
+H┬И██Ь▌Ы▐H[
+	┘]Й╦	█X[Щ█Z╦\Ы▌╔╩N┬ИЫ▐Ш\[Щ
+[
+	╪Й╦Э[█▄KЫX[Щ█Z╩K[
+	▄▄[Й╦Э[	█▌\Ь╚╚█▄KШЫ▐HИ█▄KЮ[▌_NИ	█YH╚█▄KЮY\╚И█▄KЫЫ▀H0н╚	█▌\Ь╚╚█▄KЩ┌\ЫИ█▄KЬ\ЭЩ\ЯNИ	▌[H╚█▄KЮY\╚И█▄KЫЫ▀X
+JN┬ИYИ
+YH	ЙИ[JHЫ▐Ш\[Щ┌[
+[
+	▄█X[	╦Э[█▄KЫX[Щ█Z╨Ы▌
+JN╚[┘HYИ
+YH[JHЫ▐Ш\[Щ┌[
+[
+	▄█X[	╦Э[█▄KЫX[Щ█Z╙█ЩJJN┬ИЩ\▌[Ш\[Щ┌[
+Ы▐
+N┬ИBИ██Ь▌Ы█H[
+	┘]Z[╔╦	┘Ы█	╩N┬ИЫ█Ш\[Щ┌[
+[
+	▄▌[[X\ЮI╦Э[█▄KЩ]Z[╩JN┬И██Ь▌\▌H[
+	▌[	╦	┌██▌K[\▌	╩N┬ИЫ▄И
+██Ь▌██▌H┘ИX]┌Ъ██▌\╩H┬И██Ь▌][HH[
+	█I╦██▌KЬ┌[Э╚OOH╚	▐Щ\Ы╔╚И	╔╩N┬И][KШ\[Щ
+[
+	▄▄[Й╦Э[█▄KЪ██▌\╓┌██▌KЪ┘^WJK[
+	╪Й╦Э[	┌██▌KЬ┌[Э▀H╚	┌██▌KЫX^X
+JN┬И\▌Ш\[Щ┌[
+][JN┬ИBИЫ█Ш\[Щ┌[
+\▌
+N╚Щ\▌[Ш\[Щ┌[
+Ы█
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ\▌[Ш\[Щ┌[
+[
+	▄	╦Э[█▄KЩ\ЬЫ▄КJN╚BИBИ╦╚Ц[▌\ИYX[\ЭЩ\ИОИH▌[^ЩYRH[\▌Ш][█ИЬЫ█HH▌▌\┘H[ЩЩ[Э\╚ШZ]╚[█ЩH
+Щ]Щ\ИH▌╦Щ]Щ\ВИ╦╚H▄X┌YЪX╚ЩX[\Ь██КN╚ЩZ[ЩЭ╪]┌[ИYИZ┘H[H[Щ\Ы▌Щ\▌[╦┌[И▌┌]┌Y█И[ИHYZ[И[Щ[ВИ██Ь▌\ЭЩ\У[Z]^H
 
-  /* --------------------------------------------------------- Home: calendar */
-  const eventsOn = iso => (state.month && state.month.events ? state.month.events.filter(event => event.date === iso) : []);
-  const eventName = event => calendarUI.festivalName(state.lang, event.key);
-  const IMPORTANT = { 11: 'E', 26: 'E', 15: 'P', 30: 'A' };
-  const MARKS = { E: 'ЁЯЩП', P: 'ЁЯМХ', A: 'ЁЯМС' };
-  // Short time for small spaces: 'р░╕р░╛.6:09' in Telugu, '6:09p' otherwise; '+1' when it falls on the next day.
-  function shortClock(iso, baseDate) {
-    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(iso || '');
-    if (!match) return '';
-    const hour = Number(match[2]), text = `${(hour % 12) || 12}:${match[3]}`, later = match[1] !== baseDate ? 'тБ║┬╣' : '';
-    if (state.lang === 'te') return `${hour < 12 ? 'р░Й' : hour < 16 ? 'р░о' : hour < 19 ? 'р░╕р░╛' : 'р░░р░╛'}.${text}${later}`;
-    return `${text}${hour < 12 ? 'a' : 'p'}${later}`;
-  }
-  // 'р░╢р▒Нр░░р▒А р░кр░░р░╛р░нр░╡ р░ир░╛р░о р░╕р░Вр░╡р░др▒Нр░╕р░░р░В, р░Жр░╢р▒Нр░╡р░пр▒Бр░Ьр░В тАУ р░Хр░╛р░░р▒Нр░др▒Ар░Хр░В р░ор░╛р░╕р░В' for the days shown.
-  function lunarLine(days) {
-    const copy = toolText().lunar, years = [], months = [];
-    for (const day of days) {
-      if (day.samvatsara_index && !years.includes(day.samvatsara_index)) years.push(day.samvatsara_index);
-      const key = day.lunar_month ? `${day.adhika_month ? 'A' : ''}${day.lunar_month}` : '';
-      if (key && !months.includes(key)) months.push(key);
-    }
-    if (!years.length || !months.length) return '';
-    const masa = key => { const name = names.masaName(Number(key.replace('A', '')), state.lang); return key.startsWith('A') ? fill(copy.adhika, { m: name }) : name; };
-    const year = years.map(index => names.samvatsaraName(index, state.lang)).join(' тЖТ ');
-    return `${fill(copy.year, { s: year })}, ${fill(copy.month, { m: months.map(masa).join(' тАУ ') })}`;
-  }
-  function renderCalendar() {
-    const { year, month } = state.view;
-    const grid = $('month-calendar');
-    grid.replaceChildren();
-    if (!year) { $('month-title').textContent = ''; $('month-sub').textContent = ''; $('cal-legend').replaceChildren(); $('month-events').replaceChildren(); return; }
-    $('month-title').textContent = calendarUI.monthTitle(year, month, state.lang);
-    $('month-sub').textContent = '';
-    for (const label of calendarUI.weekdayLabels(state.lang)) grid.appendChild(el('span', 'calendar-weekday', label));
-    const loaded = state.month && state.month.year === year && state.month.month === month ? state.month.days : null;
-    for (const number of calendarUI.monthCells(year, month)) {
-      if (number === null) { grid.appendChild(el('span', 'calendar-blank')); continue; }
-      const iso = calendarUI.isoDate(year, month, number);
-      const entry = loaded ? loaded[number - 1] : null;
-      const button = el('button', 'calendar-day'); button.type = 'button'; button.dataset.date = iso;
-      if (iso === state.todayIso) button.classList.add('today');
-      if (iso === state.selectedDate) button.classList.add('selected');
-      button.appendChild(el('strong', null, String(number)));
-      const dayEvents = loaded ? eventsOn(iso) : [];
-      if (dayEvents.length) {
-        button.dataset.fest = '1';
-        if (dayEvents.some(event => event.holiday)) button.dataset.holiday = '1';
-      }
-      if (entry && entry.tithi_index) {
-        const tithi = names.tithiName(entry.tithi_index, state.lang), nakshatra = names.nakshatraName(entry.nakshatra_index, state.lang);
-        const mark = IMPORTANT[entry.tithi_index];
-        button.appendChild(el('span', null, names.tithiBaseName(entry.tithi_index, state.lang)));
-        if (entry.tithi_ends_at) button.appendChild(el('em', 'tithi-end', shortClock(entry.tithi_ends_at, iso)));
-        button.dataset.pk = entry.tithi_index <= 15 ? 'S' : 'K';
-        if (mark) { button.dataset.imp = mark; button.appendChild(el('i', 'mark', MARKS[mark])); }
-        const festivalText = dayEvents.map(eventName).join(', ');
-        button.setAttribute('aria-label', `${iso}: ${tithi}, ${nakshatra}${festivalText ? ', ' + festivalText : ''}`);
-        button.title = `${tithi} ┬╖ ${nakshatra}${festivalText ? ' ┬╖ ' + festivalText : ''}`;
-      } else button.setAttribute('aria-label', iso);
-      if (dayEvents.length) button.appendChild(el('i', 'fest', 'тЬж'));
-      button.addEventListener('click', () => openDay(iso));
-      grid.appendChild(button);
-    }
-    if (loaded) $('month-sub').textContent = lunarLine(loaded);
-    const legend = $('cal-legend'); legend.replaceChildren();
-    for (const [color, text] of [['var(--good)', names.tithiName(11, state.lang)], ['var(--gold2)', names.tithiName(15, state.lang)], ['#59477f', names.tithiName(30, state.lang)], ['var(--saffron)', t('festivalTag')], ['var(--bad)', t('holidayTag')]]) {
-      const item = el('b', null, text); item.setAttribute('style', `--c:${color}`); legend.appendChild(item);
-    }
-    renderEvents();
-  }
-  function renderEvents() {
-    const box = $('month-events'); box.replaceChildren();
-    const month = state.month;
-    if (!month || month.year !== state.view.year || month.month !== state.view.month || !month.events) return;
-    box.appendChild(el('h3', 'sub-h', t('festivalsTitle')));
-    if (!month.events.length) box.appendChild(el('p', 'muted-note', t('festivalsNone')));
-    for (const event of month.events) {
-      const row = el('button', `event-row${event.holiday ? ' holiday' : ''}`); row.type = 'button';
-      row.append(el('b', 't', calendarUI.formatDate(state.lang, event.date, 'dayMonth')), el('span', null, eventName(event)));
-      if (event.holiday) row.appendChild(el('em', 'tag debilitated', t('holidayTag')));
-      row.addEventListener('click', () => openDay(event.date));
-      box.appendChild(row);
-    }
-    box.appendChild(el('p', 'muted-note', t('festivalsNote')));
-  }
-  function renderDayEvents() {
-    const chips = $('dp-events'); chips.replaceChildren();
-    if (!state.day) return;
-    for (const event of eventsOn(state.day.date)) chips.appendChild(el('span', `event-chip${event.holiday ? ' holiday' : ''}`, eventName(event)));
-  }
-  async function loadMonth() {
-    const request = ++state.monthRequest;
-    if (!state.city || !state.view.year) return;
-    const { year, month } = state.view;
-    try {
-      const { ok, body } = await post('/api/month-calendar', { year, month, place: state.city });
-      if (request !== state.monthRequest) return;
-      state.month = ok && body && body.days ? body : null;
-      if (state.month && state.month.today_local_date) state.todayIso = state.month.today_local_date;
-    } catch (_error) { if (request === state.monthRequest) state.month = null; }
-    renderCalendar(); renderDayEvents(); if (state.rashiMode === 'month') renderRashi();
-  }
-  // From the Calendar tab: show that day's full Panchang on Home.
-  function openDay(iso) {
-    selectDate(iso);
-    showPage('home');
-    try { $('detail-title').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); } catch (_error) { /* scrolling is optional */ }
-  }
-  function selectDate(iso) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-    const year = Number(iso.slice(0, 4)), month = Number(iso.slice(5, 7));
-    if (year < 1970 || year > 2100) return;
-    state.selectedDate = iso;
-    if (year !== state.view.year || month !== state.view.month) { state.view = { year, month }; state.month = null; renderCalendar(); void loadMonth(); }
-    else renderCalendar();
-    void loadDay(iso);
-  }
-  function moveMonth(step) {
-    const target = new Date(Date.UTC(state.view.year, state.view.month - 1 + step, 1));
-    const year = target.getUTCFullYear();
-    if (year < 1970 || year > 2100) return;
-    state.view = { year, month: target.getUTCMonth() + 1 }; state.month = null;
-    renderCalendar(); void loadMonth(); if (state.rashiMode === 'month') renderRashi();
-  }
-  function renderHome() { renderDay(); renderCalendar(); renderDayEvents(); renderFestivals(); }
-  $('month-prev').addEventListener('click', () => moveMonth(-1));
-  $('month-next').addEventListener('click', () => moveMonth(1));
-  $('dp-prev').addEventListener('click', () => selectDate(shiftIso(state.selectedDate || localIso(new Date()), -1)));
-  $('dp-next').addEventListener('click', () => selectDate(shiftIso(state.selectedDate || localIso(new Date()), 1)));
-  $('dp-today').addEventListener('click', () => selectDate(state.todayIso || localIso(new Date())));
-  $('dp-date').addEventListener('change', event => selectDate(event.target.value));
+HOИ
+┬ИNИ	°,"8,,8,b°,'8,`H8,+╕,`[\▌Ш][█И[Z]8,*╕,`╕,,8,cx,)8,b8, ╕,)╕,/╦И8,,8,a°,*╕,`H8,+╕,,°,cx,,╕,`8,*╕,cx,,8,+°,)8,cx,*8,/°, ╕,&╕, ╕,(x,/╦Й╦ИNИ	°)!╕)'8)%x)`[\▌Ш][█И[Z]8)*╕)`╕),8)`8).x)b╚8)%°)"8).x)b8)i8)%x),И8)*°)/°),8)%x)b°)-╕)/°)-И8)%x),8)a°) ╕)i	╦ИV▄▌]KЫ[Щ╫H	╓[▌H]ЩHЩXX┌Y┘^xа&\╚[\▌Ш][█И[Z]ИX\┘HЮHY╪Z[И█[▄ЬЫ▌╦Й╩N┬И]\ЭЩ\ФЩ\]Y\▌Э\▐HHШ[┘N┬И\▐[Ш╚Э[Ш▌[█И┘[Щ\Ш]T\ЭЩ\Ф▄ЭШZ]
+▌\┘M╘Ш\┌KЩ[Э\╘Ш\┌K┘[Щ\КH┬ИYИ
+\ЭЩ\ФЩ\]Y\▌Э\▐JHЩ]\ЫО┬И\ЭЩ\ФЩ\]Y\▌Э\▐HHЭYN┬И██Ь▌Щ]Ъ[▌\╚H▌]KЬ\ЭЩ\Ф▄ЭШZ]	ЙИ▌]KЬ\ЭЩ\Ф▄ЭШZ]Ъ[XY┘N┬ИЮH┬ИЮH┬И██Ь▌][▌HH]╪Z]┘]Ь██К	╦╪\K▄\ЭЩ\Л\▄ЭШZ]\][▌I╩N┬ИYИ
+][▌KЫ┌╚	ЙИ][▌KШЫ┘H	ЙИ][▌KШЫ┘KЬЩ[XZ[Ъ[Щ╚H
+H┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИ	█[Z]	╚N┬ИЩ[Щ\ФЩ[][█Ь┌\
 
-  /* ------------------------------------------------------------------ Kundli */
-  const dms = value => { const whole = Math.floor(value); const minutes = Math.floor((value - whole) * 60); return `${whole}┬░${String(minutes).padStart(2, '0')}тА▓`; };
-  function pseudoChart() {
-    const chart = state.chart, details = state.details;
-    if (state.kundli.division === 'd9' && details) {
-      const lagna = details.navamsa.lagna_rashi_index, positions = {};
-      for (const [name, sign] of Object.entries(details.navamsa.positions)) positions[name] = { rashi_index: sign, sidereal_longitude: (sign - 1) * 30, whole_sign_bhava: (sign - lagna + 12) % 12 + 1 };
-      return { chart: { ascendant: { rashi_index: lagna, sidereal_longitude: (lagna - 1) * 30 }, positions }, degrees: false, moonSign: details.navamsa.positions.Moon };
-    }
-    const positions = { ...chart.positions };
-    if (details) for (const node of ['Rahu', 'Ketu']) { const p = details.planets[node]; positions[node] = { rashi_index: p.rashi_index, sidereal_longitude: p.sidereal_longitude, whole_sign_bhava: p.whole_sign_bhava }; }
-    return { chart: { ascendant: chart.ascendant, positions }, degrees: true, moonSign: chart.positions.Moon.rashi_index };
-  }
-  const retroMark = name => state.details && state.details.planets[name] && state.details.planets[name].retrograde ? ' тДЮ' : '';
-  function planetChip(name, degrees, degreeText) {
-    const chip = el('div', 'd1-planet');
-    chip.setAttribute('style', `--pc:${PLANET_COLORS[name] || '#2a1d3f'}`);
-    chip.appendChild(document.createTextNode(`${bodyName(name)}${state.kundli.division === 'd1' ? retroMark(name) : ''} `));
-    if (degrees) {
-      // Full degree on roomy charts, whole degree on small ones (CSS picks one), so a sign box stays one line per planet.
-      const small = el('small');
-      small.append(el('span', 'deg-full', degreeText), el('span', 'deg-short', `${Math.floor(parseFloat(degreeText))}┬░`));
-      chip.appendChild(small);
-    }
-    return chip;
-  }
-  function renderSouth(view) {
-    const grid = $('d1-grid'); grid.replaceChildren();
-    for (const cell of chartUI.buildSouthIndianChart(view.chart)) {
-      const box = el('div', 'd1-cell'); box.style.gridRow = String(cell.row); box.style.gridColumn = String(cell.column);
-      if (cell.isLagna) box.classList.add('lagna');
-      if (cell.rashi === view.moonSign) box.classList.add('moon');
-      box.appendChild(el('div', 'd1-sign', signName(cell.rashi)));
-      box.appendChild(el('div', 'd1-house', `${t('colBhava')} ${cell.house}`));
-      if (cell.isLagna) box.appendChild(el('span', 'badge-lg', t('lagna')));
-      if (cell.rashi === view.moonSign) box.appendChild(el('span', 'badge-mn', 'тШ╛'));
-      if (cell.planets.length >= 3) box.classList.add('crowded');
-      for (const planet of cell.planets) box.appendChild(planetChip(planet.name, view.degrees, `${planet.degreesInSign.toFixed(2)}┬░`));
-      grid.appendChild(box);
-    }
-    const center = el('div', 'd1-center');
-    center.append(el('strong', null, t(state.kundli.division === 'd9' ? 'divD9' : 'divD1')), el('span', null, t('southIndian')));
-    grid.appendChild(center);
-  }
-  function renderNorth(view) {
-    const host = $('north-chart'); host.replaceChildren();
-    const svg = svgEl('svg', { viewBox: '0 0 400 400', role: 'presentation' });
-    const lagna = view.chart.ascendant.rashi_index;
-    const bySign = new Map();
-    for (const [name, p] of Object.entries(view.chart.positions)) { if (!bySign.has(p.rashi_index)) bySign.set(p.rashi_index, []); bySign.get(p.rashi_index).push({ name, degree: p.sidereal_longitude % 30 }); }
-    for (const house of chartUI.northIndianLayout()) {
-      const sign = (lagna - 1 + house.house - 1) % 12 + 1;
-      const polygon = svgEl('polygon', { points: house.points.map(point => point.join(',')).join(' ') });
-      polygon.setAttribute('class', `nc-house${house.house === 1 ? ' lagna' : ''}${sign === view.moonSign ? ' moon' : ''}`);
-      svg.appendChild(polygon);
-      const planets = bySign.get(sign) || [];
-      const lines = 1 + planets.length;
-      const [cx, cy] = house.center;
-      const top = cy - (lines - 1) * 7;
-      const label = svgEl('text', { x: cx, y: top, 'text-anchor': 'middle' });
-      label.setAttribute('class', 'nc-sign');
-      label.textContent = `${house.house === 1 ? 'тЧЖ ' : ''}${sign}${sign === view.moonSign ? ' тШ╛' : ''}`;
-      svg.appendChild(label);
-      planets.forEach((planet, index) => {
-        const text = svgEl('text', { x: cx, y: top + 14 * (index + 1), 'text-anchor': 'middle', fill: PLANET_COLORS[planet.name] || '#2a1d3f' });
-        text.setAttribute('class', 'nc-planet');
-        text.textContent = `${bodyName(planet.name)}${view.degrees ? ' ' + Math.floor(planet.degree) + '┬░' : ''}${view.degrees ? retroMark(planet.name) : ''}`;
-        svg.appendChild(text);
-      });
-    }
-    host.appendChild(svg);
-  }
-  function statTile(label, value, sub) {
-    const tile = el('div', 'k-stat');
-    tile.append(el('small', null, label), el('b', null, value), el('i', null, sub || ''));
-    return tile;
-  }
-  function row(cells, className) {
-    const tr = el('tr', className);
-    for (const cell of cells) {
-      const td = el('td');
-      if (cell && typeof cell === 'object') td.appendChild(cell); else td.textContent = String(cell);
-      tr.appendChild(td);
-    }
-    return tr;
-  }
-  function tag(kind, text) { return el('span', `tag ${kind}`, text); }
-  function renderChart() {
-    const chart = state.chart, details = state.details;
-    if (!chart) return;
-    renderTools();
-    renderDoshas();
-    showKundliView(state.kundliView);
-    const birth = chart.panchanga_at_birth, moon = chart.positions.Moon;
-    const localDate = state.resolved ? state.resolved.local_datetime.slice(0, 10) : chart.input.birth_datetime.slice(0, 10);
-    const placeName = state.resolved ? `${state.resolved.place.name}, ${state.resolved.place.country_code} ┬╖ ` : '';
-    $('chart-summary').textContent = `${placeName}${calendarUI.formatDate(state.lang, localDate, 'short')} ┬╖ ${(state.resolved ? state.resolved.local_datetime.slice(11, 16) : '')}`;
-    const stats = $('chart-stats'); stats.replaceChildren(
-      statTile(t('lagna'), signName(chart.ascendant.rashi_index), `${dms(chart.ascendant.sidereal_longitude % 30)}`),
-      statTile(t('janmaRashi'), signName(moon.rashi_index), `${bodyName('Moon')} ${dms(moon.sidereal_longitude % 30)}`),
-      statTile(t('nakshatra'), names.nakshatraName(birth.nakshatra_index, state.lang), `${t('pada')} ${birth.nakshatra_pada}`));
-    $('chart-janma').textContent = `${t('janmaRashi')}: ${signName(moon.rashi_index)} (${t('rashi')} ${moon.rashi_index}) ┬╖ ${bodyName('Moon')} ${moon.sidereal_longitude.toFixed(4)}┬░ ${t('sidereal')}`;
-    for (const button of $('style-toggle').querySelectorAll ? $('style-toggle').querySelectorAll('button') : []) button.classList.toggle('on', button.dataset.style === state.kundli.style);
-    for (const button of $('division-toggle').querySelectorAll ? $('division-toggle').querySelectorAll('button') : []) button.classList.toggle('on', button.dataset.division === state.kundli.division);
-    const division = state.kundli.division === 'd9' && !details ? 'd1' : state.kundli.division;
-    state.kundli.division = division;
-    const view = pseudoChart();
-    $('d1-grid').hidden = state.kundli.style !== 'south'; $('north-chart').hidden = state.kundli.style !== 'north';
-    if (state.kundli.style === 'south') renderSouth(view); else renderNorth(view);
-    $('chart-legend').textContent = `тЧЖ ${t('lagna')}   тШ╛ ${t('janmaRashi')}${details ? '   тДЮ ' + t('retro') : ''}`;
+N╚Щ]\ЫО┬ИBИH╪]┌
+┘\ЬЫ▄КH╚╩ИHЩX[Щ\]Y\▌▌[[ЩЫ▄Ш┘\╚H[Z]
+Л╚BИYИ
+Щ]╪\ЩYЫ▄К	▄\ЭЩ\Й╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
 
-    const body = $('details-body'); body.replaceChildren();
-    const positions = $('chart-positions'); positions.replaceChildren();
-    if (details) {
-      const entries = [['Lagna', details.lagna, t('lagna')], ...PLANET_ORDER.map(name => [name, details.planets[name], bodyName(name)])];
-      for (const [name, info, label] of entries) {
-        const status = el('span');
-        const kind = info.dignity;
-        if (kind) status.appendChild(tag(kind === 'exalted' ? 'exalted' : kind === 'debilitated' ? 'debilitated' : 'own', t(kind === 'exalted' ? 'dignityExalted' : kind === 'debilitated' ? 'dignityDebilitated' : 'dignityOwn')));
-        if (info.retrograde) status.appendChild(tag('retro', `тДЮ ${t('retro')}`));
-        const nameCell = el('span', null, label);
-        if (PLANET_COLORS[name]) nameCell.setAttribute('style', `color:${PLANET_COLORS[name]}`);
-        body.appendChild(row([nameCell, signName(info.rashi_index), dms(info.degree_in_sign),
-          `${names.nakshatraName(info.nakshatra_index, state.lang)} ┬╖ ${info.nakshatra_pada} (${bodyName(info.nakshatra_lord)})`, info.whole_sign_bhava, status]));
-      }
-    }
-    for (const [name, p] of Object.entries(chart.positions)) positions.appendChild(row([bodyName(name), p.tropical_longitude.toFixed(4), p.sidereal_longitude.toFixed(4), signName(p.rashi_index), p.whole_sign_bhava]));
+JJHЩ]\ЫО┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	█╪Y[Щ╔╦[XY┘NИЩ]Ъ[▌\╚Э[N┬ИЩ[Щ\ФЩ[][█Ь┌\
 
-    const panchang = $('birth-panchang'); panchang.replaceChildren();
-    const spans = details ? details.birth_panchang : null;
-    const spanText = item => item ? `${clock(item.starts_at, localDate)} тАУ ${clock(item.ends_at, localDate)}` : '';
-    const cell = (text, item) => { const box = el('div'); box.appendChild(el('b', null, text)); if (item) box.appendChild(el('div', 'muted-note', spanText(item))); return box; };
-    panchang.append(
-      row([t('tithi'), cell(`${names.tithiName(birth.tithi_index, state.lang)} (${birth.tithi_index})`, spans && spans.tithi)]),
-      row([t('nakshatra'), cell(`${names.nakshatraName(birth.nakshatra_index, state.lang)} ┬╖ ${t('pada')} ${birth.nakshatra_pada}`, spans && spans.nakshatra)]),
-      row([t('yoga'), cell(`${names.yogaName(birth.yoga_index, state.lang)} (${birth.yoga_index})`, spans && spans.yoga)]),
-      row([t('dpKarana'), cell(`${names.karanaName(birth.karana_half_tithi_index, state.lang)} (${birth.karana_half_tithi_index})`, spans && spans.karana)]),
-      row([t('vara'), cell(calendarUI.weekdayName(state.lang, new Date(`${localDate}T12:00:00Z`).getUTCDay()))]));
+N┬И██Ь▌╚┌╦Ы┘K▌]\╚HH]╪Z]▄▌
+	╦╪\K▄\ЭЩ\Л\▄ЭШZ]	╦╚▌\┘M╫▄Ш\┌NИ▌\┘M╘Ш\┌KЩ[Э\╫▄Ш\┌NИЩ[Э\╘Ш\┌K┘[Щ\ИJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KЬ▌]\╚OOH	█┌╔╚	ЙИЫ┘KЪ[XY┘JH┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	█┌╔╦[XY┘NИЫ┘KЪ[XY┘HN┬И┘][Y[▌]
+X^XЩP\┌╤Ы▄ФШ][Щ╦LМ
+N┬ИH[┘HYИ
+▌]\╚OOHОH	ЙИЫ┘H	ЙИЫ┘KШ█┘HOOH	▄\ЭЩ\Ч┘Z[W█[Z]	╩H┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИ	█[Z]	╚N┬ИH[┘HYИ
+Ы┘H	ЙИЫ┘KЬ▌]\╚OOH	█┘ЩЙ╩H▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	█┘ЩЙ╦[XY┘NИЩ]Ъ[▌\╚Э[N┬И[┘H▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИ	┘ШZ[Y	╚N┬ИH╪]┌
+┘\ЬЫ▄КH┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИ	┘ШZ[Y	╚N┬ИHЪ[Ш[H┬И\ЭЩ\ФЩ\]Y\▌Э\▐HHШ[┘N┬ИЩ[Щ\ФЩ[][█Ь┌\
 
-    const dashaBox = $('dasha-details');
-    dashaBox.hidden = !details;
-    if (details) {
-      const dasha = details.dasha;
-      const dateText = iso => calendarUI.formatDate(state.lang, iso, 'short');
-      const mahadasha = $('mahadasha-body'); mahadasha.replaceChildren();
-      for (const item of dasha.mahadasha) {
-        const lord = el('span', null, bodyName(item.lord)); if (item.current) lord.appendChild(tag('now', t('dashaCurrent')));
-        mahadasha.appendChild(row([lord, dateText(item.start), dateText(item.end)], item.current ? 'current' : ''));
-      }
-      $('antardasha-title').textContent = dasha.current_mahadasha ? t('antardashaTitle').replace('{lord}', bodyName(dasha.current_mahadasha)) : '';
-      const antardasha = $('antardasha-body'); antardasha.replaceChildren();
-      for (const item of dasha.antardasha) {
-        const lord = el('span', null, bodyName(item.lord)); if (item.current) lord.appendChild(tag('now', t('dashaCurrent')));
-        antardasha.appendChild(row([lord, dateText(item.start), dateText(item.end)], item.current ? 'current' : ''));
-      }
-    }
-  }
-  function bindToggle(id, attribute, key) {
-    const group = $(id);
-    if (!group.querySelectorAll) return;
-    group.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-      state.kundli[key] = button.dataset[attribute];
-      renderChart();
-    }));
-  }
-  bindToggle('style-toggle', 'style', 'style');
-  bindToggle('division-toggle', 'division', 'division');
+N┬ИBИBИ	
+	▄Щ[][█Ь┌\\ЩXY[Щ╔╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-  $('birth-form').addEventListener('submit', async event => {
-    event.preventDefault();
-    const data = new FormData($('birth-form'));
-    if (!(await rewardedGate())) return;
-    $('chart').hidden = true; state.chart = null; state.details = null;
-    setChatEnabled(false);
-    resetChat(t('processing'));
-    $('result').textContent = t('checking');
-    try {
-      const { ok, body } = await post('/api/birth-chart', { dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
-      $('result').textContent = ok && body && body.chart ? t('chartReady') : t('chartFailed');
-      if (ok && body && body.chart) {
-        state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
-        state.partnerPortrait = { status: 'idle', image: null };   // the old illustration no longer matches this chart
-        renderRelationship();
-        saveProfile({ dob: data.get('dob'), pob: data.get('pob'), tob: data.get('tob') });
-        renderChart(); $('chart').hidden = false;
-        useOwnRashi();
-        setChatEnabled(true); intake.step = null; resetChat(t('chartReady'));
-        showPage('kundli');
-        const target = $('chart'); if (target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } catch (_error) { $('result').textContent = t('serviceUnavailable'); }
-    if (!state.chart) { setChatEnabled(true); startIntake(); }
-  });
+HOИ╚▌]KЬ┌▌╙▌ЩTЩXY[Щ╚HЭYN╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* -------------------------------------------------------------------- Ask */
-  const chatLog = $('chat-log'), chatQuestion = $('chat-question');
-  function setChatEnabled(enabled) {
-    chatQuestion.disabled = !enabled; $('chat-send').disabled = !enabled;
-    document.querySelectorAll('.prompt').forEach(button => { button.disabled = !enabled; });
-  }
-  function addMessage(kind, message) {
-    const entry = el('div', `chat-message ${kind}`, message);
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  // The astrologer introduces itself by name and greets the user by theirs, then says what comes next.
-  function resetChat(message) {
-    chatLog.replaceChildren();
-    const persona = toolText().persona || TOOLS_COPY.en.persona;
-    if (message === t('chartReady') || message === t('chatAskDob')) addMessage('assistant', fill(persona.hello, { name: state.userName ? ` ${state.userName}` : '' }));
-    addMessage('assistant', message);
-    history.length = 0;
-  }
-  // The full Jathakam is assembled from the tables already rendered for the chart, so it always matches them and the language.
-  function buildJathakam() {
-    const section = (title, ...nodes) => { const box = el('section', 'jk-sec'); box.appendChild(el('h4', null, title)); nodes.forEach(node => box.appendChild(node)); return box; };
-    const copy = node => { const clone = node.cloneNode(true); clone.removeAttribute('id'); clone.removeAttribute('hidden'); clone.querySelectorAll('[id]').forEach(item => item.removeAttribute('id')); return clone; };
-    const doc = el('div', 'jathakam');
-    doc.appendChild(el('h3', null, `${t('kundli')} ┬╖ ${$('chart-summary').textContent}`));
-    doc.appendChild(copy($('chart-stats')));
-    doc.appendChild(el('p', 'jk-line', $('chart-janma').textContent));
-    doc.appendChild(copy($(state.kundli.style === 'north' ? 'north-chart' : 'd1-grid')));
-    doc.appendChild(el('p', 'chart-legend', $('chart-legend').textContent));
-    doc.appendChild(section(t('detailsTitle'), copy($('details-body').parentNode.parentNode)));
-    doc.appendChild(section(t('birthPanchangTitle'), copy($('birth-panchang').parentNode.parentNode)));
-    if (state.details) doc.appendChild(section(t('dashaTitle'), copy($('mahadasha-body').parentNode.parentNode), el('h5', null, $('antardasha-title').textContent), copy($('antardasha-body').parentNode.parentNode)));
-    doc.appendChild(el('p', 'muted-note', t('nodeNote')));
-    doc.appendChild(el('p', 'muted-note', t('chartLanguage')));
-    return doc;
-  }
-  function addJathakam() {
-    const entry = el('div', 'chat-message assistant jk-message');
-    const doc = buildJathakam();
-    const print = el('button', 'chip-btn solid jk-print', `ЁЯЦи ${t('jathakamPrint')}`);
-    print.type = 'button';
-    print.addEventListener('click', () => {
-      const root = el('div'); root.id = 'print-root'; root.appendChild(doc.cloneNode(true));
-      document.body.appendChild(root); document.body.classList.add('printing');
-      const done = () => { document.body.classList.remove('printing'); if (root.parentNode) root.parentNode.removeChild(root); };
-      window.addEventListener('afterprint', done, { once: true });
-      window.print();
-    });
-    entry.append(doc, print);
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  // With the optional assistant enabled on the server, free-form questions in any language/spelling are answered by it
-  // from the calculated facts below; everything else (and any failure) uses the offline answers.
-  function chartFacts() {
-    const chart = state.chart, d = state.details, birth = chart.panchanga_at_birth;
-    const sign = i => chartUI.signName(i, 'en'), facts = [
-      `Lagna: ${sign(chart.ascendant.rashi_index)}`, `Moon sign (Janma Rashi): ${sign(chart.positions.Moon.rashi_index)}`,
-      `Birth Nakshatra: ${names.nakshatraName(birth.nakshatra_index, 'en')} pada ${birth.nakshatra_pada}`, `Birth Tithi: ${names.tithiName(birth.tithi_index, 'en')}`];
-    const planets = d ? d.planets : chart.positions;
-    for (const [name, p] of Object.entries(planets)) facts.push(`${name}: ${sign(p.rashi_index)}, house ${p.whole_sign_bhava}${p.dignity ? ', ' + p.dignity : ''}${p.retrograde ? ', retrograde' : ''}`);
-    const doshas = d && d.doshas;
-    if (doshas && doshas.kuja) facts.push(`Kuja dosha (Manglik): ${doshas.kuja.present ? 'yes' : 'no'} (Mars house ${doshas.kuja.house_from_lagna} from Lagna, ${doshas.kuja.house_from_moon} from Moon${doshas.kuja.reduced ? '; reduced, Mars in own/exalted sign' : ''})`);
-    if (doshas && doshas.saturn && doshas.saturn.sade_sati) {
-      const sade = doshas.saturn.sade_sati, span = item => item ? `${item.start || 'earlier'} to ${item.end || 'later'}` : 'unknown';
-      facts.push(sade.active ? `Sade Sati: running now, phase ${sade.phase} of 3, ${span(sade.current)}` : `Sade Sati: not running now; next ${span(sade.next)}`);
-      if (doshas.saturn.ashtama_shani.active) facts.push(`Ashtama Shani: running now until ${doshas.saturn.ashtama_shani.current.end || 'later'}`);
-      if (doshas.saturn.ardhashtama_shani.active) facts.push(`Ardhashtama Shani: running now until ${doshas.saturn.ardhashtama_shani.current.end || 'later'}`);
-    }
-    if (d && d.dasha && d.dasha.current_mahadasha) {
-      const sub = (d.dasha.antardasha || []).find(a => a.current);
-      facts.push(`Current Vimshottari period: ${d.dasha.current_mahadasha} Mahadasha${sub ? `, ${sub.lord} Antardasha until ${sub.end}` : ''}`);
-    }
-    const todayIso = new Date().toISOString().slice(0, 10);
-    if (d && d.planets) {
-      // All twelve houses with their lords, occupants and aspects, so the AI can read a question's own houses from the chart.
-      const lords = ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'];
-      const aspectsOf = { Mars: [4, 7, 8], Jupiter: [5, 7, 9], Saturn: [3, 7, 10], Sun: [7], Moon: [7], Mercury: [7], Venus: [7] };
-      const placed = Object.entries(d.planets), lagnaIndex = chart.ascendant.rashi_index;
-      for (let house = 1; house <= 12; house += 1) {
-        const rashi = (lagnaIndex + house - 2) % 12 + 1, lord = lords[rashi - 1], lordAt = d.planets[lord];
-        const inside = placed.filter(([, p]) => p.whole_sign_bhava === house).map(([name]) => name);
-        const seen = placed.filter(([name, p]) => (aspectsOf[name] || []).some(a => (p.whole_sign_bhava + a - 2) % 12 + 1 === house)).map(([name]) => name);
-        facts.push(`House ${house} (${sign(rashi)}): lord ${lord} sits in house ${lordAt ? lordAt.whole_sign_bhava + ' (' + sign(lordAt.rashi_index) + ')' : 'unknown'}${inside.length ? '; occupied by ' + inside.join(', ') : '; empty'}${seen.length ? '; aspected by ' + seen.join(', ') : ''}`);
-      }
-      const nav = d.navamsa;
-      if (nav && nav.positions) facts.push(`Navamsa (D9): Lagna ${sign(nav.lagna_rashi_index)}${['Venus', 'Jupiter', 'Moon', 'Saturn', 'Mars'].filter(n => nav.positions[n]).map(n => `, ${n} ${sign(nav.positions[n])}`).join('')}`);
-    }
-    if (d && d.dasha && d.dasha.mahadasha) {
-      const all = d.dasha.mahadasha, from = Math.max(all.findIndex(m => m.current), 0);
-      facts.push(`Mahadasha timeline (approximate dates): ${all.slice(from, from + 4).map(m => `${m.lord} ${m.start} to ${m.end}`).join('; ')}`);
-      const later = (d.dasha.antardasha || []).filter(a => a.end >= todayIso);
-      if (later.length) facts.push(`Antardashas in the current Mahadasha: ${later.map(a => `${a.lord} ${a.start} to ${a.end}`).join('; ')}`);
-    }
-    facts.push(`Today's date: ${todayIso}`);
-    // Only calculated labels leave the browser; unreviewed life-area readings do not.
-    return facts;
-  }
-  // Native Android app only: a Google AdMob banner is drawn by the app below the page. The server switches it on and off.
-  // The bottom banner is hidden on the Ask page (like Palm AI keeps its chat clean) and while the camera is open (the
-  // banner is a native view that would cover the shutter); it is shown on the other screens.
-  function setBannerHidden(reason, on) {
-    const had = bannerHold.size > 0;
-    if (on) bannerHold.add(reason); else bannerHold.delete(reason);
-    const hide = bannerHold.size > 0, admob = appAds.admob;
-    if (hide === had || !admob || !appAds.config) return;
-    try {
-      if (hide) { void Promise.resolve(admob.hideBanner && admob.hideBanner()).catch(() => {}); document.documentElement.style.setProperty('--ad-height', '0px'); }
-      else { void Promise.resolve(admob.resumeBanner && admob.resumeBanner()).catch(() => {}); setAdHeight(appAds.height || 0); }
-    } catch (_error) { /* optional */ }
-  }
-  function syncBanner(page) { setBannerHidden('chat', page === 'chat'); }
-  function setAdHeight(pixels) {
-    const height = Number.isFinite(pixels) && pixels > 0 ? Math.min(Math.round(pixels), 200) : 0;
-    if (!bannerHold.size) appAds.height = height;
-    document.documentElement.style.setProperty('--ad-height', `${height}px`);
-  }
-  const adUnitOk = id => /^ca-app-pub-\d{16}\/\d{10}$/.test(id || '');
-  // "тЦ╢ See my reading": a rewarded ad before a Tarot or palm reading, and once a day before the Rashiphal (like Palm AI).
-  // Only in the Android app with ads on and the feature switched on in the admin panel; elsewhere results are free.
-  const rewardedFor = feature => { const { config, admob } = appAds; return !!(config && admob && config.rewarded && config.rewarded[feature] === true && adUnitOk(config.rewarded_id)); };
-  const watchForResult = () => unlockGate('unlock', '', false, false);   // the тЦ╢ button itself is the user's choice: no extra prompt, unless paying is also offered
-  const RASHI_UNLOCK_KEY = 'jyotisha.rashi-unlock.v1';
-  const rashiUnlocked = () => { try { return window.localStorage.getItem(RASHI_UNLOCK_KEY) === localIso(new Date()); } catch (_error) { return false; } };
-  // Rewarded ad before a Kundli is generated. Resolves true when the user may go ahead: they watched the ad, are inside
-  // the free window after a recent ad, or the ad could not be shown (an ad problem never blocks the user).
-  function rewardedGate() {
-    const { config } = appAds;
-    if (!config || config.rewarded_kundli !== true || Date.now() < appAds.freeUntil) return Promise.resolve(true);
-    return unlockGate('unlock', t('watchAdPrompt'), true);
-  }
-  // Pay a small amount instead of watching an ad (off unless the admin configures Razorpay: readiness.payments).
-  // 'unlock' covers one Palm/Tarot/Life Guide/Sign match/Moon sign/Rashiphal/ideal-partner reading or Kundli;
-  // 'chat_bonus' covers extra AI questions. Falls straight back to the plain ad flow when payments are not set up.
-  let razorpayScript = null;
-  function ensureRazorpayScript() {
-    if (window.Razorpay) return Promise.resolve();
-    if (!razorpayScript) razorpayScript = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(); script.onerror = () => reject(new Error('razorpay script failed to load'));
-      document.head.appendChild(script);
-    });
-    return razorpayScript;
-  }
-  async function payViaRazorpay(feature) {
-    try {
-      const made = await post('/api/payment/create-order', { feature });
-      if (!made.ok || !made.body || made.body.status !== 'ok') return false;
-      const order = made.body;
-      await ensureRazorpayScript();
-      return await new Promise(resolve => {
-        const checkout = new window.Razorpay({
-          key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
-          handler: async response => {
-            try {
-              const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, feature });
-              resolve(verified.ok && verified.body && verified.body.status === 'ok');
-            } catch (_error) { resolve(false); }
-          },
-          modal: { ondismiss: () => resolve(false) },
-        });
-        checkout.open();
-      });
-    } catch (_error) { return false; }
-  }
-  // A small card with "Watch a free ad" and "Pay тВ╣N instead"; resolves 'ad', 'pay' or 'cancel'.
-  function unlockChooser(promptText, priceRs) {
-    return new Promise(resolve => {
-      const overlay = el('div', 'update-popup');
-      const card = el('div', 'update-popup-card');
-      const adBtn = el('button', 'btn', t('watchFreeAdBtn')); adBtn.type = 'button';
-      const payBtn = el('button', 'link-btn', fill(t('payInsteadBtn'), { price: priceRs })); payBtn.type = 'button';
-      const actions = el('div', 'update-popup-actions'); actions.append(payBtn, adBtn);
-      card.append(el('p', 'update-popup-body', promptText), actions);
-      overlay.appendChild(card);
-      const close = result => { try { document.body.removeChild(overlay); } catch (_error) { /* gone */ } resolve(result); };
-      adBtn.addEventListener('click', () => close('ad'));
-      payBtn.addEventListener('click', () => close('pay'));
-      document.body.appendChild(overlay);
-    });
-  }
-  async function unlockGate(feature, promptText, startsFreeWindow, ask = true) {
-    if (!state.payments) return watchRewardedAd(promptText, startsFreeWindow, ask);
-    const price = feature === 'chat_bonus' ? state.payments.chat_bonus_rs : state.payments.unlock_rs;
-    const choice = await unlockChooser(promptText || t('unlockPrompt'), price);
-    if (choice === 'pay') {
-      const ok = await payViaRazorpay(feature);
-      if (ok && startsFreeWindow) appAds.freeUntil = Date.now() + ((appAds.config && appAds.config.rewarded_free_minutes) || 10) * 60000;
-      return ok;
-    }
-    if (choice === 'ad') return watchRewardedAd('', startsFreeWindow, false);
-    return false;
-  }
-  // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
-  function watchRewardedAd(promptText, startsFreeWindow, ask = true) {
-    const { config, admob } = appAds;
-    if (!config || !admob || !adUnitOk(config.rewarded_id)) return Promise.resolve(true);
-    if (ask && (!window.confirm || !window.confirm(promptText))) return Promise.resolve(false);
-    return new Promise(resolve => {
-      let earned = false, settled = false;
-      const handles = [];
-      const finish = result => { if (settled) return; settled = true; if (earned) appAds.lastInterstitial = Date.now();   // no interstitial right after a rewarded ad
-        handles.forEach(h => { try { h.remove(); } catch (_error) { /* gone */ } }); resolve(result); };
-      const listen = (name, handler) => { try { const h = admob.addListener(name, handler); if (h && h.then) h.then(x => handles.push(x)); else if (h) handles.push(h); } catch (_error) { /* optional */ } };
-      listen('onRewardedVideoAdReward', () => { earned = true; if (startsFreeWindow) appAds.freeUntil = Date.now() + (config.rewarded_free_minutes || 10) * 60000; });
-      listen('onRewardedVideoAdDismissed', () => finish(earned));
-      listen('onRewardedVideoAdFailedToLoad', () => finish(true));
-      listen('onRewardedVideoAdFailedToShow', () => finish(true));
-      Promise.resolve(admob.prepareRewardVideoAd({ adId: config.rewarded_id, isTesting: config.testing === true }))
-        .then(() => admob.showRewardVideoAd())
-        .then(() => { if (earned) finish(true); })
-        .catch(() => finish(true));
-    });
-  }
-  // AI chat allowance: a few free AI questions a day, then a rewarded ad buys more. Rule-based answers are always free.
-  const QUOTA_KEY = 'jyotisha.chatquota.v1';
-  function readQuota() {
-    const today = localIso(new Date());
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(QUOTA_KEY));
-      if (saved && saved.date === today && Number.isInteger(saved.used) && Number.isInteger(saved.bonus)) return saved;
-    } catch (_error) { /* start a fresh day */ }
-    return { date: today, used: 0, bonus: 0 };
-  }
-  function writeQuota(quota) { try { window.localStorage.setItem(QUOTA_KEY, JSON.stringify(quota)); } catch (_error) { /* not persisted */ } }
-  async function aiQuestionAllowed() {
-    const { config, admob } = appAds;
-    if (!config || !admob || !config.chat_free_questions || !adUnitOk(config.rewarded_id)) return true;   // browsers and unlimited setups
-    const quota = readQuota();
-    if (quota.used < config.chat_free_questions + quota.bonus) { quota.used += 1; writeQuota(quota); return true; }
-    const prompt = t('chatLimitPrompt').replace('{free}', config.chat_free_questions).replace('{bonus}', config.chat_bonus_questions);
-    if (!(await unlockGate('chat_bonus', prompt, false))) return false;
-    quota.bonus += config.chat_bonus_questions; quota.used += 1; writeQuota(quota);
-    return true;
-  }
-  // An occasional ad between screens: never in the first minute, at most one per few switches and per few minutes.
-  function maybeInterstitial() {
-    const { config, admob } = appAds;
-    if (!config || !admob || !adUnitOk(config.interstitial_id)) return;
-    appAds.switches += 1;
-    const now = Date.now();
-    if (now - appAds.started < 60000 || appAds.switches % (config.interstitial_every || 4) !== 0 || now - appAds.lastInterstitial < (config.interstitial_gap_seconds || 180) * 1000) return;
-    appAds.lastInterstitial = now;
-    Promise.resolve(admob.prepareInterstitial({ adId: config.interstitial_id, isTesting: config.testing === true }))
-      .then(() => admob.showInterstitial()).catch(() => { /* no ad available: carry on */ });
-  }
-  const admobPlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) || null;
-  // AdMob is started once (with the consent form where the law requires it), for the banner and the welcome-step ads.
-  function ensureAdmob(admob, config) {
-    if (!appAds.ready) {
-      appAds.ready = (async () => {
-        await admob.initialize({ initializeForTesting: config.testing === true });
-        try {
-          const consent = await admob.requestConsentInfo();
-          if (consent && consent.isConsentFormAvailable && consent.status === 'REQUIRED') await admob.showConsentForm();
-        } catch (_error) { /* consent is only required in some regions */ }
-      })();
-    }
-    return appAds.ready;
-  }
-  // A full-screen ad between the first-run steps (switched on in the admin panel). Never blocks the flow: if no ad
-  // loads in a few seconds, or the plugin is missing, the steps simply go on.
-  async function onboardingAd(unitKey = 'onboarding_interstitial_id') {
-    if (!appAds.waiting && !appAds.config) await within(readinessSeen, 2500);
-    const config = appAds.waiting || appAds.config, admob = admobPlugin();
-    if (!admob || !config || !adUnitOk(config[unitKey])) return;
-    try {
-      await within(ensureAdmob(admob, config), 6000);
-      let done;
-      const closed = new Promise(resolve => { done = resolve; });
-      const handles = [];
-      for (const name of ['interstitialAdDismissed', 'interstitialAdFailedToShow', 'interstitialAdFailedToLoad']) {
-        try { handles.push(await admob.addListener(name, () => done())); } catch (_error) { /* older plugin */ }
-      }
-      const loaded = await within(Promise.resolve(admob.prepareInterstitial({ adId: config[unitKey], isTesting: config.testing === true })).then(() => true), 6000, false);
-      if (loaded) { await admob.showInterstitial(); appAds.lastInterstitial = Date.now(); await within(closed, 60000); }
-      for (const handle of handles) { try { if (handle && handle.remove) await handle.remove(); } catch (_error) { /* gone */ } }
-    } catch (_error) { /* no ad: carry on */ }
-  }
-  async function startAppAds(config) {
-    const admob = admobPlugin();
-    if (!admob || !adUnitOk(config.banner_id)) return;
-    if (!state.onboarded || appAds.launching) { appAds.waiting = config; return; }   // the banner only after the welcome / loading screens
-    appAds.config = config; appAds.admob = admob;
-    try {
-      await ensureAdmob(admob, config);
-      admob.addListener('bannerAdSizeChanged', size => setAdHeight(size && size.height));
-      await admob.showBanner({ adId: config.banner_id, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: config.testing === true });
-    } catch (_error) { setAdHeight(0); }
-  }
-  // Replies written by the AI can be reported by email (nothing is sent without the user).
-  // Read an answer aloud with the phone's own voice (when it has one for the language).
-  const canSpeak = () => !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
-  function speak(text) {
-    try {
-      const synth = window.speechSynthesis;
-      if (synth.speaking) { synth.cancel(); return; }
-      const talk = new window.SpeechSynthesisUtterance(text);
-      talk.lang = calendarUI.LOCALES[state.lang] || 'en-IN';
-      synth.speak(talk);
-    } catch (_error) { /* no voice */ }
-  }
-  const SVG_SPEAKER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-  function addAiBar(entry, question, answer) {
-    const bar = el('div', 'ai-bar');
-    if (canSpeak()) {
-      const listen = el('button', 'ai-listen'); listen.type = 'button'; listen.innerHTML = SVG_SPEAKER;
-      listen.setAttribute('aria-label', (toolText().menu || TOOLS_COPY.en.menu).listen || 'Listen');
-      listen.addEventListener('click', () => speak(answer));
-      bar.appendChild(listen);
-    }
-    if (state.contactEmail) {
-      const link = el('a', 'ai-report', t('reportAnswer'));
-      const body = `Question:\n${question.slice(0, 300)}\n\nAnswer:\n${answer.slice(0, 1500)}\n\nWhat is wrong with it:\n`;
-      link.href = `mailto:${state.contactEmail}?subject=${encodeURIComponent('Report an AI answer')}&body=${encodeURIComponent(body)}`;
-      bar.appendChild(link);
-    }
-    if (bar.children.length) entry.appendChild(bar);
-  }
-  // Under each answer: a row of chips that lead into the other features (Palm AI does the same to keep people exploring).
-  let chipTurn = 0;
-  function addChatChips() {
-    removeChatChips();
-    const names = (toolText().menu || TOOLS_COPY.en.menu).chips || TOOLS_COPY.en.menu.chips;
-    const all = [['palm', 'тЬЛ', openPalm], ['tarot', 'ЁЯГП', openTarot], ['lifeguide', 'тЪЦя╕П', openLifeGuide], ['numbers', 'ЁЯФв', openNumerology], ['signmatch', 'ЁЯТС', openSignMatch]];
-    const row = el('div', 'chat-chips');
-    for (let i = 0; i < 4; i += 1) {
-      const [key, icon, go] = all[(chipTurn + i) % all.length];
-      const chip = el('button', 'chat-chip', `${icon} ${names[key]}`); chip.type = 'button';
-      chip.addEventListener('click', go);
-      row.appendChild(chip);
-    }
-    chipTurn += 1;
-    chatLog.appendChild(row); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  function removeChatChips() { try { Array.from(chatLog.children).filter(item => item.className === 'chat-chips').forEach(item => chatLog.removeChild(item)); } catch (_error) { /* optional */ } }
-  const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
-  async function askAssistant(query) {
-    removeChatChips();
-    const pending = el('div', 'chat-message assistant', 'тАж'); chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
-    try {
-      const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts: chartFacts(), history: history.slice(-10) });
-      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); addChatChips(); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); return true; }
-    } catch (_error) { /* fall back to the offline answer */ }
-    chatLog.removeChild(pending); return false;
-  }
-  /* ---- No chart yet: the chat asks for date, place and time of birth, then calculates the chart ---- */
-  const intake = { step: 'dob', dob: '', pob: '', tob: '', pending: null, recalculating: false };
-  const stepPrompt = () => t(intake.step === 'dob' ? 'chatAskDob' : intake.step === 'pob' ? 'chatAskPob' : 'chatAskTob');
-  function startIntake() { intake.step = 'dob'; intake.dob = ''; intake.pob = ''; intake.tob = ''; intake.pending = null; resetChat(t('chatAskDob')); }
-  function applyChart(body, inputs) {
-    state.chart = body.chart; state.details = body.details || null; state.resolved = body.resolved_birth || null;
-    if (state.matchWho !== 'others') { state.partnerChart = null; state.partnerDetails = null; }
-    state.showLoveReading = false; $('relationship-status').textContent = '';
-    state.partnerPortrait = { status: 'idle', image: null };   // the old illustration no longer matches this chart
-    renderRelationship();
-    try {
-      for (const [name, value] of Object.entries(inputs)) { const field = document.querySelector(`[name="${name}"]`); if (field) field.value = value; }
-    } catch (_error) { /* the form is a convenience only */ }
-    renderChart(); $('chart').hidden = false;
-    useOwnRashi();
-    void scheduleNotifications();
-  }
-  async function finishIntake() {
-    if (!(await rewardedGate())) { intake.step = 'tob'; intake.tob = ''; addMessage('assistant', t('chatAskTob')); return; }
-    addMessage('assistant', t('processing'));
-    try {
-      const { ok, body } = await post('/api/birth-chart', { dob: intake.dob, pob: intake.pob, tob: intake.tob });
-      if (ok && body && body.chart) {
-        applyChart(body, { dob: intake.dob, pob: intake.pob, tob: intake.tob });
-        saveProfile({ dob: intake.dob, pob: intake.pob, tob: intake.tob });
-        const pending = intake.pending; intake.step = null; intake.pending = null; intake.recalculating = false;
-        addMessage('assistant', t('chartReady'));
-        if (pending) { if (!routeSpecialIntent(pending)) route(pending); } else addJathakam();
-        return;
-      }
-      let hint = '';
-      try {
-        const found = await post('/api/places', { query: intake.pob });
-        if (found.ok && found.body && Array.isArray(found.body.suggestions) && found.body.suggestions.length) hint = ` (${found.body.suggestions.slice(0, 4).map(item => item.label).join(' ┬╖ ')})`;
-      } catch (_error) { /* suggestions are optional */ }
-      intake.step = 'pob';
-      addMessage('assistant', `${t('chartFailed')} ${t('chatAskPob')}${hint}`);
-    } catch (_error) { intake.step = 'pob'; addMessage('assistant', t('serviceUnavailable')); }
-  }
-  async function intakeInput(text, fromPrompt) {
-    if (fromPrompt) { if (intake.pending === null) intake.pending = text; addMessage('assistant', stepPrompt()); return; }
-    if (intake.step === 'dob') {
-      const dob = chartUI.parseBirthDate(text);
-      if (!dob) { if (intake.pending === null && !/\d/.test(text)) { intake.pending = text; addMessage('assistant', stepPrompt()); } else addMessage('assistant', t('chatBadInput')); return; }
-      intake.dob = dob; intake.step = 'pob'; addMessage('assistant', stepPrompt()); return;
-    }
-    if (intake.step === 'pob') {
-      if (text.trim().length < 2) { addMessage('assistant', stepPrompt()); return; }
-      intake.pob = text.trim().slice(0, 200);
-      if (intake.tob) { intake.step = 'busy'; await finishIntake(); return; }   // only the place was wrong: reuse the time already given
-      intake.step = 'tob'; addMessage('assistant', stepPrompt()); return;
-    }
-    const tob = chartUI.parseBirthTime(text);
-    if (!tob) { addMessage('assistant', t('chatBadInput')); return; }
-    intake.tob = tob; intake.step = 'busy';
-    await finishIntake();
-  }
-  // Any of the other tools, asked straight in chat instead of only from their own page. Returns true when handled,
-  // so the caller skips the general AI assistant / offline Q&A for it.
-  function routeSpecialIntent(query) {
-    if (chartUI.isPartnerPortraitRequest(query)) { void chatPartnerPortrait(); return true; }
-    if (chartUI.isNumerologyRequest(query)) { void chatNumerology(); return true; }
-    if (chartUI.isLifeGuideRequest(query)) { void chatLifeGuide(); return true; }
-    if (chartUI.isPalmRequest(query)) { openPalm(); void startPalmScan(); return true; }
-    if (chartUI.isTarotRequest(query)) {
-      const topic = matchTarotTopic(query);
-      if (topic) { void chatTarot(topic); return true; }
-      chatTarotAwaitingTopic = true;
-      addMessage('assistant', `${tarotCopy().ask} (${TAROT_TOPICS.map(([key]) => tarotCopy().topics[key]).join(', ')})`);
-      return true;
-    }
-    if (chatTarotAwaitingTopic) {
-      const topic = matchTarotTopic(query);
-      chatTarotAwaitingTopic = false;
-      if (topic) { void chatTarot(topic); return true; }
-    }
-    return false;
-  }
-  function ask(shown, query, fromPrompt) {
-    // Normally gated on having no chart yet; "recalculating" additionally covers typing a new birth date below,
-    // even though a (now stale) chart still exists while that recalculation is in progress.
-    if (!state.chart || intake.recalculating) {
-      if (intake.step === 'busy') return;
-      addMessage('user', shown); void intakeInput(query, fromPrompt === true); return;
-    }
-    addMessage('user', shown);
-    if (routeSpecialIntent(query)) return;
-    // A bare birth date typed with a chart already on hand means a different Kundli, not a question about this
-    // one тАФ recalculate instead of asking the AI assistant, which would otherwise answer from the old chart's
-    // facts about an unrelated date and give a nonsensical reading.
-    const newDob = !chartUI.isJathakamRequest(query) ? chartUI.parseBirthDate(query) : null;
-    if (newDob) {
-      intake.recalculating = true; intake.step = 'pob'; intake.dob = newDob; intake.pob = ''; intake.tob = ''; intake.pending = null;
-      addMessage('assistant', `${t('chatNewDate')} ${stepPrompt()}`);
-      return;
-    }
-    route(query);
-  }
-  // "Your ideal partner", asked straight in chat: generate it here (asking for birth details first via the usual
-  // intake, above, if there is no chart yet) instead of only offering it on the Love page.
-  async function chatPartnerPortrait() {
-    let read;
-    try { read = chartUI.partnerTraits(state.chart, state.lang); } catch (_error) { addMessage('assistant', t('answerFailed')); return; }
-    if (!state.partnerGender) state.partnerGender = state.myRole === 'bride' ? 'man' : 'woman';
-    const copy = loveText();
-    if (rewardedFor('partner') && !(await watchForResult())) return;
-    const pending = el('div', 'chat-message assistant', copy.traitsPortraitLoading);
-    chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
-    try {
-      const { ok, body } = await post('/api/partner-portrait', { house7_rashi: read.house7Rashi, venus_rashi: read.venusRashi, gender: state.partnerGender });
-      chatLog.removeChild(pending);
-      if (ok && body && body.status === 'ok' && body.image) {
-        state.partnerPortrait = { status: 'ok', image: body.image };
-        const entry = el('div', 'chat-message assistant');
-        const img = el('img', 'traits-portrait'); img.src = `data:${body.image.mime};base64,${body.image.data}`; img.alt = copy.traitsPortraitBtn;
-        entry.appendChild(img);
-        chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-      } else {
-        state.partnerPortrait = { status: body && body.status === 'off' ? 'off' : 'unavailable', image: null };
-        addMessage('assistant', body && body.status === 'off' ? copy.traitsPortraitOff : copy.traitsPortraitUnavailable);
-      }
-    } catch (_error) { chatLog.removeChild(pending); state.partnerPortrait = { status: 'unavailable', image: null }; addMessage('assistant', copy.traitsPortraitUnavailable); }
-  }
-  function route(query) {
-    if (state.assistant && !chartUI.isJathakamRequest(query) && !/^(What is my Lagna\?|Where is the Moon\?|Which planets are in house 1\?)$/.test(query)) {
-      void (async () => {
-        if (!(await aiQuestionAllowed())) { askOffline(query); return; }   // out of free AI questions: the rule-based answer is still free
-        if (!(await askAssistant(query))) askOffline(query);
-      })();
-      return;
-    }
-    askOffline(query);
-  }
-  function showLines(lines) {
-    const entry = el('div', 'chat-message assistant reading');
-    entry.appendChild(el('strong', null, lines[0]));
-    lines.slice(1, -1).forEach(line => entry.appendChild(el('p', null, line)));
-    entry.appendChild(el('p', 'muted-note', lines[lines.length - 1]));
-    if (!state.assistant) entry.appendChild(el('p', 'muted-note', 'To ask in your own words and get a natural reply, set up the chat assistant (see README).'));
-    chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-  }
-  function dayFor() {
-    const segment = state.day && state.day.moon_rashi && state.day.moon_rashi[0];
-    return segment ? { moonRashi: segment.index, date: state.day.date, isToday: state.day.date === state.todayIso } : null;
-  }
-  function showReading(topic) {
-    try { showLines(chartUI.readLife(state.chart, state.details, topic, state.lang, dayFor())); }
-    catch (_error) { addMessage('assistant', t('answerFailed')); }
-  }
-  function showToday() {
-    if (!state.day) { showReading('life'); return; }
-    try { showLines(chartUI.readToday(state.chart, state.details, state.day, state.lang, iso => clock(iso, state.day.date))); }
-    catch (_error) { addMessage('assistant', t('answerFailed')); }
-  }
-  // Offline: Jathakam, a topic reading, a specific fact, or (for anything else) today's reading from the chart, never a refusal.
-  function askOffline(query) {
-    if (chartUI.isJathakamRequest(query)) {
-      try { addJathakam(); } catch (_error) { addMessage('assistant', t('answerFailed')); }
-      return;
-    }
-    const topic = chartUI.readingTopic(query);
-    if (topic && !chartUI.wantsToday(query)) { showReading(topic); return; }
-    if (chartUI.wantsToday(query)) { showToday(); return; }
-    try {
-      const answer = chartUI.answerChartQuestion(state.chart, query, state.lang, state.details);
-      if (chartUI.isFallbackAnswer(answer, state.lang)) showToday(); else addMessage('assistant', answer);
-    } catch (_error) { addMessage('assistant', t('answerFailed')); }
-  }
-  $('chat-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const question = chatQuestion.value.trim();
-    if (!question) return;
-    ask(question, question); chatQuestion.value = ''; chatQuestion.focus();
-  });
-  // Home: relatable questions that open the chat and ask them straight away (asking for birth details first when there is no chart).
-  document.querySelectorAll('.ai-chip').forEach(button => button.addEventListener('click', () => {
-    const question = button.textContent;
-    showPage('chat');
-    ask(question, question, true);
-  }));
-  document.querySelectorAll('.prompt').forEach(button => button.addEventListener('click', () => ask(button.textContent, button.dataset.question, true)));
+N╚JN┬ИYИ
+	
+	▄\ЭЩ\Л\Ы█I╩KЬ]Y\ЮT┘[X▌▄Р[
+H	
+	▄\ЭЩ\Л\Ы█I╩KЬ]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
 
-  /* ------------------------------------------------------------ export / share */
-  // Plain text that can be sent through the phone's share sheet (WhatsApp, e-mail, notes) or saved as a .txt file.
-  const INLINE_TAGS = new Set(['span', 'b', 'strong', 'i', 'em', 'small', 'a', 'sup', 'sub']);
-  const tagOf = node => String((node && (node.tagName || node.tag)) || '').toLowerCase();
-  const squash = text => String(text || '').replace(/\s+/g, ' ').trim();
-  function plainText(node) {
-    if (!node) return '';
-    const kids = Array.from(node.children || []);
-    // Only elements inside (a tile, a table cell): keep a space between them. With loose text inside, textContent is right.
-    const loneElements = kids.length > 0 && !(node.childNodes && node.childNodes.length !== kids.length);
-    if (loneElements) return squash(kids.map(plainText).join(' '));
-    const own = node.textContent;
-    if (own) return squash(own);
-    return squash(kids.map(plainText).join(' '));
-  }
-  function domToText(root) {
-    const out = [];
-    const walk = node => {
-      const tag = tagOf(node);
-      if (!tag || node.hidden || ['button', 'script', 'style', 'svg', 'select', 'input'].includes(tag)) return;
-      const kids = Array.from(node.children || []);
-      if (tag === 'tr') { const line = kids.map(plainText).filter(Boolean).join(' | '); if (line) out.push(line); return; }
-      if (tag === 'li') { const line = plainText(node); if (line) out.push('тАв ' + line); return; }
-      if (/^h[1-6]$/.test(tag) || tag === 'summary') { const line = kids.length ? squash(kids.map(plainText).join(' ')) : plainText(node); if (line) out.push('', line); return; }
-      if (!kids.length || tag === 'p' || kids.every(kid => INLINE_TAGS.has(tagOf(kid)))) { const line = plainText(node); if (line) out.push(line); return; }
-      kids.forEach(walk);
-    };
-    walk(root);
-    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-  // A message from the admin panel (announcement or maintenance), shown under the header.
-  function showNotice(notice) {
-    try {
-      const old = document.getElementById('site-notice');
-      if (old && old.remove) old.remove();
-      const header = document.querySelector('.masthead');
-      if (!notice || typeof notice.text !== 'string' || !notice.text || !header) return;
-      const bar = el('div', `site-notice ${notice.kind === 'maintenance' ? 'maintenance' : ''}`, notice.text);
-      bar.id = 'site-notice'; bar.setAttribute('role', 'status');
-      if (typeof notice.link === 'string' && /^https:\/\//.test(notice.link)) {
-        const link = el('a', null, ' тЖТ'); link.href = notice.link; link.target = '_blank'; link.rel = 'noopener noreferrer'; bar.appendChild(link);
-      }
-      header.insertAdjacentElement('afterend', bar);
-    } catch (_error) { /* a notice is optional */ }
-  }
-  function showToast(message) {
-    try {
-      const toast = el('div', 'toast', message);
-      toast.setAttribute('role', 'status');
-      document.body.appendChild(toast);
-      setTimeout(() => { try { toast.remove(); } catch (_error) { /* already gone */ } }, 3800);
-    } catch (_error) { /* the message is a courtesy only */ }
-  }
-  async function copyToClipboard(text) {
-    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch (_error) { /* try the older way */ }
-    try {
-      const area = document.createElement('textarea');
-      area.value = text; area.setAttribute('readonly', ''); area.style.position = 'fixed'; area.style.opacity = '0';
-      document.body.appendChild(area); area.select();
-      const done = document.execCommand && document.execCommand('copy');
-      area.remove();
-      return done === true;
-    } catch (_error) { return false; }
-  }
-  // A WhatsApp share button: a small round green icon.
-  const WA_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2a9.8 9.8 0 0 0-8.4 14.8L2.2 21.8l4.9-1.3A9.8 9.8 0 1 0 12 2.2z" fill="#fff"/><path d="M8.7 7.1c.2-.5.5-.5.8-.5h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.2.2-.2.4-.1.6.5.8 1.1 1.6 1.9 2.1.5.4.9.6 1.2.7.2.1.4 0 .5-.2l.7-.8c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.4.4 0 .3 0 1.1-.5 1.6-.6.6-1.5.9-2.3.7-1.7-.3-3.3-1.2-4.6-2.5-1.1-1.1-2.1-2.6-2.4-4.1-.2-.9.1-1.8.6-2.4z" fill="#1fb855"/></svg>';
-  function waLabel(button, text) {   // just the round icon; the text is for screen readers and the long-press tooltip
-    const icon = el('span', 'wa-icon'); icon.innerHTML = WA_ICON;
-    button.replaceChildren(icon);
-    button.setAttribute('aria-label', text); button.title = text;
-    return button;
-  }
-  async function shareText(title, text) {
-    const body = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${text}\n\nтАФ Jyotirmaya AstroChat ┬╖ ${window.location && window.location.origin ? window.location.origin : ''}`;
-    const native = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-    try {
-      if (native && native.share) { await native.share({ title, text: body, dialogTitle: title }); return; }
-      if (navigator.share) { await navigator.share({ title, text: body }); return; }
-    } catch (error) { if (error && error.name === 'AbortError') return; /* otherwise copy it instead */ }
-    // No share sheet (an older app version, or a desktop browser): copy the text so it can still be pasted anywhere.
-    if (await copyToClipboard(body)) { showToast(t('exportCopied')); return; }
-    try {
-      const url = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url; link.download = `${title.replace(/[^\w]+/g, '-').slice(0, 40) || 'jyotisha'}.txt`;
-      document.body.appendChild(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch (_error) { /* nothing more to try */ }
-  }
-  function chatText() {
-    return Array.from(chatLog.children || []).map(message => {
-      const who = String(message.className || '').includes('user') ? 'Q' : 'A';
-      const body = domToText(message) || plainText(message);
-      return body ? `${who}: ${body}` : '';
-    }).filter(Boolean).join('\n\n');
-  }
-  function kundliText() {
-    const parts = [$('chart-summary').textContent, domToText($('chart-stats')), $('chart-janma').textContent];
-    const tables = [['detailsTitle', 'details-body'], ['birthPanchangTitle', 'birth-panchang'], ['mahadashaTitle', 'mahadasha-body'], ['antardasha', 'antardasha-body']];
-    for (const [key, id] of tables) {
-      const body = $(id), table = body && body.parentNode;
-      const text = table ? domToText(table) : '';
-      if (text) parts.push('', key === 'antardasha' ? $('antardasha-title').textContent : t(key), text);
-    }
-    return parts.filter(part => part !== undefined && part !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-  // PDF: shows only the text to print and opens the print dialog, whose "Save as PDF" makes the file.
-  // Android app: a small native plugin (PdfPrint) opens that dialog; browsers use window.print().
-  // A copy of what is on screen, ready to print: no buttons or ids, every card open.
-  function cloneForPrint(node) {
-    const copy = node.cloneNode(true);
-    if (!copy.querySelectorAll) return copy;
-    copy.querySelectorAll('button, .export-row, .export-chat').forEach(item => { try { item.remove(); } catch (_error) { /* gone */ } });
-    copy.querySelectorAll('details').forEach(item => item.setAttribute('open', ''));
-    copy.querySelectorAll('[id]').forEach(item => item.removeAttribute('id'));
-    copy.removeAttribute('id'); copy.removeAttribute('hidden');
-    return copy;
-  }
-  function printPdf(title, makeNode, fallbackText) {
-    const root = document.createElement('div'); root.id = 'print-root';
-    const sheet = el('div', 'pdf-sheet');
-    sheet.append(el('h1', null, title), makeNode(), el('p', 'pdf-foot', `тАФ Jyotirmaya AstroChat ┬╖ ${window.location && window.location.origin ? window.location.origin : ''}`));
-    root.appendChild(sheet);
-    document.body.appendChild(root); document.body.classList.add('printing');
-    let finished = false;
-    const finish = () => {
-      if (finished) return; finished = true; clearTimeout(expiry);
-      document.body.classList.remove('printing');
-      try { root.remove(); } catch (_error) { /* already gone */ }
-      try { document.removeEventListener('visibilitychange', onVisible); } catch (_error) { /* not attached */ }
-    };
-    // The print dialog hides the page while it is open; clean up when the user comes back (or after a few minutes).
-    let wasHidden = false;
-    function onVisible() { if (document.visibilityState === 'hidden') wasHidden = true; else if (wasHidden) finish(); }
-    try { document.addEventListener('visibilitychange', onVisible); } catch (_error) { /* optional */ }
-    const expiry = setTimeout(finish, 180000);
-    if (expiry && expiry.unref) expiry.unref();   // never keeps a test or server process alive
-    const nativePrint = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PdfPrint;
-    const inApp = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
-    if (nativePrint && nativePrint.print) {
-      setTimeout(() => { Promise.resolve(nativePrint.print({ title })).catch(() => { finish(); void shareText(title, fallbackText()); }); }, 400);
-    } else if (inApp) {
-      finish(); void shareText(title, fallbackText());     // an older app without the PDF plugin: share the text instead
-    } else if (window.print) {
-      try { window.addEventListener('afterprint', finish, { once: true }); } catch (_error) { /* optional */ }
-      setTimeout(() => { try { window.print(); } catch (_error) { finish(); } }, 250);
-    } else finish();
-  }
-  $('pdf-chat').addEventListener('click', () => printPdf(t('chartQuestion'), () => { const log = cloneForPrint(chatLog); log.className = 'chat-log print-chat'; return log; }, chatText));
-  $('pdf-kundli').addEventListener('click', () => { if (state.chart) printPdf(t('eyebrowBirth'), () => cloneForPrint(buildJathakam()), kundliText); });
-  $('pdf-rashi').addEventListener('click', () => {
-    const heading = `${t('rashiphal')} ┬╖ ${$('rashi-moon').textContent}`;
-    printPdf(heading, () => cloneForPrint($('rashi-list')), () => domToText($('rashi-list')));
-  });
-  $('export-chat').addEventListener('click', () => { void shareText(`${t('chartQuestion')}`, chatText()); });
-  $('export-kundli').addEventListener('click', () => { if (state.chart) void shareText(`${t('eyebrowBirth')}`, kundliText()); });
-  $('export-rashi').addEventListener('click', () => { void shareText(`${t('rashiphal')} ┬╖ ${$('rashi-moon').textContent}`, domToText($('rashi-list'))); });
+HOИ┬И▌]KЫ^TЫ█HHЭ]█ЛЩ]\┘]ЬЫ█N╚Щ[Щ\ФЩ[][█Ь┌\
 
-  /* ----------------------------------------------------------------- start */
-  // Installable app: the service worker keeps the shell available and shows a friendly page offline.
-  try { if (navigator.serviceWorker) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (_error) { /* not supported */ }
-  fetch('/api/birth-readiness', { cache: 'no-store' }).then(response => response.json()).then(readiness => {
-    $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
-    $('birth-fields').disabled = !readiness.can_calculate;
-    state.assistant = readiness.assistant_available === true;
-    state.payments = readiness.payments && typeof readiness.payments.key_id === 'string' ? readiness.payments : null;
-    startupDone('readiness');
-    state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
-    showNotice(readiness.notice);
-    setTeaserConfig(readiness.teasers);
-    rememberLaunchAd(readiness.app_ads && readiness.app_ads.enabled === true ? readiness.app_ads : null);
-    if (readiness.app_ads && readiness.app_ads.enabled === true) void startAppAds(readiness.app_ads);
-    // Ads are off unless the server was configured with an AdSense publisher id.
-    // AdSense is a website program: it is not loaded inside the installed app / Play Store wrapper (use AdMob for native apps).
-    const installedApp = (() => {
-      try { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || /^android-app:/.test(document.referrer || ''); } catch (_error) { return false; }
-    })();
-    if (!installedApp && /^ca-pub-\d{10,20}$/.test(readiness.adsense_client || '')) {
-      try {
-        const ad = document.createElement('script');
-        ad.async = true; ad.crossOrigin = 'anonymous';
-        ad.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${readiness.adsense_client}`;
-        document.head.appendChild(ad);
-      } catch (_error) { /* ads are optional */ }
-    }
-  }).catch(() => { $('availability').textContent = t('inputDisabled'); startupDone('readiness'); });
-  const saved = loadSettings();
-  if (saved) {
-    state.city = saved.city; state.useLocation = saved.useLocation; state.onboarded = true; state.userName = saved.name; state.userDob = saved.dob;
-    $('welcome-screen').hidden = true; document.body.classList.remove('onboarding-active');
-    applyLanguage(saved.lang);
-    startHome();
-    void launchSplash().then(() => wait(1500)).then(maybeOfferUpdate);
-    if (saved.useLocation) void refreshCityFromLocation();
-  } else { applyLanguage('en'); showOnboardingStep('welcome'); void runSplash(); }
-  void restoreProfile();
-  $('forget-profile').addEventListener('click', () => {
-    forgetProfile();
-    state.chart = null; state.details = null; state.resolved = null;
-    state.partnerChart = null; state.partnerDetails = null; state.showLoveReading = false;
-    for (const id of ['partner-dob', 'partner-pob', 'partner-tob', 'first-dob', 'first-pob', 'first-tob']) $(id).value = '';
-    state.firstChart = null; state.firstDetails = null;
-    $('relationship-status').textContent = ''; renderRelationship();
-    $('chart').hidden = true;
-    renderTools();
-    setChatEnabled(true); startIntake();
-  });
-  $('availability').textContent = t('availabilityChecking');
-})();
+N┬ИJJN┬И██Ь▌\╪XЫP┌\ЭHЫ┘HOИЫ┘H	ЙИЫ┘KШ┌\Э	ЙИЫ┘KШ┌\ЭЬ▄┌][█Ь╚	ЙИЫ┘KШ┌\ЭЬ▄┌][█Ь╦У[██О┬И	
+	▄Щ[][█Ь┌\YЫ▄ЫI╩KШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦\▐[Ш╚]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
+
+N┬И██Ь▌█▄HH▌ЩU^
+
+K▌\Ь╚H▌]KЫX]┌┌╚OOH	█▌\Ь╔╬┬ИYИ
+[▌\Ь╚	ЙИ\▌]KШ┌\Э
+H╚	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH█▄KЫЩYY┌\Э╚Щ]\ЫО╚BИ██Ь▌[Ь]H╚╪ОИ	
+	▄\ЭЩ\ЛY╪Й╩KЭШ[YK╪ОИ	
+	▄\ЭЩ\Л\╪Й╩KЭШ[YKЭЪ[J
+K╪ОИ	
+	▄\ЭЩ\Л]╪Й╩KЭШ[YHN┬И██Ь▌Ъ\Ь▌[Ь]H╚╪ОИ	
+	┘Ъ\Ь▌Y╪Й╩KЭШ[YK╪ОИ	
+	┘Ъ\Ь▌\╪Й╩KЭШ[YKЭЪ[J
+K╪ОИ	
+	┘Ъ\Ь▌]╪Й╩KЭШ[YHN┬ИYИ
+▌\Ь╚	ЙИJЪ\Ь▌[Ь]Щ╪И	ЙИЪ\Ь▌[Ь]Ь╪И	ЙИЪ\Ь▌[Ь]Э╪КJH╚	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH█▄KЫЩYYЫ▌╚Щ]\ЫО╚BИ██Ь▌▌█Р┌\ЭH▌]KШ┌\Э┬И▌]KЬ\ЭЩ\Р┌\ЭHЭ[╚▌]KЬ\ЭЩ\С]Z[╚HЭ[╚▌]KЩЪ\Ь▌┌\ЭHЭ[╚▌]KЩЪ\Ь▌]Z[╚HЭ[╚	
+	▄Щ[][█Ь┌\\Щ\▌[	╩KЬЩ\X┘P┌[Щ[К
+N┬И	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH█▄KШ╪[▌[][Щ╬┬И	
+	▄Щ[][█Ь┌\\▌XЫZ]	╩KЩ\╪XЫYHЭYN┬И]▌\H	▄┘X██Щ	╬┬ИЮH┬ИYИ
+▌\Ь╩H┬И▌\H	┘Ъ\Ь▌	╬┬И██Ь▌Ы▐HH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦Ъ\Ь▌[Ь]
+N┬ИYИ
+XЫ▐KЫ┌╚]\╪XЫP┌\Э
+Ы▐KШЫ┘JJHЫ▌╚Щ]╚\ЬЫ▄К	╤Ъ\Ь▌┌\Э[Ш]ШZ[XЫI╩N┬И▌]KЩЪ\Ь▌┌\ЭHЫ▐KШЫ┘KШ┌\Э╚▌]KЩЪ\Ь▌]Z[╚HЫ▐KШЫ┘KЩ]Z[╚Э[┬И▌\H	▄┘X██Щ	╬┬ИBИ██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦[Ь]
+N┬ИYИ
+▌]KШ┌\ЭOOH▌█Р┌\Э
+HЩ]\ЫО┬ИYИ
+[┌╚]\╪XЫP┌\Э
+Ы┘JJHЫ▌╚Щ]╚\ЬЫ▄К	╘┘X██Щ┌\Э[Ш]ШZ[XЫI╩N┬И▌]KЬ\ЭЩ\Р┌\ЭHЫ┘KШ┌\Э╚▌]KЬ\ЭЩ\С]Z[╚HЫ┘KЩ]Z[╚Э[┬И	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH	╔╬┬ИЩ[Щ\ФЩ[][█Ь┌\
+
+N┬ИH╪]┌
+┘\ЬЫ▄КH┬И▌]KЩЪ\Ь▌┌\ЭHЭ[╚▌]KЩЪ\Ь▌]Z[╚HЭ[┬ИYИ
+▌]KШ┌\ЭOOH▌█Р┌\Э
+H	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH▌\OOH	┘Ъ\Ь▌	╚╚█▄KЩШZ[YЪ\Ь▌И█▄KЩШZ[Y┬ИBИЪ[Ш[H╚	
+	▄Щ[][█Ь┌\\▌XЫZ]	╩KЩ\╪XЫYHШ[┘N╚BИJN┬ВИ╩ИKKKH▌[ЩNИ█ЩHЪY]╚]H[YH
+┌\Э[Щ]╦\┌K▄┌\╦Ъ\Э[Ш┌[Щ╩HKKKH
+Л┬И██Ь▌╒SСW╒ТQU╘╚H╔╪┌\Э	╦	▄[Щ]╔╦	┘\┌I╦	┘▄┌\╔╦	▄[Ш┌[Щ╔╫N┬ИЭ[Ш▌[█И┌▌╥▌[ЩUЪY]╩Ш[YJH┬И▌]KЪ▌[ЩUЪY]╚H╒SСW╒ТQU╘╦Ъ[Ш█Y\╩Ш[YJH╚Ш[YHИ	╪┌\Э	╬┬И██Ь▌█▄HH██^
+
+N┬И	
+	┌▌[ЩK]ЪY]▄╔╩KЬЩ\X┘P┌[Щ[КЛЛТ╒SСW╒ТQU╘╦ЫX\
+ЪY]╚OИ┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦ЪY]╚OOH▌]KЪ▌[ЩUЪY]╚╚	██Й╚И	╔╦█▄KЭЪY]▄╓▌ЪY]╫JN┬ИЭ]█ЛЭ\HH	╪Э]█Й╬╚Э]█ЛЬ┘]]ЪXЭ]J	▄Ы█I╦	▌XЙ╩N╚Э]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK\┘[X▌Y	╦ЪY]╚OOH▌]KЪ▌[ЩUЪY]╚╚	▌ЭYI╚И	┘Ш[┘I╩N┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┌▌╥▌[ЩUЪY]╩ЪY]╩JN┬ИЩ]\ЫИЭ]█О┬ИJJN┬И██Ь▌┌\Э╪\ЩH	
+	╪┌\Э	╩N┬И██Ь▌[Щ\╚H┌\Э╪\ЩЬ]Y\ЮT┘[X▌▄Р[╚┌\Э╪\ЩЬ]Y\ЮT┘[X▌▄Р[
+	╦Ъ▌ЪY]╔╩HИ╫N┬И[Щ\╦ЩЫ▄СXX┌
+[ЩHOИ╚[ЩKЪY[ИH[ЩKЩ]\┘]Ъ▌ЪY]╚OOH▌]KЪ▌[ЩUЪY]╬╚JN┬ИBИЭ[Ш▌[█ИЩ[Щ\С▄┌\╩
+H┬И██Ь▌█▄HH██^
+
+K▄▌H	
+	┘▄┌KXЫ┘I╩N╚▄▌ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌▄┌\╚H▌]KЩ]Z[╚	ЙИ▌]KЩ]Z[╦Щ▄┌\╬┬ИYИ
+Y▄┌\╩H╚▄▌Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЩ▄┌U[Ш]ШZ[XЫJJN╚Щ]\ЫО╚BИ██Ь▌╪\ЩH
+]K▌]\╦██┘[Щ\╩HOИ┬И██Ь▌Ы▐H[
+	┘]Й╦▄┌KX╪\Щ	┘██┘╚	█┌╔╚И	▌╪\ЫЙ▀X
+N┬И██Ь▌XYH[
+	┘]Й╦	┘▄┌KZXY	╩N╚XYШ\[Щ
+[
+	╪Й╦Э[]JK[
+	▄▄[Й╦	┘▄┌K\▌]\╔╦▌]\╩JN┬ИЫ▐Ш\[Щ┌[
+XY
+N┬ИЫ▄И
+██Ь▌[ЩH┘И[Щ\╩HYИ
+[ЩJHЫ▐Ш\[Щ┌[
+[
+	▄	╦Э[[ЩJJN┬ИЩ]\ЫИЫ▐┬ИN┬И██Ь▌▌ZШHH▄┌\╦Ъ▌ZШN┬ИYИ
+▌ZШJH▄▌Ш\[Щ┌[
+╪\Щ
+█▄KЪ▌ZШU]K▌ZШKЬЩ\┘[Э╚█▄KЪ▌ZШVY\╚И█▄KЪ▌ZШSЫ╦Z▌ZШKЬЩ\┘[ЭИ┘Ъ[
+█▄KЪ▌ZШU┌K╚Y█ШNИ▌ZШKЪ▌\┘W┘ЬЫ█W█Y█ШK[██ОИ▌ZШKЪ▌\┘W┘ЬЫ█W█[██ИJK▌ZШKЬЩYX┘Y╚█▄KЪ▌ZШTЩYX┘YИ	╔╫JJN┬И██Ь▌╪]\ЫИH▄┌\╦Ь╪]\ЫО┬ИYИ
+╪]\ЫИ	ЙИ╪]\ЫЛЬ╪YW▄╪]JH┬И██Ь▌╪YHH╪]\ЫЛЬ╪YW▄╪]N┬И██Ь▌▄[ИH][HOИ][H╚Ъ[
+█▄KЬ\Ъ[┘╚▌\ЭИ[█Э^
+][KЬ▌\Э
+K[ЩИ[█Э^
+][KЩ[Щ
+HJHИ	╔╬┬И██Ь▌[Щ\╚H╪YKШX▌]ЩH╚▄▄[К╪YKШ▌\ЬЩ[Э
+WHИ▄╪YKЫЩ^╚Ъ[
+█▄KЬ╪YSЩ^╚▌\ЭИ[█Э^
+╪YKЫЩ^Ь▌\Э
+K[ЩИ[█Э^
+╪YKЫЩ^Щ[Щ
+HJHИ	╔╫N┬ИЫ▄И
+██Ь▌┌┘^K][WH┘И╓╔╪\┌[XI╦╪]\ЫЛШ\┌[XW▄┌[ЪWK╔╪\Щ\┌[XI╦╪]\ЫЛШ\Щ\┌[XW▄┌[ЪWWJH┬ИYИ
+][H	ЙИ][KШX▌]ЩJH[Щ\╦Ь\┌
+Ъ[
+█▄V┌┘^WK╚[ЩИ[█Э^
+][KШ▌\ЬЩ[Э	ЙИ][KШ▌\ЬЩ[ЭЩ[Щ
+HJJN┬ИBИ▄▌Ш\[Щ┌[
+╪\Щ
+█▄KЬ╪YU]K╪YKШX▌]ЩH╚█▄V╪\┘I▄╪YKЬ\┘_XH█▄KЬ\┘LИИ█▄KЬ╪YSЫ╦\╪YKШX▌]ЩK[Щ\╩JN┬ИBИ▄▌Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЩ▄┌SЫ▌JJN┬ИBИ╦╚█YNИHЩ]╚█X\И┌┌X┘\╬╚XX┌╪\Щ┌▌▄╚██Y][Щ╚XЫ▌]H\┘\И
+Z\И\┌K▄┌\╦┌Y█ЛHЩ^Щ\▌]Ш[
+KВИЭ[Ш▌[█ИЩ^Щ\▌]Ш[^
+
+H┬И██Ь▌█▄HH██^
+
+K]Щ[Э╚H▌]KЩЩ\▌]Ш[╚	ЙИ▌]KЩЩ\▌]Ш[╦Щ]Щ[Э╬┬ИYИ
+Y]Щ[Э╚Y]Щ[Э╦Ы[Щ▌\▌]KЭ┘^R\█╩HЩ]\ЫИЭ[┬И██Ь▌]Щ[ЭH]Щ[Э╓╠N┬И██Ь▌^HH\█╚OИ]KХU╩Э[XЩ\К\█╦Ь█X┘J
+JKЭ[XЩ\К\█╦Ь█X┘JK╩JHHKЭ[XЩ\К\█╦Ь█X┘JL
+JJN┬И██Ь▌^\╚HX]ЬЫ▌[Щ
+
+^J]Щ[ЭЩ]JHH^J▌]KЭ┘^R\█╩JH╚Н
+N┬ИЩ]\ЫИ	┘]Щ[ЭШ[YJ]Щ[Э
+_H0н╚	┘^\╚OOH╚█▄KЩЩ\▌┘^HИ^\╚OOHH╚█▄KЩЩ\▌█[▄ЬЫ▌╚ИЪ[
+█▄KЩЩ\▌[Л╚ОИ^\╚J_X┬ИBИЭ[Ш▌[█И]ЩT▌XЭ]\╩
+H┬И██Ь▌█▄HH██^
+
+K]Z[╚H▌]KЩ]Z[╦]ЩHH▀N┬ИYИ
+▌]KШ┌\Э
+H]ЩKЬШ\┌HHЪ[
+█▄KЫ]ЩTШ\┌K╚┌Y█ОИ┌Y█УШ[YJ▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^
+HJN┬И██Ь▌\┌HH]Z[╚	ЙИ]Z[╦Щ\┌N┬ИYИ
+\┌H	ЙИ\┌KШ▌\ЬЩ[Э█XZY\┌JH┬И██Ь▌▌XИH
+\┌KШ[Э\Щ\┌H╫JKЩЪ[Щ
+][HOИ][KШ▌\ЬЩ[Э
+N┬И]ЩKЩ\┌HH▌XИ╚Ъ[
+█▄KЫ]ЩQ\┌K╚XZNИЫ┘SШ[YJ\┌KШ▌\ЬЩ[Э█XZY\┌JK[Э\ОИЫ┘SШ[YJ▌XЛЫ▄Щ
+HJHИЪ[
+█▄KЫ]ЩQ\┌SXZK╚XZNИЫ┘SШ[YJ\┌KШ▌\ЬЩ[Э█XZY\┌JHJN┬ИBИ██Ь▌▄┌\╚H]Z[╚	ЙИ]Z[╦Щ▄┌\╬┬ИYИ
+▄┌\╚	ЙИ▄┌\╦Ь╪]\ЫИ	ЙИ▄┌\╦Ь╪]\ЫЛЬ╪YW▄╪]H	ЙИ▄┌\╦Ь╪]\ЫЛЬ╪YW▄╪]KШX▌]ЩJH]ЩKЩ▄┌\╚HЪ[
+█▄KЫ]ЩT╪YK╚И▄┌\╦Ь╪]\ЫЛЬ╪YW▄╪]KЬ\┘HJN┬И[┘HYИ
+▄┌\╚	ЙИ▄┌\╦Ъ▌ZШJH]ЩKЩ▄┌\╚HЪ[
+█▄KЫ]ЩQ▄┌K╚╬И▄┌\╦Ъ▌ZШKЬЩ\┘[Э╚█▄KЮY\╚И█▄KЫЫ╦╬И█▄KЫЫ╚JN┬И]ЩKЩЩ\▌]Ш[╚HЩ^Щ\▌]Ш[^
+
+N┬ИЩ]\ЫИ]ЩN┬ИBИ╦╚┌\ЩHH█YH╪\Щ╚[ЩH┌YHY[ЭHZ┘H[▄H
+█ЩHX┘K█╚Ы▌ЩZ]ЩHH╪[YJKВИЭ[Ш▌[█И▄[Х██
+Y┘KЪY]╩H┬ИYИ
+Y┘HOOH	▄Щ[][█Ь┌\	╩H╚▌]KЫ▌ЩS[┘HH	█X]┌	╬╚Щ[Щ\ФЩ[][█Ь┌\
+
+N╚BИ┌▌╘Y┘JY┘JN┬ИYИ
+ЪY]╩H┬И┌▌╥▌[ЩUЪY]╩ЪY]╩N┬И╦╚┌]H┌\Э[ЩXYHXYKЭ[\▌ШZY┌╚H┌▄┘[ИЪY]╚[Ь▌XY┘ИHЪ\ЭЫ▄ЫKВИYИ
+▌]KШ┌\Э
+H╚ЮH╚	
+	┌▌[ЩK]ЪY]▄╔╩KЬ╪▄Ы█[Э╒ЪY]╩╚Ы╪┌╬И	▄▌\Э	╚JN╚┌[Щ▌╦Ь╪▄Ы█ЮJN
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И╪▄Ы█[Щ╚\╚▄[█Ш[
+Л╚HBИBИBИЭ[Ш▌[█И╘[Ш┌[Щ╩
+H╚┌▌╘Y┘J	┌█YI╩N╚ЮH╚	
+	┘^K\[Ш┌[Щ╔╩KЬ]Y\ЮT┘[X▌▄К	╦Ъ\Ы╦X╪\Щ	╩KЬ╪▄Ы█[Э╒ЪY]╩╚ЩZ]Ъ[▄ОИ	▄█[█▌	╦Ы╪┌╬И	▄▌\Э	╚JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИЭ[Ш▌[█И▄[ТШ]Z╪[J
+H┬И┌▌╘Y┘J	┌▌[ЩI╩N┬ИYИ
+▌]KШ┌\Э
+H╚┌▌╥▌[ЩUЪY]╩	╪┌\Э	╩N╚ЮH╚	
+	╪┌\Э	╩KЬ╪▄Ы█[Э╒ЪY]╩╚Ы╪┌╬И	▄▌\Э	╚JN╚┌[Щ▌╦Ь╪▄Ы█ЮJN
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИ[┘H╚ЮH╚╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╓█Ш[YOHЩ╪ИЧI╩KЩЫ╪▌\╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИBИЭ[Ш▌[█ИЩ[Щ\Х██╩
+H┬И██Ь▌^H██^
+
+K█▄HH^Э██╦]ЩHH]ЩT▌XЭ]\╩
+N┬И	
+	┘]Z[]]I╩KЭ^██Э[ЭH^Щ]Z[]N┬И	
+	┘Щ\▌]Ш[╦]]I╩KЭ^██Э[ЭH^ЩЩ\▌]N┬И██Ь▌▄[ИH
+Y┘KЪY]╩HOИ
+
+HOИ▄[Х██
+Y┘KЪY]╩N┬И██Ь▌╤Щ\▌]Ш[╚H
+
+HOИ┌▌╘Y┘J	╪╪[[Щ\Й╩N┬И██Ь▌ЩYY╚H┘^HOИ]ЩV┌┘^WH
+▌]KШ┌\Э╚█▄V┌┘^WV╠WHИ^ЫЩYY▌[ЩJN┬И╦╚ЪY╚[\▌Ш]Y╪\Щ╚[И┘X▌[█Ь╦Z┘HHXY╪^Ъ[ЩNИX▌\ЩH█И▄Ш[YH[ЩH]ЩH[ЩH]HЫ▌█KВИ██Ь▌\ЭH┌[Щ▌╦ТЮ[▌\┌P\ЭЭ[┬И██Ь▌╪\ЩH
+┘^K]K▌XЛ█Р█X┌╦^ШHH▀JHOИ┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦\ЭX╪\Щ	┘^ШKЭ┌YH╚	╚┌YI╚И	╔▀X
+N╚Э]█ЛЭ\HH	╪Э]█Й╬┬И██Ь▌X▌\ЩHH[
+	▄▄[Й╦	╪\Э\X╔╩N┬ИYИ
+\Э	ЙИ\Э┘^ШKШ\Э┘^WJHX▌\ЩKЪ[ЫЩ\ТSH\Э┘^ШKШ\Э┘^WJ
+N╚[┘HX▌\ЩKЭ^██Э[ЭH^ШKЩ[[┌ЪH	°з*	╬┬ИЭ]█ЛШ\[Щ
+X▌\ЩK[
+	╪Й╦Э[]JK[
+	▄█X[	╦Э[▌XКJN┬ИYИ
+^ШKШШY┘JHЭ]█ЛШ\[Щ┌[
+[
+	▄▄[Й╦	╪\ЭXШY┘I╦^ШKШШY┘JJN┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦█Р█X┌╩N┬ИЩ]\ЫИЭ]█О┬ИN┬И██Ь▌┘X▌[█ИH
+]K╪\Щ╩HOИ╚██Ь▌Ы▐H[
+	▄┘X▌[█Й╦	╪\Э\┘X▌[█Й╩N╚██Ь▌▄ЪYH[
+	┘]Й╦	╪\ЭY▄ЪY	╩N╚▄ЪYШ\[Щ
+ЛЛШ╪\Щ╩N╚Ы▐Ш\[Щ
+[
+	┌╔╦	┌█YKZ\ЭZ	╦]JK▄ЪY
+N╚Щ]\ЫИЫ▐╚N┬И██Ь▌┘X▌[█Ь╚H^Ь┘X▌[█Ь╚╙╙╫╨╙╘KЩ[ЛЬ┘X▌[█Ь╬┬И██Ь▌[Ш┌[Щ╨╪\ЩH^Ь[Ш┌[Щ╨╪\Щ╙╙╫╨╙╘KЩ[ЛЬ[Ш┌[Щ╨╪\Щ┬И██Ь▌┘^U]HH▌]KЩ^H	ЙИ▌]KЩ^KЭ]H	ЙИ▌]KЩ^KЭ]V╠H╚Ш[Y\╦Э]SШ[YJ▌]KЩ^KЭ]V╠KЪ[Щ^▌]KЫ[Щ╩HИ	╔╬┬И	
+	▌██Y▄ЪY	╩KЬЩ\X┘P┌[Щ[КИ┘X▌[█К┘X▌[█Ь╦Ш┌\Э┬И╪\Щ
+	█YЩY▌ZYI╦╨█▄J
+KШ╪\Щ╠K╨█▄J
+KШ╪\Щ╠WK▄[УYЩQ▌ZYK╚ШY┘NИ^ЩZ[H╙╙╫╨╙╘KЩ[ЛЩZ[HJKИ╪\Щ
+	▄Ш\┌I╦█▄KЬШ\┌V╠K]ЩKЬШ\┌H█▄KЬШ\┌V╠WK▄[К	▄Ш\┌I╩K╚ШY┘NИ^ЩZ[H╙╙╫╨╙╘KЩ[ЛЩZ[HJKИ╪\Щ
+	█[██Й╦[██Р█▄J
+KШ╪\Щ╠K▌█У[██К
+H╚	▄┌Y█УШ[YJ▌█У[██К
+KЬ┌Y█К_H0н╚	█[██Р█▄J
+KШ╪\Щ╠W_XИ[██Р█▄J
+KШ╪\Щ╠WK▄[У[██Ф┌Y█КKИ╪\Щ
+	┘\┌I╦█▄KЩ\┌V╠KЩYY╩	┘\┌I╩K▄[К	┌▌[ЩI╦	┘\┌I╩JWJKИ┘X▌[█К┘X▌[█Ь╦Ь[H╙╙╫╨╙╘KЩ[ЛЬ┘X▌[█Ь╦Ь[K┬И╪\Щ
+	▄[I╦[P█▄J
+KШ╪\Щ╠K[P█▄J
+KШ╪\Щ╠WK▄[Ф[JKИ╪\Щ
+	▌\Ы▌	╦\Ы▌█▄J
+KШ╪\Щ╠K\Ы▌█▄J
+KШ╪\Щ╠WK▄[Х\Ы▌
+KИ╪\Щ
+	█Э[Y\Ы█┘▐I╦Э[P█▄J
+KШ╪\Щ╠KЭ[XЩ\У[ЩJ
+HЭ[P█▄J
+KШ╪\Щ╠WK▄[УЭ[Y\Ы█┘▐JWJKИ┘X▌[█К┘X▌[█Ь╦Ы▌ЩK┬И╪\Щ
+	█X]┌	╦█▄KЫX]┌╠K█▄KЫX]┌╠WK▄[К	▄Щ[][█Ь┌\	╩JKИ╪\Щ
+	▄┌Y█ЫX]┌	╦█P█▄J
+KШ╪\Щ╠K█P█▄J
+KШ╪\Щ╠WK▄[Ф┌Y█УX]┌
+KИ╪\Щ
+	┘▄┌\╔╦█▄KЩ▄┌\╓╠KЩYY╩	┘▄┌\╔╩K▄[К	┌▌[ЩI╦	┘▄┌\╔╩JWJKИ┘X▌[█К┘X▌[█Ь╦Э[YK┬И╦╚┘^I▄╚[Ш┌[Щ╚Ъ\Ь▌█╚]\╚┘Y[И┌]▌]▌┌\[Щ╦ВИ╪\Щ
+	▄[Ш┌[Щ╔╦[Ш┌[Щ╨╪\Щ╠K┘^U]H[Ш┌[Щ╨╪\Щ╠WK╘[Ш┌[Щ╩KИ╪\Щ
+	┘Щ\▌]Ш[╔╦█▄KЩЩ\▌]Ш[╓╠K]ЩKЩЩ\▌]Ш[╚█▄KЩЩ\▌]Ш[╓╠WK╤Щ\▌]Ш[╦╚┌YNИЭYHJWJJN┬ИЩ[Щ\С▄ЩY][Щ╩
+N┬ИЩ[Щ\ТШ]Z╪[P╪\Щ
+
+N┬ИЩ[Щ\Т█YPZJ
+N┬ИЩ[Щ\УЫ▌YЮJ
+N┬ИЩ[Щ\УY[ЭJ
+N┬ИBИ╦╚█YH▄ЩY][Щ╬ИС██┘YЭ\ЫЫ██ИИ[ЩH\┘\Й▄╚Ш[YH
+▄ИШ[X\▌H┌[И┘H╚Ы▌█Ы▌╚]
+KВИЭ[Ш▌[█ИЩ[Щ\С▄ЩY][Щ╩
+H┬И██Ь▌^H██^
+
+K▄ЩY]H^Щ▄ЩY]╙╙╫╨╙╘KЩ[ЛЩ▄ЩY]▌\ИHЩ]╚]J
+KЩ┘]▌\Ь╩
+N┬И██Ь▌\ЭH▌\ИH╚	█ЪY┌	╚И▌\ИLИ╚	█[▄ЫЪ[Щ╔╚И▌\ИM╚╚	╪YЭ\ЫЫ██Й╚И▌\ИМH╚	┘]Щ[Ъ[Щ╔╚И	█ЪY┌	╬┬И	
+	┘▄ЩY]][YI╩KЭ^██Э[ЭH▄ЩY]▄\ЭN┬И	
+	┘▄ЩY][Ш[YI╩KЭ^██Э[ЭH▌]KЭ\┘\УШ[YH▄ЩY]Ъ[╬┬И██Ь▌\ЭH┌[Щ▌╦ТЮ[▌\┌P\ЭЫ▐H	
+	╪ZKX\Э	╩N┬ИYИ
+\Э	ЙИЫ▐	ЙИXЫ▐Щ]\┘]Щ█ЩJH╚Ы▐Ъ[ЫЩ\ТSH\ЭЫ▄ШК
+N╚Ы▐Щ]\┘]Щ█ЩHH	╠I╬╚BИ	
+	╪ZKY^YXЬЫ▌╔╩KЭ^██Э[ЭH^ШZQ^YXЬЫ▌╚╙╙╫╨╙╘KЩ[ЛШZQ^YXЬЫ▌╬┬И	
+	▌ЮKX\┌┌[Щ╔╩KЭ^██Э[ЭH8з)И	▌^ЭЮP\┌┌[Щ╚╙╙╫╨╙╘KЩ[ЛЭЮP\┌┌[Щ▀X┬ИBИ╦╚█YNИХ╪[Э╚█Ы▌╚[▌\ИШ]Z╪[O╚ИЩYЫ▄ЩHH┌\Э^\▌╦H┌▄Э▌[[X\ЮH┘И]YЭ\Э╪\Щ╦ВИЭ[Ш▌[█ИЩ[Щ\ТШ]Z╪[P╪\Щ
+
+H┬И██Ь▌█▄HH██^
+
+KЫ▐H	
+	█^KZШ]Z╪[I╩K┌\ЭH▌]KШ┌\Э┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦	┌Ъ╦X▌I╦┌\Э╚█▄KЪЪ╒ЪY]╚И█▄KЪЪ╨▄ЩX]JN╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦▄[ТШ]Z╪[JN┬И██Ь▌XYH[
+	┘]Й╦	┌Ъ╦ZXY	╩N┬ИXYШ\[Щ
+[
+	▄▄[Й╦	┌Ъ╦ZX██Й╦	№'ъд	╩K[
+	┘]Й╩JN┬ИXYШ┌[Щ[Ц╠WKШ\[Щ
+[
+	┌Й╦Э[┌\Э╚█▄KЪЪ╙Z[ЩHИ█▄KЪЪ╨\┌╩JN┬ИYИ
+X┌\Э
+HXYШ┌[Щ[Ц╠WKШ\[Щ
+[
+	▄	╦Э[█▄KЪЪ╘▌XКJN┬ИЫ▐Ш\[Щ┌[
+XY
+N┬ИYИ
+┌\Э
+H┬И██Ь▌▌]╚H[
+	┘]Й╦	┌Ъ╦\▌]╔╩N┬И██Ь▌▌]H
+XЩ[Ш[YJHOИ╚██Ь▌][HH[
+	┘]Й╦	┌Ъ╦\▌]	╩N╚][KШ\[Щ
+[
+	▄█X[	╦Э[XЩ[
+K[
+	╪Й╦Э[Ш[YJJN╚Щ]\ЫИ][N╚N┬И▌]╦Ш\[Щ
+▌]
+
+	█Y█ШI╩K┌Y█УШ[YJ┌\ЭШ\╪┘[Щ[ЭЬШ\┌W┌[Щ^
+JK▌]
+
+	┌Ш[ЫXTШ\┌I╩K┌Y█УШ[YJ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^
+JKИ▌]
+
+	█ШZ▄┌]ШI╩KШ[Y\╦ЫШZ▄┌]ШSШ[YJ┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\ЭЫШZ▄┌]ШW┌[Щ^▌]KЫ[Щ╩JJN┬И██Ь▌\┌HH▌]KЩ]Z[╚	ЙИ▌]KЩ]Z[╦Щ\┌N┬ИYИ
+\┌H	ЙИ\┌KШ▌\ЬЩ[Э█XZY\┌JH┬И██Ь▌▌XИH
+\┌KШ[Э\Щ\┌H╫JKЩЪ[Щ
+][HOИ][KШ▌\ЬЩ[Э
+N┬И▌]╦Ш\[Щ
+▌]
+█▄KЪЪ╤\┌K	╪Ы┘SШ[YJ\┌KШ▌\ЬЩ[Э█XZY\┌J_I▄▌XИ╚	╚8а$╚	╚
+╚Ы┘SШ[YJ▌XЛЫ▄Щ
+HИ	╔▀X
+JN┬ИBИЫ▐Ш\[Щ┌[
+▌]╩N┬ИBИЫ▐Ш\[Щ┌[
+Э]█КN┬ИBИ╦╚█YHRH╪\ЩИH\Ь██Ш[[ЩHЫ▄И┘^KH\HЫ▐[ЩHЭY┘H╚XZ┘HH▌[ЩHЪ\Ь▌ВИЭ[Ш▌[█И┘^QЫ▄Ц[▌J
+H┬И██Ь▌^HH▌]KЩ^N┬ИYИ
+Y^H^KЩ]HOOH▌]KЭ┘^R\█╩HЩ]\ЫИЭ[┬ИЩ]\ЫИ^QЫ▄Ц[▌J^K╪╪[\█╩Щ]╚]J
+JH
+╚	╒	╚
+╚Щ]╚]J
+KЭ╒[YT▌Ъ[Щ╩
+KЬ█X┘JJJN┬ИBИ╦╚H\Ь██Ш[[ЩHЫ▄ИH^H]H┌]Щ[И╪╪[[YH
+	╓VVVKSSKQУSI╩KЬЫ█H┌[ЩШXШ[[H[Щ\ШXШ[[KВИЭ[Ш▌[█И^QЫ▄Ц[▌J^KЫ▌╩H┬И██Ь▌┌\ЭH▌]KШ┌\Э┬ИYИ
+Y^HX┌\ЭP\ЬШ^KЪ\╨\ЬШ^J^KЫШZ▄┌]ШJHP\ЬШ^KЪ\╨\ЬШ^J^KЫ[██Ч▄Ш\┌JJHЩ]\ЫИЭ[┬И██Ь▌▌\ЬЩ[ЭH\▌OИ\▌ЩЪ[Щ
+][HOИ][KЬ▌\Э╫╪]HЫ▌╚	ЙИЫ▌╚][KЩ[Щ╫╪]
+H\▌╠N┬И██Ь▌\ШHH▌\ЬЩ[Э
+^KЫШZ▄┌]ШJK[██ИH▌\ЬЩ[Э
+^KЫ[██Ч▄Ш\┌JN┬ИYИ
+]\ШH[[██КHЩ]\ЫИЭ[┬И██Ь▌^T┌Y█ИH┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^^T▌\ИH┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\ЭЫШZ▄┌]ШW┌[Щ^┬И██Ь▌█▄HH██^
+
+N┬ИYИ
+[██ЛШ\┌[XW╪┌[ЩШW▄Ш\┌HOOH^T┌Y█КHЩ]\ЫИ█▄KЭ┘^P╪\ЩN┬И██Ь▌┌[ЩШHH
+[██ЛЩ██┘╪┌[ЩШXШ[[W▄Ш\┌\╚╫JKЪ[Ш█Y\╩^T┌Y█КK\ШQ██┘H
+\ШKЩ██┘▌\ШW█ШZ▄┌]Ш\╚╫JKЪ[Ш█Y\╩^T▌\КN┬ИЩ]\ЫИ┌[ЩШH	ЙИ\ШQ██┘╚█▄KЭ┘^Q██┘И┌[ЩШH\ШQ██┘╚█▄KЭ┘^SZ^YИ█▄KЭ┘^T]ZY]┬ИBИЭ[Ш▌[█ИЩ[Щ\Т█YPZJ
+H┬И██Ь▌█▄HH██^
+
+N┬И	
+	┌█YK\]Y\▌[█Й╩KЬX┘Z█\ИH█▄KШ\┌╘X┘Z█\О┬И	
+	┌█YKX\┌╦\┘[Щ	╩KЭ^██Э[ЭH█▄KШ\┌╨Э]█О┬И██Ь▌[ЩHH┘^QЫ▄Ц[▌J
+KЫ▐H	
+	┌█YK]┘^I╩N┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+[ЩJH╚Ы▐Ш\[Щ
+[
+	╪Й╦Э[8з*	╪█▄KЭ┘^SXЩ[NИ
+K╪▌[Y[ЭШ▄ЩX]U^Ы┘J[ЩJJN╚Ы▐ЪY[ИHШ[┘N╚H[┘HЫ▐ЪY[ИHЭYN┬ИBИ	
+	┌█YKX\┌╔╩KШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
+
+N┬И██Ь▌]Y\▌[█ИH	
+	┌█YK\]Y\▌[█Й╩KЭШ[YKЭЪ[J
+N┬ИYИ
+\]Y\▌[█КHЩ]\ЫО┬И	
+	┌█YK\]Y\▌[█Й╩KЭШ[YHH	╔╬┬И┌▌╘Y┘J	╪┌]	╩N┬И\┌╩]Y\▌[█Л]Y\▌[█ЛЭYJN┬ИJN┬ВИ╦╚█YNИHЩ^Щ\▌]Ш[╚ЬЫ█H┘^KЩXYЬЫ█H\╚[█Э	▄╚[ЩHЩ^█╚[█Э╔╚╪[[Щ\Ь╦ВИ██Ь▌СT╒╙S╙Х╚H╦СT╒╘╥╒╙ИHО┬И\▐[Ш╚Э[Ш▌[█И╪YЩ\▌]Ш[╩
+H┬И██Ь▌┌]HH▌]KШ┌]K┘^HH▌]KЭ┘^R\█╬┬ИYИ
+X┌]HK╫Ч═KW╠ЯKW╠ЯI╦Э\▌
+┘^H	╔╩JHЩ]\ЫО┬И██Ь▌┘^HH	╪┌]__	▌┘^_X┬ИYИ
+▌]KЩЩ\▌]Ш[╚	ЙИ▌]KЩЩ\▌]Ш[╦Ъ┘^HOOH┘^JH╚Щ[Щ\СЩ\▌]Ш[╩
+N╚Щ]\ЫО╚BИ▌]KЩЩ\▌]Ш[╚H╚┘^K]Щ[Э╬ИЭ[N┬ИЩ[Щ\СЩ\▌]Ш[╩
+N┬И██Ь▌[█Э╚H╫N┬ИЫ▄И
+]▌\H╚▌\СT╒╙S╙Х╬╚▌\
+╧HJH┬И██Ь▌\Щ┘]HЩ]╚]J]KХU╩Э[XЩ\К┘^KЬ█X┘J
+JKЭ[XЩ\К┘^KЬ█X┘JK╩JHHH
+╚▌\JJN┬И[█Э╦Ь\┌
+╚YX\ОИ\Щ┘]Щ┘]U╤Э[YX\К
+K[█ЭИ\Щ┘]Щ┘]U╙[█Э
+
+H
+╚HJN┬ИBИ██Ь▌]Щ[Э╚H╫N┬ИЮH┬И██Ь▌Щ\Y\╚H]╪Z]Ы█Z\┘KШ[
+[█Э╦ЫX\
+][HOИ▄▌
+	╦╪\K█[█ЭX╪[[Щ\Й╦╚ЛЛЪ][KX┘NИ┌]HJKШ╪]┌
+
+
+HOИЭ[
+JJN┬ИЫ▄И
+██Ь▌Щ\H┘ИЩ\Y\╩HYИ
+Щ\H	ЙИЩ\KЫ┌╚	ЙИЩ\KШЫ┘H	ЙИ\ЬШ^KЪ\╨\ЬШ^JЩ\KШЫ┘KЩ]Щ[Э╩JH]Щ[Э╦Ь\┌
+ЛЛЬЩ\KШЫ┘KЩ]Щ[Э╩N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И┌▌█И\╚Ы█ЩH
+Л╚BИYИ
+\▌]KЩЩ\▌]Ш[╚▌]KЩЩ\▌]Ш[╦Ъ┘^HOOH┘^JHЩ]\ЫО┬И▌]KЩЩ\▌]Ш[╦Щ]Щ[Э╚H]Щ[Э╦ЩЪ[\К]Щ[ЭOИ\[┘И]Щ[ЭЩ]HOOH	▄▌Ъ[Щ╔╚	ЙИ]Щ[ЭЩ]HПH┘^JKЬ█▄Э
+
+KКHOИKЩ]KЫ╪╪[P██\\ЩJЛЩ]JJN┬ИЩ[Щ\СЩ\▌]Ш[╩
+N┬ИЫ┌Y╪┌Y[SЫ▌YЪX╪][█Ь╩
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\СЩ\▌]Ш[╩
+H┬И██Ь▌█▄HH██^
+
+K\▌H	
+	┘Щ\▌]Ш[[\▌	╩K[▄ЩHH	
+	┘Щ\▌]Ш[[[▄ЩI╩N┬И\▌ЬЩ\X┘P┌[Щ[К
+N╚[▄ЩKЪY[ИHЭYN┬И██Ь▌]HH▌]KЩЩ\▌]Ш[╬┬ИЩ[Щ\Х██╩
+N┬ИYИ
+Y]HY]KЩ]Щ[Э╩H╚\▌Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЩЩ\▌╪Y[Щ╩JN╚Щ]\ЫО╚BИYИ
+Y]KЩ]Щ[Э╦Ы[Щ▌
+H╚\▌Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЩЩ\▌Ы█ЩJJN╚Щ]\ЫО╚BИ██Ь▌┘^HH]KХU╩Э[XЩ\К▌]KЭ┘^R\█╦Ь█X┘J
+JKЭ[XЩ\К▌]KЭ┘^R\█╦Ь█X┘JK╩JHHKЭ[XЩ\К▌]KЭ┘^R\█╦Ь█X┘JL
+JJN┬И██Ь▌┌▌█ИH▌]KЩЩ\▌]Ш[╨[╚]KЩ]Щ[Э╚И]KЩ]Щ[Э╦Ь█X┘JСT╒╘╥╒╙КN┬ИЫ▄И
+██Ь▌]Щ[Э┘И┌▌█КH┬И██Ь▌^\╚HX]ЬЫ▌[Щ
+
+]KХU╩Э[XЩ\К]Щ[ЭЩ]KЬ█X┘J
+JKЭ[XЩ\К]Щ[ЭЩ]KЬ█X┘JK╩JHHKЭ[XЩ\К]Щ[ЭЩ]KЬ█X┘JL
+JJHH┘^JH╚Н
+N┬И██Ь▌┌[ИH^\╚OOH╚█▄KЩЩ\▌┘^HИ^\╚OOHH╚█▄KЩЩ\▌█[▄ЬЫ▌╚ИЪ[
+█▄KЩЩ\▌[Л╚ОИ^\╚JN┬И██Ь▌Ы▌╚H[
+	╪Э]█Й╦Щ\▌\Ы▌╔┘]Щ[ЭЪ█Y^H╚	╚█Y^I╚И	╔▀I┘^\╚OOH╚	╚┘^I╚И	╔▀X
+N╚Ы▌╦Э\HH	╪Э]█Й╬┬И██Ь▌]HH[
+	▄▄[Й╦	┘Щ\▌Y]I╩N┬И]KШ\[Щ
+[
+	╪Й╦Э[]Щ[ЭЩ]KЬ█X┘JL
+KЬЩ\X┘J╫М╦	╔╩JK[
+	▄█X[	╦Э[╪[[Щ\ХRKЫ[█ЭШ[YJ▌]KЫ[Щ╦Э[XЩ\К]Щ[ЭЩ]KЬ█X┘JK╩JHHK	▄┌▄Э	╩JJN┬И██Ь▌^H[
+	▄▄[Й╦	┘Щ\▌]^	╩N┬И^Ш\[Щ
+[
+	╪Й╦Э[]Щ[ЭШ[YJ]Щ[Э
+JK[
+	▄█X[	╦Э[	╪╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦Щ]╚]J	┘]Щ[ЭЩ]_ULОММШ
+KЩ┘]U╤^J
+J_H0н╚	▌┌[ЯX
+JN┬ИЫ▌╦Ш\[Щ
+]K^
+N┬ИYИ
+]Щ[ЭЪ█Y^JHЫ▌╦Ш\[Щ┌[
+[
+	┘[I╦	▌Y╚XЪ[]]Y	╦
+	┌█Y^UY╔╩JJN┬ИЫ▌╦ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▄[С^J]Щ[ЭЩ]JJN┬И\▌Ш\[Щ┌[
+Ы▌╩N┬ИBИYИ
+]KЩ]Щ[Э╦Ы[Щ▌ИСT╒╘╥╒╙КH┬И[▄ЩKЪY[ИHШ[┘N╚[▄ЩKЭ^██Э[ЭH▌]KЩЩ\▌]Ш[╨[╚█▄KЩЩ\▌\▄╚И█▄KЩЩ\▌[▄ЩN┬ИBИBИ	
+	┘Щ\▌]Ш[[[▄ЩI╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚▌]KЩЩ\▌]Ш[╨[H\▌]KЩЩ\▌]Ш[╨[╚Щ[Щ\СЩ\▌]Ш[╩
+N╚JN┬ВИ╩ИKKKH\X\Ш[Ш┘NИ^\▌X╚
+[KHYШ][
+H╚Y┌╚\Ъ╚╚]]╦[Щ[ИX╪┘[Э██▌\ЛЩ[Y[XЩ\ЩY█И\╚]ЪX┘HKKKH
+Л┬И██Ь▌╙╥╫╥╤VHH	┌Ю[▌\┌KШ\X\Ш[Ш┘KЭМЙ╬╚╦╚МОИ]Щ\Ю[█ЩH▌\Э╚█ИH^\▌X╚[H█┌╚█Ш┘BИ██Ь▌P╨╤SХ╚H╚╪YЩЬЫ█ОИ╔╚┘НШМI╦	╚┘МL╪I╫KX[И╔╚═╪═╪YI╦	╚╠YОYI╫KЫ▄┘NИ╔╚┘YОL╪XI╦	╚┘MM╬	╫KЫYNИ╔╚╬ШYYМЙ╦	╚═M┘Щ	╫HN┬И██Ь▌S╤T╚H╔█^\▌X╔╦	█Y┌	╦	┘\Ъ╔╦	╪]]╔╫N┬ИЭ[Ш▌[█И╪Y█┌╩
+H┬ИЮH┬И██Ь▌╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][J╙╥╫╥╤VJJH▀N┬ИЩ]\ЫИ╚[┘NИS╤T╦Ъ[Ш█Y\╩╪]ЩYЫ[┘JH╚╪]ЩYЫ[┘HИ	█^\▌X╔╦X╪┘[ЭИ╪ЪЩX▌Ъ\╙▌█КP╨╤SХ╦╪]ЩYШX╪┘[Э
+H╚╪]ЩYШX╪┘[ЭИ	▄╪YЩЬЫ█Й╚N┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИ╚[┘NИ	█^\▌X╔╦X╪┘[ЭИ	▄╪YЩЬЫ█Й╚N╚BИBИ██Ь▌█┌╚H╪Y█┌╩
+N┬И██Ь▌▐\▌[Q\Ъ╚H
+
+HOИ╚ЮH╚Щ]\ЫИHJ┌[Щ▌╦ЫX]┌YYXH	ЙИ┌[Щ▌╦ЫX]┌YYXJ	╩ЩYЩ\Ь╦X██▄Л\╪┌[YNИ\Ъ╩I╩KЫX]┌\╩N╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚HN┬ИЭ[Ш▌[█И\S█┌╩
+H┬И██Ь▌^\▌X╚H█┌╦Ы[┘HOOH	█^\▌X╔╬┬И██Ь▌\Ъ╚H^\▌X╚█┌╦Ы[┘HOOH	┘\Ъ╔╚
+█┌╦Ы[┘HOOH	╪]]╔╚	ЙИ▐\▌[Q\Ъ╩
+JN┬И██Ь▌Ы█▌H╪▌[Y[ЭЩ╪▌[Y[Э[[Y[Э┬ИYИ
+Ы█▌Ь┘]]ЪXЭ]JH┬ИЫ█▌Ь┘]]ЪXЭ]J	┘]K[[┘I╦\Ъ╚╚	┘\Ъ╔╚И	█Y┌	╩N┬ИЫ█▌Ь┘]]ЪXЭ]J	┘]KXX╪┘[Э	╦^\▌X╚╚	█^\▌X╔╚И█┌╦ШX╪┘[Э
+N┬ИЫ█▌Ь┘]]ЪXЭ]J	┘]K\┌┌[Й╦^\▌X╚╚	█^\▌X╔╚И	▄Z[Й╩N┬ИBИ██Ь▌Ш\Р██▄ИH^\▌X╚╚	╚╠XLМН	╚И\Ъ╚╚	╚╠X╠YМНI╚И	╚┘ЩЩН┘N	╬┬ИЮH╚██Ь▌Y]HH╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	█Y]V█Ш[YOHЭ[YKX██▄ИЧI╩N╚YИ
+Y]JHY]KЬ┘]]ЪXЭ]J	╪██Э[Э	╦Ш\Р██▄КN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИ╦╚[ИH[ЩЫ┌Y\H█ЩI▄╚▌]\╚[ЩШ]ЪY╪][█ИШ\Ь╚Z┘HH╪[YH██▌\И
+Y┌X██Ь╚█И\Ъ╚Ш\Ь╩KВИЮH┬И██Ь▌Ш\Ь╚H┌[Щ▌╦Р╪\X┌]▄И	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╚	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╦Ф▐\▌[PШ\Ь╬┬ИYИ
+Ш\Ь╚	ЙИШ\Ь╦Ь┘]
+HЫ┌YЫ█Z\┘KЬЩ\██ЩJШ\Ь╦Ь┘]
+╚██▄ОИШ\Р██▄ЛY┌ИY\Ъ╚JJKШ╪]┌
+
+
+HOИ▀JN┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И█\И\ИШ\Ь╚┘Y\HЭZ[Z[И██▌\И
+Л╚BИЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][J╙╥╫╥╤VKФ╙╙ЛЬ▌Ъ[Щ┌YЮJ█┌╩JN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌Щ[Y[XЩ\ЩY
+Л╚BИBИЭ[Ш▌[█ИЩ[Щ\У█┌╘[Щ[
+
+H┬И██Ь▌█▄HH██^
+
+KЫ█┌╦[Щ[H	
+	▌[YK\[Щ[	╩N┬И	
+	▌[YKXЭЙ╩KЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦█▄KШЭ]█КN┬И[Щ[ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌]HH[
+	┌╔╦Э[<'ук	╪█▄KЭ]_X
+N╚]KЪYH	▌[YK]]I╬┬И██Ь▌[┘\╚H[
+	┘]Й╦	▄┘Y╔╩N╚[┘\╦Ь┘]]ЪXЭ]J	▄Ы█I╦	┘▄Ы▌\	╩N┬ИЫ▄И
+██Ь▌[┘H┘ИS╤T╩H┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦[┘HOOH█┌╦Ы[┘H╚	██Й╚И	╔╦	▐╚^\▌X╬И	№'х+Й╦Y┌И	°ж ;ю#╔╦\Ъ╬И	№'у&I╦]]╬И	№'фьI╚V█[┘W_H	╪█▄V█[┘W_X
+N╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK\Щ\▄┘Y	╦[┘HOOH█┌╦Ы[┘H╚	▌ЭYI╚И	┘Ш[┘I╩N┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚█┌╦Ы[┘HH[┘N╚\S█┌╩
+N╚Щ[Щ\У█┌╘[Щ[
+
+N╚JN┬И[┘\╦Ш\[Щ┌[
+Э]█КN┬ИBИ██Ь▌▌╪]┌\╚H[
+	┘]Й╦	▄▌╪]┌\╔╩N┬ИЫ▄И
+██Ь▌█Ш[YK╪KЧWH┘И╪ЪЩX▌Щ[ЭЪY\╩P╨╤SХ╩JH┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦▌╪]┌	█Ш[YHOOH█┌╦ШX╪┘[Э╚	╚█Й╚И	╔▀X
+N╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK\Щ\▄┘Y	╦Ш[YHOOH█┌╦ШX╪┘[Э╚	▌ЭYI╚И	┘Ш[┘I╩N┬И██Ь▌▌H[
+	┌I╩N╚▌Ь┘]]ЪXЭ]J	▄▌[I╦K\╪NЙ╪_N╦K\╪ОЙ╪ЯX
+N┬ИЭ]█ЛШ\[Щ
+▌[
+	▄▄[Й╦Э[█▄V█Ш[YWJJN┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚█┌╦ШX╪┘[ЭHШ[YN╚\S█┌╩
+N╚Щ[Щ\У█┌╘[Щ[
+
+N╚JN┬И▌╪]┌\╦Ш\[Щ┌[
+Э]█КN┬ИBИ██Ь▌█ЩHH[
+	╪Э]█Й╦	▌[YKY█ЩI╦█▄KЩ█ЩJN╚█ЩKЭ\HH	╪Э]█Й╬┬И█ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚[Щ[ЪY[ИHЭYN╚JN┬И[Щ[Ш\[Щ
+]K[
+	▄▄[Й╦	█XЩ[	╦█▄KЫ[┘JK[┘\╩N┬ИYИ
+█┌╦Ы[┘HOOH	█^\▌X╔╩H[Щ[Ш\[Щ
+[
+	▄▄[Й╦	█XЩ[	╦█▄KШ██▌\КK▌╪]┌\╩N╚╦╚H^\▌X╚█┌╚\╚]╚▌█И██▌\Ь┬И╦╚Ы▌YЪX╪][█Ь╚█▄Ъ╚█ИZ\И▌█О╚Z\И╪┌Y[H\╚Ы▌┌▌█И╚\┘\Ь╦ВИ[Щ[Ш\[Щ┌[
+█ЩJN┬ИBИ	
+	▌[YKXЭЙ╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚██Ь▌[Щ[H	
+	▌[YK\[Щ[	╩N╚Щ[Щ\У█┌╘[Щ[
+
+N╚[Щ[ЪY[ИH\[Щ[ЪY[О╚JN┬ИЮH╚YИ
+┌[Щ▌╦ЫX]┌YYXJH┌[Щ▌╦ЫX]┌YYXJ	╩ЩYЩ\Ь╦X██▄Л\╪┌[YNИ\Ъ╩I╩KШY]Щ[Э\▌[Щ\К	╪┌[Щ┘I╦
+
+HOИ╚YИ
+█┌╦Ы[┘HOOH	╪]]╔╩H\S█┌╩
+N╚JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И█\ИЬЫ▌▄┘\Ь╚
+Л╚BИ\S█┌╩
+N┬ВИ╩ИKKKHZ[HЫ▌YЪX╪][█Ь╚
+[ЩЫ┌Y\█ЫJNИ╪┌Y[Y█ИH█ЩKЫ╚┘\ЭЩ\И▄ИX╪█▌[ЭЩYYYKKKH
+Л┬И██Ь▌У╒QЦW╥╤VHH	┌Ю[▌\┌KЫЫ▌YЮKЭМI╦У╒QЦW╤ТTФ╒╥QH╠LУ╒QЦW╤VT╚H╦У╒QЦW╨P╒S╙ИH	╥ЦS╒W╙╘SЙ╬┬И██Ь▌Ы▌YЪY\ИH
+
+HOИ╚██Ь▌╪\H┌[Щ▌╦Р╪\X┌]▄О╚Щ]\ЫИ╪\	ЙИ╪\ФY┌[Ь╚	ЙИ╪\ФY┌[Ь╦У╪╪[Ы▌YЪX╪][█Ь╚╚╪\ФY┌[Ь╦У╪╪[Ы▌YЪX╪][█Ь╚ИЭ[╚N┬ИЭ[Ш▌[█И╪YЫ▌YЮJ
+H┬ИЮH┬И██Ь▌╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][JУ╒QЦW╥╤VJJH▀N┬ИЩ]\ЫИ╚█ОИ╪]ЩYЫ█ИOOHЭYK\┌┘YИ╪]ЩYШ\┌┘YOOHЭYK[YNИ╫Ч╠ЯNЧ╠ЯI╦Э\▌
+╪]ЩYЭ[YH	╔╩H╚╪]ЩYЭ[YHИ	╠╬М	╦И]Щ[Ъ[Щ╬И╪]ЩYЩ]Щ[Ъ[Щ╚OOHШ[┘K]Z\ЭNИ╪]ЩYЫ]Z\ЭHOOHШ[┘K┌▄Э▌]╬И╪]ЩYЬ┌▄Э▌]╚OOHШ[┘KX\┘\Ь╬И╪]ЩYЭX\┘\Ь╚OOHШ[┘K]Щ[Ъ[Щ╒[YNИ╫Ч╠ЯNЧ╠ЯI╦Э\▌
+╪]ЩYЩ]Щ[Ъ[Щ╒[YH	╔╩H╚╪]ЩYЩ]Щ[Ъ[Щ╒[YHИ	╠NNМ╠	╚N┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИ╚█ОИШ[┘K\┌┘YИШ[┘K[YNИ	╠╬М	╦]Щ[Ъ[Щ╬ИЭYK]Z\ЭNИЭYK┌▄Э▌]╬ИЭYKX\┘\Ь╬ИЭYK]Щ[Ъ[Щ╒[YNИ	╠NNМ╠	╚N╚BИBИ██Ь▌Ы▌YЮHH╪YЫ▌YЮJ
+N┬И██Ь▌╪]ЩSЫ▌YЮHH
+
+HOИ╚ЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JУ╒QЦW╥╤VKФ╙╙ЛЬ▌Ъ[Щ┌YЮJЫ▌YЮJJN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌Щ[Y[XЩ\ЩY
+Л╚HN┬И]Ы▌YЮPЭ\▐HHШ[┘KЫ▌YЮPY╪Z[ИHШ[┘KЫ▌YЮSЫ▌HH	╔╦Ы▌YЮR[ЩЫ╚HЭ[╚╦╚Ы▌YЮR[ЩЫ╦ШЫ╪┌┘YИ[▌┘Y█Ш┘K┌[Ш┘H\ЫЩY┘ЩИ[И█ЩH┘][Щ▄┬И\▐[Ш╚Э[Ш▌[█И╪┌Y[SЫ▌YЪX╪][█Ь╩
+H┬И██Ь▌Y┌[ИHЫ▌YЪY\К
+N┬ИYИ
+\Y┌[И\▌]KШ┌]JHЩ]\ЫО┬ИYИ
+Ы▌YЮPЭ\▐JH╚Ы▌YЮPY╪Z[ИHЭYN╚Щ]\ЫО╚H╦╚Э[И█Ш┘H[▄ЩH┌[ИH▌\ЬЩ[ЭЭ[И[Щ┬ИЫ▌YЮPЭ\▐HHЭYN┬ИЮH┬И██Ь▌[Щ[Щ╚H]╪Z]Y┌[ЛЩ┘][Щ[Щ╩
+KШ╪]┌
+
+
+HOИ
+╚Ы▌YЪX╪][█Ь╬И╫HJJN┬И██Ь▌▌\Ь╚H
+[Щ[Щ╦ЫЫ▌YЪX╪][█Ь╚╫JKЩЪ[\К][HOИ
+][KЪYПHУ╒QЦW╤ТTФ╒╥Q	ЙИ][KЪYУ╒QЦW╤ТTФ╒╥Q
+╚L
+H
+][KЪYПHPT╤W╤ТTФ╒╥Q	ЙИ][KЪYPT╤W╤ТTФ╒╥Q
+╚PT╤W╙PV
+H
+][KЪYПHS╘СW╤ТTФ╒╥Q	ЙИ][KЪYS╘СW╤ТTФ╒╥Q
+╚S╘СW╙PV
+JKЫX\
+][HOИ
+╚YИ][KЪYJJN┬ИYИ
+▌\Ь╦Ы[Щ▌
+H]╪Z]Y┌[ЛШ╪[Ш┘[
+╚Ы▌YЪX╪][█Ь╬И▌\Ь╚JN┬ИYИ
+[Ы▌YЮKЫ█КH╚Ы▌YЮR[ЩЫ╚HЭ[╚Щ]\ЫО╚BИ██Ь▌\ЫZ\▄┌[█ИH]╪Z]Y┌[ЛШ┌X┌╘\ЫZ\▄┌[█Ь╩
+KШ╪]┌
+
+
+HOИ
+╚\▄^NИ	┘▄Ш[ЭY	╚JJN┬ИYИ
+\ЫZ\▄┌[█ЛЩ\▄^HOOH	┘▄Ш[ЭY	╩H╚Ы▌YЮR[ЩЫ╚H╚Ы╪┌┘YИЭYHN╚Щ]\ЫО╚BИ██Ь▌█▄HH██^
+
+KЫЫ▌YЮK┌▌\ЛZ[Э]WHHЫ▌YЮKЭ[YKЬ▄]
+	╬Й╩KЫX\
+Э[XЩ\КKЫ▌╚HЩ]╚]J
+N┬И██Ь▌Щ\▌]Ш[╚H
+▌]KЩЩ\▌]Ш[╚	ЙИ▌]KЩЩ\▌]Ш[╦Щ]Щ[Э╩H╫N┬И██Ь▌\▌H╫K^\╚H▀K[▄ЩT┘Y[ИH╚┘^\╬ИЩ]╚┘]
+
+KY╬ИN┬ИZPШ]┌\╚H▀N┬ИЮH╚╦╚ЬЩ\┌RK]▄Ъ][И█▄HЫ▄И\╚[Щ▌XY┘N╚HЭZ[Z[ИY\▄╪Y┘\╚\ЩH\┘YЫ▄И[ЮH^H┌]▌]]И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K█ЭY┘\╔╦╚[Щ▌XY┘NИ▌]KЫ[Щ╦ЬЫ█NИ╪╪[\█╩Ы▌╩K^\╬ИУ╒QЦW╤VT╚JN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШШ]┌\╚	ЙИ\[┘ИЫ┘KШШ]┌\╚OOH	█╪ЪЩX▌	╩HZPШ]┌\╚HЫ┘KШШ]┌\╬┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И┘ЩЫ[ЩNИЭZ[Z[ИY\▄╪Y┘\╚
+Л╚BИЫ▄И
+]┘ЩЬ┘]H╚┘ЩЬ┘]У╒QЦW╤VT╬╚┘ЩЬ┘]
+╧HJH┬И██Ь▌]HЩ]╚]JЫ▌╦Щ┘]Э[YX\К
+KЫ▌╦Щ┘][█Э
+
+KЫ▌╦Щ┘]]J
+H
+╚┘ЩЬ┘]▌\ЛZ[Э]K
+N┬И██Ь▌\█╚H╪╪[\█╩]
+N┬И██Ь▌[Щ┘С^HHЩ]╚]JЫ▌╦Щ┘]Э[YX\К
+KЫ▌╦Щ┘][█Э
+
+KЫ▌╦Щ┘]]J
+H
+╚┘ЩЬ┘]МK╠
+N┬ИYИ
+[Щ┘С^HHЫ▌╩H██Э[ЭYN┬И]^HHЭ[┬ИЮH╚██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K┘^K\[Ш┌[Щ╔╦╚]NИ\█╦X┘NИ▌]KШ┌]HJN╚YИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KЩ^JH^HHЫ┘KЩ^N╚H╪]┌
+┘\ЬЫ▄КH╚╩И┌┌\H^H
+Л╚BИYИ
+Y^JH██Э[ЭYN┬И^\╓┌\█╫HH^N┬И╦╚XX┌\Э█И]╚▌█ОИ█ЩHШY^H▄ИY\▄╪Y┘H]\▌Щ]Щ\И▌▄HЩ\▌ЬЫ█HЩZ[Щ╚╪┌Y[YВИЮH╚\▌Ь\┌
+ЛЛЫ]Z\ЭP[\Э╩^K\█╦┘ЩЬ┘]Ы▌╩JN╚H╪]┌
+\ЬЫ▄КH╚██Ь██KЭ╪\ЫК	█]Z\ЭH[\Э╔╦\█╦\ЬЫ▄КN╚BИЮH╚\▌Ь\┌
+ЛЛЫ[▄ЩP[\Э╩^K\█╦Ы▌╦[▄ЩT┘Y[КJN╚H╪]┌
+\ЬЫ▄КH╚██Ь██KЭ╪\ЫК	█[▄ЩH[\Э╔╦\█╦\ЬЫ▄КN╚BИYИ
+]HЫ▌╩H██Э[ЭYN┬ИЮH┬И██Ь▌]^H	┌\█▀U	█Ы▌YЮKЭ[Y_X┬И██Ь▌X┌╚H][\╚OИ][\╦ЩЪ[Щ
+][HOИ][KЬ▌\Э╫╪]H]^	ЙИ]^][KЩ[Щ╫╪]
+H][\╓╠N┬И██Ь▌Щ\▌]Ш[HЩ\▌]Ш[╦ЩЪ[Щ
+]Щ[ЭOИ]Щ[ЭЩ]HOOH\█╩N┬И██Ь▌┘YZ┘^HH╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦Щ]╚]J	┌\█▀ULОММШ
+KЩ┘]U╤^J
+JN┬И██Ь▌]HHЩ\▌]Ш[╚Ъ[
+█▄KЩЩ\▌╚Ш[YNИ]Щ[ЭШ[YJЩ\▌]Ш[
+HJHИ<'у!H	▌┘YZ┘^_H0н╚	█Ш[Y\╦Э]SШ[YJX┌╩^KЭ]JKЪ[Щ^▌]KЫ[Щ╩_X┬И██Ь▌ШZHH^KЭ[Z[Щ▄╚	ЙИ^KЭ[Z[Щ▄╦ЬШZW┌╪[[N┬И██Ь▌[Щ\╚H╪	█Ш[Y\╦ЫШZ▄┌]ШSШ[YJX┌╩^KЫШZ▄┌]ШJKЪ[Щ^▌]KЫ[Щ╩_I▄ШZH╚0н╚	╪█▄KЬШZ_H	╪█╪┌╩ШZV╠K\█╩_xа$╔╪█╪┌╩ШZV╠WK\█╩_XИ	╔▀XN┬И██Ь▌\Ь██Ш[H^QЫ▄Ц[▌J^K]^
+N┬ИYИ
+\Ь██Ш[
+H[Щ\╦Ь\┌
+8з*	▄\Ь██Ш[X
+N┬И██Ь▌^H[Щ\╦ЪЫ┌[К	╫Й╩KЬЩ\X┘J╓╫LМНЛWLМОWK┘╦	╔╩N╚╦╚Ы╚\ЩX▌[█ИX\Ъ▄╬И██YH█Щ\╚Ш]╚[H\╚Ы▐\┬И\▌Ь\┌
+╚YИУ╒QЦW╤ТTФ╒╥Q
+╚┘ЩЬ┘]]KЫ┘NИ^\Щ┘PЫ┘NИ^╪┌Y[NИ╚][▌╒┌[RYNИЭYHK^ШNИ╚Y┘NИ	┌█YI╚HJN┬ИH╪]┌
+\ЬЫ▄КH╚██Ь██KЭ╪\ЫК	█[▄ЫЪ[Щ╚Ы▌YЪX╪][█Й╦\█╦\ЬЫ▄КN╚BИBИ╦╚YЭ\ИH╪┌Y[Y┘YZ╦█ЩHЩ[Z[Щ\И╚▄[ИH\
+┌X┌╪┌Y[\╚HЩ^┘YZ╩KВИ██Ь▌\▌HЩ]╚]JЫ▌╦Щ┘]Э[YX\К
+KЫ▌╦Щ┘][█Э
+
+KЫ▌╦Щ┘]]J
+H
+╚У╒QЦW╤VT╦▌\ЛZ[Э]K
+N┬И\▌Ь\┌
+╚YИУ╒QЦW╤ТTФ╒╥Q
+╚У╒QЦW╤VT╦]NИ█▄KЬЩ[▄[Х]KЫ┘NИ█▄KЬЩ[▄[РЫ┘K╪┌Y[NИ╚]И\▌[▌╒┌[RYNИЭYHHJN┬ИЮH╚\▌Ь\┌
+ЛЛЩ]Щ[Ъ[Щ╙Ы▌YЪX╪][█Ь╩Ы▌╦^\╩JN╚H╪]┌
+\ЬЫ▄КH╚██Ь██KЭ╪\ЫК	┘]Щ[Ъ[Щ╚Ы▌YЪX╪][█Ь╔╦\ЬЫ▄КN╚BИЮH╚\▌Ь\┌
+ЛЛЭX\┘\УЫ▌YЪX╪][█Ь╩Ы▌╩JN╚H╪]┌
+\ЬЫ▄КH╚██Ь██KЭ╪\ЫК	▄ЩXY[Щ╚Щ[Z[Щ\Ь╔╦\ЬЫ▄КN╚BИ╦╚HЭ]█И[Щ\ИXX┌ЩXY[Щ╚Щ[Z[Щ\И[Щ[Z[Щ╚[\Э
+Z┘HФЩ]ЩX[]КK▄[Ъ[Щ╚H╪[YH╪▄ЩY[И\╚H\ВИ██Ь▌Э]█ИH╚[ОИ	╘┘YHЫ▌╔╦NИ	°,!°,*╕,cx,*╕,`x,(x,a╚8,&╕,`╕,(x, ╕,(x,/╔╦NИ	°)!x)+x)`8))╕)a°)%╕)a°) Й╚V▄▌]KЫ[Щ╫H	╘┘YHЫ▌╔╬┬ИЮH╚YИ
+Y┌[ЛЬЩY┌\▌\РX▌[█Х\\╩H]╪Z]Y┌[ЛЬЩY┌\▌\РX▌[█Х\\╩╚\\╬И▐╚YИУ╒QЦW╨P╒S╙ЛX▌[█Ь╬И▐╚YИ	█▄[Й╦]NИЭ]█ЛЫ▄ЩY▄Ы▌[ЩИЭYHWHWHJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И█\ИY┌[ОИЫ╚Э]█И
+Л╚BИЫ▄И
+██Ь▌][H┘И\▌
+HYИ
+][KЩ^ШH	ЙИ][KЩ^ШKЬY┘H	ЙИ][KЩ^ШKЬY┘HOOH	┌█YI╩H][KШX▌[█Х\RYHУ╒QЦW╨P╒S╙О┬И]╪Z]Y┌[ЛЬ╪┌Y[J╚Ы▌YЪX╪][█Ь╬И\▌JN┬ИЫ▌YЮR[ЩЫ╚HЭ[┬ИH╪]┌
+\ЬЫ▄КH┬И██Ь██KЭ╪\ЫК	█Ы▌YЪX╪][█Ь╔╦\ЬЫ▄КN┬ИHЪ[Ш[H┬ИЫ▌YЮPЭ\▐HHШ[┘N╚ЩYЬЩ\┌Ы▌YЮT┘][Щ▄╩
+N╚Ы┌Y▐[Ш╘┌▄Э▌]╩
+N┬ИYИ
+Ы▌YЮPY╪Z[КH╚Ы▌YЮPY╪Z[ИHШ[┘N╚Ы┌Y╪┌Y[SЫ▌YЪX╪][█Ь╩
+N╚BИBИBИ╩ИKKKHЩXY[Щ╚Щ[Z[Щ\Ь╬И┌▄Э[\[Щ╚
+Э]ЭYJHЫ▌YЪX╪][█Ь╚]Щ\ЮH▌\И▄И█╚[ИH^KXX┌▄[Ъ[Щ╚HЩX]\ЩKВИ▌╚┘Э[И[ЩЩ]┘Y[И┌X┌▌\Ь╚██Y\╚ЬЫ█HHYZ[И[Щ[╚H\┘\И╪[И▌┌]┌[H┘ЩИ[Щ\И<'укИKKKH
+Л┬И██Ь▌PT╤W╤ТTФ╒╥QH╠╠PT╤W╙PVHNLPT╤W╤VT╚H╦PT╤W╥╤VHH	┌Ю[▌\┌KЭX\┘\Ь╦ЭМI╬┬И██Ь▌PT╤TЧ╨╙╘HH┬И[ОИ╚┘┘█NИ	╘ЩXY[Щ╚Щ[Z[Щ\Ь╚
+]Щ\ЮHЩ]╚▌\Ь╩I╦][\╬И┬И[NИ╔°з"╚[▌\И[H\╚╪Z][Щ╚╚ЩHЩXY	╦	╓[▌\ИX\ЭXY[ЩYЩH[Щ\╚]ЩHH▌▄ЮKИ╪╪[И[▌\И[H[Щ┘YH][И┘X██Щ╦Й╫KИ\Ы▌И╔№'ру╚[▌\И╪\Щ╚\ЩH┌YЩЫY	╦	╒ЩYH╪\Щ╚\ЩH╪Z][Щ╚Ы▄И[▌\И]Y\▌[█ИXЫ▌]▌ЩK╪\ЩY\И▄И[█Щ^KИX┌╚[▌\Ь╚Ы▌╦Й╫KИШ\┌NИ╔№'х+И▄┌Y█ЯNИ┘^xа&\╚ЩXY[Щ╚\╚ЩXYI╦	╓[▌\ИX┌╦██▌\И[ЩЩ\▌[YHЫ▄И┘^KИ\╚┘YH┌]H^H█╦Й╫KИШ\┌P[ЮNИ╔№'х+И┘^xа&\╚Ш\┌\[\╚ЩXYI╦	╤Ъ[Щ[▌\ИШ\┌H[Щ┘YH┌]┘^H█╚Ы▄И[▌KЙ╫KИ▌[ЩNИ╔№'фч[▌\ИШ]Z╪[H\╚ЩXYI╦	╓[▌\И┌\Э\┌H[Щ▄┌\╚\ЩH╪Z][Щ╦И┘YH┌]\╚\Ъ[┘YX[Ь╚Ы▄И[▌KЙ╫KИ▌[ЩSЩ]╬И╔№'фч[▌\ИШ]Z╪[H\╚╠┘X██Щ╚]╪^I╦	╨Y[▌\ИЪ\Э[YH[Щ┘YH[▌\ИY█ШKШ\┌KШZ▄┌]ШH[Щ\┌KЙ╫KИ[██ОИ╔№'у&H┌]┘\╚[▌\И[██И╪^HXЫ▌][▌O╔╦	╓[▌\И[██И┌Y█И┌▌▄╚[▌\ИЩY[[Щ▄╦▌ЩH[ЩШ]\ЩKИ\╚ЩXY]Й╫KИЭ[XЩ\Ь╬И╔№'х(И[▌\ИX┌▐HЭ[XЩ\Ь╚\ЩHЩXYI╦	╓[▌\И[██[Ъ╦ЪY▐X[Ъ╦X┌▐H^\╚[Щ██▌\Ь╦ЬЫ█H[▌\ИЪ\Э]KЙ╫KИ┌]И╔№'фл\┌╚Ю[▌\ЫX^XH[Ю][Щ╔╦	╨╪\ЩY\ЛX\ЬЪXY┘H▄И[█Щ^NИ┘][И[Ь▌┘\ИЬЫ█H[▌\И▌█И┌\ЭЙ╫KИX]┌И╔№'фзИ\╚[▌\ИX]┌▄Ъ][И[ИH▌\Ь╧╔╦	╨┌X┌╚▌[ШHZ[[И▌]┘И═И[И[Щ\ИHZ[Э]KЙ╫HHKИNИ╚┘┘█NИ	°,,8,`8,(x,/°, ╕,%°,cH8,,8,/°,+╕,b8, ╕,(x,,8,cx,,╕,`H
+8,*╕,cx,,8,)8,/╚8,%x,b╕,*8,cx,*8,/╚8,%°, ╕,'°,,╕,%x,`JI╦][\╬И┬И[NИ╔°з"╚8,+╕,`8,.x,.8,cx,)8,,8,a°,%╕,,╕,`H8,+╕,`8,%x,b°,.8, И8,#╕,)╕,`x,,8,`x,&╕,`╕,.8,cx,)8,`x,*8,cx,*8,/╕,+°,/╔╦	°,+╕,`8,.x,`°,)╕,+╦8,+╕,.8,cx,)8,/°,-°,cx,%K8,'8,`8,-x,*8,,8,a°,%╕,,╕,`H8,#°, И8,&╕,a╕,+8,`x,)8,`x,*8,cx,*8,/╕,+°,b╚8,&╕,`╕,(x, ╕,(x,/╦И8,!x,,8,&╕,a°,)8,/°,*8,/╚8,.8,cx,%x,/╕,*8,cH8,&╕,a°,+°, ╕,(x,/╦Й╫KИ\Ы▌И╔№'ру╚8,+╕,`8,%x,/╕,,8,cx,(x,`x,,╕,`H8,.8,/°,)╕,cx,)°, ╕,%°,/И8,"x,*8,cx,*8,/╕,+°,/╔╦	°,*╕,cx,,8,a°,+Л8,"x,)╕,cx,+°,b°,%°, Л8,(x,+8,cx,+8,`NИ8,+╕,`8,*╕,cx,,8,-╕,cx,*8,%x,`H8,+╕,`╕,(x,`H8,%x,/╕,,8,cx,(x,`x,,╕,`H8,#╕,)╕,`x,,8,`x,&╕,`╕,.8,cx,)8,`x,*8,cx,*8,/╕,+°,/╦И8,!°,*╕,cx,*╕,`x,(x,a╚8,#╕, ╕,&╕,`x,%x,b°, ╕,(x,/╦Й╫KИШ\┌NИ╔№'х+И▄┌Y█ЯNИ8,"8,,8,b°,'8,`H8,*°,,╕,/°,)8, И8,.8,/°,)╕,cx,)°, Й╦	°,"8,,8,b°,'8,`H8,+╕,`8,!x,)╕,`°,-°,cx,'°, Л8,,8, ╕,%°,`K8,+╕, ╕,&╕,/╚8,.8,+╕,+°, ЛИ8,,8,b°,'8,`H8,#╕,,╕,/И8,"x, ╕,)╕,b╚8,&╕,`╕,(x, ╕,(x,/╦Й╫KИШ\┌P[ЮNИ╔№'х+И8,"8,,8,b°,'8,`H8,,8,/╕,-╕,/╚8,*°,,╕,/╕,,╕,`H8,.8,/°,)╕,cx,)°, Й╦	°,+╕,`8,,8,/╕,-╕,/╚8,#╕, ╕,&╕,`x,%x,`x,*8,/╚8,"8,,8,b°,'8,`H8,+╕,`8,%x,`H8,#╕,,╕,/И8,"x, ╕,)╕,b╚8,&╕,`╕,(x, ╕,(x,/╦Й╫KИ▌[ЩNИ╔№'фч8,+╕,`8,'8,/╕,)8,%x, И8,.8,/°,)╕,cx,)°, ╕,%°,/И8,"x, ╕,)╕,/╔╦	°,+╕,`8,&╕,%x,cx,,8, Л8,)╕,-Л8,)╕,b°,-°,/╕,,╕,`H8,+╕,`8,%x,b°,.8, И8,#╕,)╕,`x,,8,`x,&╕,`╕,.8,cx,)8,`x,*8,cx,*8,/╕,+°,/╦И8,"8,%x,/╕,,╕, И8,+╕,`8,%x,`H8,#°, И8,&╕,a╕,+8,`x,)8,`x, ╕,)╕,b╚8,&╕,`╕,(x, ╕,(x,/╦Й╫KИ▌[ЩSЩ]╬И╔№'фч8,+╕,`8,'8,/╕,)8,%x, И╠8,.8,a╕,%x,*8,cx,,И8,)╕,`╕,,8, ╕,,╕,b╔╦	°,*╕,`x,'°,cx,'°,/°,*8,.8,+╕,+°, И8,!°,&╕,cx,&╕,/╚8,+╕,`8,,╕,%°,cx,*8, Л8,,8,/╕,-╕,/╦8,*8,%x,cx,-°,)8,cx,,8, Л8,)╕,-И8,&╕,`╕,(x, ╕,(x,/╦Й╫KИ[██ОИ╔№'у&H8,+╕,`8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/╚8,+╕,`8,%°,`x,,8,/°, ╕,&╕,/╚8,#°, И8,&╕,a╕,+8,`x,)8,b°, ╕,)╕,/╧╔╦	°,+╕,`8,+x,/╕,-x,/╕,,╕,`K8,*╕,cx,,8,a°,+Л8,.8,cx,-x,+x,/╕,-x, И8,+╕,`8,&╕, ╕,)╕,cx,,8,,8,/╕,-╕,/°,,╕,b╚8,"x,*8,cx,*8,/╕,+°,/╦И8,&╕,)╕,-x, ╕,(x,/╦Й╫KИЭ[XЩ\Ь╬И╔№'х(И8,+╕,`8,!x,)╕,`°,-°,cx,'╚8,.8, ╕,%╕,cx,+°,,╕,`H8,.8,/°,)╕,cx,)°, Й╦	°,+╕,`8,+╕,`╕,,╕,/╕, ╕,%x, Л8,+x,/╕,%°,cx,+°,/╕, ╕,%x, Л8,!x,)╕,`°,-°,cx,'╚8,,8,b°,'8,`x,,╕,`K8,,8, ╕,%°,`x,,╕,`NИ8,+╕,`8,*╕,`x,'°,cx,'°,/°,*8,)8,a°,)╕,`8,*8,`x, ╕,&╕,/╦Й╫KИ┌]И╔№'фл8,'8,cx,+°,b°,)8,/°,,8,cx,+╕,+°,*8,`H8,#°,)╕,b8,*8,/И8,!x,(x,%°, ╕,(x,/╔╦	°,"x,)╕,cx,+°,b°,%°, Л8,*╕,a╕,,°,cx,,╕,/╦8,(x,+8,cx,+8,`NИ8,+╕,`8,'8,/╕,)8,%x, И8,!╕,)°,/╕,,8, ╕,%°,/И8,.8,+╕,/╕,)°,/╕,*8, И8,*╕,b╕, ╕,)╕, ╕,(x,/╦Й╫KИX]┌И╔№'фзИ8,+╕,`8,'8, ╕,'╚8,*8,%x,cx,-°,)8,cx,,8,/╕,,╕,cx,,╕,b╚8,,8,/╕,.8,/╚8,"x, ╕,)╕,/П╔╦	°,$╕,%x,cx,%H8,*8,/°,+╕,/°,-°, ╕,,╕,b╚═╕,%x,/╚8,%°,`x,(╚8,+╕,a°,,°,*8, И8,&╕,`╕,(x, ╕,(x,/╦Й╫HHKИNИ╚┘┘█NИ	°),8)`8)(x)/°) ╕)%╚8),8)/°)+╕)/╕)!°) ╕)(x),
+8).x),8)%x)`x)&╚8)&8) ╕)'°)b°) И8)+╕)a°) КI╦][\╬И┬И[NИ╔°з"╚8)!╕)*╕)%x)`8).x))x)a°),╕)`8)%x)`8),8)a°)%╕)/╕)#°) H8)!°) ╕))8)'8)/8)/╕),8)%x),8),8).x)`8).x)b8) Й╦	°)!╕)*╕)%x)`8).x)`°))╕)+╦8)+╕).8)cx))8)/°)-°)cx)%H8)%8),8)'8)`8)-x)*8),8)a°)%╕)/И8)%x)cx)+°)/И8)%x).x))8)`8).x)b╚8).x))x)a°),╕)`8).8)cx)%x)b8)*8)%x),8)a°) И8)%8),8))╕)a°)%╕)a°) ╕)i	╫KИ\Ы▌И╔№'ру╚8)!╕)*╕)%x)a╚8)%x)/╕),8)cx)(H8))8)b8)+°)/╕),8).x)b8) Й╦	°)*╕)cx),8)a°)+Л8)%x),8)/°)+°),8)+°)/И8)*╕)b8).8)/ОИ8)!╕)*╕)%x)a╚8).8)-x)/╕),И8)%x)a╚8),╕)/°)#╚8))8)`8)*8)%x)/╕),8)cx)(H8)!°) ╕))8)'8)/8)/╕),8)%x),8),8).x)a╚8).x)b8) ╕)i8)!x)+x)`8)&╕)`x)*8)a°) ╕)i	╫KИШ\┌NИ╔№'х+И▄┌Y█ЯNИ8)!╕)'8)%x)/И8),8)/╕)-╕)/°)*°),И8))8)b8)+°)/╕),8).x)b	╦	°)!╕)'8)!╕)*╕)%x)/И8)+x)/╕)%°)cx)+╦8),8) ╕)%╚8)%8),8)-╕)`x)+H8).8)+╕)+°)i8))╕)a°)%╕)a°) И8)!╕)'8)%x)/И8))╕)/°)*8)%x)b8).8)/И8).x)b8)i	╫KИШ\┌P[ЮNИ╔№'х+И8)!╕)'8)%x)/И8),8)/╕)-╕)/°)*°),И8))8)b8)+°)/╕),8).x)b	╦	°)!x)*╕)*8)`8),8)/╕)-╕)/╚8)&╕)`x)*8)a°) И8)%8),8))╕)a°)%╕)a°) И8)!╕)'8)!╕)*╕)%x)a╚8),╕)/°)#╚8)%x)cx)+°)/И8).x)b8)i	╫KИ▌[ЩNИ╔№'фч8)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8))8)b8)+°)/╕),8).x)b	╦	°)!╕)*╕)%x)/И8)&╕)/╕),8)cx)'╦8))╕)-╕)/И8)%8),8))╕)b°)-╚8)!°) ╕))8)'8)/8)/╕),8)%x),8),8).x)a╚8).x)b8) ╕)i8))╕)a°)%╕)a°) И8)+°).H8).8)+╕)+╚8)!╕)*╕)%x)a╚8),╕)/°)#╚8)%x)cx)+°)/И8)%x).x))8)/И8).x)b8)i	╫KИ▌[ЩSЩ]╬И╔№'фч8)!╕)*╕)%x)`8)%x)`x) ╕)(x),╕)`8)+8).╠8).8)a°)%x) ╕)(H8))╕)`╕),	╦	°)'8)*8)cx)+И8).8)+╕)+╚8)(x)/╕),╕)a°) И8)%8),8)!x)*╕)*8)/И8),╕)%°)cx)*8),8)/╕)-╕)/╦8)*8)%x)cx)-°))8)cx),8)%8),8))╕)-╕)/И8))╕)a°)%╕)a°) ╕)i	╫KИ[██ОИ╔№'у&H8)!╕)*╕)%x)`8)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8)!╕)*╕)%x)a╚8)+8)/╕),8)a╚8)+╕)a°) И8)%x)cx)+°)/И8)%x).x))8)`8).x)b╔╦	°)!╕)*╕)%x)`8)+x)/╕)-x)*8)/╕)#°) K8)*╕)cx),8)a°)+И8)%8),8).8)cx)-x)+x)/╕)-H8)&╕) ╕))╕)cx),8),8)/╕)-╕)/╚8)+╕)a°) И8)&°)/°)*╕)a╚8).x)b8) ╕)i8)*╕)(╕)/8)a°) ╕)i	╫KИЭ[XЩ\Ь╬И╔№'х(И8)!╕)*╕)%x)a╚8)-╕)`x)+H8)!x) ╕)%H8))8)b8)+°)/╕),8).x)b8) Й╦	°)!╕)*╕)%x)/И8)+╕)`╕),╕)/╕) ╕)%K8)+x)/╕)%°)cx)+°)/╕) ╕)%K8)-╕)`x)+H8))╕)/°)*8)%8),8),8) ╕)%╬И8)!╕)*╕)%x)`8)'8)*8)cx)+И8))8)/°))x)/╚8).8)a°)i	╫KИ┌]И╔№'фл8)'8)cx)+°)b°))8)/°),8)cx)+╕)+╚8).8)a╚8)%x)`x)&╚8)+x)`8)*╕)`╕)&°)a°) Й╦	Ўєп9╢ЙЮ╦k║w╡чex)cx)+°)/И8).8)`x))°)/╕),8)*8)/И8)&╕)/╕).x)/°)#╔╦X┘Z█\ОИ	°)!╕)*╕)%x)b╚8)%x)cx)+°)/И8)*╕).8) ╕))И8)*8).x)`8) И8)!╕)+°)/И8)+°)/И8)%x)cx)+°)/И8).8)+╕).8)cx)+°)/И8).x)`x)"8а)Й╦┘[ЩИ	╤ЩYYШX┌╚8)+x)a°)'8)a°) Й╦[Ъ▄╬И	°))°)*8)cx)+°)-x)/╕))ИH8)!╕)*╕)%x)/ИЩYYШX┌╚8).x)+╕)a°) И8)+8)a°).x))8),8)+8)*8)/╕)*8)a╚8)+╕)a°) И8)+╕))╕))И8)%x),8)a°)%°)/╕)i	╦█▄┘NИ	°)+8)/╕))И8)+╕)a°) Й╚KИV▄▌]KЫ[Щ╫H╚]NИ	╤[ЪЫ▐Z[Щ╚Ю[▌\ЫX^XO╔╦Ы┘NИ	╥▌╚X[ЮH▌\Ь╚█▌[[▌H┌]ЩH[▌\И^\ЪY[Ш┘O╔╦ЩX\██ОИ	╘X\┘H[\╚┌]┘H┌▌[[\Ы▌ЩI╦X┘Z█\ОИ	╒┌]Y[▌H\█Z┘H▄И┌]┘[Э▄Ы█Щ╧╔╦┘[ЩИ	╘┘[ЩЩYYШX┌╔╦[Ъ▄╬И	╒[Ъ╚[▌HH[▌\ИЩYYШX┌╚[╚\╚[\Ы▌ЩKЙ╦█▄┘NИ	╙X^XЩH]\Й╚JN┬ИЭ[Ш▌[█ИЩ[Y[XЩ\ФШ][Щ╩Ш[YJH╚ЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JРUSС╫╥╤VKФ╙╙ЛЬ▌Ъ[Щ┌YЮJШ[YJJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИЭ[Ш▌[█ИX^XЩP\┌╤Ы▄ФШ][Щ╩
+H┬ИYИ
+Y╪▌[Y[Э\[┘И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄ИOOH	┘Э[Ш▌[█Й╩HЩ]\ЫО┬ИЮH┬И██Ь▌╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][JРUSС╫╥╤VJJN┬ИYИ
+╪]ЩY	ЙИ
+╪]ЩYЬ▌XЫZ]Y
+╪]ЩYЬ█Ы█▐ЩU[Э[	ЙИ]KЫЫ▌╩
+H╪]ЩYЬ█Ы█▐ЩU[Э[
+JJHЩ]\ЫО┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И\┌╚
+Л╚BИШ]P\
+ЭYJN┬ИBИЭ[Ш▌[█ИШ]P\
+]]█X]X╚HШ[┘JH┬ИYИ
+Y╪▌[Y[Э\[┘И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄ИOOH	┘Э[Ш▌[█Й╚╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╦ЬШ][Щ╦\▄\	╩JHЩ]\ЫО┬И██Ь▌█▄HHШ][Щ╨█▄J
+K▌Щ\Ы^HH[
+	┘]Й╦	▌\]K\▄\Ш][Щ╦\▄\	╩K╪\ЩH[
+	┘]Й╦	▌\]K\▄\X╪\Щ	╩N┬И██Ь▌▌\Ь╚H[
+	┘]Й╦	▄Ш][Щ╦\▌\Ь╔╩N╚▌\Ь╦Ь┘]]ЪXЭ]J	▄Ы█I╦	┘▄Ы▌\	╩N╚▌\Ь╦Ь┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦█▄KШЫ┘JN┬И██Ь▌ЩX\██ИH[
+	┘]Й╦	▄Ш][Щ╦\ЩX\██Й╩N╚ЩX\██ЛЪY[ИHЭYN┬И██Ь▌^\ЩXHH[
+	▌^\ЩXI╩N╚^\ЩXKЬЫ▌▄╚H╚^\ЩXKЫX^[Щ▌HL╚^\ЩXKЬX┘Z█\ИH█▄KЬX┘Z█\О┬И██Ь▌\ЬЫ▄ИH[
+	▄	╦	▄Ш][Щ╦Y\ЬЫ▄Й╩N┬И██Ь▌┘[ЩH[
+	╪Э]█Й╦	╪ЭЙ╦█▄KЬ┘[Щ
+N╚┘[ЩЭ\HH	╪Э]█Й╬┬ИЩX\██ЛШ\[Щ
+[
+	█XЩ[	╦Э[█▄KЬЩX\██КK^\ЩXK\ЬЫ▄Л┘[Щ
+N┬И██Ь▌]\ИH[
+	╪Э]█Й╦	█[Ъ╦XЭЙ╦█▄KШ█▄┘JN╚]\ЛЭ\HH	╪Э]█Й╬┬И██Ь▌█▄┘HH▌XЫZ]YOИ┬ИЮH╚╪▌[Y[ЭШЫ┘KЬЩ[[▌ЩP┌[
+▌Щ\Ы^JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И██ЩH
+Л╚BИYИ
+\▌XЫZ]Y	ЙИ]]█X]X╩HЩ[Y[XЩ\ФШ][Щ╩╚▌XЫZ]YИШ[┘K█Ы█▐ЩU[Э[И]KЫЫ▌╩
+H
+╚╚
+ИНJN┬ИN┬И██Ь▌[Ъ╚H
+
+HOИ┬И╪\ЩЬЩ\X┘P┌[Щ[К[
+	▄▌Ы█Щ╔╦	▌\]K\▄\]]I╦█▄KЭ]JK[
+	▄	╦	▌\]K\▄\XЫ┘I╦█▄KЭ[Ъ▄╩JN┬И██Ь▌█ЩHH[
+	╪Э]█Й╦	╪ЭЙ╦	╙╥╔╩N╚█ЩKЭ\HH	╪Э]█Й╬╚█ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ█▄┘JЭYJJN╚╪\ЩШ\[Щ┌[
+█ЩJN┬ИN┬ИЫ▄И
+]Ш[YHHN╚Ш[YHHN╚Ш[YH
+╧HJH┬И██Ь▌▌\ИH[
+	╪Э]█Й╦Э[	°ж!I╩N╚▌\ЛЭ\HH	╪Э]█Й╬╚▌\ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦	▌Ш[Y_H╚X
+N┬И▌\ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И▌\Ь╦Ь]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩KЩЫ▄СXX┌
+
+Э]█Л[Щ^
+HOИЭ]█ЛШ█\▄╙\▌Э┘┘█J	██Й╦[Щ^Ш[YJJN┬ИЩX\██ЛЪY[ИHШ[YHПH╬┬И\ЬЫ▄ЛЭ^██Э[ЭH	╔╬┬ИYИ
+Ш[YH╩H╚^\ЩXKЩЫ╪▌\╩
+N╚┘[ЩЫ█Ш█X┌╚H\▐[Ш╚
+
+HOИ┬И██Ь▌Ы▌HH^\ЩXKЭШ[YKЭЪ[J
+N╚YИ
+[Ы▌JH╚\ЬЫ▄ЛЭ^██Э[ЭH█▄KЬЩX\██О╚Щ]\ЫО╚BИ┘[ЩЩ\╪XЫYHЭYN┬ИЮH┬И██Ь▌Щ\▌[H]╪Z]▄▌
+	╦╪\K▄Ш][Щ╔╦╚▌\Ь╬ИШ[YKЩX\██ОИЫ▌K[Щ▌XY┘NИ▌]KЫ[Щ╚JN┬ИYИ
+\Щ\▌[Ы┌╩HЫ▌╚Щ]╚\ЬЫ▄К
+Щ\▌[ШЫ┘H	ЙИЩ\▌[ШЫ┘KЩ\ЬЫ▄КH	╨█▌[Ы▌┘[ЩЩYYШX┌╔╩N┬ИЩ[Y[XЩ\ФШ][Щ╩╚▌XЫZ]YИЭYK▌\Ь╬ИШ[YHJN╚[Ъ╩
+N┬ИH╪]┌
+╪]Y┌
+H╚\ЬЫ▄ЛЭ^██Э[ЭH╪]Y┌ЫY\▄╪Y┘N╚┘[ЩЩ\╪XЫYHШ[┘N╚BИN╚BИ[┘H┬ИЩ[Y[XЩ\ФШ][Щ╩╚▌XЫZ]YИЭYK▌\Ь╬ИШ[YHJN┬ИЫ┌Y▄▌
+	╦╪\K▄Ш][Щ╔╦╚▌\Ь╬ИШ[YKЩX\██ОИ	╔╦[Щ▌XY┘NИ▌]KЫ[Щ╚JN┬ИYИ
+Ш[YHOOHJH╚█▄┘JЭYJN╚ЮH╚┌[Щ▌╦Ы▄[КVW╒TУ	╫╪Ы[Ъ╔╩N╚H╪]┌
+┘\ЬЫ▄КH╚┌[Щ▌╦Ы╪╪][█ЛЪЩYИHVW╒TУ╚HBИ[┘H[Ъ╩
+N┬ИBИJN┬И▌\Ь╦Ш\[Щ┌[
+▌\КN┬ИBИ]\ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ█▄┘JШ[┘JJN┬И╪\ЩШ\[Щ
+[
+	▄▌Ы█Щ╔╦	▌\]K\▄\]]I╦█▄KЭ]JK[
+	▄	╦	▌\]K\▄\XЫ┘I╦█▄KШЫ┘JK▌\Ь╦ЩX\██Л]\КN┬И▌Щ\Ы^KШ\[Щ┌[
+╪\Щ
+N╚╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+▌Щ\Ы^JN┬ИBИЭ[Ш▌[█ИЩ[Щ\УY[ЭJ
+H┬И██Ь▌Y[ЭHH██^
+
+KЫY[ЭH╙╙╫╨╙╘KЩ[ЛЫY[ЭN┬И	
+	▄┌YK]]I╩KЭ^██Э[ЭHY[ЭKЭ]N┬И	
+	█Y[ЭKXЭЙ╩KЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦Y[ЭKЫ▄[КN┬И	
+	▄┌YKX█▄┘I╩KЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦Y[ЭKШ█▄┘JN┬И	
+	▄┌YK[\▌	╩KЬЩ\X┘P┌[Щ[КЛЛЫY[ЭR][\╩
+KЫX\
+
+┌┘^KX██ЛXЩ[█╫JHOИ┬И██Ь▌][HH[
+	╪Э]█Й╦┌YKZ][I┌┘^HOOH▌\ЬЩ[ЭY┘H╚	╚█Й╚И	╔▀X
+N╚][KЭ\HH	╪Э]█Й╬┬И][KШ\[Щ
+[
+	▄▄[Й╦	▄┌YKZX██Й╦X██КK[
+	▄▄[Й╦Э[XЩ[
+JN┬И][KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┌█▄┘QЬЫ█SY[ЭJ█╩JN┬ИЩ]\ЫИ][N┬ИJJN┬ИBИЭ[Ш▌[█ИYSY[ЭJ
+H┬И	
+	▄┌YK[Y[ЭI╩KЪY[ИHЭYN┬И	
+	█Y[ЭKXЭЙ╩KЬ┘]]ЪXЭ]J	╪\ЪXKY^[ЩY	╦	┘Ш[┘I╩N┬ИYИ
+╪▌[Y[ЭШЫ┘H	ЙИ╪▌[Y[ЭШЫ┘KШ█\▄╙\▌
+H╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ЬЩ[[▌ЩJ	█Y[ЭK[▄[Й╩N┬ИBИЭ[Ш▌[█И▄[УY[ЭJ
+H┬ИЩ[Щ\УY[ЭJ
+N┬И	
+	▄┌YK[Y[ЭI╩KЪY[ИHШ[┘N┬И	
+	█Y[ЭKXЭЙ╩KЬ┘]]ЪXЭ]J	╪\ЪXKY^[ЩY	╦	▌ЭYI╩N┬ИYИ
+╪▌[Y[ЭШЫ┘H	ЙИ╪▌[Y[ЭШЫ┘KШ█\▄╙\▌
+H╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ШY
+	█Y[ЭK[▄[Й╩N┬ИY[ЭR\▌▄ЮHHШ[┘N┬ИЮH┬ИYИ
+┌[Щ▌╦Ъ\▌▄ЮH	ЙИ\[┘И┌[Щ▌╦Ъ\▌▄ЮKЬ\┌▌]HOOH	┘Э[Ш▌[█Й╩H╚┌[Щ▌╦Ъ\▌▄ЮKЬ\┌▌]J╚Y┘NИ▌\ЬЩ[ЭY┘KY[ЭNИЭYHK	╔╦╔╪▌\ЬЩ[ЭY┘_X
+N╚Y[ЭR\▌▄ЮHHЭYN╚BИH╪]┌
+┘\ЬЫ▄КH╚╩И\▌▄ЮH\╚▄[█Ш[
+Л╚BИBИ╦╚█▄┌[Щ╚┌]8з%H▄ИH\▌]┌YH[█╚Щ[[▌Щ\╚HY[ЭI▄╚\▌▄ЮH▌\█╚ШX┌╚\╚Ы▌ЩYYY┌X┘KВИЭ[Ш▌[█И█▄┘SY[ЭJ
+H┬ИYИ
+	
+	▄┌YK[Y[ЭI╩KЪY[КHЩ]\ЫО┬ИYSY[ЭJ
+N┬ИYИ
+Y[ЭR\▌▄ЮJH╚Y[ЭR\▌▄ЮHHШ[┘N╚ЮH╚┌[Щ▌╦Ъ\▌▄ЮKШШX┌╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИBИЭ[Ш▌[█И┌█▄┘QЬЫ█SY[ЭJ█╩H┬ИYSY[ЭJ
+N┬И██Ь▌ЩYЫ▄ЩHH▌\ЬЩ[ЭY┘K▌\YHY[ЭR\▌▄ЮN┬ИЩ\X┘SЩ^H▌\Y┬ИЮH╚█╩
+N╚HЪ[Ш[H╚Щ\X┘SЩ^HШ[┘N╚Y[ЭR\▌▄ЮHHШ[┘N╚BИYИ
+▌\Y	ЙИ▌\ЬЩ[ЭY┘HOOHЩYЫ▄ЩJH╚ЮH╚┌[Щ▌╦Ъ\▌▄ЮKШШX┌╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HH╦╚Ы▌[Щ╚Щ]╚▄[ЩYИBИ	
+	█Y[ЭKXЭЙ╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦▄[УY[ЭJN┬И	
+	▌┘^K\▌Ъ\	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦▄[Х┘^JN┬И	
+	▄┌YKX█▄┘I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦█▄┘SY[ЭJN┬И	
+	▄┌YK\╪▄Ъ[I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦█▄┘SY[ЭJN┬ВИ╩ИKKKHЭ[Y\Ы█┘▐NИ[██[Ъ╦ЪY▐X[Ъ╦Ш[YHЭ[XЩ\И[Щ\Ь██Ш[YX\Л█▄Ъ┘Y▌]█ИH█ЩH
+Ы╚RJHKKKH
+Л┬И██Ь▌Э[P█▄HH
+
+HOИ██^
+
+KЫЭ[Y\Ы█┘▐H╙╙╫╨╙╘KЩ[ЛЫЭ[Y\Ы█┘▐N┬И██Ь▌Э[T▌]HH╚╪ОИ	╔╦Ш[YNИ	╔╦Y][Щ╬ИШ[┘K\ЬЫ▄ОИ	╔╚N┬И██Ь▌Э[XЩ\С╪ИH
+
+HOИЭ[T▌]KЩ╪И▌]KЭ\┘\С╪И
+╪YЫ┘Ъ[J
+H▀JKЩ╪И	╔╬┬ИЭ[Ш▌[█ИЭ[XЩ\У[ЩJ
+H┬И██Ь▌██H┌[Щ▌╦ТЮ[▌\┌SЭ[Y\Ы█┘▐K╪ИHЭ[XЩ\С╪К
+K█▄HHЭ[P█▄J
+N┬ИYИ
+]██]██Ь\Ь┘J╪КJHЩ]\ЫИ	╔╬┬ИЩ]\ЫИ	╪█▄KЫ[██[Ъ╓╠_H	▌██Ы[██[Ъ╩╪К_H0н╚	╪█▄KШЪY▐X[Ъ╓╠_H	▌██ШЪY▐X[Ъ╩╪К_X┬ИBИЭ[Ш▌[█И▄[УЭ[Y\Ы█┘▐J
+H╚Э[T▌]KЩY][Щ╚HШ[┘N╚Э[T▌]KЩ\ЬЫ▄ИH	╔╬╚┌▌╘Y┘J	█Э[XЩ\Ь╔╩N╚Щ[Щ\УЭ[Y\Ы█┘▐J
+N╚BИЭ[Ш▌[█ИЭ[XЩ\СЫ▄ЫJ█▄K╪ЛШ[YJH┬И██Ь▌Ы▄ЫHH[
+	┘Ы▄ЫI╦	█Э[KYЫ▄ЫI╩N┬И██Ь▌╪Т[Ь]H[
+	┌[Ь]	╩N╚╪Т[Ь]Э\HH	┘]I╬╚╪Т[Ь]ЪYH	█Э[KY╪Й╬╚╪Т[Ь]ЫX^H	╠МLLLЛL╠I╬╚╪Т[Ь]ЭШ[YHH╪О┬И██Ь▌Ш[YR[Ь]H[
+	┌[Ь]	╩N╚Ш[YR[Ь]Э\HH	▌^	╬╚Ш[YR[Ь]ЪYH	█Э[K[Ш[YI╬╚Ш[YR[Ь]ЫX^[Щ▌HМ╚Ш[YR[Ь]Ш]]╪██\]HH	█Ш[YI╬╚Ш[YR[Ь]ЭШ[YHHШ[YN┬И██Ь▌ЪY[H
+XЩ[[Ь]
+HOИ╚██Ь▌Ы▐H[
+	█XЩ[	╦	█Э[KYЪY[	╩N╚Ы▐Ш\[Щ
+[
+	▄▄[Й╦Э[XЩ[
+K[Ь]
+N╚Щ]\ЫИЫ▐╚N┬И██Ь▌█╚H[
+	╪Э]█Й╦[K\╪╪[Й▄Щ]╪\ЩYЫ▄К	█Э[XЩ\Ь╔╩H╚	╚Щ]╪\ЩXЭЙ╚И	╔▀X<'х(И	╪█▄KЬ┌▌▀X
+N╚█╦Э\HH	▄▌XЫZ]	╬┬ИЫ▄ЫKШ\[Щ
+ЪY[
+█▄KЩ╪Л╪Т[Ь]
+KЪY[
+█▄KЫШ[YKШ[YR[Ь]
+K█╩N┬ИYИ
+Э[T▌]KЩ\ЬЫ▄КHЫ▄ЫKШ\[Щ┌[
+[
+	▄	╦	█Э[KY\ЬЫ▄Й╦Э[T▌]KЩ\ЬЫ▄КJN┬ИЫ▄ЫKШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦\▐[Ш╚]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
+
+N┬И██Ь▌██H┌[Щ▌╦ТЮ[▌\┌SЭ[Y\Ы█┘▐N┬ИYИ
+]██]██Ь\Ь┘J╪Т[Ь]ЭШ[YJJH╚Э[T▌]KЩ\ЬЫ▄ИH█▄KШШY╚Щ[Щ\УЭ[Y\Ы█┘▐J
+N╚Щ]\ЫО╚BИYИ
+Щ]╪\ЩYЫ▄К	█Э[XЩ\Ь╔╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО┬И╪ЪЩX▌Ш\▄┌Y█КЭ[T▌]K╚╪ОИ╪Т[Ь]ЭШ[YKШ[YNИШ[YR[Ь]ЭШ[YKЭЪ[J
+KЬ█X┘JМ
+KY][Щ╬ИШ[┘K\ЬЫ▄ОИ	╔╚JN┬ИЩ[Щ\УЭ[Y\Ы█┘▐J
+N┬ИЩ[Щ\Х██╩
+N┬ИJN┬ИЩ]\ЫИЫ▄ЫN┬ИBИЭ[Ш▌[█ИЩ[Щ\УЭ[Y\Ы█┘▐J
+H╚Щ[Щ\УЭ[Y\Ы█┘▐PЫ┘J
+N╚X█▄Ш]J	
+	█Э[Y\Ы█┘▐I╩KЭ[P█▄J
+KЭ]JN╚BИЭ[Ш▌[█ИЩ[Щ\УЭ[Y\Ы█┘▐PЫ┘J
+H┬И██Ь▌█▄HHЭ[P█▄J
+KЫ▐H	
+	█Э[Y\Ы█┘▐I╩K\ЭH┌[Щ▌╦ТЮ[▌\┌P\Э██H┌[Щ▌╦ТЮ[▌\┌SЭ[Y\Ы█┘▐N┬И██Ь▌\Ы╚H[
+	┘]Й╦	█Э[KZ\Ы╔╩N╚YИ
+\Э	ЙИ\ЭЫЭ[Y\Ы█┘▐JH\Ы╦Ъ[ЫЩ\ТSH\ЭЫЭ[Y\Ы█┘▐J
+N┬ИЫ▐ЬЩ\X┘P┌[Щ[К\Ы╩N┬И██Ь▌╪ИHЭ[XЩ\С╪К
+KШ[YHHЭ[T▌]KЩ╪И╚Э[T▌]KЫШ[YHИ
+▌]KЭ\┘\УШ[YH	╔╩KYX\ИHЩ]╚]J
+KЩ┘]Э[YX\К
+N┬И██Ь▌Щ\▌[H██	ЙИ[Э[T▌]KЩY][Щ╚	ЙИ╪И╚██ЬЩ\▄Э
+╪ЛШ[YK▌]KЫ[Щ╦YX\КHИЭ[┬ИYИ
+\Щ\▌[
+H╚Ы▐Ш\[Щ
+[
+	▄	╦	▌\Ы▌X\┌╔╦█▄KЪ[ЭЫ╩KЭ[XЩ\СЫ▄ЫJ█▄K╪ЛШ[YJJN╚Щ]\ЫО╚BИ]]U^H╪О┬ИЮH╚]U^HЩ]╚[ЭС]U[YQЫ▄ЫX]
+▌]KЫ[Щ╦╚^NИ	█Э[Y\ЪX╔╦[█ЭИ	██Щ╔╦YX\ОИ	█Э[Y\ЪX╔╦[YVЫ█ЩNИ	╒U╔╚JKЩЫ▄ЫX]
+Щ]╚]J	┘╪ЯULОММШ
+JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И┘Y\T╙╚
+Л╚BИ██Ь▌┌╚H[
+	┘]Й╦	█Э[K]┌╔╩N┬И██Ь▌┌[Щ┘HH[
+	╪Э]█Й╦	╪┌\XЭЙ╦8з#И	╪█▄KШ┌[Щ┘_X
+N╚┌[Щ┘KЭ\HH	╪Э]█Й╬┬И┌[Щ┘KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Э[T▌]KЩY][Щ╚HЭYN╚Щ[Щ\УЭ[Y\Ы█┘▐J
+N╚JN┬И┌╦Ш\[Щ
+[
+	▄▄[Й╦Э[█Ш[YK]U^KЩЪ[\КЫ██X[КKЪЫ┌[К	╚0н╚	╩JK┌[Щ┘JN┬И██Ь▌[\╚H[
+	┘]Й╦	█Э[K][\╔╩N┬И██Ь▌[HH
+ЛXЩ[
+HOИ╚██Ь▌][HH[
+	┘]Й╦	█Э[K][I╩N╚][KШ\[Щ
+[
+	╪Й╦	█Э[KYY┌]	╦▌Ъ[Щ╩КJK[
+	▄▌Ы█Щ╔╦Э[XЩ[╠JK[
+	▄█X[	╦Э[XЩ[╠WJJN╚Щ]\ЫИ][N╚N┬И[\╦Ш\[Щ
+[JЩ\▌[Ы[██[Ъ╦ЫЭ[XЩ\Л█▄KЫ[██[Ъ╩K[JЩ\▌[ШЪY▐X[Ъ╦ЫЭ[XЩ\Л█▄KШЪY▐X[Ъ╩JN┬ИYИ
+Щ\▌[ЫШ[YJH[\╦Ш\[Щ┌[
+[JЩ\▌[ЫШ[YKЫЭ[XЩ\Л█▄KЫШ[YSЭ[JJN┬ИЫ▐Ш\[Щ
+┌╦[\╩N┬И██Ь▌[Щ\╚H╪<'х(И	╪█▄KЭ]_I█Ш[YH╚0н╚	█Ш[Y_XИ	╔▀XN┬И██Ь▌┘X▌[█ИH
+XЩ[[ЩЫ╦^ШJHOИ┬И██Ь▌┘X╚H[
+	▄┘X▌[█Й╦	█Э[K\┘X╔╩N┬И██Ь▌XY[Щ╚H	█XЩ[H	┌[ЩЫ╦ЫЭ[XЩ\ЯH0н╚	┌[ЩЫ╦Э]_X┬И┘X╦Ш\[Щ
+[
+	┌	╦Э[XY[Щ╩K[
+	▄	╦	█Э[K\[Щ]	╦<'ъд	╪█▄KЬ[Щ]NИ	╪Ы┘SШ[YJ[ЩЫ╦Ь[Щ]
+_X
+K[
+	▄	╦Э[[ЩЫ╦ЫШ]\ЩJKИ[
+	▄	╦Э[<'фкИ	╪█▄KЬ▌Щ[Щ▌▀NИ	┌[ЩЫ╦Ь▌Щ[Щ▌▀X
+K[
+	▄	╦Э[8жи;ю#╚	╪█▄KШ╪\Щ_NИ	┌[ЩЫ╦Ш╪\Щ_X
+JN┬ИYИ
+^ШJH┘X╦Ш\[Щ┌[
+[
+	▄	╦	█Э[KZ\Ы[█ЮI╦^ШJJN┬И[Щ\╦Ь\┌
+	┌XY[Щ▀WЙ┌[ЩЫ╦ЫШ]\Щ_X
+N┬ИЩ]\ЫИ┘X╬┬ИN┬ИЫ▐Ш\[Щ┌[
+┘X▌[█К█▄KЫ[██[Ъ╓╠KЩ\▌[Ы[██[Ъ╩JN┬ИЫ▐Ш\[Щ┌[
+┘X▌[█К█▄KШЪY▐X[Ъ╓╠KЩ\▌[ШЪY▐X[Ъ╩JN┬ИYИ
+Щ\▌[ЫШ[YJHЫ▐Ш\[Щ┌[
+┘X▌[█К█▄KЫШ[YSЭ[V╠KЩ\▌[ЫШ[YKЩ\▌[Ъ\Ы[█ЮH╚8з$╚	╪█▄KЪ\Ы[█ЮQ██┘XИ8а(И	╪█▄KЪ\Ы[█ЮSЩ]]Ш[X
+JN┬И[┘HЫ▐Ш\[Щ┌[
+[
+	▄	╦	█Э[K[Ы▌I╦█▄KЫЫ╙Ш[YJJN┬И██Ь▌YX\РЫ▐H[
+	▄┘X▌[█Й╦	█Э[K\┘X╚Э[K^YX\Й╩N┬И██Ь▌YX\Х]HH<'фсH	┘Ъ[
+█▄KЮYX\Л╚YX\ЛОИЩ\▌[ЮYX\ЛЫЭ[XЩ\ИJ_X┬ИYX\РЫ▐Ш\[Щ
+[
+	┌	╦Э[YX\Х]JK[
+	▄	╦Э[Щ\▌[ЮYX\ЛЭ^
+JN┬И[Щ\╦Ь\┌
+	▐YX\Х]_WЙ▄Щ\▌[ЮYX\ЛЭ^X
+N┬И██Ь▌██▌\Ь╚H
+
+██^
+
+KЬШ\┌H╙╙╫╨╙╘KЩ[ЛЬШ\┌JKШ██▌\Ь╚╙╙╫╨╙╘KЩ[ЛЬШ\┌KШ██▌\Ь╩V▄Щ\▌[ЫX┌▐KЬ[Щ]N┬И██Ь▌^\╚HЩ\▌[ЫX┌▐KЩ^\╦ЫX\
+^HOИ╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦^K	██Щ╔╩JKЪЫ┌[К	╦	╩N┬И██Ь▌X┌▐HH[
+	▄┘X▌[█Й╦	█Э[K[X┌▐I╩N┬ИX┌▐KШ\[Щ┌[
+[
+	┌	╦Э[<'у`	╪█▄KЫX┌▐_X
+JN┬ИЫ▄И
+██Ь▌█XЩ[Ш[YWH┘И╓╪█▄KЫX┌▐SЭ[XЩ\Ь╦Щ\▌[ЫX┌▐KЫЭ[XЩ\Ь╦ЪЫ┌[К	╦	╩WK╪█▄KЫX┌▐Q^\╦^\╫K╪█▄KЫX┌▐P██▌\Ь╦██▌\Ь╫WJH┬И██Ь▌Ы▌╚H[
+	▄	╩N╚Ы▌╦Ш\[Щ
+[
+	▄▄[Й╦Э[XЩ[
+K[
+	╪Й╦Э[Ш[YJJN╚X┌▐KШ\[Щ┌[
+Ы▌╩N┬ИBИЫ▐Ш\[Щ
+YX\РЫ▐X┌▐JN┬И██Ь▌X▌[█Ь╚H[
+	┘]Й╦	▌\Ы▌XX▌[█Ь╔╩N┬И██Ь▌\┌╨ZHH[
+	╪Э]█Й╦	▄Ш\┌KX\┌╔╦8з*	╪█▄KШ\┌╨Z_X
+N╚\┌╨ZKЭ\HH	╪Э]█Й╬┬И\┌╨ZKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌]Y\▌[█ИHЪ[
+█▄KШ\┌╘K╚NИЩ\▌[Ы[██[Ъ╦ЫЭ[XЩ\ЛОИЩ\▌[ШЪY▐X[Ъ╦ЫЭ[XЩ\ИJN┬И┌▌╘Y┘J	╪┌]	╩N╚\┌╩]Y\▌[█Л]Y\▌[█ЛЭYJN┬ИJN┬И██Ь▌┌\ЩHH[
+	╪Э]█Й╦	╪┌\XЭЙ╦8бе╚	╪█▄KЬ┌\Щ_X
+N╚┌\ЩKЭ\HH	╪Э]█Й╬┬И┌\ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Ы┌Y┌\ЩU^
+<'х(И	╪█▄KЭ]_X[Щ\╦ЪЫ┌[К	╫ЧЙ╩JN╚JN┬ИX▌[█Ь╦Ш\[Щ
+\┌╨ZK┌\ЩJN┬ИЫ▐Ш\[Щ
+X▌[█Ь╦[
+	▄	╦	█Э[K[Ы▌I╦█▄KЫЫ▌JJN┬ИBИ╦╚Э[Y\Ы█┘▐K\┌┘Y▌ШZY┌[И┌]ИH╪[YH[██[Ъ╦╨ЪY▐X[Ъ╦█Ш[YK[Э[XЩ\ИЩ\▄Э\╚H██\X▌┌]Y\▄╪Y┘KВИ\▐[Ш╚Э[Ш▌[█И┌]Э[Y\Ы█┘▐J
+H┬И██Ь▌██H┌[Щ▌╦ТЮ[▌\┌SЭ[Y\Ы█┘▐K╪ИHЭ[XЩ\С╪К
+K█▄HHЭ[P█▄J
+N┬ИYИ
+]██]██Ь\Ь┘J╪КJH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦█▄KШШY
+N╚Щ]\ЫО╚BИYИ
+Щ]╪\ЩYЫ▄К	█Э[XЩ\Ь╔╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО┬И██Ь▌Ш[YHHЭ[T▌]KЩ╪И╚Э[T▌]KЫШ[YHИ
+▌]KЭ\┘\УШ[YH	╔╩KYX\ИHЩ]╚]J
+KЩ┘]Э[YX\К
+N┬И██Ь▌Щ\▌[H██ЬЩ\▄Э
+╪ЛШ[YK▌]KЫ[Щ╦YX\КN┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╩N┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[<'х(И	╪█▄KЭ]_I█Ш[YH╚0н╚	█Ш[Y_XИ	╔▀X
+JN┬И██Ь▌┘X▌[█ИH
+XЩ[[ЩЫ╩HOИ[ЭЮKШ\[Щ
+[
+	▄	╦Э[	█XЩ[H	┌[ЩЫ╦ЫЭ[XЩ\ЯH0н╚	┌[ЩЫ╦Э]_X
+K[
+	▄	╦Э[[ЩЫ╦ЫШ]\ЩJJN┬И┘X▌[█К█▄KЫ[██[Ъ╓╠KЩ\▌[Ы[██[Ъ╩N┬И┘X▌[█К█▄KШЪY▐X[Ъ╓╠KЩ\▌[ШЪY▐X[Ъ╩N┬ИYИ
+Щ\▌[ЫШ[YJH┘X▌[█К█▄KЫШ[YSЭ[V╠KЩ\▌[ЫШ[YJN┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[<'фсH	┘Ъ[
+█▄KЮYX\Л╚YX\ЛОИЩ\▌[ЮYX\ЛЫЭ[XЩ\ИJ_H	▄Щ\▌[ЮYX\ЛЭ^X
+JN┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИ╩ИKKKHYЩH▌ZYNИ┌^Ш[[Ш┘HШ\Ь╚
+▌ЩKШ[Z[KX\ЬЪXY┘K╪\ЩY\Л┘X[X[▌]┘ИL
+HЫ▄ИY\▌\Щ^K┘^KИ█[▄ЬЫ▌╦\╚[█Э[Щ\╚YX\Л█▄Ъ┘Y▌]█ИH┘\ЭЩ\ИЬЫ█H[Щ]Ш[Ь┌]╚[ЩH[Ш\И^H
+Ы╚RJKИKKKH
+Л┬И██Ь▌╨█▄HH
+
+HOИ██^
+
+KЫYЩY▌ZYH╙╙╫╨╙╘KЩ[ЛЫYЩY▌ZYN┬И██Ь▌╫╨TСPT╚H╔█▌ЩI╦	┘Ш[Z[I╦	█X\ЬЪXY┘I╦	╪╪\ЩY\Й╦	▌┘X[	╦	┌X[	╫N┬И██Ь▌╫╥P╙╙Ф╚H╚▌ЩNИ	№'фе╔╦Ш[Z[NИ	№'ушI╦X\ЬЪXY┘NИ	№'фгI╦╪\ЩY\ОИ	№'фп	╦┘X[И	№'ъжI╦X[И	№'у/╔╚N┬И██Ь▌╫╒PФ╚H╔▐Y\▌\Щ^I╦	▌┘^I╦	▌█[▄ЬЫ▌╔╦	█[█Э	╦	▐YX\Й╫N┬И██Ь▌╚H╚┌Y█ОИXОИ	▌┘^I╦X┌┌[Щ╬ИШ[┘K╪X┌NИ▀K[ЩЫ╬И▀K^И▀KЭ\▐NИ	╔╦ШZ[YИШ[┘HN┬И╦╚█ЩHЩ]╪\ЩYY▄[Ь╚[XЬ╚┘ИH┌Y█ИЫ▄ИHЩ\▌┘ИH^H
+┘^H▌^\╚ЬЩYJN╚Щ[Y[XЩ\ЩY█ИH█ЩKВИ██Ь▌╫╒SУ╨╥╫╥╤VHH	┌Ю[▌\┌KЫ╦][Ы╪┌╦ЭМI╬┬ИЭ[Ш▌[█И╒[Ы╪┌┘Y
+┌Y█КH┬ИЮH╚██Ь▌╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][J╫╒SУ╨╥╫╥╤VJJN╚Щ]\ЫИHJ╪]ЩY	ЙИ╪]ЩYЩ^HOOH╪╪[\█╩Щ]╚]J
+JH	ЙИ\ЬШ^KЪ\╨\ЬШ^J╪]ЩYЬ┌Y█Ь╩H	ЙИ╪]ЩYЬ┌Y█Ь╦Ъ[Ш█Y\╩┌Y█КJN╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚BИBИЭ[Ш▌[█И╒[Ы╪┌╩┌Y█КH┬ИЮH┬И██Ь▌┘^HH╪╪[\█╩Щ]╚]J
+JK╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][J╫╒SУ╨╥╫╥╤VJJN┬И██Ь▌┌Y█Ь╚H╪]ЩY	ЙИ╪]ЩYЩ^HOOH┘^H	ЙИ\ЬШ^KЪ\╨\ЬШ^J╪]ЩYЬ┌Y█Ь╩H╚╪]ЩYЬ┌Y█Ь╚И╫N┬И┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][J╫╒SУ╨╥╫╥╤VKФ╙╙ЛЬ▌Ъ[Щ┌YЮJ╚^NИ┘^K┌Y█Ь╬И╦ЛЛЬ┌Y█Ь╦┌Y█ЧHJJN┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИBИ██Ь▌╙╪┌┘YHXИOИXИOOH	▌┘^I╚	ЙИЩ]╪\ЩYЫ▄К	█YЩY▌ZYI╩H	ЙИ[╒[Ы╪┌┘Y
+╦Ь┌Y█КN┬ИЭ[Ш▌[█И▄[УYЩQ▌ZYJ
+H┬И╦ЭXИH	▌┘^I╬╚╦ЩШZ[YHШ[┘N╚╦ЬX┌┌[Щ╚HШ[┘N┬ИYИ
+[╦Ь┌Y█КH╚██Ь▌▌█ИH▌█У[██К
+N╚YИ
+▌█КH╦Ь┌Y█ИH▌█ЛЬ┌Y█О╚BИ┌▌╘Y┘J	█YЩY▌ZYI╩N╚Щ[Щ\УYЩQ▌ZYJ
+N┬ИЫ┌Y╪YYЩQ▌ZYJ
+N┬ИЫ┌Y╪YYЩQ▌ZYU^
+
+N┬ИBИ╦╚┌]H\┘\Й▄╚▌█И┌\Э[ЩZ\И▌█И[██И┌Y█ЛHYЩH▌ZYH\╚\Ь██Ш[ИHЪ\Э▌\И[ЩHЭ[ЫЪ[Щ╚\┌BИ╦╚▄Щ╚
+[ЩHШ][▌\┘H┘ИXX┌
+H\ЩH┘[ЭЩ]Щ\ИHЪ\Э]K[YH▄ИX┘KВИЭ[Ш▌[█И╘\Ь██Ш[
+
+H┬И██Ь▌┌\ЭH▌]KШ┌\Э┬ИYИ
+X┌\ЭX┌\ЭЬ▄┌][█Ь╚X┌\ЭЬ▄┌][█Ь╦У[██И╦Ь┌Y█ИOOH┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^
+HЩ]\ЫИЭ[┬И██Ь▌▌\ИH┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\Э	ЙИ┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\ЭЫШZ▄┌]ШW┌[Щ^┬ИYИ
+SЭ[XЩ\ЛЪ\╥[ЭY┘\К▌\КH▌\ИH▌\ИИН╩HЩ]\ЫИЭ[┬И██Ь▌\┌HH▌]KЩ]Z[╚	ЙИ▌]KЩ]Z[╦Щ\┌K[Щ]╚H
+▌]KЩ]Z[╚	ЙИ▌]KЩ]Z[╦Ь[Щ]╩H▀K▄Щ╚H╫N┬ИYИ
+\┌H	ЙИ\┌KШ▌\ЬЩ[Э█XZY\┌JH▄Щ╦Ь\┌
+\┌KШ▌\ЬЩ[Э█XZY\┌JN┬И██Ь▌▌XИH\┌H	ЙИ
+\┌KШ[Э\Щ\┌H╫JKЩЪ[Щ
+][HOИ][KШ▌\ЬЩ[Э
+N┬ИYИ
+▌XКH▄Щ╦Ь\┌
+▌XЛЫ▄Щ
+N┬ИЩ]\ЫИ╚ШZ▄┌]ШNИ▌\Л\┌NИ▄Щ╦ЩЪ[\К▄ЩOИ[Щ]╓█▄ЩH	ЙИЭ[XЩ\ЛЪ\╥[ЭY┘\К[Щ]╓█▄ЩKЭ┌█W▄┌Y█Ч╪Ъ]ШJJKЫX\
+▄ЩOИ
+╚▄Щ▌\┘NИ[Щ]╓█▄ЩKЭ┌█W▄┌Y█Ч╪Ъ]ШHJJHN┬ИBИ██Ь▌╥┘^HH
+
+HOИ╚██Ь▌\Ь██Ш[H╘\Ь██Ш[
+
+N╚Щ]\ЫИ	█╦Ь┌Y█ЯNЙ▄▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+J_NЙ▄\Ь██Ш[╚\Ь██Ш[ЫШZ▄┌]ШHИX╚N┬И\▐[Ш╚Э[Ш▌[█И╪YYЩQ▌ZYJ
+H┬И██Ь▌┌Y█ИH╦Ь┌Y█Л^HH▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+JK┘^HH╥┘^J
+K\Ь██Ш[H╘\Ь██Ш[
+
+N┬ИYИ
+\┌Y█И╦Ш╪X┌V┌┘^WH╦ШЭ\▐HOOH┘^JHЩ]\ЫО┬И╦ШЭ\▐HH┘^N╚╦ЩШZ[YHШ[┘N╚Щ[Щ\УYЩQ▌ZYJ
+N┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K█YЩKY▌ZYI╦\Ь██Ш[╚╚┌Y█Л]NИ^K\Ь██Ш[HИ╚┌Y█Л]NИ^HJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KЬЩXY[Щ╩H╚╦Ш╪X┌V┌┘^WHHЫ┘KЬЩXY[Щ╬╚╦Ъ[ЩЫ╓┌┘^WHHЫ┘KЬ\Ь██Ш[Э[╚H[┘H╦ЩШZ[YHЭYN┬ИH╪]┌
+┘\ЬЫ▄КH╚╦ЩШZ[YHЭYN╚BИ╦ШЭ\▐HH	╔╬┬ИYИ
+Y┘\╦ЫYЩY▌ZYH	ЙИ\Y┘\╦ЫYЩY▌ZYKЪY[КHЩ[Щ\УYЩQ▌ZYJ
+N┬ИBИ╦╚HRK]▄Ъ][И█▄Щ[Щ╚┘ИH^H
+Ы▌\И┘[Э[Ш┘\╚\И\ЩXH[ЩШ[Щ█Ш┘HH^H\И[Щ▌XY┘K┌\ЩYЮH]Щ\Ю[█ЩJKВИ╦╚[Э[]\ЬЪ]Щ\╦▄ИYИHRH\╚┘ЩЛHЭZ[Z[И┘[Э[Ш┘\╚\ЩH┌▌█ЛВИ\▐[Ш╚Э[Ш▌[█И╪YYЩQ▌ZYU^
+
+H┬И██Ь▌^HH▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+JK┘^HH	▄▌]KЫ[Щ▀NЙ┘^_X┬ИYИ
+╦Э^┌┘^WHOOH[ЩYЪ[ЩY
+HЩ]\ЫО┬И╦Э^┌┘^WHHЭ[┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K█YЩKY▌ZYK]^	╦╚[Щ▌XY┘NИ▌]KЫ[Щ╦]NИ^HJN┬И╦Э^┌┘^WHH┌╚	ЙИЫ┘H	ЙИЫ┘KЭШ\ЪX[Э╚╚Ы┘KЭШ\ЪX[Э╚ИЭ[┬ИH╪]┌
+┘\ЬЫ▄КH╚╦Э^┌┘^WHHЭ[╚BИYИ
+╦Э^┌┘^WH	ЙИY┘\╦ЫYЩY▌ZYH	ЙИ\Y┘\╦ЫYЩY▌ZYKЪY[КHЩ[Щ\УYЩQ▌ZYJ
+N┬ИBИ██Ь▌╒█▄Щ╚H
+
+HOИ╦Э^╪	▄▌]KЫ[Щ▀NЙ▄▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+J_XHЭ[┬И██Ь▌╨Ш[ЩH╪█▄ЩHOИ
+╪█▄ЩHПH╚╚ИИ╪█▄ЩHПHH╚HИ
+N┬ИЭ[Ш▌[█ИЩ[Щ\УYЩQ▌ZYJ
+H╚Щ[Щ\УYЩQ▌ZYPЫ┘J
+N╚X█▄Ш]J	
+	█YЩY▌ZYI╩K╨█▄J
+KЭ]JN╚BИЭ[Ш▌[█ИЩ[Щ\УYЩQ▌ZYPЫ┘J
+H┬И██Ь▌█▄HH╨█▄J
+KЫ▐H	
+	█YЩY▌ZYI╩K\ЭH┌[Щ▌╦ТЮ[▌\┌P\Э┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌\Ы╚H[
+	┘]Й╦	█╦Z\Ы╔╩N╚YИ
+\Э	ЙИ\ЭЫYЩY▌ZYJH\Ы╦Ъ[ЫЩ\ТSH\ЭЫYЩY▌ZYJ
+N┬ИЫ▐Ш\[Щ┌[
+\Ы╩N┬И██Ь▌┘^HH╥┘^J
+K]HH╦Ь┌Y█И╚╦Ш╪X┌V┌┘^WHИЭ[\Ь██Ш[H╘\Ь██Ш[
+
+K[ЩЫ╚H╦Ъ[ЩЫ╓┌┘^WK█▄Щ╚H╒█▄Щ╩
+N┬И╦╚┌X┌┌Y█ОИH\┘\Й▄╚▌█И[██И┌Y█Л▄И[ЮH┌Y█И┌▄┘[ИЩ[▌╦ВИYИ
+╦Ь┌Y█КH┬И██Ь▌Ы▌╚H[
+	┘]Й╦	█╦\┌Y█Й╩N┬ИЫ▌╦Ш\[Щ
+[
+	▄▄[Й╦	█╦\┌Y█Л[Ш[YI╦	╘РT╥W╥P╙╙Ф╓█╦Ь┌Y█ИHW_H	╪█▄KЮ[▌\Ф┌Y█ЯNИ	▄┌Y█УШ[YJ╦Ь┌Y█К_X
+JN┬И██Ь▌┌[Щ┘HH[
+	╪Э]█Й╦	╪┌\XЭЙ╦█▄KШ┌[Щ┘JN╚┌[Щ┘KЭ\HH	╪Э]█Й╬┬И┌[Щ┘KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚╦ЬX┌┌[Щ╚H[╦ЬX┌┌[Щ╬╚Щ[Щ\УYЩQ▌ZYJ
+N╚JN┬ИЫ▌╦Ш\[Щ┌[
+┌[Щ┘JN┬ИЫ▐Ш\[Щ┌[
+Ы▌╩N┬ИYИ
+\Ь██Ш[
+H┬И██Ь▌▄Щ╚H\Ь██Ш[Щ\┌KЫX\
+][HOИЫ┘SШ[YJ][KЫ▄Щ
+JKЪЫ┌[К	╚8а$╚	╩N┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█╦\\Ь██Ш[	╦8з*	┘Ъ[
+█▄KЬ\Ь██Ш[╚▌\ОИШ[Y\╦ЫШZ▄┌]ШSШ[YJ\Ь██Ш[ЫШZ▄┌]ШK▌]KЫ[Щ╩HJ_I█▄Щ╚╚0н╚	┘Ъ[
+█▄KЩ\┌S[ЩK╚▄Щ╚J_XИ	╔▀X
+JN┬ИYИ
+[ЩЫ╚	ЙИ[ЩЫ╦Э\ШH	ЙИ╦ЭXИOOH	▌┘^I╩H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█╦\\Ь██Ш[╦]\ШI╦	┘Ъ[
+█▄KЭ\ШK╚\ШNИ█▄KЭ\ШSШ[Y\╓┌[ЩЫ╦Э\ШHHWHJ_NИ	╪█▄KЭ\ШQYЩЩX▌┌[ЩЫ╦Ь┌YЭ
+╚W_X
+JN┬ИBИH[┘H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█╦\\Ь██Ш[╦Y┘[Щ\Ш[	╦█▄KЩ┘[Щ\Ш[
+JN┬ИBИH[┘H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	▌\Ы▌X\┌╔╦█▄KЬX┌╤Ъ\Ь▌
+JN┬ИBИYИ
+╦Ь┌Y█КH┬И██Ь▌XЬ╚H[
+	┘]Й╦	▌XЬ╦[[ЩI╩N╚XЬ╦Ь┘]]ЪXЭ]J	▄Ы█I╦	▌XЫ\▌	╩N┬И╫╒PФ╦ЩЫ▄СXX┌
+
+XЛJHOИ┬И██Ь▌╪┌┘YH╙╪┌┘Y
+XКN┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦	▌XИOOH╦ЭXИ╚	██Й╚И	╔▀I█╪┌┘Y╚	╚╪┌┘Y	╚И	╔▀XЭЪ[J
+K█▄KЭXЬ╓┌WJN╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛЬ┘]]ЪXЭ]J	▄Ы█I╦	▌XЙ╩N╚Э]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK\┘[X▌Y	╦XИOOH╦ЭXИ╚	▌ЭYI╚И	┘Ш[┘I╩N┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\▐[Ш╚
+
+HOИ┬ИYИ
+╙╪┌┘Y
+XКJH╚YИ
+J]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО╚╒[Ы╪┌╩╦Ь┌Y█КN╚H╦╚HЪY[╚X██И█ИHXИ╪^\╚[ИY██Y\╚Ъ\Ь▌И╦ЭXИHXО╚Щ[Щ\УYЩQ▌ZYJ
+N┬ИJN┬ИXЬ╦Ш\[Щ┌[
+Э]█КN┬ИJN┬ИЫ▐Ш\[Щ┌[
+XЬ╩N┬ИYИ
+╫╒PФ╦Ь██YJ╙╪┌┘Y
+JHЫ▐Ш\[Щ┌[
+[
+	▄	╦	█╦][Ы╪┌╦[Ы▌I╦█▄KЭ[Ы╪┌╩JN┬ИYИ
+Y]JH┬ИYИ
+╦ЩШZ[Y
+H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	▄[K]╪Z]	╦█▄KЩШZ[Y
+JN┬И██Ь▌Щ]ЮHH[
+	╪Э]█Й╦	╪┌\XЭЙ╦	°бо╔╩N╚Щ]ЮKЭ\HH	╪Э]█Й╬╚Щ]ЮKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Ы┌Y╪YYЩQ▌ZYJ
+N╚JN┬ИЫ▐Ш\[Щ┌[
+Щ]ЮJN┬ИH[┘HЫ▐Ш\[Щ┌[
+╪Y\К█▄KЫ╪Y[Щ╩JN┬ИH[┘H┬И██Ь▌\Ъ[┘H]V█╦ЭXЧN┬ИЫ▐Ш\[Щ┌[
+[
+	┌	╦	┌█YKZ╦XШ[[Ш┘KZ	╦█▄KШШ[[Ш┘V╙╫╒PФ╦Ъ[Щ^┘К╦ЭXКWJJN┬И██Ь▌Ш\Ь╚H[
+	┘]Й╦	█╦XШ\Ь╔╩N┬ИЫ▄И
+██Ь▌\ЩXH┘И╫╨TСPT╩H┬И██Ь▌╪█▄ЩHH\Ъ[┘╪\ЩXWKЬ╪█▄ЩN┬И██Ь▌██H[
+	┘]Й╦╦X██╦I╪\ЩX_X
+N┬И██Ь▌ШX┌╚H[
+	┘]Й╦	█╦]ШX┌╔╩KЪ[H[
+	┌I╩N╚YИ
+Ъ[Ь▌[JHЪ[Ь▌[KЪZY┌H	▄╪█▄ЩH
+ИLIX┬ИШX┌╦Ш\[Щ┌[
+Ъ[
+N┬И██Ш\[Щ
+[
+	╪Й╦Э[	▄╪█▄Щ_K╠L
+KШX┌╦[
+	▄█X[	╦Э[█▄KШ\ЩX\╓╪\ЩXWJJN┬ИШ\Ь╦Ш\[Щ┌[
+██
+N┬ИBИЫ▐Ш\[Щ┌[
+Ш\Ь╩N┬ИЫ▐Ш\[Щ┌[
+[
+	┌	╦	┌█YKZ╦XШ[[Ш┘KZ	╦█▄KШЮP\ЩXJJN┬ИЫ▄И
+██Ь▌\ЩXH┘И╫╨TСPT╩H┬И██Ь▌╚╪█▄ЩK▌\▄ЭHH\Ъ[┘╪\ЩXWN┬И██Ь▌][HH[
+	▄┘X▌[█Й╦╦X\▄X▌╦I╪\ЩX_X
+N┬И██Ь▌XYH[
+	┘]Й╦	█╦X\▄X▌ZXY	╩N┬ИXYШ\[Щ
+[
+	▄▄[Й╦	█╦ZX█╔╦╫╥P╙╙Ф╓╪\ЩXWJK[
+	┌	╦Э[█▄KШ\ЩX\╓╪\ЩXWJK[
+	▄▄[Й╦	█╦\╪█▄ЩI╦▌Ъ[Щ╩╪█▄ЩJJJN┬И╦╚H^KHXЛH\ЩXH[ЩH\┘\Й▄╚▌█И▌\ИX┌╚┌X┌┘ИH^I▄╚█▄Щ[Щ▄╚╚┌▌╦ВИ██Ь▌██H█▄Щ╚	ЙИ█▄Щ╓╪\ЩXWH	ЙИ█▄Щ╓╪\ЩXWV╓╔█▌╔╦	█ZY	╦	┌Y┌	╫V█╨Ш[Щ
+╪█▄ЩJWWN┬И██Ь▌[ЩHH██	ЙИ██Ы[Щ▌╚██╩^SЭ[XЩ\У┘КЩ]╚]J
+JH
+╚╫╨TСPT╦Ъ[Щ^┘К\ЩXJH
+╚╫╒PФ╦Ъ[Щ^┘К╦ЭXКH
+ИИ
+╚
+\Ь██Ш[╚\Ь██Ш[ЫШZ▄┌]ШHИ
+JH	H██Ы[Щ▌HИ█▄KЭ^╪\ЩXWV█╨Ш[Щ
+╪█▄ЩJWN┬И][KШ\[Щ
+XY[
+	▄	╦Э[[ЩJJN┬ИYИ
+▌\▄Э	ЙИ▌\▄ЭЫ[Щ▌
+H][KШ\[Щ┌[
+[
+	▄█X[	╦Э[Ъ[
+█▄KЬ▌\▄ЭY╚[Щ]╬И▌\▄ЭЫX\
+Ы┘SШ[YJKЪЫ┌[К	╦	╩HJJJN┬ИЫ▐Ш\[Щ┌[
+][JN┬ИBИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█Э[K[Ы▌I╦█▄KЫЫ▌JJN┬ИBИBИ╦╚[ЮH┌Y█ОИ┘[ЩH█X[[\╚
+[█╚▌╚HЪ\┌]▄И┌]▌]H▌[ЩH▌\Э╩KВИYИ
+╦ЬX┌┌[Щ╚[╦Ь┌Y█КH┬ИЫ▐Ш\[Щ┌[
+[
+	┌	╦	┌█YKZ[██Л\X┌╦Z	╦█▄KЬX┌╩JN┬И██Ь▌▄ЪYH[
+	┘]Й╦	█[██Л\X┌╔╩N┬ИЫ▄И
+]ИHN╚ИHLО╚И
+╧HJH┬И██Ь▌[HH[
+	╪Э]█Й╦[██Л][I█ИOOH╦Ь┌Y█И╚	╚█Й╚И	╔▀X
+N╚[KЭ\HH	╪Э]█Й╬┬И[KШ\[Щ
+[
+	▄▄[Й╦Э[РT╥W╥P╙╙Ф╓█ИHWJK[
+	▄█X[	╦Э[┌Y█УШ[YJКJJN┬И[KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚╦Ь┌Y█ИHО╚╦ЬX┌┌[Щ╚HШ[┘N╚Щ[Щ\УYЩQ▌ZYJ
+N╚Ы┌Y╪YYЩQ▌ZYJ
+N╚ЮH╚┌[Щ▌╦Ь╪▄Ы█╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HJN┬И▄ЪYШ\[Щ┌[
+[JN┬ИBИЫ▐Ш\[Щ┌[
+▄ЪY
+N┬ИBИBИ╦╚YЩH▌ZYK\┌┘Y▌ШZY┌[И┌]И┘^I▄╚Ш[[Ш┘H
+HЬЩYHXКHЫ▄И[▌\И▌█И[██И┌Y█Л\╚H██\X▌Y\▄╪Y┘KВИ\▐[Ш╚Э[Ш▌[█И┌]YЩQ▌ZYJ
+H┬ИYИ
+[╦Ь┌Y█КH╚██Ь▌▌█ИH▌█У[██К
+N╚YИ
+▌█КH╦Ь┌Y█ИH▌█ЛЬ┌Y█О╚BИ██Ь▌█▄HH╨█▄J
+N┬ИYИ
+[╦Ь┌Y█КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦█▄KЬX┌╤Ъ\Ь▌
+N╚Щ]\ЫО╚BИ╦ЭXИH	▌┘^I╬┬ИYИ
+[╦Ш╪X┌V█╥┘^J
+WJH]╪Z]╪YYЩQ▌ZYJ
+N┬И██Ь▌]HH╦Ш╪X┌V█╥┘^J
+WN┬ИYИ
+Y]JH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦█▄KЩШZ[Y
+N╚Щ]\ЫО╚BИ██Ь▌\Ъ[┘H]KЭ┘^N┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╩N┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[8же╗ю#╚	╪█▄KШШ[[Ш┘V╠W_H0н╚	▄┌Y█УШ[YJ╦Ь┌Y█К_X
+JN┬ИЫ▄И
+██Ь▌\ЩXH┘И╫╨TСPT╩H[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[	╙╫╥P╙╙Ф╓╪\ЩXW_H	╪█▄KШ\ЩX\╓╪\ЩXW_NИ	▄\Ъ[┘╪\ЩXWKЬ╪█▄Щ_K╠L
+JN┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBВИ╩ИKKKH┌Y█ИX]┌И[ЮH█╚[██И┌Y█Ь╬╚▄ШZHXZ]ЪH
+╚ЪZ██▌
+LИ┌[Э╩HЬЫ█HX]┌RKЬ┌Y█УX]┌KKKH
+Л┬И██Ь▌█P█▄HH
+
+HOИ██^
+
+KЬ┌Y█ЫX]┌╙╙╫╨╙╘KЩ[ЛЬ┌Y█ЫX]┌┬И██Ь▌█HH╚Ъ\Ь▌И┘X██ЩИ█▌И	┘Ъ\Ь▌	╦┌▌█ОИШ[┘HN┬ИЭ[Ш▌[█И▄[Ф┌Y█УX]┌
+
+H┬И█KЬ█▌H	┘Ъ\Ь▌	╬╚█KЬ┌▌█ИHШ[┘N┬ИYИ
+\█KЩЪ\Ь▌
+H╚██Ь▌▌█ИH▌█У[██К
+N╚YИ
+▌█КH╚█KЩЪ\Ь▌H▌█ЛЬ┌Y█О╚█KЬ█▌H	▄┘X██Щ	╬╚HBИ┌▌╘Y┘J	▄┌Y█ЫX]┌	╩N╚Щ[Щ\Ф┌Y█УX]┌
+
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\Ф┌Y█УX]┌
+
+H╚Щ[Щ\Ф┌Y█УX]┌Ы┘J
+N╚X█▄Ш]J	
+	▄┌Y█ЫX]┌	╩K█P█▄J
+KЭ]JN╚BИЭ[Ш▌[█ИЩ[Щ\Ф┌Y█УX]┌Ы┘J
+H┬И██Ь▌█▄HH█P█▄J
+KЫ▐H	
+	▄┌Y█ЫX]┌	╩K\ЭH┌[Щ▌╦ТЮ[▌\┌P\Э██H┌[Щ▌╦ЫX]┌RN┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌\Ы╚H[
+	┘]Й╦	█╦Z\Ы╔╩N╚YИ
+\Э	ЙИ\ЭЬ┌Y█ЫX]┌
+H\Ы╦Ъ[ЫЩ\ТSH\ЭЬ┌Y█ЫX]┌
+
+N┬ИЫ▐Ш\[Щ┌[
+\Ы╩N┬И╦╚H█╚┌\Ш█\╬И[▌H[Щ\ЭЩ\Л┌]HX\ЭЩ]┘Y[ЛВИ██Ь▌█▌╚H[
+	┘]Й╦	▄█K\█▌╔╩N┬И██Ь▌█▌H
+┘^KXЩ[
+HOИ┬И██Ь▌Ш[YHH█V┌┘^WK█ИH█KЬ█▌OOH┘^N┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦█K\█▌	██И╚	╚█Й╚И	╔▀X
+N╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛШ\[Щ
+[
+	▄▄[Й╦	▄█KX┌\Ш█I╦Ш[YH╚РT╥W╥P╙╙Ф╓▌Ш[YHHWHИ	√я"╔╩K[
+	╪Й╦Э[Ш[YH╚┌Y█УШ[YJШ[YJHИ█▄KШ┌█▄┘JK[
+	▄█X[	╦Э[XЩ[
+JN┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚█KЬ█▌H┘^N╚█KЬ┌▌█ИHШ[┘N╚Щ[Щ\Ф┌Y█УX]┌
+
+N╚JN┬ИЩ]\ЫИЭ]█О┬ИN┬И█▌╦Ш\[Щ
+█▌
+	┘Ъ\Ь▌	╦█▄KЮ[▌JK[
+	▄▄[Й╦	▄█KZX\Э	╦	№'фе╔╩K█▌
+	▄┘X██Щ	╦█▄KЬ\ЭЩ\КJN┬ИЫ▐Ш\[Щ┌[
+█▌╩N┬И██Ь▌XЬ╚H[
+	┘]Й╦	▌XЬ╦[[ЩI╩N╚XЬ╦Ь┘]]ЪXЭ]J	▄Ы█I╦	▌XЫ\▌	╩N┬И╔┘Ъ\Ь▌	╦	▄┘X██Щ	╫KЩЫ▄СXX┌
+
+┘^KJHOИ┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦█KЬ█▌OOH┘^H╚	██Й╚И	╔╦█▄KЭXЬ╓┌WJN╚Э]█ЛЭ\HH	╪Э]█Й╬┬ИЭ]█ЛЬ┘]]ЪXЭ]J	▄Ы█I╦	▌XЙ╩N╚Э]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK\┘[X▌Y	╦█KЬ█▌OOH┘^H╚	▌ЭYI╚И	┘Ш[┘I╩N┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚█KЬ█▌H┘^N╚Щ[Щ\Ф┌Y█УX]┌
+
+N╚JN┬ИXЬ╦Ш\[Щ┌[
+Э]█КN┬ИJN┬ИЫ▐Ш\[Щ┌[
+XЬ╩N┬И██Ь▌▄ЪYH[
+	┘]Й╦	█[██Л\X┌╔╩N┬ИЫ▄И
+]ИHN╚ИHLО╚И
+╧HJH┬И██Ь▌[HH[
+	╪Э]█Й╦[██Л][I█ИOOH█V▄█KЬ█▌H╚	╚█Й╚И	╔▀X
+N╚[KЭ\HH	╪Э]█Й╬┬И[KШ\[Щ
+[
+	▄▄[Й╦Э[РT╥W╥P╙╙Ф╓█ИHWJK[
+	▄█X[	╦Э[┌Y█УШ[YJКJJN┬И[KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И█V▄█KЬ█▌HHО╚█KЬ┌▌█ИHШ[┘N┬ИYИ
+\█V▄█KЬ█▌OOH	┘Ъ\Ь▌	╚╚	▄┘X██Щ	╚И	┘Ъ\Ь▌	╫JH█KЬ█▌H█KЬ█▌OOH	┘Ъ\Ь▌	╚╚	▄┘X██Щ	╚И	┘Ъ\Ь▌	╬╚╦╚█И╚H▌\И┌\Ш█BИЩ[Щ\Ф┌Y█УX]┌
+
+N┬ИJN┬И▄ЪYШ\[Щ┌[
+[JN┬ИBИЫ▐Ш\[Щ┌[
+▄ЪY
+N┬И██Ь▌ЩXYHHHJ█KЩЪ\Ь▌	ЙИ█KЬ┘X██Щ	ЙИ██
+N┬ИYИ
+█KЬ┌▌█И	ЙИЩXYJH┬И██Ь▌Щ\▌[H██Ь┌Y█УX]┌
+█KЩЪ\Ь▌█KЬ┘X██Щ
+N┬И██Ь▌▌]H[
+	▄┘X▌[█Й╦	▄█K\Щ\▌[	╩N┬И██Ь▌Щ\ЩX▌H█▄KЭЩ\ЩX▌▄Щ\▌[ЭЩ\ЩX▌N┬И▌]Ш\[Щ
+[
+	┘]Й╦	▄█K\\Ш┘[Э	╦	▄Щ\▌[Ь\Ш┘[ЭIX
+K[
+	┌	╦Э[Щ\ЩX▌
+K[
+	▄	╦Э[█▄KЭ^▄Щ\▌[ЭЩ\ЩX▌JJN┬И██Ь▌Ы▌╚H
+XЩ[┌[Э╦X^
+HOИ╚██Ь▌[ЩHH[
+	▄	╦	▄█K\Ы▌╔╩N╚[ЩKШ\[Щ
+[
+	▄▄[Й╦Э[XЩ[
+K[
+	╪Й╦Э[	▄┌[Э▀H╚	█X^X
+JN╚Щ]\ЫИ[ЩN╚N┬И▌]Ш\[Щ
+Ы▌╩█▄KЩЬЪY[Щ┌\Щ\▌[ЫXZ]ЪKJKЫ▌╩█▄KЩШ[Z[KЩ\▌[ШЪZ██▌╩JN┬ИYИ
+Щ\▌[ШЪZ██▌▄┌JH▌]Ш\[Щ┌[
+[
+	▄	╦	█Э[K[Ы▌I╦█▄KЩ▄┌JJN┬ИЫ▐Ш\[Щ┌[
+▌]
+N┬И██Ь▌Э[H[
+	╪Э]█Й╦	╪┌\XЭЙ╦	╪█▄KЩЭ[H8а.Ш
+N╚Э[Э\HH	╪Э]█Й╬┬ИЭ[ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▄[Х██
+	▄Щ[][█Ь┌\	╩JN┬ИЫ▐Ш\[Щ
+Э[[
+	▄	╦	█Э[K[Ы▌I╦█▄KЫЫ▌JJN┬ИBИ╦╚HXZ[ИЭ]█Л▄Щ^H[Э[Ы▌┌Y█Ь╚\ЩH┌▄┘[О╚HЪY[╚X██ИX\Ъ▄╚HYЩYЫ▄ЩHHЩ\▌[ВИ██Ь▌┘YHH[
+	╪Э]█Й╦[K\╪╪[Й▄Щ]╪\ЩYЫ▄К	▄┌Y█ЫX]┌	╩H╚	╚Щ]╪\ЩXЭЙ╚И	╔▀I▄ЩXYH╚	╔╚И	╚\╦[┘ЩЙ▀X█▄KЬ┘YJN╚┘YKЭ\HH	╪Э]█Й╬╚┘YKЩ\╪XЫYH\ЩXYN┬И┘YKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\▐[Ш╚
+
+HOИ┬ИYИ
+\ЩXYJHЩ]\ЫО┬ИYИ
+\█KЬ┌▌█И	ЙИЩ]╪\ЩYЫ▄К	▄┌Y█ЫX]┌	╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО┬И█KЬ┌▌█ИHЭYN╚Щ[Щ\Ф┌Y█УX]┌
+
+N┬ИЮH╚██Ь▌Щ\▌[H\ЬШ^KЩЬЫ█JЫ▐Ш┌[Щ[КKЩЪ[Щ
+][HOИ][KШ█\▄╙Ш[YHOOH	▄█K\Щ\▌[	╩N╚YИ
+Щ\▌[	ЙИЩ\▌[Ь╪▄Ы█[Э╒ЪY]╩HЩ\▌[Ь╪▄Ы█[Э╒ЪY]╩╚Ы╪┌╬И	╪┘[Э\Й╚JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИJN┬ИЫ▐Ш\[Щ┌[
+┘YJN┬ИBВИ╩ИKKKH\Ы▌ИX┌╚H▄X╦X┌╚╚┘ИLИШX┘KY▌█И╪\Щ╦┘YH\▌╚Щ\┘[Э╚Э]\ЩH[ЩHRI▄╚ЩXY[Щ╚KKKH
+Л┬И╦╚HМИXZЫ▄И\Ш╪[ШNИ[Щ█\┌Ш[YK\ЪY┌[ЩЩ]Щ\Ь┘YYX[Ъ[Щ╚
+ШY][█Ш[
+K[ЩHШ[Y\╚[И[Y▌H[Щ[ЩKВИ██Ь▌TУ╒H┬И╔╒HЫ██	╦	█Щ]╚ЩY┌[ЫЪ[Щ▄╦Э\▌[ЩHЬЩ\┌▌\Э	╦	┌\┌]][█И[Щ╪\Щ[\▄╚┌┌X┘\╔╦	°,+╕,`╕,,8,cx,%╕,`x,(x,`I╦	°)+╕)`╕),8)cx)%Й╫KИ╔╒HXY┌X┌X[Й╦	▄┌┌[Ы╪▌\╚[ЩXZ┌[Щ╚[Щ▄╚\[Й╦	▄╪╪]\ЩY[Щ\Щ▐H[Щ[Э\┘Y[[Э	╦	°,+╕,/╕, ╕,)8,cx,,8,/°,%x,`x,(x,`I╦	°)'8)/╕))╕)`╕)%°),	╫KИ╔╒HY┌ЪY\▌\▄╔╦	┌[ЭZ][█Л[ЫЩ\И┌\┘█H[Щ]Y[Ш┘I╦	┌Y█Ы▄Ъ[Щ╚[▌\И[ЫЩ\ИЫ┌X┘I╦	°,*╕,cx,,8,)°,/╕,*8,*╕,`╕,'8,/╕,,8,/°,(°,/╔╦	°)+╕).x)/╕)*╕)`x)'8)/╕),8)/°)*	╫KИ╔╒H[\Щ\▄╔╦	╪╪\ЩKXЭ[Щ[Ш┘H[Щ▄ЩX]]Ъ]I╦	█ЩY█X▌[Щ╚[▌\Ь┘[И▄И▌\Ь╔╦	°,.8,/╕,+╕,cx,,8,/╕,'8,cx,'╕,/╔╦	°).8)+╕)cx),8)/╕)'8)cx)'╕)`	╫KИ╔╒H[\\Ы▄Й╦	▄▌ЭX▌\ЩK▌XЪ[]H[ЩXY\Ь┌\	╦	▄ЪY┌Y]H[Щ██ЭЫ█	╦	°,&╕,%x,cx,,8,-x,,8,cx,)8,/╔╦	°).8)+╕)cx),8)/╕)'╔╫KИ╔╒HY\Ы▄[Э	╦	▌ШY][█Л▌ZY[Ш┘H[ЩX\ЫЪ[Щ╔╦	╪ЬЩXZ┌[Щ╚ЬЫ█H██ЭЩ[Э[█Й╦	°,%°,`x,,8,`x,-x,`I╦	°)%°)`x),8)`I╫KИ╔╒H▌Щ\Ь╔╦	█▌ЩK\Ы[█ЮH[ЩЭYH┌┌X┘\╔╦	┌[XШ[[Ш┘H[Щ▌XЭ[ИH┌┌X┘I╦	°,*╕,cx,,8,a°,+╕,/°,%x,`x,,╕,`I╦	°)*╕)cx),8)a°)+╕)`	╫KИ╔╒H┌\Ъ[▌	╦	┘]\ЫZ[Ш][█И[Щ[▌Ъ[Щ╚Ы▄Э╪\Щ	╦	█▄▌\ЩX▌[█И[Щ[^\╔╦	°,,8,)x, Й╦	°),8))I╫KИ╔╘▌Щ[Щ▌	╦	╪█▌\ШY┘K┌[ЩЩ\▄╚[Щ[ЫЩ\И▌Щ[Щ▌	╦	▄┘[ЛY▌XЭ[Щ[\]Y[Ш┘I╦	°,+8,,╕, Й╦	°)-╕)%x)cx))8)/╔╫KИ╔╒H\ЫZ]	╦	▄ЩYЫX▌[█Л██]YH[Щ┌\┘█I╦	┌\██][█И[Щ┌]Ш]╪[	╦	°,.8,*8,cx,+°,/╕,.8,/╔╦	°).8)/╕))°)`I╫KИ╔╒┌Y[┘ИЫ▄Э[ЩI╦	╪┌[Щ┘K▐X█\╚[Щ██┘[Z[Щ╔╦	▄Щ\┌\▌[Ш┘H╚┌[Щ┘I╦	°,!x,)╕,`°,-°,cx,'╚8,&╕,%x,cx,,8, Й╦	°)+x)/╕)%°)cx)+╚8)&╕)%x)cx),	╫KИ╔╥Э\▌X┘I╦	┘ШZ\ЫЩ\▄╦Э][ЩШ[[Ш┘I╦	┌[XШ[[Ш┘H[Щ]Ы┌Y[Щ╚Щ\▄█Ь┌XЪ[]I╦	°,*8,cx,+°,/╕,+°, Й╦	°)*8)cx)+°)/╕)+╔╫KИ╔╒H[Щ┘YX[Й╦	▄]\┘KЩ]╚\Ь▄X▌]ЩH[Щ▌\ЬЩ[Щ\Й╦	▄▌[[Щ╚[Щ[ЩX┌\┌[█Й╦	°,-x,a°,,╕,/╕,(x,a╚8,+╕,*8,/°,-°,/╔╦	°),╕)'°)%x)/И8).x)`x)!И8)-x)cx)+°)%x)cx))8)/╔╫KИ╔╤X]	╦	┘[Щ[Щ▄╚]▄[ИЩ]╚ЩY┌[ЫЪ[Щ▄╔╦	┘ЩX\И┘И┌[Щ┘H[Щ█[Щ╚█Й╦	°,*╕,,8,/°,-x,,8,cx,)8,*	╦	°)*╕),8)/°)-x),8)cx))8)*	╫KИ╔╒[\\Ш[Ш┘I╦	╪Ш[[Ш┘K]Y[Ш┘H[Щ[┘\Ш][█Й╦	┘^┘\▄╚[Щ[\]Y[Ш┘I╦	°,.8, ╕,+°,+╕,*8, Й╦	°).8) ╕)+°)+Й╫KИ╔╒H]Ъ[	╦	╪]X┌Y[Э╚[Щ[\][█Ь╚╚Ы▌X┘I╦	╪ЬЩXZ┌[Щ╚ЬЩYHЬЫ█H┌]Ъ[Щ╚[▌I╦	°,+8, ╕,)°,*8,/╕,,╕,`I╦	°)+8) ╕))°)*	╫KИ╔╒H▌┘\Й╦	▄▌Y[И┌[Щ┘H]█X\Ь╚H╪^I╦	╪]Ы┌Y[Щ╚HЩYYY┌[Щ┘I╦	°,%°,b°,*╕,`x,,8, Й╦	°)+╕)`8)*8)/╕),	╫KИ╔╒H▌\Й╦	┌▄KX[[Щ╚[ЩЩ[Щ]╪[	╦	█▄┌[Щ╚ШZ]Ы▄ИH┌[I╦	°,*8,%x,cx,-°,)8,cx,,8, Й╦	°))8)/╕),8)/Й╫KИ╔╒H[██Й╦	┘ЩX[\╦[ЭZ][█И[Щ[Ш┘\ЭZ[ЭI╦	╪██ЩЭ\┌[█И█X\Ъ[Щ╚\	╦	°,&╕, ╕,)╕,cx,,8,`x,(x,`I╦	°)&╕) ╕))╕)cx),8)+╕)/Й╫KИ╔╒H▌[Й╦	┌Ы▐K▌X╪┘\▄╚[Щ╪\Ы]	╦	▌[\▄Ш\ЮH█▌Y╚▌Щ\И\[Щ\▄╔╦	°,.8,`╕,,8,cx,+°,`x,(x,`I╦	°).8)`╕),8)cx)+╔╫KИ╔╥ЭY┘[Y[Э	╦	╪]╪Z┘[Ъ[Щ╚[ЩHЬЩ\┌╪[[Щ╔╦	▄┘[ЛY▌XЭ[Щ█ЩY▄Щ]╔╦	°,'8,/╕,%°,`°,)8,/╔╦	°)'8)/╕)%°)`°))8)/╔╫KИ╔╒H█▄Ы	╦	╪██\][█ЛЭ[Ъ[Y[Э[Щ┌█[Щ\▄╔╦	▌[ЩЪ[Ъ\┌YЭ\┌[Щ\▄╔╦	°,*╕,cx,,8,*╕, ╕,&╕, Й╦	°).8) ╕).8)/╕),	╫KИN┬И██Ь▌TУ╒╒╘P╘╚H╓╔█▌ЩI╦	№'фзЙ╫K╔╪╪\ЩY\Й╦	№'фп	╫K╔█[█Щ^I╦	№'ъжI╫K╔┌X[	╦	№'у/╔╫K╔█X┌╔╦	№'у`	╫K╔┘Ш[Z[I╦	№'ушI╫WN┬И██Ь▌\Ы▌█▄HH
+
+HOИ██^
+
+KЭ\Ы▌╙╙╫╨╙╘KЩ[ЛЭ\Ы▌┬И██Ь▌\Ы▌Ш[YHH[Щ^OИ
+▌]KЫ[Щ╚OOH	▌I╚╚TУ╒┌[Щ^V╠╫HИ▌]KЫ[Щ╚OOH	┌I╚╚TУ╒┌[Щ^V═HИTУ╒┌[Щ^V╠JN┬И██Ь▌Ш[Щ█R[ЭHИOИ╚ЮH╚██Ь▌HHЩ]╚Z[Э╠Р\ЬШ^JJN╚┌[Щ▌╦Ш▄Ю\╦Щ┘]Ш[Щ█UШ[Y\╩JN╚Щ]\ЫИV╠H	HО╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИX]ЩЫ█▄КX]ЬШ[Щ█J
+H
+ИКN╚HN┬И██Ь▌\Ы▌H╚▌\И	▌▄X╔╦▄X╬И	╔╦▄ЩXYИ╫K┌▄┘[ОИ╫KЩXY[Щ╬И[ЩYЪ[ЩYN┬ИЭ[Ш▌[█И▄[Х\Ы▌
+
+H╚\Ы▌Ь▌\H	▌▄X╔╬╚\Ы▌Э▄X╚H	╔╬╚\Ы▌Ш┌▄┘[ИH╫N╚\Ы▌ЬЩXY[Щ╚H[ЩYЪ[ЩY╚┌▌╘Y┘J	▌\Ы▌	╩N╚Щ[Щ\Х\Ы▌
+
+N╚BИЭ[Ш▌[█И▌\Э\Ы▌Ш]╩▄X╩H┬И██Ь▌X┌╚HTУ╒ЫX\
+
+╦JHOИJN┬ИЫ▄И
+]HHX┌╦Ы[Щ▌HN╚HИ╚HOHJH╚██Ь▌ИHШ[Щ█R[Э
+H
+╚JN╚┘X┌╓┌WKX┌╓┌ЧWHH┘X┌╓┌ЧKX┌╓┌WWN╚H╦╚┌YЩЫBИ\Ы▌Э▄X╚H▄X╬╚\Ы▌Ь▌\H	┘Ш]╔╬╚\Ы▌Ш┌▄┘[ИH╫N╚\Ы▌ЬЩXY[Щ╚H[ЩYЪ[ЩY┬И\Ы▌Ь▄ЩXYHX┌╦Ь█X┘JLКKЫX\
+YOИ
+╚YЩ]Щ\Ь┘YИШ[Щ█R[Э
+
+HOOHJJN╚╦╚XЫ▌]H[ИЩ]Щ\Ь┘YИЩ[Щ\Х\Ы▌
+
+N┬ИBИ\▐[Ш╚Э[Ш▌[█И╪Y\Ы▌ЩXY[Щ╩
+H┬И██Ь▌╪\Щ╚H\Ы▌Ш┌▄┘[ЛЫX\
+ИOИ\Ы▌Ь▄ЩXY█ЧJN┬И\Ы▌ЬЩXY[Щ╚HЭ[╚╦╚╪Y[Щ┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K▌\Ы▌	╦╚▄X╬И\Ы▌Э▄X╦[Щ▌XY┘NИ▌]KЫ[Щ╦╪\Щ╚JN┬И\Ы▌ЬЩXY[Щ╚H┌╚	ЙИЫ┘H	ЙИЫ┘KЬЩXY[Щ╚╚Ы┘KЬЩXY[Щ╚ИШ[┘N┬ИH╪]┌
+┘\ЬЫ▄КH╚\Ы▌ЬЩXY[Щ╚HШ[┘N╚BИYИ
+\Ы▌Ь▌\OOH	▄Щ\▌[	╩HЩ[Щ\Х\Ы▌
+
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\Х\Ы▌
+
+H╚Щ[Щ\Х\Ы▌Ы┘J
+N╚X█▄Ш]J	
+	▌\Ы▌	╩K\Ы▌█▄J
+KЭ]JN╚BИЭ[Ш▌[█ИЩ[Щ\Х\Ы▌Ы┘J
+H┬И██Ь▌█▄HH\Ы▌█▄J
+KЫ▐H	
+	▌\Ы▌	╩K\ЭH┌[Щ▌╦ТЮ[▌\┌P\Э┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+\Ы▌Ь▌\OOH	▌▄X╔╩H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	▌\Ы▌X\┌╔╦█▄KШ\┌╩JN┬И██Ь▌▄ЪYH[
+	┘]Й╦	▌\Ы▌]▄X▄╔╩N┬ИЫ▄И
+██Ь▌┌┘^KX██ЧH┘ИTУ╒╒╘P╘╩H┬И██Ь▌[HH[
+	╪Э]█Й╦	▌\Ы▌]▄X╔╩N╚[KЭ\HH	╪Э]█Й╬┬И[KШ\[Щ
+[
+	▄▄[Й╦	▌\Ы▌]▄X╦ZX██Й╦X██КK[
+	╪Й╦Э[█▄KЭ▄X▄╓┌┘^WJJN┬И[KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▌\Э\Ы▌Ш]╩┘^JJN┬И▄ЪYШ\[Щ┌[
+[JN┬ИBИЫ▐Ш\[Щ┌[
+▄ЪY
+N┬ИЩ]\ЫО┬ИBИYИ
+\Ы▌Ь▌\OOH	┘Ш]╔╩H┬ИЫ▐Ш\[Щ
+[
+	▄	╦	▌\Ы▌X\┌╔╦	╪█▄KЭ▄X▄╓▌\Ы▌Э▄X╫_H0н╚	╪█▄KЬX┌▀X
+K[
+	▄	╦	▌\Ы▌Z[Э	╦█▄KЬ┌YЩЫJKИ[
+	▄	╦	▌\Ы▌X█▌[Э	╦Ъ[
+█▄KЬX┌┘Y╚ОИ\Ы▌Ш┌▄┘[ЛЫ[Щ▌JJJN┬И██Ь▌▄ЪYH[
+	┘]Й╦	▌\Ы▌\▄ЩXY	╩N┬И\Ы▌Ь▄ЩXYЩЫ▄СXX┌
+
+╪╪\ЩКHOИ┬И██Ь▌ШX┌╚H[
+	╪Э]█Й╦\Ы▌XШX┌╔▌\Ы▌Ш┌▄┘[ЛЪ[Ш█Y\╩КH╚	╚█Й╚И	╔▀X
+N╚ШX┌╦Э\HH	╪Э]█Й╬┬ИYИ
+\Э
+HШX┌╦Ъ[ЫЩ\ТSH\ЭЭ\Ы▌ШX┌╩
+N┬ИШX┌╦ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬ИYИ
+\Ы▌Ш┌▄┘[ЛЪ[Ш█Y\╩КH\Ы▌Ш┌▄┘[ЛЫ[Щ▌ПH╩HЩ]\ЫО┬И\Ы▌Ш┌▄┘[ЛЬ\┌
+КN┬ИYИ
+\Ы▌Ш┌▄┘[ЛЫ[Щ▌OOH╩H┬ИYИ
+Щ]╪\ЩYЫ▄К	▌\Ы▌	╩JH\Ы▌Ь▌\H	█╪┌┘Y	╬╚╦╚HЩYH╪\Щ╚╪Z]ШX┘H▌█ИЩZ[Щ╕енИ┘YH^HЩXY[Щ╚ВИ[┘H╚\Ы▌Ь▌\H	▄Щ\▌[	╬╚Ы┌Y╪Y\Ы▌ЩXY[Щ╩
+N╚BИBИЩ[Щ\Х\Ы▌
+
+N┬ИJN┬И▄ЪYШ\[Щ┌[
+ШX┌╩N┬ИJN┬ИЫ▐Ш\[Щ┌[
+▄ЪY
+N┬ИЩ]\ЫО┬ИBИYИ
+\Ы▌Ь▌\OOH	█╪┌┘Y	╩H┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	▌\Ы▌X\┌╔╦█▄KЭ▄X▄╓▌\Ы▌Э▄X╫JJN┬И██Ь▌Ы▌╚H[
+	┘]Й╦	▌\Ы▌\Ы▌╔╩N┬И█▄KЬ▄┌][█Ь╦ЩЫ▄СXX┌
+▄┌][█ИOИ┬И██Ь▌ШX┘HH[
+	┘]Й╦	▌\Ы▌YШX┘I╩N┬И██Ь▌X╚H[
+	┘]Й╦	▌\Ы▌\X╔╩N╚YИ
+\Э
+HX╦Ъ[ЫЩ\ТSH\ЭЭ\Ы▌ШX┌╩
+N┬ИШX┘KШ\[Щ
+[
+	▄█X[	╦	▌\Ы▌\▄╔╦▄┌][█КKX╩N┬ИЫ▌╦Ш\[Щ┌[
+ШX┘JN┬ИJN┬И██Ь▌┘YHH[
+	╪Э]█Й╦	▄[K\╪╪[ИЩ]╪\ЩXЭЙ╦█▄KЬ┘YJN╚┘YKЭ\HH	╪Э]█Й╬┬И┘YKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\▐[Ш╚
+
+HOИ┬ИYИ
+J]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО╚╦╚█▄┘YHYX\ЫNИH╪\Щ╚▌^HШX┘H▌█ВИ\Ы▌Ь▌\H	▄Щ\▌[	╬╚Ы┌Y╪Y\Ы▌ЩXY[Щ╩
+N╚Щ[Щ\Х\Ы▌
+
+N┬ИJN┬ИЫ▐Ш\[Щ
+Ы▌╦┘YJN┬ИЩ]\ЫО┬ИBИ╦╚Щ\▌[ИHЩYH╪\Щ╚ШX┘H\[ИHЩXY[Щ╚
+RK▄ИHЭZ[Z[ИYX[Ъ[Щ▄╩KВИ██Ь▌╪\Щ╚H\Ы▌Ш┌▄┘[ЛЫX\
+ИOИ\Ы▌Ь▄ЩXY█ЧJN┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	▌\Ы▌X\┌╔╦█▄KЭ▄X▄╓▌\Ы▌Э▄X╫JJN┬И██Ь▌Ы▌╚H[
+	┘]Й╦	▌\Ы▌\Ы▌╔╩N┬И╪\Щ╦ЩЫ▄СXX┌
+
+╪\ЩJHOИ┬И██Ь▌ШX┘HH[
+	┘]Й╦\Ы▌YШX┘I╪╪\ЩЬЩ]Щ\Ь┘Y╚	╚Щ]Щ\Ь┘Y	╚И	╔▀X
+N┬И██Ь▌X╚H[
+	┘]Й╦	▌\Ы▌\X╔╩N╚YИ
+\Э
+HX╦Ъ[ЫЩ\ТSH\ЭЭ\Ы▌╪\Щ
+╪\ЩЪY
+N┬ИШX┘KШ\[Щ
+[
+	▄█X[	╦	▌\Ы▌\▄╔╦█▄KЬ▄┌][█Ь╓┌WJKX╦[
+	╪Й╦Э[\Ы▌Ш[YJ╪\ЩЪY
+JJN┬ИYИ
+╪\ЩЬЩ]Щ\Ь┘Y
+HШX┘KШ\[Щ┌[
+[
+	▄▄[Й╦	▌\Ы▌\Щ]Й╦█▄KЬЩ]Щ\Ь┘Y
+JN┬ИЫ▌╦Ш\[Щ┌[
+ШX┘JN┬ИJN┬ИЫ▐Ш\[Щ┌[
+Ы▌╩N┬И██Ь▌ЩXY[Щ╚H\Ы▌ЬЩXY[Щ╦[Щ\╚H╫N┬И╔▄\▌	╦	▄Щ\┘[Э	╦	┘Э]\ЩI╫KЩЫ▄СXX┌
+
+┘^KJHOИ┬И██Ь▌╪\ЩH╪\Щ╓┌WKYX[Ъ[Щ╚HTУ╒╪╪\ЩЪYV╪╪\ЩЬЩ]Щ\Ь┘Y╚ИИWN┬И██Ь▌^HЩXY[Щ╚╚ЩXY[Щ╓┌┘^WHИЩXY[Щ╚OOHЭ[╚█▄KЫ╪Y[Щ╚И	▌\Ы▌Ш[YJ╪\ЩЪY
+_NИ	█YX[Ъ[Щ▀KШ┬И██Ь▌┘X╚H[
+	▄┘X▌[█Й╦\Ы▌\┘X╔▄ЩXY[Щ╚OOHЭ[╚	╚╪Y[Щ╔╚И	╔▀X
+N┬И┘X╦Ш\[Щ
+[
+	┌	╦Э[	╪█▄KЬ▄┌][█Ь╓┌W_H0н╚	▌\Ы▌Ш[YJ╪\ЩЪY
+_I╪╪\ЩЬЩ]Щ\Ь┘Y╚
+	╪█▄KЬЩ]Щ\Ь┘YJXИ	╔▀X
+K[
+	▄	╦Э[^
+JN┬ИЫ▐Ш\[Щ┌[
+┘X╩N┬И[Щ\╦Ь\┌
+	╪█▄KЬ▄┌][█Ь╓┌W_H0н╚	▌\Ы▌Ш[YJ╪\ЩЪY
+_NИ	▌^X
+N┬ИJN┬ИYИ
+ЩXY[Щ╚OOHЭ[
+H┬И██Ь▌YЪX┘HHЩXY[Щ╚╚ЩXY[Щ╦ШYЪX┘HИ█▄KЩШ[ШX┌╨YЪX┘N┬И██Ь▌┘X╚H[
+	▄┘X▌[█Й╦	▌\Ы▌\┘X╚YЪX┘I╩N┬И┘X╦Ш\[Щ
+[
+	┌	╦Э[8з*	╪█▄KШYЪX┘_X
+K[
+	▄	╦Э[YЪX┘JJN┬ИЫ▐Ш\[Щ┌[
+┘X╩N┬И[Щ\╦Ь\┌
+8з*	╪YЪX┘_X
+N┬ИBИ██Ь▌X▌[█Ь╚H[
+	┘]Й╦	▌\Ы▌XX▌[█Ь╔╩N┬И██Ь▌\┌╨ZHH[
+	╪Э]█Й╦	▄Ш\┌KX\┌╔╦8з*	╪█▄KШ\┌╨Z_X
+N╚\┌╨ZKЭ\HH	╪Э]█Й╬┬И\┌╨ZKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌]Y\▌[█ИHЪ[
+█▄KШ\┌╘K╚╪\Щ╬И╪\Щ╦ЫX\
+╪\ЩOИ\Ы▌Ш[YJ╪\ЩЪY
+JKЪЫ┌[К	╦	╩K▄X╬И█▄KЭ▄X▄╓▌\Ы▌Э▄X╫HJN┬И┌▌╘Y┘J	╪┌]	╩N╚\┌╩]Y\▌[█Л]Y\▌[█ЛЭYJN┬ИJN┬И██Ь▌┌\ЩHH[
+	╪Э]█Й╦	╪┌\XЭЙ╦8бе╚	╪█▄KЬ┌\Щ_X
+N╚┌\ЩKЭ\HH	╪Э]█Й╬┬И┌\ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Ы┌Y┌\ЩU^
+<'ру╚	╪█▄KЭ]_NИ	╪█▄KЭ▄X▄╓▌\Ы▌Э▄X╫_X[Щ\╦ЪЫ┌[К	╫ЧЙ╩JN╚JN┬И██Ь▌Y╪Z[ИH[
+	╪Э]█Й╦	╪┌\XЭЙ╦8бо╚	╪█▄KШY╪Z[ЯX
+N╚Y╪Z[ЛЭ\HH	╪Э]█Й╬┬ИY╪Z[ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚\Ы▌Ь▌\H	▌▄X╔╬╚Щ[Щ\Х\Ы▌
+
+N╚ЮH╚┌[Щ▌╦Ь╪▄Ы█╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HJN┬ИX▌[█Ь╦Ш\[Щ
+\┌╨ZK┌\ЩKY╪Z[КN┬ИЫ▐Ш\[Щ┌[
+X▌[█Ь╩N┬ИBИ╦╚\Ы▌\┌┘Y▌ШZY┌[И┌]ИHЬЩ\┌ЩYKX╪\ЩШ]╚[ЩЩXY[Щ╚Ы▄ИHX]┌Y▄X╦┌▌█И\╚HY\▄╪Y┘KВИЭ[Ш▌[█ИX]┌\Ы▌▄X╩]Y\ЮJH┬И██Ь▌^H▌Ъ[Щ╩]Y\ЮH	╔╩KЭ╙▌┘\Р╪\┘J
+K█▄HH\Ы▌█▄J
+N┬ИЫ▄И
+██Ь▌┌┘^WH┘ИTУ╒╒╘P╘╩HYИ
+^Ъ[Ш█Y\╩┘^JH
+█▄KЭ▄X▄╓┌┘^WH	ЙИ^Ъ[Ш█Y\╩█▄KЭ▄X▄╓┌┘^WKЭ╙▌┘\Р╪\┘J
+JJJHЩ]\ЫИ┘^N┬ИЩ]\ЫИЭ[┬ИBИ]┌]\Ы▌]╪Z][Щ╒▄X╚HШ[┘N┬И\▐[Ш╚Э[Ш▌[█И┌]\Ы▌
+▄X╥┘^JH┬И██Ь▌█▄HH\Ы▌█▄J
+N┬И▌\Э\Ы▌Ш]╩▄X╥┘^JN┬И\Ы▌Ш┌▄┘[ИH╠KЧN┬ИYИ
+Щ]╪\ЩYЫ▄К	▌\Ы▌	╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJH╚\Ы▌Ь▌\H	▌▄X╔╬╚Щ]\ЫО╚BИ██Ь▌[Щ[Щ╚H[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╦█▄KЫ╪Y[Щ╩N┬И┌]┘╦Ш\[Щ┌[
+[Щ[Щ╩N╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬И]╪Z]╪Y\Ы▌ЩXY[Щ╩
+N┬И┌]┘╦ЬЩ[[▌ЩP┌[
+[Щ[Щ╩N┬И██Ь▌╪\Щ╚H\Ы▌Ш┌▄┘[ЛЫX\
+ИOИ\Ы▌Ь▄ЩXY█ЧJKЩXY[Щ╚H\Ы▌ЬЩXY[Щ╬┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╩N┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[<'ру╚	╪█▄KЭ▄X▄╓▌\Ы▌Э▄X╫_X
+JN┬И╔▄\▌	╦	▄Щ\┘[Э	╦	┘Э]\ЩI╫KЩЫ▄СXX┌
+
+┘^KJHOИ┬И██Ь▌╪\ЩH╪\Щ╓┌WKYX[Ъ[Щ╚HTУ╒╪╪\ЩЪYV╪╪\ЩЬЩ]Щ\Ь┘Y╚ИИWN┬И██Ь▌^HЩXY[Щ╚╚ЩXY[Щ╓┌┘^WHИ	▌\Ы▌Ш[YJ╪\ЩЪY
+_NИ	█YX[Ъ[Щ▀KШ┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[	╪█▄KЬ▄┌][█Ь╓┌W_H0н╚	▌\Ы▌Ш[YJ╪\ЩЪY
+_I╪╪\ЩЬЩ]Щ\Ь┘Y╚
+	╪█▄KЬЩ]Щ\Ь┘YJXИ	╔▀NИ	▌^X
+JN┬ИJN┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[8з*	▄ЩXY[Щ╚╚ЩXY[Щ╦ШYЪX┘HИ█▄KЩШ[ШX┌╨YЪX┘_X
+JN┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИ╩ИKKKH[██И┌Y█ИY┘NИHЪY╚[██Л[▌\ИЩYX╚[██И┌Y█И
+┌]ШZ▄┌]ШJH[ЩЪ]ЩH╪\ЫH┘X▌[█Ь╚KKKH
+Л┬И▌]KЫ[██Х^H▀N╚▌]KЫ[██ФX┌╚H╚▌]KЫ[██Р\Ы▐HЭ[┬И██Ь▌S╙╙Ч╘╤P╒S╙Ф╚H╓╔┘[[▌[█Ш[	╦	№'у.	╫K╔█▌ЩI╦	№'фзЙ╫K╔╪╪\ЩY\Й╦	№'фп	╫K╔▌┘[ЩZ[Щ╔╦	№'у/╔╫K╔▄Щ[YYI╦	№'ъе	╫WN┬И██Ь▌[██Р█▄HH
+
+HOИ██^
+
+KЫ[██И╙╙╫╨╙╘KЩ[ЛЫ[██О┬ИЭ[Ш▌[█И▌█У[██К
+H┬ИYИ
+▌]KШ┌\Э
+H┬И██Ь▌Ъ\ЭH▌]KШ┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\Э▀N┬ИЩ]\ЫИ╚┌Y█ОИ▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^▌\ОИЪ\ЭЫШZ▄┌]ШW┌[Щ^YNИЪ\ЭЫШZ▄┌]ШW▄YK\Ы▐ИШ[┘HN┬ИBИЩ]\ЫИ▌]KЫ[██Р\Ы▐┬ИBИ╦╚█ЫHHЪ\Э]H
+Ы╚[YJNИH[██И]Ы██И]^KX\Ъ┘Y\╚\Ы▐[X]H
+]╪[И┌[Щ┘H┌Y█И┌][ИH^JKВИ\▐[Ш╚Э[Ш▌[█И╪Y\Ы▐[██К
+H┬ИYИ
+▌]KШ┌\Э▌]KЫ[██Р\Ы▐▌]KЫ[██Р\Ы▐Э\▐H\▌]KЭ\┘\С╪И\▌]KШ┌]JHЩ]\ЫО┬И▌]KЫ[██Р\Ы▐Э\▐HHЭYN┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦╚╪ОИ▌]KЭ\┘\С╪Л╪ОИ▌]KШ┌]K╪ОИ	╠LОМ	╚JN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШ┌\Э
+H▌]KЫ[██Р\Ы▐H╚┌Y█ОИЫ┘KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^\Ы▐ИЭYHN┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И┘ЩЫ[ЩNИ\┌╚Ы▄И]Z[╚[Ь▌XY
+Л╚BИ▌]KЫ[██Р\Ы▐Э\▐HHШ[┘N┬ИYИ
+\Y┘\╦Ы[██ЛЪY[КHЩ[Щ\У[██Ф┌Y█К
+N┬ИBИ\▐[Ш╚Э[Ш▌[█И╪Y[██Х^
+┌Y█КH┬И██Ь▌┘^HH	▄┌Y█Я_	▄▌]KЫ[Щ▀X┬ИYИ
+┘^H[И▌]KЫ[██Х^
+HЩ]\ЫО┬И▌]KЫ[██Х^┌┘^WHHЭ[╚╦╚╪Y[Щ┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K█[██Л\┌Y█Й╦╚┌Y█Л[Щ▌XY┘NИ▌]KЫ[Щ╚JN┬И▌]KЫ[██Х^┌┘^WHH┌╚	ЙИЫ┘H	ЙИЫ┘KЬЩXY[Щ▄╚╚Ы┘KЬЩXY[Щ▄╚ИШ[┘N┬ИH╪]┌
+┘\ЬЫ▄КH╚▌]KЫ[██Х^┌┘^WHHШ[┘N╚BИYИ
+\Y┘\╦Ы[██ЛЪY[КHЩ[Щ\У[██Ф┌Y█К
+N┬ИBИЭ[Ш▌[█И▄[У[██Ф┌Y█К
+H╚▌]KЫ[██ФX┌╚H╚┌▌╘Y┘J	█[██Й╩N╚Щ[Щ\У[██Ф┌Y█К
+N╚BИЭ[Ш▌[█ИЩ[Щ\У[██Ф┌Y█К
+H╚Щ[Щ\У[██Ф┌Y█РЫ┘J
+N╚X█▄Ш]J	
+	█[██Ь┌Y█Й╩K[██Р█▄J
+KЭ]JN╚BИЭ[Ш▌[█ИЩ[Щ\У[██Ф┌Y█РЫ┘J
+H┬И██Ь▌█▄HH[██Р█▄J
+KЫ▐H	
+	█[██Ь┌Y█Й╩K▌█ИH▌█У[██К
+N┬ИYИ
+[▌█КHЫ┌Y╪Y\Ы▐[██К
+N┬И██Ь▌┌Y█ИH▌]KЫ[██ФX┌╚
+▌█И╚▌█ЛЬ┌Y█ИИ
+N┬ИЫ▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌\ЭH[
+	┘]Й╦	█[██ЛX\Э	╩N┬ИYИ
+┌[Щ▌╦ТЮ[▌\┌P\Э
+H\ЭЪ[ЫЩ\ТSH┌[Щ▌╦ТЮ[▌\┌P\ЭЫ[██К
+N┬ИЫ▐Ш\[Щ┌[
+\Э
+N┬ИYИ
+\┌Y█КH┬ИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█[██Л[ЩYY	╦█▄KЫЩYY
+JN┬И██Ь▌YH[
+	╪Э]█Й╦	█[██ЛXY	╦	╪█▄KШYH8а.Ш
+N╚YЭ\HH	╪Э]█Й╬┬ИYШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚┌▌╘Y┘J	┌▌[ЩI╩N╚ЮH╚╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╓█Ш[YOHЩ╪ИЧI╩KЩЫ╪▌\╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HJN┬ИЫ▐Ш\[Щ┌[
+Y
+N┬ИH[┘H┬ИЫ▐Ш\[Щ┌[
+[
+	┌╔╦	█[██Л\┌Y█Й╦8з)И	▄┌Y█УШ[YJ┌Y█К_H8з)Ш
+JN┬ИYИ
+▌█И	ЙИ┌Y█ИOOH▌█ЛЬ┌Y█КH┬ИYИ
+▌█ЛЬ▌\КHЫ▐Ш\[Щ┌[
+[
+	▄	╦	█[██Л\▌\Й╦	╪█▄KЫШZ▄┌]Ш_NИ	█Ш[Y\╦ЫШZ▄┌]ШSШ[YJ▌█ЛЬ▌\Л▌]KЫ[Щ╩_I█▌█ЛЬYH╚0н╚	╪█▄KЬY_H	█▌█ЛЬY_XИ	╔▀X
+JN┬ИYИ
+▌█ЛШ\Ы▐
+HЫ▐Ш\[Щ┌[
+[
+	▄	╦	█[██ЛX\Ы▐	╦█▄KШ\Ы▐
+JN┬ИBИ██Ь▌┘^HH	▄┌Y█Я_	▄▌]KЫ[Щ▀X┬ИYИ
+J┘^H[И▌]KЫ[██Х^
+JHЫ┌Y╪Y[██Х^
+┌Y█КN┬И██Ь▌^H▌]KЫ[██Х^┌┘^WN┬И██Ь▌[Щ\╚H╫N┬ИЫ▄И
+██Ь▌█Ш[YKX██ЧH┘ИS╙╙Ч╘╤P╒S╙Ф╩H┬И██Ь▌Ы┘HH^╚^█Ш[YWHИ
+Ш[YHOOH	┘[[▌[█Ш[	╚╚█▄KЫШ]\ЩV▄┌Y█ИHWHИ	╔╩N┬ИYИ
+XЫ┘H	ЙИ^OOHЭ[
+H██Э[ЭYN┬И██Ь▌╪\ЩH[
+	▄┘X▌[█Й╦[██Л\┘X╔▌^OOHЭ[	ЙИШ[YHOOH	┘[[▌[█Ш[	╚╚	╚╪Y[Щ╔╚И	╔▀X
+N┬И╪\ЩШ\[Щ
+[
+	▄▄[Й╦	█[██ЛZX██Й╦X██КK[
+	┌	╦Э[█▄KЬ┘X▌[█Ь╓█Ш[YWJK[
+	▄	╦Э[Ы┘H█▄KЫ╪Y[Щ╩JN┬ИЫ▐Ш\[Щ┌[
+╪\Щ
+N┬ИYИ
+Ы┘JH[Щ\╦Ь\┌
+	┌X██ЯH	╪█▄KЬ┘X▌[█Ь╓█Ш[YW_WЙ╪Ы┘_X
+N┬ИBИ╦╚┌\Ъ[Щ╚\╚H┌\ЩHX██И[ИHY┘HXY\О╚█ЫHHЩ\▄Э[Ъ╚▌^\╚\ЩKВИYИ
+▌]KШ██ЭX▌[XZ[
+H┬И██Ь▌██╚H[
+	┘]Й╦	█[██Л]██╔╩N┬И██Ь▌Щ\▄ЭH[
+	╪I╦	╪┌\XЭЙ╦8ждH	╪█▄KЬЩ\▄ЭX
+N┬ИЩ\▄ЭЪЩYИHXZ[╬Й▄▌]KШ██ЭX▌[XZ[O▄▌XЪЩX▌I┘[Ш█┘UTТP██\█Щ[Э
+Щ\▄ЭИ[██И┌Y█И	▄┌Y█ЯH
+	▄▌]KЫ[Щ▀JX
+_X┬И██╦Ш\[Щ┌[
+Щ\▄Э
+N┬ИЫ▐Ш\[Щ┌[
+██╩N┬ИBИBИ╦╚^▄ЩH[ЮH┌Y█ОИ┘[ЩH█X[[\╦ВИЫ▐Ш\[Щ┌[
+[
+	┌	╦	┌█YKZ[██Л\X┌╦Z	╦█▄KЬX┌╩JN┬И██Ь▌▄ЪYH[
+	┘]Й╦	█[██Л\X┌╔╩N┬ИЫ▄И
+]ИHN╚ИHLО╚И
+╧HJH┬И██Ь▌[HH[
+	╪Э]█Й╦[██Л][I█ИOOH┌Y█И╚	╚█Й╚И	╔▀X
+N╚[KЭ\HH	╪Э]█Й╬┬И[KШ\[Щ
+[
+	▄▄[Й╦Э[РT╥W╥P╙╙Ф╓█ИHWJK[
+	▄█X[	╦Э[┌Y█УШ[YJКJJN┬ИYИ
+▌█И	ЙИИOOH▌█ЛЬ┌Y█КH[KШ\[Щ┌[
+[
+	┌I╦Э[8ж!H	╪█▄KЮ[▌\Ь▀X
+JN┬И[KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\▐[Ш╚
+
+HOИ┬ИYИ
+Щ]╪\ЩYЫ▄К	█[██Й╩H	ЙИJ▌█И	ЙИИOOH▌█ЛЬ┌Y█КH	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО╚╦╚[▌\И▌█И┌Y█И▌^\╚ЬЩYBИ▌]KЫ[██ФX┌╚HО╚Щ[Щ\У[██Ф┌Y█К
+N╚ЮH╚┌[Щ▌╦Ь╪▄Ы█╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИJN┬И▄ЪYШ\[Щ┌[
+[JN┬ИBИЫ▐Ш\[Щ┌[
+▄ЪY
+N┬ИBИ╩ИKKKHШ\┌\[ИX┌╚[▌\И┌Y█ЛЩXY┘^I▄╚\ШY▄Ш\┌\ЩH▄И\┌╚HRHKKKH
+Л┬И██Ь▌РT╥W╥╤VHH	┌Ю[▌\┌KЬШ\┌KЭМI╬┬И██Ь▌РT╥W╥P╙╙Ф╚H╔№'ф#╔╦	№'ф Й╦	№'фj╔╦	№'ща	╦	№'щаI╦	№'фi╔╦	°же╗ю#╔╦	№'щаЙ╦	№'уюI╦	№'ф$	╦	№'уюЙ╦	№'ф'╔╫N┬И██Ь▌РT╥W╤╙T╚H╔°жb	╦	°жbI╦	°жbЙ╦	°жb╔╦	°жc	╦	°жcI╦	°жcЙ╦	°жc╔╦	°жd	╦	°жdI╦	°жdЙ╦	°жd╔╫N┬И▌]KЬШ\┌TX┌╚H
+
+
+HOИ╚ЮH╚██Ь▌Ш[YHHЭ[XЩ\К┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][JРT╥W╥╤VJJN╚Щ]\ЫИШ[YHПHH	ЙИШ[YHHLИ╚Ш[YHИ╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИ╚HJJ
+N┬И▌]KЬШ\┌PRHH▀N┬И▌]KЬШ\┌SX┌▐HH▀N┬И╦╚┌]H▌[ЩKШ\┌\[▄[Ь╚█ИH\┘\Й▄╚▌█И[██И┌Y█И
+┘]┌[Щ]Щ\ИH┌\Э\╚XYH▄ИЩ\▌▄ЩY
+KВИЭ[Ш▌[█И\┘S▌█ФШ\┌J
+H┬ИYИ
+\▌]KШ┌\Э
+HЩ]\ЫО┬И▌]KЬШ\┌TX┌╚H▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^┬ИЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JРT╥W╥╤VK▌Ъ[Щ╩▌]KЬШ\┌TX┌╩JN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌Щ[Y[XЩ\ЩY
+Л╚BИЮH╚Щ[Щ\ФШ\┌J
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩ИHY┘H\╚Ы▌ЩXYHY]
+Л╚BИBИЭ[Ш▌[█ИX┌╘Ш\┌JШ\┌JH┬И▌]KЬШ\┌TX┌╚HШ\┌N┬ИЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JРT╥W╥╤VK▌Ъ[Щ╩Ш\┌JJN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌Щ[Y[XЩ\ЩY
+Л╚BИЩ[Щ\ФШ\┌J
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\ФШ\┌TX┌┘\К
+H┬И██Ь▌█▄HH██^
+
+KЬШ\┌KZ[ЩHH▌]KШ┌\Э╚▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^И┬ИYИ
+\▌]KЬШ\┌TX┌╚	ЙИZ[ЩJH▌]KЬШ\┌TX┌╚HZ[ЩN╚╦╚[▌\И▌█И┌Y█И█Ш┘H\ЩH\╚H▌[ЩBИ	
+	▄Ш\┌K\X┌┘\Й╩KЬЩ\X┘P┌[Щ[КЛЛФРT╥W╥P╙╙Ф╦ЫX\
+
+X██Л[Щ^
+HOИ┬И██Ь▌Ш\┌HH[Щ^
+╚K[HH[
+	╪Э]█Й╦Ш\┌K][I▄Ш\┌HOOH▌]KЬШ\┌TX┌╚╚	╚█Й╚И	╔▀X
+N┬И[KЭ\HH	╪Э]█Й╬╚[KЬ┘]]ЪXЭ]J	╪\ЪXK\Щ\▄┘Y	╦Ш\┌HOOH▌]KЬШ\┌TX┌╚╚	▌ЭYI╚И	┘Ш[┘I╩N┬И[KШ\[Щ
+[
+	▄▄[Й╦	▄Ш\┌KZX██Й╦X██КK[
+	╪Й╦Э[┌Y█УШ[YJШ\┌JJK[
+	▄█X[	╦Э[Ш\┌HOOHZ[ЩH╚8ж!H	╪█▄KЫZ[Щ_XИРT╥W╤╙T╓┌[Щ^JJN┬И[KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИX┌╘Ш\┌JШ\┌JJN┬ИЩ]\ЫИ[N┬ИJJN┬И██Ь▌Ъ[ЩH	
+	▄Ш\┌KYЪ[Щ	╩N┬ИЪ[ЩЭ^██Э[ЭH	▄▌]KШ┌\Э╚█▄KЫZ[ЩPЭ]█ИИ█▄KЩЪ[ЩH8а.Ш┬ИЪ[ЩЫ█Ш█X┌╚H
+
+HOИ┬ИYИ
+▌]KШ┌\Э
+H╚X┌╘Ш\┌J▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^
+N╚Щ]\ЫО╚BИ┌▌╘Y┘J	┌▌[ЩI╩N╚ЮH╚╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╓█Ш[YOHЩ╪ИЧI╩KЩЫ╪▌\╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИN┬ИYИ
+\▌]KЬШ\┌TX┌╩H	
+	▄Ш\┌K\ЩXY[Щ╔╩KЬЩ\X┘P┌[Щ[К[
+	▄	╦	▄Ш\┌KZ[Э	╦█▄KЪ[Э
+JN┬ИBИ\▐[Ш╚Э[Ш▌[█И╪YШ\┌PRJ]JH┬И██Ь▌┘^HH	┘]__	▄▌]KЫ[Щ▀X┬ИYИ
+┘^H[И▌]KЬШ\┌PRJHЩ]\ЫО┬И▌]KЬШ\┌PRV┌┘^WHHЭ[╚╦╚╪Y[Щ┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K▄Ш\┌\[	╦╚]K[Щ▌XY┘NИ▌]KЫ[Щ╚JN┬И▌]KЬШ\┌PRV┌┘^WHH┌╚	ЙИЫ┘H	ЙИЫ┘KЬЩXY[Щ▄╚╚Ы┘KЬЩXY[Щ▄╚ИШ[┘N┬И▌]KЬШ\┌SX┌▐V┌┘^WHH┌╚	ЙИЫ┘H	ЙИЫ┘KЫX┌▐H╚Ы┘KЫX┌▐HИЭ[┬ИH╪]┌
+┘\ЬЫ▄КH╚▌]KЬШ\┌PRV┌┘^WHHШ[┘N╚BИYИ
+▌]KЬШ\┌S[┘HOOH	┘^I╩HЩ[Щ\ФШ\┌J
+N┬ИBИ╦╚┘^I▄╚\ШY▄Ш\Ы▄ИH┌▄┘[И┌Y█ОИHRK]▄Ъ][И█ЩH┌[И]ШZ[XЫK▌\Э┌\┘HHЭ[KXШ\┘YЩXY[Щ╦ВИЭ[Ш▌[█ИЩ[Щ\ФШ\┌TЩXY[Щ╩][K]Z[^JH┬И██Ь▌█▄HH██^
+
+KЬШ\┌K┘^HH	┘^KЩ]__	▄▌]KЫ[Щ▀X┬ИYИ
+J┘^H[И▌]KЬШ\┌PRJJHЫ┌Y╪YШ\┌PRJ^KЩ]JN┬И██Ь▌ZHH▌]KЬШ\┌PRV┌┘^WH	ЙИ▌]KЬШ\┌PRV┌┘^WV╘▌Ъ[Щ╩][KЬШ\┌JWN┬И██Ь▌┘[Э[Ш┘HH\ЭOИ
+╓╦ИO°)iI╦Э\▌
+\ЭЭЪ[J
+JH╚\ЭЭЪ[J
+HИ	▄\ЭЭЪ[J
+_KШ
+N┬И██Ь▌^HZH┘]Z[	ЙИ]Z[ЭЩ\ЩX▌][KЪ┌[Щ][KШ\ЩXWKЩЪ[\КЫ██X[КKЫX\
+┘[Э[Ш┘JKЪЫ┌[К	╚	╩N┬И██Ь▌Ы▐H	
+	▄Ш\┌K\ЩXY[Щ╔╩N╚Ы▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌]HHЪ[
+█▄KЭ]K╚┌Y█ОИ][KЫШ[YK]NИ╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦^KЩ]K	██Щ╔╩HJN┬ИЫ▐Ш\[Щ┌[
+[
+	┌╔╦	▄Ш\┌K\ЩXY[Щ╦]]I╦	╘РT╥W╥P╙╙Ф╓┌][KЬШ\┌HHW_H	▌]_X
+JN┬И██Ь▌\┌╨XЫ▌]^HH
+
+HOИ╚██Ь▌]Y\▌[█ИHЪ[
+█▄KШ\┌╘K╚┌Y█ОИ][KЫШ[YHJN╚┌▌╘Y┘J	╪┌]	╩N╚\┌╩]Y\▌[█Л]Y\▌[█ЛЭYJN╚N┬И██Ь▌▄[ТШ]Z╪[HH
+
+HOИ╚┌▌╘Y┘J	┌▌[ЩI╩N╚YИ
+\▌]KШ┌\Э
+H╚ЮH╚╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╓█Ш[YOHЩ╪ИЧI╩KЩЫ╪▌\╩
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HHN┬И╦╚]ZX┌╚[Ъ▄╚]H▄█╚[▄H█Ы▌╚HШ[Ь┌]╚[ЩЩ[YYY\╚Э\Э\И▌█И^\▌ВИ██Ь▌Э[\╚H[
+	┘]Й╦	▄Ш\┌KZЭ[\╔╩N┬И██Ь▌Э[\H
+XЩ[X▌[█КHOИ╚██Ь▌ИH[
+	╪Э]█Й╦	▄Ш\┌KZЭ[\	╦XЩ[
+N╚ЛЭ\HH	╪Э]█Й╬╚ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦X▌[█КN╚Э[\╦Ш\[Щ┌[
+КN╚N┬ИYИ
+]Z[	ЙИ]Z[ЬЫ▌▄╚	ЙИ]Z[ЬЫ▌▄╦Ы[Щ▌
+HЭ[\
+<'ъд	╪█▄KЪЭ[\ЭШ[Ь┌]▀X
+
+HOИЭ[\╘Ш\┌T┘X▌[█К	▌Ш[Ь┌]╔╩JN┬ИYИ
+]Z[	ЙИ]Z[ЬЩ[YYY\╚	ЙИ]Z[ЬЩ[YYY\╦Ы[Щ▌
+HЭ[\
+<'цc╚	╪█▄KЪЭ[\ЬЩ[YYY\▀X
+
+HOИЭ[\╘Ш\┌T┘X▌[█К	▄Щ[YYY\╔╩JN┬ИЭ[\
+<'фч	╪█▄KЪЭ[\ЩЭ[X▄[ТШ]Z╪[JN┬ИЭ[\
+8з*	╪█▄KЪЭ[\Ш\┌▀X\┌╨XЫ▌]^JN┬ИЫ▐Ш\[Щ┌[
+Э[\╩N┬И██Ь▌Ы┘HH[
+	▄	╦	▄Ш\┌K]^█[\	╦^
+N┬ИЫ▐Ш\[Щ┌[
+Ы┘JN┬ИYИ
+^Ы[Щ▌ИНМ
+H┬И██Ь▌[▄ЩHH[
+	╪Э]█Й╦	█[Ъ╦XЭЙ╦█▄KЫ[▄ЩJN╚[▄ЩKЭ\HH	╪Э]█Й╬┬И[▄ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚██Ь▌▄[ИHЫ┘KШ█\▄╙\▌Ш██ЭZ[Ь╩	╪█[\	╩N╚Ы┘KШ█\▄╙\▌Э┘┘█J	╪█[\	╦[▄[КN╚[▄ЩKЭ^██Э[ЭH▄[И╚█▄KЫ\▄╚И█▄KЫ[▄ЩN╚JN┬ИЫ▐Ш\[Щ┌[
+[▄ЩJN┬ИH[┘HЫ┘KШ█\▄╙\▌ЬЩ[[▌ЩJ	╪█[\	╩N┬И╦╚X┌▐H██▌\ЛЭ[XЩ\Ь╚[Щ\ЩX▌[█И
+╪[▌[]YИH┘YZ┘^I▄╚▄Щ[ЩH┌Y█Й▄╚▄Щ╚\╚H┌Y█Й▄╚Щ\▌Ш[Ь┌]
+KВИ██Ь▌X┌▐HH▌]KЬШ\┌SX┌▐V┌┘^WH	ЙИ▌]KЬШ\┌SX┌▐V┌┘^WV╘▌Ъ[Щ╩][KЬШ\┌JWN┬И]X┌▐U^H	╔╬┬ИYИ
+X┌▐H	ЙИ█▄KШ██▌\Ь╓█X┌▐KЬ[Щ]JH┬И██Ь▌Ы▐ИH[
+	┘]Й╦	▄Ш\┌K[X┌▐I╩N┬ИЫ▐ЛШ\[Щ┌[
+[
+	┌	╦Э[<'у`	╪█▄KЫX┌▐U]_X
+JN┬И╦╚██▌\И[Щ\ЩX▌[█ИЫ█▌╚H┘YZ┘^H▄Щ
+H╪[YHЫ▄И]Щ\ЮH┌Y█КN╚Э[XЩ\Ь╚YH┌Y█И▄Щ	▄╦ИH┌Y█Й▄╚▌█ВИ╦╚██▌\И[Щ\ЩX▌[█И
+]╚Щ\▌Ш[Ь┌]
+H\ЩHYY┌[И^HYЩЩ\ЛВИ██Ь▌▌█ИHX┌▐KЬ┌Y█Ч▄[Щ]	ЙИX┌▐KЬ┌Y█Ч▄[Щ]OOHX┌▐KЬ[Щ]	ЙИ█▄KШ██▌\Ь╓█X┌▐KЬ┌Y█Ч▄[Щ]H╚X┌▐KЬ┌Y█Ч▄[Щ]ИЭ[┬ИYИ
+▌█КHЫ▐ЛШ\[Щ┌[
+[
+	▄█X[	╦	█X┌▐K\▌XЙ╦█▄KЫX┌▐Q^JJN┬И██Ь▌┌\╚H[
+	┘]Й╦	█X┌▐KX┌\╔╩N┬И██Ь▌┌\H
+X██ЛXЩ[Ш[YJHOИ╚██Ь▌╚H[
+	▄▄[Й╦	█X┌▐KX┌\	╩N╚╦Ш\[Щ
+[
+	▄█X[	╦Э[	┌X██ЯH	█XЩ[X
+K[
+	╪Й╦Э[Ш[YJJN╚Щ]\ЫИ╬╚N┬И┌\╦Ш\[Щ
+┌\
+	№'ук	╦█▄KШ██▌\Л█▄KШ██▌\Ь╓█X┌▐KЬ[Щ]JK┌\
+	№'х(Й╦█▄KЫЭ[XЩ\Ь╦X┌▐KЫЭ[XЩ\Ь╦ЪЫ┌[К	╦	╩JK┌\
+	№'щыI╦█▄KЩ\ЩX▌[█Л█▄KЩ\ЩX▌[█Ь╓█X┌▐KЬ[Щ]JJN┬ИЫ▐ЛШ\[Щ┌[
+┌\╩N┬ИX┌▐U^HЧ╝'у`	╪█▄KЫX┌▐U]_W╝'ук	╪█▄KШ██▌\ЯNИ	╪█▄KШ██▌\Ь╓█X┌▐KЬ[Щ]_H0н╚<'х(И	╪█▄KЫЭ[XЩ\Ь▀NИ	█X┌▐KЫЭ[XЩ\Ь╦ЪЫ┌[К	╦	╩_H0н╚<'щыH	╪█▄KЩ\ЩX▌[█ЯNИ	╪█▄KЩ\ЩX▌[█Ь╓█X┌▐KЬ[Щ]_X┬ИYИ
+▌█КH┬И██Ь▌▄X┌X[H[
+	┘]Й╦	█X┌▐K\┌Y█Й╩N┬И▄X┌X[Ш\[Щ
+[
+	▄█X[	╦	█X┌▐K\▌XЙ╦8з*	╪█▄KЫX┌▐T┌Y█ЯX
+K[
+	╪Й╦Э[<'ук	╪█▄KШ██▌\Ь╓█▌█Ч_H0н╚<'щыH	╪█▄KЩ\ЩX▌[█Ь╓█▌█Ч_X
+JN┬ИЫ▐ЛШ\[Щ┌[
+▄X┌X[
+N┬ИX┌▐U^
+╧H╕з*	╪█▄KЫX┌▐T┌Y█ЯNИ<'ук	╪█▄KШ██▌\Ь╓█▌█Ч_H0н╚<'щыH	╪█▄KЩ\ЩX▌[█Ь╓█▌█Ч_X┬ИBИЫ▐Ш\[Щ┌[
+Ы▐КN┬ИBИ██Ь▌X▌[█Ь╚H[
+	┘]Й╦	▄Ш\┌KXX▌[█Ь╔╩N┬И██Ь▌\┌╨Э]█ИH[
+	╪Э]█Й╦	▄Ш\┌KX\┌╔╦8з*	╪█▄KШ\┌▀X
+N╚\┌╨Э]█ЛЭ\HH	╪Э]█Й╬┬И\┌╨Э]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\┌╨XЫ▌]^JN┬И██Ь▌┌\ЩHH╪SXЩ[
+[
+	╪Э]█Й╦	▌╪KXЭЙ╩K█▄KЬ┌\ЩJN╚┌\ЩKЭ\HH	╪Э]█Й╬┬И┌\ЩKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌Y\▄╪Y┘HH	╘РT╥W╥P╙╙Ф╓┌][KЬШ\┌HHW_H	▌]_WЧЙ▌^I█X┌▐U^WЧ╕а%Ю[▌\ЫX^XH\▌Ы╨┌]И	▌┌[Щ▌╦Ы╪╪][█И	ЙИ┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[И╚┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[ИИ	╔▀X┬ИЮH╚┌[Щ▌╦Ы▄[К╬Л╦▌╪KЫYK╧▌^I┘[Ш█┘UTТP██\█Щ[Э
+Y\▄╪Y┘KЬЩ\X┘J╓╫LМНЛWLМОWK┘╦	╔╩J_X	╫╪Ы[Ъ╔╩N╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ╚ЬЫ▌▄┘\И
+Л╚BИJN┬И██Ь▌Э[H[
+	╪Э]█Й╦	█[Ъ╦XЭЙ╦	╪█▄KЩЭ[H8а.Ш
+N╚Э[Э\HH	╪Э]█Й╬┬ИЭ[ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦▄[ТШ]Z╪[JN┬ИX▌[█Ь╦Ш\[Щ
+\┌╨Э]█Л┌\ЩKЭ[
+N┬ИЫ▐Ш\[Щ┌[
+X▌[█Ь╩N┬ИЫ▐Ш\[Щ┌[
+[
+	┌	╦	▄Ш\┌KY]Z[╦ZXY	╦█▄KЩ]Z[╩JN┬ИBИ╦╚[Щ]Ш[Ь┌]╚\╚╪\Щ╚
+▐[XЫ█Ш[YK▌\┘KШ]Ы▌\ШXЫH▄ИЫ▌┌]]ЬЪ[Щ▄╩KШ]Ы▌\ШXЫH█Щ\╚Ъ\Ь▌ВИ██Ь▌SСU╤╙T╚H╪ЪЩX▌ЩЬЩY^ЩJ╚▌[ОИ	°ж"I╦[██ОИ	°ж/I╦X\Ь╬И	°ж`Й╦Y\Ш▌\ЮNИ	°ж/╔╦Э\]\ОИ	°ж`╔╦Щ[Э\╬И	°ж`	╦╪]\ЫОИ	°жa	╦ШZNИ	°ж"Й╦┘]NИ	°ж"╔╚JN┬ИЭ[Ш▌[█ИШ[Ь┌]╪\Щ╩Ы▌▄╩H┬И██Ь▌█▄HH██^
+
+KЬШ\┌N┬И██Ь▌▄ЪYH[
+	┘]Й╦	▌Ш[Ь┌]Y▄ЪY	╩N┬И██Ь▌█▄ЭYH╦ЛЛЬЫ▌▄╦ЩЪ[\КЫ▌╚OИЫ▌╦Щ██┘
+KЛЛЬЫ▌▄╦ЩЪ[\КЫ▌╚OИ\Ы▌╦Щ██┘
+WN┬ИЫ▄И
+██Ь▌Ы▌╚┘И█▄ЭY
+H┬И██Ь▌╪\ЩH[
+	┘]Й╦Ш[Ь┌]X╪\Щ	▄Ы▌╦Щ██┘╚	█┌╔╚И	█Ы╔▀X
+N┬И██Ь▌█\H[
+	▄▄[Й╦	▌Ш[Ь┌]Y█\	╦SСU╤╙T╓▄Ы▌╦ЫШ[YWH	°а(Й╩N┬И█\Ь▌[KШШX┌┘▄Ы▌[ЩHSСU╨╙╙╘Ф╓▄Ы▌╦ЫШ[YWH	╚╬	╬┬И██Ь▌XYH[
+	┘]Й╦	▌Ш[Ь┌]ZXY	╩N┬И██Ь▌Ш[Y\╚H[
+	┘]Й╦	▌Ш[Ь┌][Ш[Y\╔╩N┬ИШ[Y\╦Ш\[Щ
+[
+	╪Й╦Э[Ы▌╦ШЫ┘HЫ▌╦ЫШ[YJK[
+	▄█X[	╦Э[Ы▌╦Ъ▌\┘U^	╔╩JN┬ИXYШ\[Щ
+█\Ш[Y\╦[
+	▄▄[Й╦Ш[Ь┌]]Y╚	▄Ы▌╦Щ██┘╚	█┌╔╚И	█Ы╔▀XЫ▌╦Щ██┘╚8з%	╪█▄KЭШ[Ь┌]██┘XИ8жи	╪█▄KЭШ[Ь┌]╪\Щ_X
+JN┬И╪\ЩШ\[Щ
+XY[
+	▄	╦	▌Ш[Ь┌]\Ш\┘I╦Ы▌╦ЬШ\┘HЫ▌╦Э^
+JN┬И▄ЪYШ\[Щ┌[
+╪\Щ
+N┬ИBИЩ]\ЫИ▄ЪY┬ИBИЭ[Ш▌[█ИЭ[\╘Ш\┌T┘X▌[█КШ[YJH┬И██Ь▌▄▌H▌]KЬШ\┌RЭ[\▀N┬ИYИ
+\▄▌Ш╪\Щ\▄▌█Ш[YWJHЩ]\ЫО┬И▄▌Ш╪\ЩЫ▄[ИHЭYN╚╦╚H]Z[╚╪\Щ\╚Ы█Y╚▄[И][И╪▄Ы█╚H┘X▌[█ВИЮH╚▄▌█Ш[YWKЬ╪▄Ы█[Э╒ЪY]╩╚ЩZ]Ъ[▄ОИ	▄█[█▌	╦Ы╪┌╬И	▄▌\Э	╚JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И█\ИЬЫ▌▄┘\Ь╚
+Л╚BИBИЭ[Ш▌[█ИЩ[Щ\ФШ\┌Q^J
+H┬И██Ь▌^HH▌]KЩ^N┬ИYИ
+Y^JH╚	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH
+	┘[Ш]ШZ[XЫI╩N╚Щ]\ЫО╚BИ	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH	╪╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦^KЩ]K	┘Э[	╩_H0н╚	▌
+	█[██Ь┌Y█Й╩_NИ	▄┌Y█УШ[YJ^KЫ[██Ч▄Ш\┌V╠KЪ[Щ^
+_X┬И██Ь▌Z[ЩHH▌]KШ┌\Э╚▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^И┬И██Ь▌]Z[H┌\ЭRKЩ█╪┌\ШS▌]█┌╩^K▌]KЫ[Щ╩K[██Р╪\Щ╚H┌\ЭRKЬШ\┌S▌]█┌╩^K▌]KЫ[Щ╩N┬ИЫ▄И
+██Ь▌][H┘И[██Р╪\Щ╩H┬И██Ь▌[▄ЩHH]Z[┌][KЬШ\┌HHWN┬ИYИ
+▌]KЬШ\┌TX┌╚	ЙИ][KЬШ\┌HOOH▌]KЬШ\┌TX┌╩H██Э[ЭYN┬И██Ь▌█ЩHH[▄ЩH╚[▄ЩKЭ█ЩHИ][KЭ█ЩN┬И██Ь▌╪\ЩH[
+	┘]Z[╔╦Ш\┌KX╪\Щ	▌█Щ_I┌][KЬШ\┌HOOHZ[ЩH╚	╚Z[ЩI╚И	╔▀X
+N┬ИYИ
+][KЬШ\┌HOOHZ[ЩH	ЙИ\▌]KЬШ\┌TX┌╩H╪\ЩЫ▄[ИHЭYN┬ИYИ
+▌]KЬШ\┌TX┌╩HЩ[Щ\ФШ\┌TЩXY[Щ╩][K[▄ЩK^JN┬И██Ь▌XYH[
+	▄▌[[X\ЮI╦Э[
+N┬ИXYШ\[Щ┌[
+[
+	▄▌Ы█Щ╔╦Э[	▌[ЭY
+█ЩJ_H	┌][KЫШ[Y_X
+JN┬ИYИ
+][KЬШ\┌HOOHZ[ЩJHXYШ\[Щ┌[
+[
+	▄▄[Й╦	▌Y╚Ы▌╔╦
+	┌Ш[ЫXTШ\┌I╩JJN┬ИYИ
+[▄ЩJHXYШ\[Щ┌[
+[
+	▄▄[Й╦	▄Ш\┌KX█▌[Э	╦[▄ЩKШ█▌[Э
+JN┬И╪\ЩШ\[Щ┌[
+XY
+N┬ИYИ
+[▄ЩJH╪\ЩШ\[Щ┌[
+[
+	▄	╦	▄Ш\┌K]Щ\ЩX▌	╦[▄ЩKЭЩ\ЩX▌
+JN┬ИYИ
+[▄ЩJH╪\ЩШ\[Щ┌[
+\ЩXPЫ╪┌╩[▄ЩKШ\ЩX\╩JN┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦Э[][KЪ┌[Щ
+JN┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦][KШ\ЩXJJN┬ИYИ
+[▄ЩJH┬И██Ь▌Ш[Ь┌]╥XYH[
+	┌	╦Э[┌\ЭRKЩ█╪┌\ШRXY
+▌]KЫ[Щ╩JN┬И╪\ЩШ\[Щ┌[
+Ш[Ь┌]╥XY
+N┬И╪\ЩШ\[Щ┌[
+Ш[Ь┌]╪\Щ╩[▄ЩKЬЫ▌▄╩JN┬И██Ь▌Щ[YYY\╥XYHЩ[YYPЫ╪┌╩╪\Щ[▄ЩKЬЩ[YYY\╩N┬ИYИ
+▌]KЬШ\┌TX┌╩H▌]KЬШ\┌RЭ[\H╚╪\ЩШ[Ь┌]╬ИШ[Ь┌]╥XYЩ[YYY\╬ИЩ[YYY\╥XYN┬ИBИ	
+	▄Ш\┌K[\▌	╩KШ\[Щ┌[
+╪\Щ
+N┬ИBИBИ\▐[Ш╚Э[Ш▌[█И╪Y┘YZ╩
+H┬И██Ь▌▌\ЭH▌]KЬ┘[X▌Y]K┘^HH	▄▌]KШ┌]__	▄▌\ЭX┬ИYИ
+\▌\Э\▌]KШ┌]H▌]KЭ┘YZ╙╪Y[Щ╚OOH┘^JHЩ]\ЫО┬И▌]KЭ┘YZ╙╪Y[Щ╚H┘^N┬И██Ь▌]\╚H\ЬШ^KЩЬЫ█J╚[Щ▌И╚K
+▌[Э\┘YКHOИ┌YЭ\█╩▌\ЭКJN┬И██Ь▌^\╚H]╪Z]Ы█Z\┘KШ[
+]\╦ЫX\
+\▐[Ш╚\█╚OИ┬И██Ь▌╪X┌YH▌]KЭ┘YZ╨╪X┌V╪	▄▌]KШ┌]__	┌\█▀XN┬ИYИ
+╪X┌Y
+HЩ]\ЫИ╪X┌Y┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K┘^K\[Ш┌[Щ╔╦╚]NИ\█╦X┘NИ▌]KШ┌]HJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KЩ^JH╚▌]KЭ┘YZ╨╪X┌V╪	▄▌]KШ┌]__	┌\█▀XHHЫ┘KЩ^N╚Щ]\ЫИЫ┘KЩ^N╚BИH╪]┌
+┘\ЬЫ▄КH╚╩ИHZ\▄┌[Щ╚^H\╚┌┌\Y
+Л╚BИЩ]\ЫИЭ[┬ИJJN┬ИYИ
+▌]KЭ┘YZ╙╪Y[Щ╚OOH┘^JHЩ]\ЫО┬И▌]KЭ┘YZ╚H╚┘^K^\╬И^\╦ЩЪ[\КЫ██X[КHN┬И▌]KЭ┘YZ╙╪Y[Щ╚HЭ[┬ИЩ[Щ\ФШ\┌J
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\ФШ\┌U┘YZ╩
+H┬И██Ь▌┘^HH	▄▌]KШ┌]__	▄▌]KЬ┘[X▌Y]_X┬ИYИ
+\▌]KЭ┘YZ╚▌]KЭ┘YZ╦Ъ┘^HOOH┘^JH╚	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH
+	┘╪Y[Щ╔╩N╚Ы┌Y╪Y┘YZ╩
+N╚Щ]\ЫО╚BИ██Ь▌^\╚H▌]KЭ┘YZ╦Щ^\╬┬ИYИ
+Y^\╦Ы[Щ▌
+H╚	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH
+	┘[Ш]ШZ[XЫI╩N╚Щ]\ЫО╚BИ██Ь▌Ш[Щ┘HH	╪╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦^\╓╠KЩ]K	┘^S[█Э	╩_H8а$╚	╪╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦^\╓┘^\╦Ы[Щ▌HWKЩ]K	┘^S[█Э	╩_X┬И	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH	▌
+	▌ЪY]╒┘YZ╔╩_NИ	▄Ш[Щ┘_X┬И██Ь▌Z[ЩHH▌]KШ┌\Э╚▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^И┬ИЫ▄И
+██Ь▌][H┘И┌\ЭRKЭ┘YZ╙▌]█┌╩^\╦▌]KЫ[Щ╦^SXЩ[
+JH┬ИYИ
+▌]KЬШ\┌TX┌╚	ЙИ][KЬШ\┌HOOH▌]KЬШ\┌TX┌╩H██Э[ЭYN┬И██Ь▌╪\ЩH[
+	┘]Z[╔╦Ш\┌KX╪\Щ	┌][KЭ█Щ_I┌][KЬШ\┌HOOHZ[ЩH╚	╚Z[ЩI╚И	╔▀X
+N┬ИYИ
+][KЬШ\┌HOOHZ[ЩJH╪\ЩЫ▄[ИHЭYN┬И██Ь▌XYH[
+	▄▌[[X\ЮI╦Э[
+N┬ИXYШ\[Щ┌[
+[
+	▄▌Ы█Щ╔╦Э[	▌[ЭY
+][KЭ█ЩJ_H	┌][KЫШ[Y_X
+JN┬ИYИ
+][KЬШ\┌HOOHZ[ЩJHXYШ\[Щ┌[
+[
+	▄▄[Й╦	▌Y╚Ы▌╔╦
+	┌Ш[ЫXTШ\┌I╩JJN┬ИXYШ\[Щ┌[
+[
+	▄▄[Й╦	▄Ш\┌KX█▌[Э	╦Ш[Щ┘JJN┬И╪\ЩШ\[Щ┌[
+XY
+N┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦	▄Ш\┌K]Щ\ЩX▌	╦][KЭЩ\ЩX▌
+JN┬И██Ь▌▌Ъ\H[
+	┘]Й╦	▌┘YZ╦\▌Ъ\	╩N┬ИЫ▄И
+██Ь▌^H┘И][KЬ▌Ъ\
+H╚██Ь▌┘[H[
+	▄▄[Й╦┘YZ╦Y^H	┘^KЭ█Щ_X
+N╚┘[Ш\[Щ
+[
+	╪Й╦Э[^KЫXЩ[
+K[
+	▄█X[	╦Э[▌Ъ[Щ╩^KЩ^JJK[
+	┌I╦Э[[ЭY
+^KЭ█ЩJJJN╚▌Ъ\Ш\[Щ┌[
+┘[
+N╚BИ╪\ЩШ\[Щ┌[
+▌Ъ\
+N┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦Э[][KШЩ\▌
+JN╚╪\ЩШ\[Щ┌[
+[
+	▄	╦Э[][KШ╪\ЩJJN┬И╪\ЩШ\[Щ┌[
+[
+	┌	╦Э[┌\ЭRKЭ┘YZ╥XY
+▌]KЫ[Щ╩JJN╚╪\ЩШ\[Щ┌[
+\ЩXPЫ╪┌╩][KШ\ЩX\╩JN┬И╪\ЩШ\[Щ┌[
+[
+	┌	╦Э[┌\ЭRKЬ█▌╥XY
+▌]KЫ[Щ╩JJN┬И██Ь▌[Щ]╚H[
+	▌[	╦	▄Ш\┌K\[Щ]╔╩N┬ИЫ▄И
+██Ь▌Ы▌╚┘И][KЬ█▌╘Ы▌▄╩H[Щ]╦Ш\[Щ┌[
+[
+	█I╦Ы▌╦Щ██┘╚	█┌╔╚И	█Ы╔╦Ы▌╦Э^
+JN┬И╪\ЩШ\[Щ┌[
+[Щ]╩N┬ИЩ[YYPЫ╪┌╩╪\Щ][KЬЩ[YYY\╩N┬И	
+	▄Ш\┌K[\▌	╩KШ\[Щ┌[
+╪\Щ
+N┬ИBИBИЭ[Ш▌[█ИЩ[Щ\ФШ\┌S[█Э
+
+H┬И██Ь▌[█ЭH▌]KЫ[█Э┬ИYИ
+[[█Э[█ЭЮYX\ИOOH▌]KЭЪY]╦ЮYX\И[█ЭЫ[█ЭOOH▌]KЭЪY]╦Ы[█Э
+H╚	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH
+	┘╪Y[Щ╔╩N╚Щ]\ЫО╚BИ██Ь▌^\╚H[█ЭЩ^\╦ЩЪ[\КЫ▌╚OИЫ▌╦Ы[██Ч▄Ш\┌W┌[Щ^	ЙИЫ▌╦Ь[Щ]▄Ш\┌\╩KЫX\
+Ы▌╚OИ
+╚]NИЫ▌╦Щ]K[██Ч▄Ш\┌NИ▐╚[Щ^ИЫ▌╦Ы[██Ч▄Ш\┌W┌[Щ^WK[Щ]▄Ш\┌\╬ИЫ▌╦Ь[Щ]▄Ш\┌\╚JJN┬ИYИ
+Y^\╦Ы[Щ▌
+H╚	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH
+	┘[Ш]ШZ[XЫI╩N╚Щ]\ЫО╚BИ	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH	▌
+	▌ЪY]╙[█Э	╩_NИ	╪╪[[Щ\ХRKЫ[█Э]J[█ЭЮYX\Л[█ЭЫ[█Э▌]KЫ[Щ╩_X┬И██Ь▌^SЭ[XЩ\ИH\█╚OИ▌Ъ[Щ╩Э[XЩ\К\█╦Ь█X┘J
+JJN┬И██Ь▌[▌Щ\╚H[
+	┘]Й╦	▄Ш\┌K[[▌Щ\╔╩N┬И[▌Щ\╦Ш\[Щ┌[
+[
+	┌	╦Э[┌\ЭRKЫ[█Э[▌Щ\╥XY
+▌]KЫ[Щ╩JJN┬И██Ь▌\▌H[
+	▌[	╦	▄Ш\┌K\[Щ]╔╩N┬ИЫ▄И
+██Ь▌[ЩH┘И┌\ЭRKЬ[Щ][▌Щ\╩^\╦▌]KЫ[Щ╦\█╚OИ╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦\█╦	┘^S[█Э	╩JJH\▌Ш\[Щ┌[
+[
+	█I╦Э[[ЩJJN┬И[▌Щ\╦Ш\[Щ┌[
+\▌
+N┬И	
+	▄Ш\┌K[\▌	╩KШ\[Щ┌[
+[▌Щ\╩N┬И██Ь▌Z[ЩHH▌]KШ┌\Э╚▌]KШ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^И┬ИЫ▄И
+██Ь▌][H┘И┌\ЭRKЫ[█Э▌]█┌╩^\╦▌]KЫ[Щ╦^SЭ[XЩ\КJH┬ИYИ
+▌]KЬШ\┌TX┌╚	ЙИ][KЬШ\┌HOOH▌]KЬШ\┌TX┌╩H██Э[ЭYN┬И██Ь▌╪\ЩH[
+	┘]Z[╔╦Ш\┌KX╪\Щ	┌][KЭ█Щ_I┌][KЬШ\┌HOOHZ[ЩH╚	╚Z[ЩI╚И	╔▀X
+N┬ИYИ
+][KЬШ\┌HOOHZ[ЩJH╪\ЩЫ▄[ИHЭYN┬И██Ь▌XYH[
+	▄▌[[X\ЮI╦Э[
+N┬ИXYШ\[Щ┌[
+[
+	▄▌Ы█Щ╔╦Э[	▌[ЭY
+][KЭ█ЩJ_H	┌][KЫШ[Y_X
+JN┬ИYИ
+][KЬШ\┌HOOHZ[ЩJHXYШ\[Щ┌[
+[
+	▄▄[Й╦	▌Y╚Ы▌╔╦
+	┌Ш[ЫXTШ\┌I╩JJN┬И╪\ЩШ\[Щ┌[
+XY
+N┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦	▄Ш\┌K]Щ\ЩX▌	╦][KЭЩ\ЩX▌
+JN┬И██Ь▌▄ЪYH[
+	┘]Й╦	█[█Э\▌Ъ\	╩N┬ИЫ▄И
+██Ь▌^H┘И][KЬ▌Ъ\
+H╚██Ь▌┘[H[
+	▄▄[Й╦[█ЭY^H	┘^KЭ█Щ_X
+N╚┘[Ш\[Щ
+[
+	╪Й╦Э[^KЫXЩ[
+K[
+	┌I╦Э[[ЭY
+^KЭ█ЩJJJN╚▄ЪYШ\[Щ┌[
+┘[
+N╚BИ╪\ЩШ\[Щ┌[
+▄ЪY
+N┬И╪\ЩШ\[Щ┌[
+[
+	▄	╦Э[][KШЩ\▌
+JN╚╪\ЩШ\[Щ┌[
+[
+	▄	╦Э[][KШ╪\ЩJJN┬И╪\ЩШ\[Щ┌[
+\ЩXPЫ╪┌╩][KШ\ЩX\╩JN┬И╪\ЩШ\[Щ┌[
+[
+	┌	╦Э[┌\ЭRKЬ█▌╥XY
+▌]KЫ[Щ╩JJN┬И██Ь▌[Щ]╚H[
+	▌[	╦	▄Ш\┌K\[Щ]╔╩N┬ИЫ▄И
+██Ь▌Ы▌╚┘И][KЬ█▌╘Ы▌▄╩H[Щ]╦Ш\[Щ┌[
+[
+	█I╦Ы▌╦Щ██┘╚	█┌╔╚И	█Ы╔╦Ы▌╦Э^
+JN┬И╪\ЩШ\[Щ┌[
+[Щ]╩N┬ИЩ[YYPЫ╪┌╩╪\Щ][KЬЩ[YYY\╩N┬И	
+	▄Ш\┌K[\▌	╩KШ\[Щ┌[
+╪\Щ
+N┬ИBИBИЭ[Ш▌[█ИЩ[Щ\ФШ\┌J
+H┬И	
+	▄Ш\┌K[\▌	╩KЬЩ\X┘P┌[Щ[К
+N┬И▌]KЬШ\┌RЭ[\HЭ[┬И	
+	▄Ш\┌K\ЩXY[Щ╔╩KЬЩ\X┘P┌[Щ[К
+N┬ИЩ[Щ\ФШ\┌TX┌┘\К
+N┬И	
+	▄Ш\┌K]]I╩KЭ^██Э[ЭH
+	▄Ш\┌\[	╩N┬И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╚▄Ш\┌K[[┘HЭ]█Й╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШ█\▄╙\▌Э┘┘█J	██Й╦Э]█ЛЩ]\┘]ЬЫ[┘HOOH▌]KЬШ\┌S[┘JJN┬И██Ь▌[Ъ]H▌]KЬШ\┌S[┘HOOH	▌┘YZ╔╚╚
+	▌ЪY]╒┘YZ╔╩HИ▌]KЬШ\┌S[┘HOOH	█[█Э	╚╚
+	▌ЪY]╙[█Э	╩HИ	╔╬┬И	
+	▄Ш\┌K\Щ]Й╩KЭ^██Э[ЭH[Ъ]╚8а.H	▌[Ъ]XИ
+	▄Щ]Ъ[▌\╤^I╩N┬И	
+	▄Ш\┌K[Щ^	╩KЭ^██Э[ЭH[Ъ]╚	▌[Ъ]H8а.ШИ
+	█Щ^^I╩N┬ИYИ
+▌]KЬШ\┌TX┌╚	ЙИЩ]╪\ЩYЫ▄К	▄Ш\┌\[	╩H	ЙИ\Ш\┌U[Ы╪┌┘Y
+
+JH╚╦╚█Ш┘HH^NИ█ЩHY▄[Ь╚HЩXY[Щ▄┬И██Ь▌█▄HH██^
+
+KЬШ\┌KЫ▐H	
+	▄Ш\┌K\ЩXY[Щ╔╩N┬И	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH▌]KЩ^H╚╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦▌]KЩ^KЩ]K	┘Э[	╩HИ	╔╬┬И██Ь▌┘YHH[
+	╪Э]█Й╦	▄[K\╪╪[ИЩ]╪\ЩXЭЙ╦█▄KЭ[Ы╪┌╚╙╙╫╨╙╘KЩ[ЛЬШ\┌KЭ[Ы╪┌╩N╚┘YKЭ\HH	╪Э]█Й╬┬И┘YKШY]Щ[Э\▌[Щ\К	╪█X┌╔╦\▐[Ш╚
+
+HOИ┬ИYИ
+J]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО┬ИЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JРT╥W╒SУ╨╥╫╥╤VK╪╪[\█╩Щ]╚]J
+JJN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌Щ[Y[XЩ\ЩYИ\┌▄╚Y╪Z[ИЩ^[YH
+Л╚BИЩ[Щ\ФШ\┌J
+N┬ИJN┬ИЫ▐ЬЩ\X┘P┌[Щ[К[
+	┌╔╦	▄Ш\┌K\ЩXY[Щ╦]]I╦	╘РT╥W╥P╙╙Ф╓▄▌]KЬШ\┌TX┌╚HW_H	▄┌Y█УШ[YJ▌]KЬШ\┌TX┌╩_X
+K[
+	▄	╦	▄Ш\┌KZ[Э	╦█▄KЭ[Ы╪┌╙Ы▌H╙╙╫╨╙╘KЩ[ЛЬШ\┌KЭ[Ы╪┌╙Ы▌JK┘YJN┬ИЩ]\ЫО┬ИBИYИ
+\▌]KЬШ\┌TX┌╩H╚╦╚Ы▌[Щ╚X┌┘YY]ИЭ\▌H┌Y█И▄ЪY[ЩH[ЭИ	
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭH▌]KЩ^H╚╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦▌]KЩ^KЩ]K	┘Э[	╩HИ	╔╬┬ИЩ]\ЫО┬ИBИYИ
+▌]KЬШ\┌S[┘HOOH	▌┘YZ╔╩HЩ[Щ\ФШ\┌U┘YZ╩
+N╚[┘HYИ
+▌]KЬШ\┌S[┘HOOH	█[█Э	╩HЩ[Щ\ФШ\┌S[█Э
+
+N╚[┘HЩ[Щ\ФШ\┌Q^J
+N┬ИBИ╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╚▄Ш\┌K[[┘HЭ]█Й╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚▌]KЬШ\┌S[┘HHЭ]█ЛЩ]\┘]ЬЫ[┘N╚Щ[Щ\ФШ\┌J
+N╚JJN┬И██Ь▌Ш\┌T▌\H^\╚OИ╚YИ
+▌]KЬШ\┌S[┘HOOH	█[█Э	╩H[▌ЩS[█Э
+^\╩N╚[┘H┘[X▌]J┌YЭ\█╩▌]KЬ┘[X▌Y]H╪╪[\█╩Щ]╚]J
+JK▌]KЬШ\┌S[┘HOOH	▌┘YZ╔╚╚^\╚
+И╚И^\╩JN╚N┬И	
+	▄Ш\┌K\Щ]Й╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИШ\┌T▌\
+LJJN┬И	
+	▄Ш\┌K[Щ^	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИШ\┌T▌\
+JJN┬И	
+	▄Ш\┌K]┘^I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┘[X▌]J▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+JJJN┬ИЭ[Ш▌[█ИЩ[Щ\С^J
+H┬ИЩ[Щ\ФШ\┌J
+N┬ИЩ[Щ\Т█YPZJ
+N┬И██Ь▌^HH▌]KЩ^N┬ИYИ
+Y^JH╚█X\С^J
+N╚Щ]\ЫО╚BИ██Ь▌]HH^KЩ]N┬И██Ь▌█ЩHH^OИ▐╚^WN┬И██Ь▌\╚H\█╚OИ
+	▌\╔╩KЬЩ\X┘J	▐▌[Y_I╦█╪┌╩\█╦]JJN┬И██Ь▌┘Y█Y[Э╚H
+\▌Ш[YS┘КHOИ\▌ЫX\
+][HOИ
+╚^ИШ[YS┘К][KЪ[Щ^
+H▌Ъ[Щ╩][KЪ[Щ^
+KЫ▌NИ][KЩ[Щ╫╪]╚\╩][KЩ[Щ╫╪]
+HИ	╔╚JJN┬И██Ь▌▄[ИHZ\ИOИ█ЩJ	╪█╪┌╩Z\Ц╠K]J_H8а$╚	╪█╪┌╩Z\Ц╠WK]J_X
+N┬И██Ь▌[██С]Щ[ЭH\█╚OИ█ЩJ\█╚╚█╪┌╩\█╦]JHИ
+	█Ы╙[██С]Щ[Э	╩JN┬И██Ь▌┌Y█ИH[Щ^OИ┌Y█УШ[YJ[Щ^
+H▌Ъ[Щ╩[Щ^
+N┬И██Ь▌Ш[YS\▌H
+[ЩX┘\╦Ш[YS┘КHOИ[ЩX┘\╦ЫX\
+Ш[YS┘КKЪЫ┌[К	╦	╩N┬И██Ь▌]SШ[YHH[Щ^OИШ[Y\╦Э]SШ[YJ[Щ^▌]KЫ[Щ╩N┬И██Ь▌ШZ▄┌]ШSШ[YHH[Щ^OИШ[Y\╦ЫШZ▄┌]ШSШ[YJ[Щ^▌]KЫ[Щ╩N┬ВИYИ
+^KЩ]HOOH▌]KЭ┘^R\█╩H╚▌]KЭ┘^HH^N╚Щ[Щ\Х┘^T▌Ъ\
+
+N╚BИ	
+	┘[[██Й╩KЭ^██Э[ЭH[██С[[┌ЪJ^KЭ]V╠KЪ[Щ^
+N┬И	
+	┘Y]K]]I╩KЭ^██Э[ЭH╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦]K	┘Э[	╩N┬И	
+	┘\▌XЭ]I╩KЭ^██Э[ЭH	█Ш[Y\╦ЬZ▄┌SШ[YJ^KЬZ▄┌K▌]KЫ[Щ╩_K	▌]SШ[YJ^KЭ]V╠KЪ[Щ^
+_X┬И	
+	┘\X┘I╩KЭ^██Э[ЭH	┘^KЬX┘_K	┘^KШ█▌[ЭЮW╪█┘_X┬ВИ██Ь▌▌Ъ\H	
+	┘\▌[Л\▌Ъ\	╩N╚▌Ъ\ЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌┌X██ЛXЩ[\█╫H┘И╓╔№'у!I╦
+	▄▌[ЬЪ\┘I╩K^KЬ▌[ЬЪ\┘WK╔№'у!╔╦
+	▄▌[Ь┘]	╩K^KЬ▌[Ь┘]K╔№'у&I╦
+	█[██ЬЪ\┘I╩K^KЫ[██ЬЪ\┘WK╔№'у&	╦
+	█[██Ь┘]	╩K^KЫ[██Ь┘]WJH┬И██Ь▌[HH[
+	┘]Й╦	▄▌[Л][I╩N┬И[KШ\[Щ
+[
+	▄▄[Й╦	┌X╔╦X██КK[
+	▄█X[	╦Э[XЩ[
+K[
+	╪Й╦Э[\█╚╚█╪┌╩\█╦]JHИ
+	█Ы╙[██С]Щ[Э	╩JJN┬И▌Ъ\Ш\[Щ┌[
+[JN┬ИBИ██Ь▌┘^\╚H	
+	┘Z┘^I╩N╚┘^\╦ЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌╪██▄ЛXЩ[\▌Ш[YS┘ЧH┘И┬И╔╚┘МШ╠MI╦
+	▌]I╩K^KЭ]K]SШ[YWK╔╚╠ЩШ═N	╦
+	█ШZ▄┌]ШI╩K^KЫШZ▄┌]ШKШZ▄┌]ШSШ[YWKИ╔╚╬XН╪ЩЩЙ╦
+	▐[┘╪I╩K^KЮ[┘╪K[Щ^OИШ[Y\╦Ю[┘╪SШ[YJ[Щ^▌]KЫ[Щ╩WK╔╚┘ЩНШОI╦
+	┘╪\Ш[ШI╩K^KЪ╪\Ш[ШW┌[Ч▌]K[Щ^OИШ[Y\╦Ъ╪\Ш[ШSШ[YJ[Щ^▌]KЫ[Щ╩WWJH┬И██Ь▌┌\H[
+	┘]Й╦	┌┘^KX┌\	╩N┬И┌\Ь┘]]ЪXЭ]J	▄▌[I╦KX╬Й╪██▄ЯX
+N┬И┌\Ш\[Щ
+[
+	▄█X[	╦Э[XЩ[
+K[
+	╪Й╦Э[Ш[YS┘К\▌╠KЪ[Щ^
+H	╔╩K[
+	▄▄[Й╦Э[\╩\▌╠KЩ[Щ╫╪]
+JJN┬И┘^\╦Ш\[Щ┌[
+┌\
+N┬ИBИ██Ь▌┘YZ┘^HH╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦Щ]╚]J	┘]_ULОММШ
+KЩ┘]U╤^J
+JN┬И██Ь▌Ш[[TЫ▌▄╚H┬И▌
+	┘██┘┌[ЩШXШ[[I╩K^KЫ[██Ч▄Ш\┌KЫX\
+][HOИ
+╚^ИШ[YS\▌
+][KЩ██┘╪┌[ЩШXШ[[W▄Ш\┌\╦┌Y█КKЫ▌NИ\╩][KЩ[Щ╫╪]
+HJJWKИ▌
+	╪\┌[XP┌[ЩШI╩K^KЫ[██Ч▄Ш\┌KЫX\
+][HOИ
+╚^И┌Y█К][KШ\┌[XW╪┌[ЩШW▄Ш\┌JKЫ▌NИ\╩][KЩ[Щ╫╪]
+HJJWKИ▌
+	┘██┘\ШXШ[[I╩K^KЫШZ▄┌]ШKЫX\
+][HOИ
+╚^ИШ[YS\▌
+][KЩ██┘▌\ШW█ШZ▄┌]Ш\╦ШZ▄┌]ШSШ[YJKЫ▌NИ\╩][KЩ[Щ╫╪]
+HJJWKИN┬И██Ь▌[Z[Щ▄╚H^KЭ[Z[Щ▄╬┬И	
+	┘]XЫ\╔╩KЬЩ\X┘P┌[Щ[КИ┘X▌[█К
+	┘▌[У[██Й╩K╓▌
+	▄▌[ЬЪ\┘I╩K█ЩJ█╪┌╩^KЬ▌[ЬЪ\┘K]JJWK▌
+	▄▌[Ь┘]	╩K█ЩJ█╪┌╩^KЬ▌[Ь┘]]JJWK▌
+	█[██ЬЪ\┘I╩K[██С]Щ[Э
+^KЫ[██ЬЪ\┘JWK▌
+	█[██Ь┘]	╩K[██С]Щ[Э
+^KЫ[██Ь┘]
+WWJKИ┘X▌[█К
+	┘[Ш┌[Щ╔╩K┬И▌
+	▌]I╩K┘Y█Y[Э╩^KЭ]K]SШ[YJWK▌
+	█ШZ▄┌]ШI╩K┘Y█Y[Э╩^KЫШZ▄┌]ШKШZ▄┌]ШSШ[YJWKИ▌
+	▐[┘╪I╩K┘Y█Y[Э╩^KЮ[┘╪K[Щ^OИШ[Y\╦Ю[┘╪SШ[YJ[Щ^▌]KЫ[Щ╩JWK▌
+	┘╪\Ш[ШI╩K┘Y█Y[Э╩^KЪ╪\Ш[ШW┌[Ч▌]K[Щ^OИШ[Y\╦Ъ╪\Ш[ШSШ[YJ[Щ^▌]KЫ[Щ╩JWKИ▌
+	▌Ш\ШI╩K█ЩJ┘YZ┘^JWK▌
+	▄Z▄┌I╩K█ЩJШ[Y\╦ЬZ▄┌SШ[YJ^KЬZ▄┌K▌]KЫ[Щ╩JWWJKИ┘X▌[█К
+	┘Ш\┌I╩K╓▌
+	█[██Ь┌Y█Й╩K┘Y█Y[Э╩^KЫ[██Ч▄Ш\┌K┌Y█КWK▌
+	▄▌[Ь┌Y█Й╩K█ЩJ┌Y█К^KЬ▌[Ч▄Ш\┌W┌[Щ^
+JWWK	╪╪[I╩KИ┘X▌[█К
+	┘Ш[[I╩KШ[[TЫ▌▄╦	╪╪[I╩KИ┘X▌[█К
+	┘]\▄X┌[▌\╔╩K┬И▌
+	▄Ш]Z╪[ЩXI╩K▄[К[Z[Щ▄╦ЬШ]Z▄╪[ЩXJWK▌
+	╪ЬШZXI╩K▄[К[Z[Щ▄╦ШЬШZXW█]Z\ЭJWK▌
+	╪XЪZЪ]	╩K▄[К[Z[Щ▄╦ШXЪZЪ]
+WKИ▌
+	▌ЪZШ^XI╩K▄[К[Z[Щ▄╦ЭЪZШ^XW█]Z\ЭJWK▌
+	▄╪^XZШT╪[ЩXI╩K▄[К[Z[Щ▄╦Ь╪^XZШW▄╪[ЩXJWK▌
+	█Ъ\┌]I╩K▄[К[Z[Щ▄╦ЫЪ\┌]W█]Z\ЭJWKИЛЛК
+^KШ[\Ъ]W┌╪[[H╫JKЫ[Щ▌╚╓▌██^
+
+KШ╪\Щ╦Ш[\Ъ]K^KШ[\Ъ]W┌╪[[KЫX\
+][HOИ
+╚^И	╪█╪┌╩][KЬ▌\Э╫╪]]J_H8а$╚	╪█╪┌╩][KЩ[Щ╫╪]]J_XЫ▌NИШZ▄┌]ШSШ[YJ][KЫШZ▄┌]ШW┌[Щ^
+HJJWWHИ╫JWK	┘██┘	╩KИ┘X▌[█К
+	┘[Ш]\▄X┌[▌\╔╩K┬И▌
+	▄ШZI╩K▄[К[Z[Щ▄╦ЬШZW┌╪[[JWK▌
+	▐X[XY╪[ЩI╩K▄[К[Z[Щ▄╦ЮX[XY╪[ЩJWK▌
+	┘▌[Z╪I╩K▄[К[Z[Щ▄╦Щ▌[Z╪W┌╪[[JWKИЛЛК
+^KЩ\Ы]Z\Э[H╫JKЫ[Щ▌╚╓▌██^
+
+KШ╪\Щ╦Щ\Ы]Z\Э[K^KЩ\Ы]Z\Э[KЫX\
+
+▄▌\Э[ЩJHOИ
+╚^И	╪█╪┌╩▌\Э]J_H8а$╚	╪█╪┌╩[Щ]J_XJJWWHИ╫JKИ▌
+	▌Ш\ЪЮX[I╩K^KЭШ\ЪЮX[KЫX\
+][HOИ
+╚^И	╪█╪┌╩][KЬ▌\Э╫╪]]J_H8а$╚	╪█╪┌╩][KЩ[Щ╫╪]]J_XЫ▌NИШZ▄┌]ШSШ[YJ][KЫШZ▄┌]ШW┌[Щ^
+HJJWWK	╪ШY	╩KИ┘X▌[█К
+	┘^I╩K╓▌
+	┘[Ш[X[ШI╩K█ЩJ\Ш][█К^KЩ[Ш[X[ШW█Z[Э]\╩JWK▌
+	▄Ш]Ъ[X[ШI╩K█ЩJ\Ш][█К^KЬШ]Ъ[X[ШW█Z[Э]\╩JWK▌
+	█XYXZШI╩K█ЩJ█╪┌╩^KЫXYXZШK]JJWWJJN┬ИЩ[Щ\С^P╪\Щ╩^JN┬ИBИ╦╚H^H]H█[Ш┘NИ▌┌\XXЫH╪\Щ╚Z┘HHЪ[ЭY╪[[Щ\Й▄╚Ы▐\╦\╚H┌]╨\┌\ЩH┘ИH^KВИЭ[Ш▌[█ИЩ[Щ\С^P╪\Щ╩^JH┬И██Ь▌█▄HH██^
+
+KШ╪\Щ╦]HH^KЩ]K▄▌H	
+	┘^KX╪\Щ╔╩N┬И██Ь▌Ш[Щ┘HH
+▌\Э[Щ
+HOИ	╪█╪┌╩▌\Э]J_H8а$╚	╪█╪┌╩[Щ]J_X┬И██Ь▌]SXЩ[H╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦]K	▄┌▄Э	╩N┬И██Ь▌╪\ЩH
+┌[Щ]KЫ▌▄╩HOИ┬И██Ь▌Ы▐H[
+	╪\ЭX█I╦^KX╪\Щ	┌┌[ЩX
+N┬И██Ь▌XYH[
+	┌XY\Й╩N╚XYШ\[Щ
+[
+	┌╔╦Э[]JK[
+	▄█X[	╦Э[]SXЩ[
+JN┬И██Ь▌\▌H[
+	▌[	╩N┬ИЫ▄И
+██Ь▌█XЩ[Ш[Y\╫H┘ИЫ▌▄╩H┬ИYИ
+]Ш[Y\╚]Ш[Y\╦Ы[Щ▌
+H██Э[ЭYN┬И██Ь▌][HH[
+	█I╩N╚][KШ\[Щ┌[
+[
+	╪Й╦Э[	█XЩ[NИ
+JN┬ИШ[Y\╦ЩЫ▄СXX┌
+
+Ш[YKJHOИ╚YИ
+JH][KШ\[Щ┌[
+[
+	▄▄[Й╦	╪Y╪Z[Й╦	╪█▄KШY╪Z[ЯH
+JN╚][KШ\[Щ┌[
+[
+	▄▄[Й╦Э[Ш[YJJN╚JN┬И\▌Ш\[Щ┌[
+][JN┬ИBИЫ▐Ш\[Щ
+XY\▌
+N┬ИЩ]\ЫИЫ▐┬ИN┬И██Ь▌[Z[Щ▄╚H^KЭ[Z[Щ▄╚▀N┬И██Ь▌┘Y█Y[Э╚H
+][\╦Ш[YS┘КHOИ
+][\╚╫JKЫX\
+][HOИ	█Ш[YS┘К][KЪ[Щ^
+_H
+	▄Ш[Щ┘J][KЬ▌\Э╫╪]][KЩ[Щ╫╪]
+_JX
+N┬И██Ь▌██┘H╪\Щ
+	┘██┘	╦█▄KЩ██┘┬И▌
+	╪XЪZЪ]	╩K[Z[Щ▄╦ШXЪZЪ]╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦ШXЪZЪ]
+WHИ╫WKИ╪█▄KШ[\Ъ]K
+^KШ[\Ъ]W┌╪[[H╫JKЫX\
+][HOИШ[Щ┘J][KЬ▌\Э╫╪]][KЩ[Щ╫╪]
+JWKИ▌
+	╪ЬШZXI╩K[Z[Щ▄╦ШЬШZXW█]Z\ЭH╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦ШЬШZXW█]Z\ЭJWHИ╫WKИ▌
+	▌ЪZШ^XI╩K[Z[Щ▄╦ЭЪZШ^XW█]Z\ЭH╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦ЭЪZШ^XW█]Z\ЭJWHИ╫WKИJN┬И██Ь▌[Ш\ИH^KЬ╪[]Ш]╪\ШW┌[Щ^	ЙИ^KЫ[Ш\Ч█[█Э╚[Ш\У[ЩJ▐╚╪[]Ш]╪\ШW┌[Щ^И^KЬ╪[]Ш]╪\ШW┌[Щ^[Ш\Ч█[█ЭИ^KЫ[Ш\Ч█[█ЭYZ╪W█[█ЭИ^KШYZ╪W█[█ЭWJHИ	╔╬┬И██Ь▌[Ш┌[Щ╚H╪\Щ
+	▄[Ш┌[Щ╔╦█▄KЬ[Ш┌[Щ╦┬И▌
+	▌]I╩K┘Y█Y[Э╩^KЭ]K[Щ^OИШ[Y\╦Э]SШ[YJ[Щ^▌]KЫ[Щ╩JWKИ▌
+	█ШZ▄┌]ШI╩K┘Y█Y[Э╩^KЫШZ▄┌]ШK[Щ^OИШ[Y\╦ЫШZ▄┌]ШSШ[YJ[Щ^▌]KЫ[Щ╩JWKИ▌
+	▐[┘╪I╩K┘Y█Y[Э╩^KЮ[┘╪K[Щ^OИШ[Y\╦Ю[┘╪SШ[YJ[Щ^▌]KЫ[Щ╩JWKИJN┬ИYИ
+[Ш\КH╚██Ь▌┌XY\▌HH╦ЛЛЬ[Ш┌[Щ╦Ш┌[Щ[ЧN╚[Ш┌[Щ╦ЬЩ\X┘P┌[Щ[КXY[
+	▄	╦	█[Ш\Й╦[Ш\КK\▌
+N╚BИ██Ь▌]Щ[Э╚H^KЩ]Щ[Э█]Z\Э\╚▀N┬И██Ь▌]Щ[ЭЫ▌▄╚H╔█X\ЬЪXY┘I╦	┘▄ЭZ\Ш]Щ\╪[I╦	▌ЩZX█I╫KЫX\
+Ш[YHOИ╪█▄V█Ш[YWK
+]Щ[Э╓█Ш[YWH╫JKЫX\
+
+▄▌\Э[ЩJHOИШ[Щ┘J▌\Э[Щ
+JWJN┬И██Ь▌]Z\Э\╚H╪\Щ
+	┘]Щ[Э╔╦█▄KЩ]Щ[Э╦]Щ[ЭЫ▌▄╩N┬ИYИ
+Y]Щ[ЭЫ▌▄╦Ь██YJ
+╦Ш[Y\╫JHOИШ[Y\╦Ы[Щ▌
+JH]Z\Э\╦Ш\[Щ┌[
+[
+	▄	╦	┘[\I╦█▄KЫЫ█ЩJJN┬И]Z\Э\╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦█▄KЩ]Щ[ЭЫ▌JJN┬И██Ь▌ШYH╪\Щ
+	╪ШY	╦█▄KШШY┬И▌
+	▄ШZI╩K[Z[Щ▄╦ЬШZW┌╪[[H╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦ЬШZW┌╪[[JWHИ╫WKИ▌
+	▐X[XY╪[ЩI╩K[Z[Щ▄╦ЮX[XY╪[ЩH╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦ЮX[XY╪[ЩJWHИ╫WKИ▌
+	┘▌[Z╪I╩K[Z[Щ▄╦Щ▌[Z╪W┌╪[[H╚▄Ш[Щ┘JЛЛЭ[Z[Щ▄╦Щ▌[Z╪W┌╪[[JWHИ╫WKИ╪█▄KЩ\Ы]Z\Э[K
+^KЩ\Ы]Z\Э[H╫JKЫX\
+
+▄▌\Э[ЩJHOИШ[Щ┘J▌\Э[Щ
+JWKИ▌
+	▌Ш\ЪЮX[I╩K
+^KЭШ\ЪЮX[H╫JKЫX\
+][HOИШ[Щ┘J][KЬ▌\Э╫╪]][KЩ[Щ╫╪]
+JWKИJN┬И▄▌ЬЩ\X┘P┌[Щ[К██┘[Ш┌[Щ╦]Z\Э\╦ШY
+N┬И	
+	┘^KX╪\Щ╦Z[Э	╩KЭ^██Э[ЭH█▄KЬ▌┌\N┬И	
+	┘YЭ[]]I╩KЭ^██Э[ЭH█▄KЩЭ[┬И██Ь▌┌\ЩHH	
+	▄┌\ЩKY^I╩N╚┌\ЩKЪY[ИHШ[┘N╚╪SXЩ[
+┌\ЩK█▄KЬ┌\ЩJN┬И┌\ЩKЫ█Ш█X┌╚H
+
+HOИ┌\ЩQ^S█Х┌]╨\
+^JN┬ИBИЭ[Ш▌[█И┌\ЩQ^S█Х┌]╨\
+^JH┬И██Ь▌█▄HH██^
+
+KШ╪\Щ╦]HH^KЩ]K[Z[Щ▄╚H^KЭ[Z[Щ▄╚▀N┬И██Ь▌Ш[Щ┘HH▄[ИOИ
+\ЬШ^KЪ\╨\ЬШ^J▄[КH╚	╪█╪┌╩▄[Ц╠K]J_H8а$╚	╪█╪┌╩▄[Ц╠WK]J_XИ	╔╩N┬И██Ь▌Ъ\Ь▌H
+][\╦Ш[YS┘КHOИ
+][\╚	ЙИ][\╓╠H╚	█Ш[YS┘К][\╓╠KЪ[Щ^
+_H
+8бдИ	╪█╪┌╩][\╓╠KЩ[Щ╫╪]]J_JXИ	╔╩N┬И██Ь▌[Ш\ИH^KЬ╪[]Ш]╪\ШW┌[Щ^	ЙИ^KЫ[Ш\Ч█[█Э╚[Ш\У[ЩJ▐╚╪[]Ш]╪\ШW┌[Щ^И^KЬ╪[]Ш]╪\ШW┌[Щ^[Ш\Ч█[█ЭИ^KЫ[Ш\Ч█[█ЭYZ╪W█[█ЭИ^KШYZ╪W█[█ЭWJHИ	╔╬┬И██Ь▌Щ\▌]Ш[╚H]Щ[Э╙█К]JKЫX\
+]Щ[ЭШ[YJKЪЫ┌[К	╦	╩N┬И██Ь▌[Щ\╚H┬И<'хф√ю#╚	╪╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦]K	┘Э[	╩_H0н╚	┘^KЬX┘_XИ[Ш\ЛИЩ\▌]Ш[╚╚<'ъе	┘Щ\▌]Ш[▀XИ	╔╦И<'у!H	▌
+	▄▌[ЬЪ\┘I╩_H	╪█╪┌╩^KЬ▌[ЬЪ\┘K]J_H0н╚<'у!╚	▌
+	▄▌[Ь┘]	╩_H	╪█╪┌╩^KЬ▌[Ь┘]]J_XИ<'фя╚	▌
+	▌]I╩_NИ	┘Ъ\Ь▌
+^KЭ]K[Щ^OИШ[Y\╦Э]SШ[YJ[Щ^▌]KЫ[Щ╩J_XИ8лd	▌
+	█ШZ▄┌]ШI╩_NИ	┘Ъ\Ь▌
+^KЫШZ▄┌]ШK[Щ^OИШ[Y\╦ЫШZ▄┌]ШSШ[YJ[Щ^▌]KЫ[Щ╩J_XИ8з!H	▌
+	╪XЪZЪ]	╩_NИ	▄Ш[Щ┘J[Z[Щ▄╦ШXЪZЪ]
+_XИ
+^KШ[\Ъ]W┌╪[[H╫JKЫ[Щ▌╚8з*	╪█▄KШ[\Ъ]_NИ	┘^KШ[\Ъ]W┌╪[[KЫX\
+][HOИШ[Щ┘J┌][KЬ▌\Э╫╪]][KЩ[Щ╫╪]JJKЪЫ┌[К	╦	╩_XИ	╔╦И8жи;ю#╚	▌
+	▄ШZI╩_NИ	▄Ш[Щ┘J[Z[Щ▄╦ЬШZW┌╪[[J_XИ8жи;ю#╚	▌
+	▐X[XY╪[ЩI╩_NИ	▄Ш[Щ┘J[Z[Щ▄╦ЮX[XY╪[ЩJ_XИ
+^KЩ\Ы]Z\Э[H╫JKЫ[Щ▌╚8жх	╪█▄KЩ\Ы]Z\Э[_NИ	┘^KЩ\Ы]Z\Э[KЫX\
+Ш[Щ┘JKЪЫ┌[К	╦	╩_XИ	╔╦ИKЩЪ[\КЫ██X[КN┬И[Щ\╦Ь\┌
+	╔╦8а%Ю[▌\ЫX^XH\▌Ы╨┌]И	▌┌[Щ▌╦Ы╪╪][█И	ЙИ┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[И╚┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[ИИ	╔▀X
+N┬И██Ь▌^H[Щ\╦ЪЫ┌[К	╫Й╩KЬЩ\X┘J╓╫LМНЛWLМОWK┘╦	╔╩N┬ИЮH╚┌[Щ▌╦Ы▄[К╬Л╦▌╪KЫYK╧▌^I┘[Ш█┘UTТP██\█Щ[Э
+^
+_X	╫╪Ы[Ъ╔╩N╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ╚ЬЫ▌▄┘\И
+Л╚BИBИ╦╚H█[HЭ┘^HИ╪\Щ]H▄┘И█YNИ]K┘YZ┘^H[ЩYX\Л[ЩH]H[ЩШZ▄┌]ШHЭ[ЫЪ[Щ╚Ы▌╦ВИ╦╚H\▄[Ь╚┘^I▄╚Э[[Ш┌[Щ╚Щ[▌╚
+Z┘HHШ]Z╪[H╪\Щ▄[Ь╚H┌\Э
+KВИЭ[Ш▌[█ИЩ[Щ\Х┘^T▌Ъ\
+
+H┬И██Ь▌Ы▐H	
+	▌┘^K\▌Ъ\	╩K^HH▌]KЭ┘^N┬ИYИ
+XЫ▐
+HЩ]\ЫО┬ИYИ
+Y^HP\ЬШ^KЪ\╨\ЬШ^J^KЭ]JHY^KЭ]KЫ[Щ▌
+H╚Ы▐ЪY[ИHЭYN╚Щ]\ЫО╚BИ██Ь▌\█╚H^KЩ]KЫ▌╚H	█╪╪[\█╩Щ]╚]J
+J_U	█Щ]╚]J
+KЭ╒[YT▌Ъ[Щ╩
+KЬ█X┘JJ_X┬И██Ь▌X┌╚H][\╚OИ
+\ЬШ^KЪ\╨\ЬШ^J][\╩H	ЙИ][\╦Ы[Щ▌╚][\╦ЩЪ[Щ
+][HOИ][KЬ▌\Э╫╪]HЫ▌╚	ЙИЫ▌╚][KЩ[Щ╫╪]
+H][\╓╠HИЭ[
+N┬И██Ь▌]HHX┌╩^KЭ]JK▌\ИHX┌╩^KЫШZ▄┌]ШJK]HHЩ]╚]J	┌\█▀ULОММШ
+N┬И██Ь▌┌[ИH	┘]KЩ┘]U╤]J
+_H	╪╪[[Щ\ХRKЫ[█ЭШ[YJ▌]KЫ[Щ╦]KЩ┘]U╙[█Э
+
+K	▄┌▄Э	╩_H	▌
+	┘]I╩_H0н╚	╪╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦]KЩ┘]U╤^J
+J_K	┘]KЩ┘]U╤Э[YX\К
+_X┬И██Ь▌┌]H█Ш[Y\╦Э]SШ[YJ]KЪ[Щ^▌]KЫ[Щ╩K▌\И╚Ш[Y\╦ЫШZ▄┌]ШSШ[YJ▌\ЛЪ[Щ^▌]KЫ[Щ╩HИ	╔╫KЩЪ[\КЫ██X[КKЪЫ┌[К	╚0н╚	╩N┬ИЫ▐ЬЩ\X┘P┌[Щ[К[
+	╪Й╦	▌╦]┌[Й╦┌[КK[
+	▄▄[Й╦	▌╦]┌]	╦	█[██С[[┌ЪJ]KЪ[Щ^
+_H	▌┌]H8а.Ш
+JN┬ИЫ▐ЪY[ИHШ[┘N┬ИBИЭ[Ш▌[█И▄[Х┘^J
+H┬ИYИ
+▌]KЭ┘^R\█╚	ЙИ▌]KЩ^H	ЙИ▌]KЩ^KЩ]HOOH▌]KЭ┘^R\█╩H┘[X▌]J▌]KЭ┘^R\█╩N┬И╘[Ш┌[Щ╩
+N┬ИBИ\▐[Ш╚Э[Ш▌[█И╪Y^J\█╦Ы█▌╒┘^HHШ[┘K]ZY]HШ[┘JH┬И██Ь▌Щ\]Y\▌H
+╩▄▌]KЩ^TЩ\]Y\▌▌]\╚H	
+	┘\▌]\╔╩N┬ИYИ
+\▌]KШ┌]JH╚▌]\╦Э^██Э[ЭH
+	▄┘[X▌┌]I╩N╚X\Ъ╤^TЩXYJ
+N╚Щ]\ЫО╚BИYИ
+\]ZY]
+H▌]\╦Э^██Э[ЭH
+	┘╪Y[Щ╔╩N╚╦╚]ZY]ИH╪]ЩY[Ш┌[Щ╚\╚[ЩXYH┌▌┌[Щ┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K┘^K\[Ш┌[Щ╔╦╚]NИ\█╦X┘NИ▌]KШ┌]HJN┬ИYИ
+Щ\]Y\▌OOH▌]KЩ^TЩ\]Y\▌
+HЩ]\ЫО┬ИYИ
+[┌╚XЫ┘HXЫ┘KЩ^JH┬ИX\Ъ╤^TЩXYJ
+N┬ИYИ
+]ZY]	ЙИ▌]KЩ^JHЩ]\ЫО╚╦╚┘Y\H╪]ЩY█ЩBИ▌]KЩ^HHЭ[╚█X\С^J
+N╚▌]\╦Э^██Э[ЭH
+	┘[Ш]ШZ[XЫI╩N╚Щ]\ЫО┬ИBИ▌]KЭ┘^R\█╚HЫ┘KЩ^KЭ┘^W█╪╪[┘]N┬ИYИ
+Ы█▌╒┘^H	ЙИЫ┘KЩ^KЭ┘^W█╪╪[┘]HOOHЫ┘KЩ^KЩ]JH╚┘[X▌]JЫ┘KЩ^KЭ┘^W█╪╪[┘]JN╚Щ]\ЫО╚BИ▌]KЩ^HHЫ┘KЩ^N╚▌]\╦Э^██Э[ЭH	╔╬┬И	
+	┘Y]I╩KЭШ[YHH▌]KЩ^KЩ]N┬ИЩ[Щ\С^J
+N╚Щ[Щ\Р╪[[Щ\К
+N╚Щ[Щ\С^Q]Щ[Э╩
+N┬ИYИ
+▌]KЩ^KЩ]HOOH▌]KЭ┘^R\█╩H┘Y\┘^J▌]KЩ^JN┬ИX\Ъ╤^TЩXYJ
+N┬ИH╪]┌
+┘\ЬЫ▄КH┬ИX\Ъ╤^TЩXYJ
+N┬ИYИ
+Щ\]Y\▌OOH▌]KЩ^TЩ\]Y\▌	ЙИJ]ZY]	ЙИ▌]KЩ^JJH╚▌]KЩ^HHЭ[╚█X\С^J
+N╚▌]\╦Э^██Э[ЭH
+	┘[Ш]ШZ[XЫI╩N╚BИBИBВИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKH█YNИ╪[[Щ\И
+Л┬И██Ь▌]Щ[Э╙█ИH\█╚OИ
+▌]KЫ[█Э	ЙИ▌]KЫ[█ЭЩ]Щ[Э╚╚▌]KЫ[█ЭЩ]Щ[Э╦ЩЪ[\К]Щ[ЭOИ]Щ[ЭЩ]HOOH\█╩HИ╫JN┬И██Ь▌]Щ[ЭШ[YHH]Щ[ЭOИ╪[[Щ\ХRKЩЩ\▌]Ш[Ш[YJ▌]KЫ[Щ╦]Щ[ЭЪ┘^JN┬И██Ь▌ST╘ХSХH╚LNИ	╤I╦НОИ	╤I╦MNИ	╘	╦╠И	╨I╚N┬И██Ь▌PTТ╘╚H╚NИ	№'цc╔╦И	№'у%I╦NИ	№'у$I╚N┬И╦╚┌▄Э[YHЫ▄И█X[▄X┘\╬И	°,.8,/ЛНОМI╚[И[Y▌K	═ОМ\	╚▌\Э┌\┘N╚	╩╠I╚┌[И]Ш[╚█ИHЩ^^KВИЭ[Ш▌[█И┌▄Э█╪┌╩\█╦Ш\┘Q]JH┬И██Ь▌X]┌H╫К═KW╠ЯKW╠ЯJU
+╠ЯJNК╠ЯJK╦Щ^X╩\█╚	╔╩N┬ИYИ
+[X]┌
+HЩ]\ЫИ	╔╬┬И██Ь▌▌\ИHЭ[XЩ\КX]┌╠ЧJK^H	╩▌\И	HLКHLЯNЙ█X]┌╠╫_X]\ИHX]┌╠WHOOHШ\┘Q]H╚	°аn░оI╚И	╔╬┬ИYИ
+▌]KЫ[Щ╚OOH	▌I╩HЩ]\ЫИ	┌▌\ИLИ╚	°,"I╚И▌\ИMИ╚	°,+Й╚И▌\ИNH╚	°,.8,/Й╚И	°,,8,/Й▀KЙ▌^I█]\ЯX┬ИЩ]\ЫИ	▌^I┌▌\ИLИ╚	╪I╚И	▄	▀I█]\ЯX┬ИBИ╦╚	°,-╕,cx,,8,`8,*╕,,8,/╕,+x,-H8,*8,/╕,+И8,.8, ╕,-x,)8,cx,.8,,8, Л8,!╕,-╕,cx,-x,+°,`x,'8, И8а$╚8,%x,/╕,,8,cx,)8,`8,%x, И8,+╕,/╕,.8, Й╚Ы▄ИH^\╚┌▌█ЛВИЭ[Ш▌[█И[Ш\У[ЩJ^\╩H┬И██Ь▌█▄HH██^
+
+KЫ[Ш\ЛYX\Ь╚H╫K[█Э╚H╫N┬ИЫ▄И
+██Ь▌^H┘И^\╩H┬ИYИ
+^KЬ╪[]Ш]╪\ШW┌[Щ^	ЙИ^YX\Ь╦Ъ[Ш█Y\╩^KЬ╪[]Ш]╪\ШW┌[Щ^
+JHYX\Ь╦Ь\┌
+^KЬ╪[]Ш]╪\ШW┌[Щ^
+N┬И██Ь▌┘^HH^KЫ[Ш\Ч█[█Э╚	┘^KШYZ╪W█[█Э╚	╨I╚И	╔▀I┘^KЫ[Ш\Ч█[█ЭXИ	╔╬┬ИYИ
+┘^H	ЙИ[[█Э╦Ъ[Ш█Y\╩┘^JJH[█Э╦Ь\┌
+┘^JN┬ИBИYИ
+^YX\Ь╦Ы[Щ▌[[█Э╦Ы[Щ▌
+HЩ]\ЫИ	╔╬┬И██Ь▌X\╪HH┘^HOИ╚██Ь▌Ш[YHHШ[Y\╦ЫX\╪SШ[YJЭ[XЩ\К┘^KЬЩ\X┘J	╨I╦	╔╩JK▌]KЫ[Щ╩N╚Щ]\ЫИ┘^KЬ▌\Э╒┌]
+	╨I╩H╚Ъ[
+█▄KШYZ╪K╚NИШ[YHJHИШ[YN╚N┬И██Ь▌YX\ИHYX\Ь╦ЫX\
+[Щ^OИШ[Y\╦Ь╪[]Ш]╪\ШSШ[YJ[Щ^▌]KЫ[Щ╩JKЪЫ┌[К	╚8бдИ	╩N┬ИЩ]\ЫИ	┘Ъ[
+█▄KЮYX\Л╚╬ИYX\ИJ_K	┘Ъ[
+█▄KЫ[█Э╚NИ[█Э╦ЫX\
+X\╪JKЪЫ┌[К	╚8а$╚	╩HJ_X┬ИBИЭ[Ш▌[█ИЩ[Щ\Р╪[[Щ\К
+H┬И██Ь▌╚YX\Л[█ЭHH▌]KЭЪY]╬┬И██Ь▌▄ЪYH	
+	█[█ЭX╪[[Щ\Й╩N┬И▄ЪYЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+^YX\КH╚	
+	█[█Э]]I╩KЭ^██Э[ЭH	╔╬╚	
+	█[█Э\▌XЙ╩KЭ^██Э[ЭH	╔╬╚	
+	╪╪[[Y┘[Щ	╩KЬЩ\X┘P┌[Щ[К
+N╚	
+	█[█ЭY]Щ[Э╔╩KЬЩ\X┘P┌[Щ[К
+N╚Щ]\ЫО╚BИ	
+	█[█Э]]I╩KЭ^██Э[ЭH╪[[Щ\ХRKЫ[█Э]JYX\Л[█Э▌]KЫ[Щ╩N┬И	
+	█[█Э\▌XЙ╩KЭ^██Э[ЭH	╔╬┬ИЫ▄И
+██Ь▌XЩ[┘И╪[[Щ\ХRKЭ┘YZ┘^SXЩ[╩▌]KЫ[Щ╩JH▄ЪYШ\[Щ┌[
+[
+	▄▄[Й╦	╪╪[[Щ\Л]┘YZ┘^I╦XЩ[
+JN┬И██Ь▌╪YYH▌]KЫ[█Э	ЙИ▌]KЫ[█ЭЮYX\ИOOHYX\И	ЙИ▌]KЫ[█ЭЫ[█ЭOOH[█Э╚▌]KЫ[█ЭЩ^\╚ИЭ[┬ИЫ▄И
+██Ь▌Э[XЩ\И┘И╪[[Щ\ХRKЫ[█Э┘[╩YX\Л[█Э
+JH┬ИYИ
+Э[XЩ\ИOOHЭ[
+H╚▄ЪYШ\[Щ┌[
+[
+	▄▄[Й╦	╪╪[[Щ\ЛXЫ[Ъ╔╩JN╚██Э[ЭYN╚BИ██Ь▌\█╚H╪[[Щ\ХRKЪ\█╤]JYX\Л[█ЭЭ[XЩ\КN┬И██Ь▌[ЭЮHH╪YY╚╪YY█Э[XЩ\ИHWHИЭ[┬И██Ь▌Э]█ИH[
+	╪Э]█Й╦	╪╪[[Щ\ЛY^I╩N╚Э]█ЛЭ\HH	╪Э]█Й╬╚Э]█ЛЩ]\┘]Щ]HH\█╬┬ИYИ
+\█╚OOH▌]KЭ┘^R\█╩HЭ]█ЛШ█\▄╙\▌ШY
+	▌┘^I╩N┬ИYИ
+\█╚OOH▌]KЬ┘[X▌Y]JHЭ]█ЛШ█\▄╙\▌ШY
+	▄┘[X▌Y	╩N┬ИЭ]█ЛШ\[Щ┌[
+[
+	▄▌Ы█Щ╔╦Э[▌Ъ[Щ╩Э[XЩ\КJJN┬И██Ь▌^Q]Щ[Э╚H╪YY╚]Щ[Э╙█К\█╩HИ╫N┬ИYИ
+^Q]Щ[Э╦Ы[Щ▌
+H┬ИЭ]█ЛЩ]\┘]ЩЩ\▌H	╠I╬┬ИYИ
+^Q]Щ[Э╦Ь██YJ]Щ[ЭOИ]Щ[ЭЪ█Y^JJHЭ]█ЛЩ]\┘]Ъ█Y^HH	╠I╬┬ИBИYИ
+[ЭЮH	ЙИ[ЭЮKЭ]W┌[Щ^
+H┬И██Ь▌]HHШ[Y\╦Э]SШ[YJ[ЭЮKЭ]W┌[Щ^▌]KЫ[Щ╩KШZ▄┌]ШHHШ[Y\╦ЫШZ▄┌]ШSШ[YJ[ЭЮKЫШZ▄┌]ШW┌[Щ^▌]KЫ[Щ╩N┬И██Ь▌X\Ъ╚HST╘ХSХ┘[ЭЮKЭ]W┌[Щ^N┬ИЭ]█ЛШ\[Щ┌[
+[
+	▄▄[Й╦Э[Ш[Y\╦Э]PШ\┘SШ[YJ[ЭЮKЭ]W┌[Щ^▌]KЫ[Щ╩JJN┬ИYИ
+[ЭЮKЭ]W┘[Щ╫╪]
+HЭ]█ЛШ\[Щ┌[
+[
+	┘[I╦	▌]KY[Щ	╦┌▄Э█╪┌╩[ЭЮKЭ]W┘[Щ╫╪]\█╩JJN┬ИЭ]█ЛЩ]\┘]Ь╚H[ЭЮKЭ]W┌[Щ^HMH╚	╘╔╚И	╥╔╬┬ИYИ
+X\Ъ╩H╚Э]█ЛЩ]\┘]Ъ[\HX\Ъ╬╚Э]█ЛШ\[Щ┌[
+[
+	┌I╦	█X\Ъ╔╦PTТ╘╓█X\Ъ╫JJN╚BИ██Ь▌Щ\▌]Ш[^H^Q]Щ[Э╦ЫX\
+]Щ[ЭШ[YJKЪЫ┌[К	╦	╩N┬ИЭ]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦	┌\█▀NИ	▌]_K	█ШZ▄┌]Ш_I┘Щ\▌]Ш[^╚	╦	╚
+╚Щ\▌]Ш[^И	╔▀X
+N┬ИЭ]█ЛЭ]HH	▌]_H0н╚	█ШZ▄┌]Ш_I┘Щ\▌]Ш[^╚	╚0н╚	╚
+╚Щ\▌]Ш[^И	╔▀X┬ИH[┘HЭ]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦\█╩N┬ИYИ
+^Q]Щ[Э╦Ы[Щ▌
+HЭ]█ЛШ\[Щ┌[
+[
+	┌I╦	┘Щ\▌	╦	°з)Й╩JN┬ИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▄[С^J\█╩JN┬И▄ЪYШ\[Щ┌[
+Э]█КN┬ИBИYИ
+╪YY
+H	
+	█[█Э\▌XЙ╩KЭ^██Э[ЭH[Ш\У[ЩJ╪YY
+N┬И██Ь▌Y┘[ЩH	
+	╪╪[[Y┘[Щ	╩N╚Y┘[ЩЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌╪██▄Л^H┘И╓╔▌Ш\КKY██┘
+I╦Ш[Y\╦Э]SШ[YJLK▌]KЫ[Щ╩WK╔▌Ш\КKY██КI╦Ш[Y\╦Э]SШ[YJMK▌]KЫ[Щ╩WK╔╚═NM═┘Й╦Ш[Y\╦Э]SШ[YJ╠▌]KЫ[Щ╩WK╔▌Ш\КK\╪YЩЬЫ█КI╦
+	┘Щ\▌]Ш[Y╔╩WK╔▌Ш\КKXШY
+I╦
+	┌█Y^UY╔╩WWJH┬И██Ь▌][HH[
+	╪Й╦Э[^
+N╚][KЬ┘]]ЪXЭ]J	▄▌[I╦KX╬Й╪██▄ЯX
+N╚Y┘[ЩШ\[Щ┌[
+][JN┬ИBИЩ[Щ\С]Щ[Э╩
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\С]Щ[Э╩
+H┬И██Ь▌Ы▐H	
+	█[█ЭY]Щ[Э╔╩N╚Ы▐ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌[█ЭH▌]KЫ[█Э┬ИYИ
+[[█Э[█ЭЮYX\ИOOH▌]KЭЪY]╦ЮYX\И[█ЭЫ[█ЭOOH▌]KЭЪY]╦Ы[█Э[[█ЭЩ]Щ[Э╩HЩ]\ЫО┬ИЫ▐Ш\[Щ┌[
+[
+	┌╔╦	▄▌XЛZ	╦
+	┘Щ\▌]Ш[╒]I╩JJN┬ИYИ
+[[█ЭЩ]Щ[Э╦Ы[Щ▌
+HЫ▐Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦
+	┘Щ\▌]Ш[╙Ы█ЩI╩JJN┬ИЫ▄И
+██Ь▌]Щ[Э┘И[█ЭЩ]Щ[Э╩H┬И██Ь▌Ы▌╚H[
+	╪Э]█Й╦]Щ[Э\Ы▌╔┘]Щ[ЭЪ█Y^H╚	╚█Y^I╚И	╔▀X
+N╚Ы▌╦Э\HH	╪Э]█Й╬┬ИЫ▌╦Ш\[Щ
+[
+	╪Й╦	▌	╦╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦]Щ[ЭЩ]K	┘^S[█Э	╩JK[
+	▄▄[Й╦Э[]Щ[ЭШ[YJ]Щ[Э
+JJN┬ИYИ
+]Щ[ЭЪ█Y^JHЫ▌╦Ш\[Щ┌[
+[
+	┘[I╦	▌Y╚XЪ[]]Y	╦
+	┌█Y^UY╔╩JJN┬ИЫ▌╦ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▄[С^J]Щ[ЭЩ]JJN┬ИЫ▐Ш\[Щ┌[
+Ы▌╩N┬ИBИЫ▐Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦
+	┘Щ\▌]Ш[╙Ы▌I╩JJN┬ИBИЭ[Ш▌[█ИЩ[Щ\С^Q]Щ[Э╩
+H┬И██Ь▌┌\╚H	
+	┘Y]Щ[Э╔╩N╚┌\╦ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+\▌]KЩ^JHЩ]\ЫО┬ИЫ▄И
+██Ь▌]Щ[Э┘И]Щ[Э╙█К▌]KЩ^KЩ]JJH┌\╦Ш\[Щ┌[
+[
+	▄▄[Й╦]Щ[ЭX┌\	┘]Щ[ЭЪ█Y^H╚	╚█Y^I╚И	╔▀X]Щ[ЭШ[YJ]Щ[Э
+JJN┬ИBИ\▐[Ш╚Э[Ш▌[█И╪Y[█Э
+
+H┬И██Ь▌Щ\]Y\▌H
+╩▄▌]KЫ[█ЭЩ\]Y\▌┬ИYИ
+\▌]KШ┌]H\▌]KЭЪY]╦ЮYX\КHЩ]\ЫО┬И██Ь▌╚YX\Л[█ЭHH▌]KЭЪY]╬┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K█[█ЭX╪[[Щ\Й╦╚YX\Л[█ЭX┘NИ▌]KШ┌]HJN┬ИYИ
+Щ\]Y\▌OOH▌]KЫ[█ЭЩ\]Y\▌
+HЩ]\ЫО┬И▌]KЫ[█ЭH┌╚	ЙИЫ┘H	ЙИЫ┘KЩ^\╚╚Ы┘HИЭ[┬ИYИ
+▌]KЫ[█Э	ЙИ▌]KЫ[█ЭЭ┘^W█╪╪[┘]JH▌]KЭ┘^R\█╚H▌]KЫ[█ЭЭ┘^W█╪╪[┘]N┬ИH╪]┌
+┘\ЬЫ▄КH╚YИ
+Щ\]Y\▌OOH▌]KЫ[█ЭЩ\]Y\▌
+H▌]KЫ[█ЭHЭ[╚BИЩ[Щ\Р╪[[Щ\К
+N╚Щ[Щ\С^Q]Щ[Э╩
+N╚YИ
+▌]KЬШ\┌S[┘HOOH	█[█Э	╩HЩ[Щ\ФШ\┌J
+N┬ИBИ╦╚ЬЫ█HH╪[[Щ\ИXОИ┌▌╚]^I▄╚Э[[Ш┌[Щ╚█И█YKВИЭ[Ш▌[█И▄[С^J\█╩H┬И┘[X▌]J\█╩N┬И┌▌╘Y┘J	┌█YI╩N┬ИЮH╚	
+	┘]Z[]]I╩KЬ╪▄Ы█[Э╒ЪY]╩╚Ы╪┌╬И	▄▌\Э	╚JN╚┌[Щ▌╦Ь╪▄Ы█ЮJN
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И╪▄Ы█[Щ╚\╚▄[█Ш[
+Л╚BИBИЭ[Ш▌[█И┘[X▌]J\█╩H┬ИYИ
+K╫Ч═KW╠ЯKW╠ЯI╦Э\▌
+\█╩JHЩ]\ЫО┬И██Ь▌YX\ИHЭ[XЩ\К\█╦Ь█X┘J
+JK[█ЭHЭ[XЩ\К\█╦Ь█X┘JK╩JN┬ИYИ
+YX\ИNM╠YX\ИИМL
+HЩ]\ЫО┬И▌]KЬ┘[X▌Y]HH\█╬┬ИYИ
+YX\ИOOH▌]KЭЪY]╦ЮYX\И[█ЭOOH▌]KЭЪY]╦Ы[█Э
+H╚▌]KЭЪY]╚H╚YX\Л[█ЭN╚▌]KЫ[█ЭHЭ[╚Щ[Щ\Р╪[[Щ\К
+N╚Ы┌Y╪Y[█Э
+
+N╚BИ[┘HЩ[Щ\Р╪[[Щ\К
+N┬ИЫ┌Y╪Y^J\█╩N┬ИBИЭ[Ш▌[█И[▌ЩS[█Э
+▌\
+H┬И██Ь▌\Щ┘]HЩ]╚]J]KХU╩▌]KЭЪY]╦ЮYX\Л▌]KЭЪY]╦Ы[█ЭHH
+╚▌\JJN┬И██Ь▌YX\ИH\Щ┘]Щ┘]U╤Э[YX\К
+N┬ИYИ
+YX\ИNM╠YX\ИИМL
+HЩ]\ЫО┬И▌]KЭЪY]╚H╚YX\Л[█ЭИ\Щ┘]Щ┘]U╙[█Э
+
+H
+╚HN╚▌]KЫ[█ЭHЭ[┬ИЩ[Щ\Р╪[[Щ\К
+N╚Ы┌Y╪Y[█Э
+
+N╚YИ
+▌]KЬШ\┌S[┘HOOH	█[█Э	╩HЩ[Щ\ФШ\┌J
+N┬ИBИЭ[Ш▌[█ИЩ[Щ\Т█YJ
+H╚Щ[Щ\С^J
+N╚Щ[Щ\Р╪[[Щ\К
+N╚Щ[Щ\С^Q]Щ[Э╩
+N╚Щ[Щ\СЩ\▌]Ш[╩
+N╚BИ	
+	█[█Э\Щ]Й╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ[▌ЩS[█Э
+LJJN┬И	
+	█[█Э[Щ^	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ[▌ЩS[█Э
+JJN┬И	
+	┘\Щ]Й╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┘[X▌]J┌YЭ\█╩▌]KЬ┘[X▌Y]H╪╪[\█╩Щ]╚]J
+JKLJJJN┬И	
+	┘[Щ^	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┘[X▌]J┌YЭ\█╩▌]KЬ┘[X▌Y]H╪╪[\█╩Щ]╚]J
+JKJJJN┬И	
+	┘]┘^I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┘[X▌]J▌]KЭ┘^R\█╚╪╪[\█╩Щ]╚]J
+JJJN┬И	
+	┘Y]I╩KШY]Щ[Э\▌[Щ\К	╪┌[Щ┘I╦]Щ[ЭOИ┘[X▌]J]Щ[ЭЭ\Щ┘]ЭШ[YJJN┬ВИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKH▌[ЩH
+Л┬И██Ь▌\╚HШ[YHOИ╚██Ь▌┌█HHX]ЩЫ█▄КШ[YJN╚██Ь▌Z[Э]\╚HX]ЩЫ█▄К
+Ш[YHH┌█JH
+ИМ
+N╚Щ]\ЫИ	▌┌█_pм	╘▌Ъ[Щ╩Z[Э]\╩KЬY▌\Э
+Л	╠	╩_xа,Ш╚N┬ИЭ[Ш▌[█И┘]Y╨┌\Э
+
+H┬И██Ь▌┌\ЭH▌]KШ┌\Э]Z[╚H▌]KЩ]Z[╬┬ИYИ
+▌]KЪ▌[ЩKЩ]Ъ\┌[█ИOOH	┘I╚	ЙИ]Z[╩H┬И██Ь▌Y█ШHH]Z[╦ЫШ]Ш[\╪KЫY█ШW▄Ш\┌W┌[Щ^▄┌][█Ь╚H▀N┬ИЫ▄И
+██Ь▌█Ш[YK┌Y█ЧH┘И╪ЪЩX▌Щ[ЭЪY\╩]Z[╦ЫШ]Ш[\╪KЬ▄┌][█Ь╩JH▄┌][█Ь╓█Ш[YWHH╚Ш\┌W┌[Щ^И┌Y█Л┌Y\ЩX[██Щ┌]YNИ
+┌Y█ИHJH
+И╠┌█W▄┌Y█Ч╪Ъ]ШNИ
+┌Y█ИHY█ШH
+╚LКH	HLИ
+╚HN┬ИЩ]\ЫИ╚┌\ЭИ╚\╪┘[Щ[ЭИ╚Ш\┌W┌[Щ^ИY█ШK┌Y\ЩX[██Щ┌]YNИ
+Y█ШHHJH
+И╠K▄┌][█Ь╚KY▄ЩY\╬ИШ[┘K[██Ф┌Y█ОИ]Z[╦ЫШ]Ш[\╪KЬ▄┌][█Ь╦У[██ИN┬ИBИ██Ь▌▄┌][█Ь╚H╚ЛЛШ┌\ЭЬ▄┌][█Ь╚N┬ИYИ
+]Z[╩HЫ▄И
+██Ь▌Ы┘H┘И╔╘ШZI╦	╥┘]I╫JH╚██Ь▌H]Z[╦Ь[Щ]╓█Ы┘WN╚▄┌][█Ь╓█Ы┘WHH╚Ш\┌W┌[Щ^ИЬШ\┌W┌[Щ^┌Y\ЩX[██Щ┌]YNИЬ┌Y\ЩX[██Щ┌]YK┌█W▄┌Y█Ч╪Ъ]ШNИЭ┌█W▄┌Y█Ч╪Ъ]ШHN╚BИЩ]\ЫИ╚┌\ЭИ╚\╪┘[Щ[ЭИ┌\ЭШ\╪┘[Щ[Э▄┌][█Ь╚KY▄ЩY\╬ИЭYK[██Ф┌Y█ОИ┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^N┬ИBИ██Ь▌Щ]Ы╙X\Ъ╚HШ[YHOИ▌]KЩ]Z[╚	ЙИ▌]KЩ]Z[╦Ь[Щ]╓█Ш[YWH	ЙИ▌]KЩ]Z[╦Ь[Щ]╓█Ш[YWKЬЩ]Ы┘▄ШYH╚	╚8б'Й╚И	╔╬┬ИЭ[Ш▌[█И[Щ]┌\
+Ш[YKY▄ЩY\╦Y▄ЩYU^
+H┬И██Ь▌┌\H[
+	┘]Й╦	┘K\[Щ]	╩N┬И┌\Ь┘]]ЪXЭ]J	▄▌[I╦K\╬Й╘SСU╨╙╙╘Ф╓█Ш[YWH	╚╠ШLY┘Й▀X
+N┬И┌\Ш\[Щ┌[
+╪▌[Y[ЭШ▄ЩX]U^Ы┘J	╪Ы┘SШ[YJШ[YJ_I▄▌]KЪ▌[ЩKЩ]Ъ\┌[█ИOOH	┘I╚╚Щ]Ы╙X\Ъ╩Ш[YJHИ	╔▀H
+JN┬ИYИ
+Y▄ЩY\╩H┬И╦╚Э[Y▄ЩYH█ИЫ██^H┌\Э╦┌█HY▄ЩYH█И█X[█Щ\╚
+╘╘╚X┌▄╚█ЩJK█╚H┌Y█ИЫ▐▌^\╚█ЩH[ЩH\И[Щ]ВИ██Ь▌█X[H[
+	▄█X[	╩N┬И█X[Ш\[Щ
+[
+	▄▄[Й╦	┘Y╦YЭ[	╦Y▄ЩYU^
+K[
+	▄▄[Й╦	┘Y╦\┌▄Э	╦	╙X]ЩЫ█▄К\Ь┘QЫ╪]
+Y▄ЩYU^
+J_pм
+JN┬И┌\Ш\[Щ┌[
+█X[
+N┬ИBИЩ]\ЫИ┌\┬ИBИЭ[Ш▌[█ИЩ[Щ\Ф█▌]
+ЪY]╩H┬И██Ь▌▄ЪYH	
+	┘KY▄ЪY	╩N╚▄ЪYЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌┘[┘И┌\ЭRKШЭZ[█▌][ЩX[Р┌\Э
+ЪY]╦Ш┌\Э
+JH┬И██Ь▌Ы▐H[
+	┘]Й╦	┘KX┘[	╩N╚Ы▐Ь▌[KЩ▄ЪYЫ▌╚H▌Ъ[Щ╩┘[ЬЫ▌╩N╚Ы▐Ь▌[KЩ▄ЪY██[[ИH▌Ъ[Щ╩┘[Ш██[[КN┬ИYИ
+┘[Ъ\╙Y█ШJHЫ▐Ш█\▄╙\▌ШY
+	█Y█ШI╩N┬ИYИ
+┘[ЬШ\┌HOOHЪY]╦Ы[██Ф┌Y█КHЫ▐Ш█\▄╙\▌ШY
+	█[██Й╩N┬ИЫ▐Ш\[Щ┌[
+[
+	┘]Й╦	┘K\┌Y█Й╦┌Y█УШ[YJ┘[ЬШ\┌JJJN┬ИЫ▐Ш\[Щ┌[
+[
+	┘]Й╦	┘KZ▌\┘I╦	▌
+	╪██Ъ]ШI╩_H	╪┘[Ъ▌\┘_X
+JN┬ИYИ
+┘[Ъ\╙Y█ШJHЫ▐Ш\[Щ┌[
+[
+	▄▄[Й╦	╪ШY┘K[╔╦
+	█Y█ШI╩JJN┬ИYИ
+┘[ЬШ\┌HOOHЪY]╦Ы[██Ф┌Y█КHЫ▐Ш\[Щ┌[
+[
+	▄▄[Й╦	╪ШY┘K[[Й╦	°ж/Й╩JN┬ИYИ
+┘[Ь[Щ]╦Ы[Щ▌ПH╩HЫ▐Ш█\▄╙\▌ШY
+	╪▄Ы▌┘Y	╩N┬ИЫ▄И
+██Ь▌[Щ]┘И┘[Ь[Щ]╩HЫ▐Ш\[Щ┌[
+[Щ]┌\
+[Щ]ЫШ[YKЪY]╦ЩY▄ЩY\╦	▄[Щ]ЩY▄ЩY\╥[Ф┌Y█ЛЭ╤Ъ^Y
+К_pм
+JN┬И▄ЪYШ\[Щ┌[
+Ы▐
+N┬ИBИ██Ь▌┘[Э\ИH[
+	┘]Й╦	┘KX┘[Э\Й╩N┬И┘[Э\ЛШ\[Щ
+[
+	▄▌Ы█Щ╔╦Э[
+▌]KЪ▌[ЩKЩ]Ъ\┌[█ИOOH	┘I╚╚	┘]СI╚И	┘]СI╩JK[
+	▄▄[Й╦Э[
+	▄█▌][ЩX[Й╩JJN┬И▄ЪYШ\[Щ┌[
+┘[Э\КN┬ИBИЭ[Ш▌[█ИЩ[Щ\УЫ▄Э
+ЪY]╩H┬И██Ь▌▄▌H	
+	█Ы▄ЭX┌\Э	╩N╚▄▌ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌▌Щ╚H▌Щ╤[
+	▄▌Щ╔╦╚ЪY]╨Ы▐И	╠	╦Ы█NИ	▄Щ\┘[Э][█Й╚JN┬И██Ь▌Y█ШHHЪY]╦Ш┌\ЭШ\╪┘[Щ[ЭЬШ\┌W┌[Щ^┬И██Ь▌ЮT┌Y█ИHЩ]╚X\
+
+N┬ИЫ▄И
+██Ь▌█Ш[YKH┘И╪ЪЩX▌Щ[ЭЪY\╩ЪY]╦Ш┌\ЭЬ▄┌][█Ь╩JH╚YИ
+XЮT┌Y█ЛЪ\╩ЬШ\┌W┌[Щ^
+JHЮT┌Y█ЛЬ┘]
+ЬШ\┌W┌[Щ^╫JN╚ЮT┌Y█ЛЩ┘]
+ЬШ\┌W┌[Щ^
+KЬ\┌
+╚Ш[YKY▄ЩYNИЬ┌Y\ЩX[██Щ┌]YH	H╠JN╚BИЫ▄И
+██Ь▌▌\┘H┘И┌\ЭRKЫЫ▄Э[ЩX[У^[▌]
+
+JH┬И██Ь▌┌Y█ИH
+Y█ШHHH
+╚▌\┘KЪ▌\┘HHJH	HLИ
+╚N┬И██Ь▌█Y██ИH▌Щ╤[
+	▄█Y██Й╦╚┌[Э╬И▌\┘KЬ┌[Э╦ЫX\
+┌[ЭOИ┌[ЭЪЫ┌[К	╦	╩JKЪЫ┌[К	╚	╩HJN┬И█Y██ЛЬ┘]]ЪXЭ]J	╪█\▄╔╦Ш╦Z▌\┘I┌▌\┘KЪ▌\┘HOOHH╚	╚Y█ШI╚И	╔▀I▄┌Y█ИOOHЪY]╦Ы[██Ф┌Y█И╚	╚[██Й╚И	╔▀X
+N┬И▌Щ╦Ш\[Щ┌[
+█Y██КN┬И██Ь▌[Щ]╚HЮT┌Y█ЛЩ┘]
+┌Y█КH╫N┬И██Ь▌[Щ\╚HH
+╚[Щ]╦Ы[Щ▌┬И██Ь▌╪▐▐WHH▌\┘KШ┘[Э\О┬И██Ь▌▄H▐HH
+[Щ\╚HJH
+И╬┬И██Ь▌XЩ[H▌Щ╤[
+	▌^	╦╚И▐NИ▄	▌^X[Ш┌▄Й╬И	█ZYI╚JN┬ИXЩ[Ь┘]]ЪXЭ]J	╪█\▄╔╦	█Ш╦\┌Y█Й╩N┬ИXЩ[Э^██Э[ЭH	┌▌\┘KЪ▌\┘HOOHH╚	°есИ	╚И	╔▀I▄┌Y█ЯI▄┌Y█ИOOHЪY]╦Ы[██Ф┌Y█И╚	╚8ж/Й╚И	╔▀X┬И▌Щ╦Ш\[Щ┌[
+XЩ[
+N┬И[Щ]╦ЩЫ▄СXX┌
+
+[Щ][Щ^
+HOИ┬И██Ь▌^H▌Щ╤[
+	▌^	╦╚И▐NИ▄
+╚M
+И
+[Щ^
+╚JK	▌^X[Ш┌▄Й╬И	█ZYI╦Ъ[ИSСU╨╙╙╘Ф╓▄[Щ]ЫШ[YWH	╚╠ШLY┘Й╚JN┬И^Ь┘]]ЪXЭ]J	╪█\▄╔╦	█Ш╦\[Щ]	╩N┬И^Э^██Э[ЭH	╪Ы┘SШ[YJ[Щ]ЫШ[YJ_I▌ЪY]╦ЩY▄ЩY\╚╚	╚	╚
+╚X]ЩЫ█▄К[Щ]ЩY▄ЩYJH
+╚	Ём	╚И	╔▀I▌ЪY]╦ЩY▄ЩY\╚╚Щ]Ы╙X\Ъ╩[Щ]ЫШ[YJHИ	╔▀X┬И▌Щ╦Ш\[Щ┌[
+^
+N┬ИJN┬ИBИ▄▌Ш\[Щ┌[
+▌Щ╩N┬ИBИЭ[Ш▌[█И▌][JXЩ[Ш[YK▌XКH┬И██Ь▌[HH[
+	┘]Й╦	┌╦\▌]	╩N┬И[KШ\[Щ
+[
+	▄█X[	╦Э[XЩ[
+K[
+	╪Й╦Э[Ш[YJK[
+	┌I╦Э[▌XИ	╔╩JN┬ИЩ]\ЫИ[N┬ИBИЭ[Ш▌[█ИЫ▌╩┘[╦█\▄╙Ш[YJH┬И██Ь▌ИH[
+	▌Й╦█\▄╙Ш[YJN┬ИЫ▄И
+██Ь▌┘[┘И┘[╩H┬И██Ь▌H[
+	▌	╩N┬ИYИ
+┘[	ЙИ\[┘И┘[OOH	█╪ЪЩX▌	╩HШ\[Щ┌[
+┘[
+N╚[┘HЭ^██Э[ЭH▌Ъ[Щ╩┘[
+N┬ИЛШ\[Щ┌[
+
+N┬ИBИЩ]\ЫИО┬ИBИЭ[Ш▌[█ИY╩┌[Щ^
+H╚Щ]\ЫИ[
+	▄▄[Й╦Y╚	┌┌[ЩX^
+N╚BИЭ[Ш▌[█ИЩ[Щ\Р┌\Э
+
+H┬И██Ь▌┌\ЭH▌]KШ┌\Э]Z[╚H▌]KЩ]Z[╬┬ИYИ
+X┌\Э
+HЩ]\ЫО┬ИЩ[Щ\Х██╩
+N┬ИЩ[Щ\С▄┌\╩
+N┬И┌▌╥▌[ЩUЪY]╩▌]KЪ▌[ЩUЪY]╩N┬И██Ь▌Ъ\ЭH┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\Э[██ИH┌\ЭЬ▄┌][█Ь╦У[██О┬И██Ь▌╪╪[]HH▌]KЬЩ\██ЩY╚▌]KЬЩ\██ЩYЫ╪╪[┘]][YKЬ█X┘JL
+HИ┌\ЭЪ[Ь]ШЪ\Э┘]][YKЬ█X┘JL
+N┬И██Ь▌X┘SШ[YHH▌]KЬЩ\██ЩY╚	▄▌]KЬЩ\██ЩYЬX┘KЫШ[Y_K	▄▌]KЬЩ\██ЩYЬX┘KШ█▌[ЭЮW╪█┘_H0н╚И	╔╬┬И	
+	╪┌\Э\▌[[X\ЮI╩KЭ^██Э[ЭH	▄X┘SШ[Y_I╪╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦╪╪[]K	▄┌▄Э	╩_H0н╚	╩▌]KЬЩ\██ЩY╚▌]KЬЩ\██ЩYЫ╪╪[┘]][YKЬ█X┘JLKMКHИ	╔╩_X┬И██Ь▌▌]╚H	
+	╪┌\Э\▌]╔╩N╚▌]╦ЬЩ\X┘P┌[Щ[КИ▌][J
+	█Y█ШI╩K┌Y█УШ[YJ┌\ЭШ\╪┘[Щ[ЭЬШ\┌W┌[Щ^
+K	┘\╩┌\ЭШ\╪┘[Щ[ЭЬ┌Y\ЩX[██Щ┌]YH	H╠
+_X
+KИ▌][J
+	┌Ш[ЫXTШ\┌I╩K┌Y█УШ[YJ[██ЛЬШ\┌W┌[Щ^
+K	╪Ы┘SШ[YJ	╙[██Й╩_H	┘\╩[██ЛЬ┌Y\ЩX[██Щ┌]YH	H╠
+_X
+KИ▌][J
+	█ШZ▄┌]ШI╩KШ[Y\╦ЫШZ▄┌]ШSШ[YJЪ\ЭЫШZ▄┌]ШW┌[Щ^▌]KЫ[Щ╩K	▌
+	▄YI╩_H	╪Ъ\ЭЫШZ▄┌]ШW▄Y_X
+JN┬И	
+	╪┌\ЭZШ[ЫXI╩KЭ^██Э[ЭH	▌
+	┌Ш[ЫXTШ\┌I╩_NИ	▄┌Y█УШ[YJ[██ЛЬШ\┌W┌[Щ^
+_H
+	▌
+	▄Ш\┌I╩_H	█[██ЛЬШ\┌W┌[Щ^JH0н╚	╪Ы┘SШ[YJ	╙[██Й╩_H	█[██ЛЬ┌Y\ЩX[██Щ┌]YKЭ╤Ъ^Y
+
+_pм	▌
+	▄┌Y\ЩX[	╩_X┬ИЫ▄И
+██Ь▌Э]█И┘И	
+	▄▌[K]┘┘█I╩KЬ]Y\ЮT┘[X▌▄Р[╚	
+	▄▌[K]┘┘█I╩KЬ]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩HИ╫JHЭ]█ЛШ█\▄╙\▌Э┘┘█J	██Й╦Э]█ЛЩ]\┘]Ь▌[HOOH▌]KЪ▌[ЩKЬ▌[JN┬ИЫ▄И
+██Ь▌Э]█И┘И	
+	┘]Ъ\┌[█Л]┘┘█I╩KЬ]Y\ЮT┘[X▌▄Р[╚	
+	┘]Ъ\┌[█Л]┘┘█I╩KЬ]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩HИ╫JHЭ]█ЛШ█\▄╙\▌Э┘┘█J	██Й╦Э]█ЛЩ]\┘]Щ]Ъ\┌[█ИOOH▌]KЪ▌[ЩKЩ]Ъ\┌[█КN┬И██Ь▌]Ъ\┌[█ИH▌]KЪ▌[ЩKЩ]Ъ\┌[█ИOOH	┘I╚	ЙИY]Z[╚╚	┘I╚И▌]KЪ▌[ЩKЩ]Ъ\┌[█О┬И▌]KЪ▌[ЩKЩ]Ъ\┌[█ИH]Ъ\┌[█О┬И██Ь▌ЪY]╚H┘]Y╨┌\Э
+
+N┬И	
+	┘KY▄ЪY	╩KЪY[ИH▌]KЪ▌[ЩKЬ▌[HOOH	▄█▌]	╬╚	
+	█Ы▄ЭX┌\Э	╩KЪY[ИH▌]KЪ▌[ЩKЬ▌[HOOH	█Ы▄Э	╬┬ИYИ
+▌]KЪ▌[ЩKЬ▌[HOOH	▄█▌]	╩HЩ[Щ\Ф█▌]
+ЪY]╩N╚[┘HЩ[Щ\УЫ▄Э
+ЪY]╩N┬И	
+	╪┌\Э[Y┘[Щ	╩KЭ^██Э[ЭH8есИ	▌
+	█Y█ШI╩_H8ж/И	▌
+	┌Ш[ЫXTШ\┌I╩_I┘]Z[╚╚	╚8б'И	╚
+╚
+	▄Щ]Ы╔╩HИ	╔▀X┬ВИ██Ь▌Ы┘HH	
+	┘]Z[╦XЫ┘I╩N╚Ы┘KЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌▄┌][█Ь╚H	
+	╪┌\Э\▄┌][█Ь╔╩N╚▄┌][█Ь╦ЬЩ\X┘P┌[Щ[К
+N┬ИYИ
+]Z[╩H┬И██Ь▌[ЭЪY\╚H╓╔╙Y█ШI╦]Z[╦ЫY█ШK
+	█Y█ШI╩WKЛЛФSСU╙╘СTЛЫX\
+Ш[YHOИ█Ш[YK]Z[╦Ь[Щ]╓█Ш[YWKЫ┘SШ[YJШ[YJWJWN┬ИЫ▄И
+██Ь▌█Ш[YK[ЩЫ╦XЩ[H┘И[ЭЪY\╩H┬И██Ь▌▌]\╚H[
+	▄▄[Й╩N┬И██Ь▌┌[ЩH[ЩЫ╦ЩY█Ъ]N┬ИYИ
+┌[Щ
+H▌]\╦Ш\[Щ┌[
+Y╩┌[ЩOOH	┘^[Y	╚╚	┘^[Y	╚И┌[ЩOOH	┘XЪ[]]Y	╚╚	┘XЪ[]]Y	╚И	█▌█Й╦
+┌[ЩOOH	┘^[Y	╚╚	┘Y█Ъ]Q^[Y	╚И┌[ЩOOH	┘XЪ[]]Y	╚╚	┘Y█Ъ]QXЪ[]]Y	╚И	┘Y█Ъ]S▌█Й╩JJN┬ИYИ
+[ЩЫ╦ЬЩ]Ы┘▄ШYJH▌]\╦Ш\[Щ┌[
+Y╩	▄Щ]Ы╔╦8б'И	▌
+	▄Щ]Ы╔╩_X
+JN┬И██Ь▌Ш[YP┘[H[
+	▄▄[Й╦Э[XЩ[
+N┬ИYИ
+SСU╨╙╙╘Ф╓█Ш[YWJHШ[YP┘[Ь┘]]ЪXЭ]J	▄▌[I╦██▄ОЙ╘SСU╨╙╙╘Ф╓█Ш[YW_X
+N┬ИЫ┘KШ\[Щ┌[
+Ы▌╩█Ш[YP┘[┌Y█УШ[YJ[ЩЫ╦ЬШ\┌W┌[Щ^
+K\╩[ЩЫ╦ЩY▄ЩYW┌[Ч▄┌Y█КKИ	█Ш[Y\╦ЫШZ▄┌]ШSШ[YJ[ЩЫ╦ЫШZ▄┌]ШW┌[Щ^▌]KЫ[Щ╩_H0н╚	┌[ЩЫ╦ЫШZ▄┌]ШW▄Y_H
+	╪Ы┘SШ[YJ[ЩЫ╦ЫШZ▄┌]ШW█▄Щ
+_JX[ЩЫ╦Э┌█W▄┌Y█Ч╪Ъ]ШK▌]\╫JJN┬ИBИBИЫ▄И
+██Ь▌█Ш[YKH┘И╪ЪЩX▌Щ[ЭЪY\╩┌\ЭЬ▄┌][█Ь╩JH▄┌][█Ь╦Ш\[Щ┌[
+Ы▌╩╪Ы┘SШ[YJШ[YJKЭЫ▄X╪[██Щ┌]YKЭ╤Ъ^Y
+
+KЬ┌Y\ЩX[██Щ┌]YKЭ╤Ъ^Y
+
+K┌Y█УШ[YJЬШ\┌W┌[Щ^
+KЭ┌█W▄┌Y█Ч╪Ъ]ШWJJN┬ВИ██Ь▌[Ш┌[Щ╚H	
+	╪Ъ\Э\[Ш┌[Щ╔╩N╚[Ш┌[Щ╦ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌▄[Ь╚H]Z[╚╚]Z[╦ШЪ\Э▄[Ш┌[Щ╚ИЭ[┬И██Ь▌▄[Х^H][HOИ][H╚	╪█╪┌╩][KЬ▌\Э╫╪]╪╪[]J_H8а$╚	╪█╪┌╩][KЩ[Щ╫╪]╪╪[]J_XИ	╔╬┬И██Ь▌┘[H
+^][JHOИ╚██Ь▌Ы▐H[
+	┘]Й╩N╚Ы▐Ш\[Щ┌[
+[
+	╪Й╦Э[^
+JN╚YИ
+][JHЫ▐Ш\[Щ┌[
+[
+	┘]Й╦	█]]Y[Ы▌I╦▄[Х^
+][JJJN╚Щ]\ЫИЫ▐╚N┬И[Ш┌[Щ╦Ш\[Щ
+ИЫ▌╩▌
+	▌]I╩K┘[
+	█Ш[Y\╦Э]SШ[YJЪ\ЭЭ]W┌[Щ^▌]KЫ[Щ╩_H
+	╪Ъ\ЭЭ]W┌[Щ^JX▄[Ь╚	ЙИ▄[Ь╦Э]JWJKИЫ▌╩▌
+	█ШZ▄┌]ШI╩K┘[
+	█Ш[Y\╦ЫШZ▄┌]ШSШ[YJЪ\ЭЫШZ▄┌]ШW┌[Щ^▌]KЫ[Щ╩_H0н╚	▌
+	▄YI╩_H	╪Ъ\ЭЫШZ▄┌]ШW▄Y_X▄[Ь╚	ЙИ▄[Ь╦ЫШZ▄┌]ШJWJKИЫ▌╩▌
+	▐[┘╪I╩K┘[
+	█Ш[Y\╦Ю[┘╪SШ[YJЪ\ЭЮ[┘╪W┌[Щ^▌]KЫ[Щ╩_H
+	╪Ъ\ЭЮ[┘╪W┌[Щ^JX▄[Ь╚	ЙИ▄[Ь╦Ю[┘╪JWJKИЫ▌╩▌
+	┘╪\Ш[ШI╩K┘[
+	█Ш[Y\╦Ъ╪\Ш[ШSШ[YJЪ\ЭЪ╪\Ш[ШW┌[Ч▌]W┌[Щ^▌]KЫ[Щ╩_H
+	╪Ъ\ЭЪ╪\Ш[ШW┌[Ч▌]W┌[Щ^JX▄[Ь╚	ЙИ▄[Ь╦Ъ╪\Ш[ШJWJKИЫ▌╩▌
+	▌Ш\ШI╩K┘[
+╪[[Щ\ХRKЭ┘YZ┘^SШ[YJ▌]KЫ[Щ╦Щ]╚]J	█╪╪[]_ULОММШ
+KЩ┘]U╤^J
+JJWJJN┬ВИ██Ь▌\┌PЫ▐H	
+	┘\┌KY]Z[╔╩N┬И\┌PЫ▐ЪY[ИHY]Z[╬┬ИYИ
+]Z[╩H┬И██Ь▌\┌HH]Z[╦Щ\┌N┬И██Ь▌]U^H\█╚OИ╪[[Щ\ХRKЩЫ▄ЫX]]J▌]KЫ[Щ╦\█╦	▄┌▄Э	╩N┬И██Ь▌XZY\┌HH	
+	█XZY\┌KXЫ┘I╩N╚XZY\┌KЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌][H┘И\┌KЫXZY\┌JH┬И██Ь▌▄ЩH[
+	▄▄[Й╦Э[Ы┘SШ[YJ][KЫ▄Щ
+JN╚YИ
+][KШ▌\ЬЩ[Э
+H▄ЩШ\[Щ┌[
+Y╩	█Ы▌╔╦
+	┘\┌P▌\ЬЩ[Э	╩JJN┬ИXZY\┌KШ\[Щ┌[
+Ы▌╩█▄Щ]U^
+][KЬ▌\Э
+K]U^
+][KЩ[Щ
+WK][KШ▌\ЬЩ[Э╚	╪▌\ЬЩ[Э	╚И	╔╩JN┬ИBИ	
+	╪[Э\Щ\┌K]]I╩KЭ^██Э[ЭH\┌KШ▌\ЬЩ[Э█XZY\┌H╚
+	╪[Э\Щ\┌U]I╩KЬЩ\X┘J	▐█▄ЩI╦Ы┘SШ[YJ\┌KШ▌\ЬЩ[Э█XZY\┌JJHИ	╔╬┬И██Ь▌[Э\Щ\┌HH	
+	╪[Э\Щ\┌KXЫ┘I╩N╚[Э\Щ\┌KЬЩ\X┘P┌[Щ[К
+N┬ИЫ▄И
+██Ь▌][H┘И\┌KШ[Э\Щ\┌JH┬И██Ь▌▄ЩH[
+	▄▄[Й╦Э[Ы┘SШ[YJ][KЫ▄Щ
+JN╚YИ
+][KШ▌\ЬЩ[Э
+H▄ЩШ\[Щ┌[
+Y╩	█Ы▌╔╦
+	┘\┌P▌\ЬЩ[Э	╩JJN┬И[Э\Щ\┌KШ\[Щ┌[
+Ы▌╩█▄Щ]U^
+][KЬ▌\Э
+K]U^
+][KЩ[Щ
+WK][KШ▌\ЬЩ[Э╚	╪▌\ЬЩ[Э	╚И	╔╩JN┬ИBИBИBИЭ[Ш▌[█ИЪ[Щ┘┘█JY]ЪXЭ]K┘^JH┬И██Ь▌▄Ы▌\H	
+Y
+N┬ИYИ
+Y▄Ы▌\Ь]Y\ЮT┘[X▌▄Р[
+HЩ]\ЫО┬И▄Ы▌\Ь]Y\ЮT┘[X▌▄Р[
+	╪Э]█Й╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И▌]KЪ▌[ЩV┌┘^WHHЭ]█ЛЩ]\┘]╪]ЪXЭ]WN┬ИЩ[Щ\Р┌\Э
+
+N┬ИJJN┬ИBИЪ[Щ┘┘█J	▄▌[K]┘┘█I╦	▄▌[I╦	▄▌[I╩N┬ИЪ[Щ┘┘█J	┘]Ъ\┌[█Л]┘┘█I╦	┘]Ъ\┌[█Й╦	┘]Ъ\┌[█Й╩N┬ВИ	
+	╪Ъ\ЭYЫ▄ЫI╩KШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦\▐[Ш╚]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
+
+N┬И██Ь▌]HHЩ]╚Ы▄ЫQ]J	
+	╪Ъ\ЭYЫ▄ЫI╩JN┬ИYИ
+J]╪Z]Щ]╪\ЩY╪]J
+JJHЩ]\ЫО┬И	
+	╪┌\Э	╩KЪY[ИHЭYN╚▌]KШ┌\ЭHЭ[╚▌]KЩ]Z[╚HЭ[┬И┘]┌][ШXЫY
+Ш[┘JN┬ИЩ\┘]┌]
+
+	▄Ы╪┘\▄┌[Щ╔╩JN┬И	
+	▄Щ\▌[	╩KЭ^██Э[ЭH
+	╪┌X┌┌[Щ╔╩N┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦╚╪ОИ]KЩ┘]
+	┘╪Й╩K╪ОИ]KЩ┘]
+	▄╪Й╩K╪ОИ]KЩ┘]
+	▌╪Й╩HJN┬И	
+	▄Щ\▌[	╩KЭ^██Э[ЭH┌╚	ЙИЫ┘H	ЙИЫ┘KШ┌\Э╚
+	╪┌\ЭЩXYI╩HИ
+	╪┌\ЭШZ[Y	╩N┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШ┌\Э
+H┬И▌]KШ┌\ЭHЫ┘KШ┌\Э╚▌]KЩ]Z[╚HЫ┘KЩ]Z[╚Э[╚▌]KЬЩ\██ЩYHЫ┘KЬЩ\██ЩY╪Ъ\ЭЭ[┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	┌YI╦[XY┘NИЭ[N╚╦╚H█[\▌Ш][█ИЫ╚█Щ┘\ИX]┌\╚\╚┌\ЭИЩ[Щ\ФЩ[][█Ь┌\
+
+N┬И╪]ЩTЫ┘Ъ[J╚╪ОИ]KЩ┘]
+	┘╪Й╩K╪ОИ]KЩ┘]
+	▄╪Й╩K╪ОИ]KЩ┘]
+	▌╪Й╩HJN┬ИЩ[Щ\Р┌\Э
+
+N╚	
+	╪┌\Э	╩KЪY[ИHШ[┘N┬И\┘S▌█ФШ\┌J
+N┬И┘]┌][ШXЫY
+ЭYJN╚[ЭZ┘KЬ▌\HЭ[╚Щ\┘]┌]
+
+	╪┌\ЭЩXYI╩JN┬И┌▌╘Y┘J	┌▌[ЩI╩N┬И██Ь▌\Щ┘]H	
+	╪┌\Э	╩N╚YИ
+\Щ┘]Ь╪▄Ы█[Э╒ЪY]╩H\Щ┘]Ь╪▄Ы█[Э╒ЪY]╩╚ЩZ]Ъ[▄ОИ	▄█[█▌	╦Ы╪┌╬И	▄▌\Э	╚JN┬ИBИH╪]┌
+┘\ЬЫ▄КH╚	
+	▄Щ\▌[	╩KЭ^██Э[ЭH
+	▄┘\ЭЪX┘U[Ш]ШZ[XЫI╩N╚BИYИ
+\▌]KШ┌\Э
+H╚┘]┌][ШXЫY
+ЭYJN╚▌\Э[ЭZ┘J
+N╚BИJN┬ВИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKH\┌╚
+Л┬И██Ь▌┌]┘╚H	
+	╪┌][┘╔╩K┌]]Y\▌[█ИH	
+	╪┌]\]Y\▌[█Й╩N┬ИЭ[Ш▌[█И┘]┌][ШXЫY
+[ШXЫY
+H┬И┌]]Y\▌[█ЛЩ\╪XЫYHY[ШXЫY╚	
+	╪┌]\┘[Щ	╩KЩ\╪XЫYHY[ШXЫY┬И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╦ЬЫ█\	╩KЩЫ▄СXX┌
+Э]█ИOИ╚Э]█ЛЩ\╪XЫYHY[ШXЫY╚JN┬ИBИЭ[Ш▌[█ИYY\▄╪Y┘J┌[ЩY\▄╪Y┘JH┬И██Ь▌[ЭЮHH[
+	┘]Й╦┌][Y\▄╪Y┘H	┌┌[ЩXY\▄╪Y┘JN┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИ╦╚H\▌Ы█┘┘\И[ЭЫ┘X┘\╚]┘[ИЮHШ[YH[Щ▄ЩY]╚H\┘\ИЮHZ\Ь╦[И╪^\╚┌]██Y\╚Щ^ВИЭ[Ш▌[█ИЩ\┘]┌]
+Y\▄╪Y┘JH┬И┌]┘╦ЬЩ\X┘P┌[Щ[К
+N┬И██Ь▌\Ь██ШHH██^
+
+KЬ\Ь██ШH╙╙╫╨╙╘KЩ[ЛЬ\Ь██ШN┬ИYИ
+Y\▄╪Y┘HOOH
+	╪┌\ЭЩXYI╩HY\▄╪Y┘HOOH
+	╪┌]\┌╤╪Й╩JHYY\▄╪Y┘J	╪\▄┌\▌[Э	╦Ъ[
+\Ь██ШKЪ[╦╚Ш[YNИ▌]KЭ\┘\УШ[YH╚	▄▌]KЭ\┘\УШ[Y_XИ	╔╚JJN┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦Y\▄╪Y┘JN┬И\▌▄ЮKЫ[Щ▌H┬ИBИ╦╚HЭ[Ш]Z╪[H\╚\▄┘[XЫYЬЫ█HHXЫ\╚[ЩXYHЩ[Щ\ЩYЫ▄ИH┌\Э█╚][╪^\╚X]┌\╚[H[ЩH[Щ▌XY┘KВИЭ[Ш▌[█ИЭZ[Ш]Z╪[J
+H┬И██Ь▌┘X▌[█ИH
+]KЛЛЫЫ┘\╩HOИ╚██Ь▌Ы▐H[
+	▄┘X▌[█Й╦	┌Ъ╦\┘X╔╩N╚Ы▐Ш\[Щ┌[
+[
+	┌	╦Э[]JJN╚Ы┘\╦ЩЫ▄СXX┌
+Ы┘HOИЫ▐Ш\[Щ┌[
+Ы┘JJN╚Щ]\ЫИЫ▐╚N┬И██Ь▌█▄HHЫ┘HOИ╚██Ь▌██ЩHHЫ┘KШ██ЩSЫ┘JЭYJN╚██ЩKЬЩ[[▌ЩP]ЪXЭ]J	┌Y	╩N╚██ЩKЬЩ[[▌ЩP]ЪXЭ]J	┌Y[Й╩N╚██ЩKЬ]Y\ЮT┘[X▌▄Р[
+	╓┌YI╩KЩЫ▄СXX┌
+][HOИ][KЬЩ[[▌ЩP]ЪXЭ]J	┌Y	╩JN╚Щ]\ЫИ██ЩN╚N┬И██Ь▌╪╚H[
+	┘]Й╦	┌Ш]Z╪[I╩N┬И╪╦Ш\[Щ┌[
+[
+	┌╔╦Э[	▌
+	┌▌[ЩI╩_H0н╚	╔
+	╪┌\Э\▌[[X\ЮI╩KЭ^██Э[ЭX
+JN┬И╪╦Ш\[Щ┌[
+█▄J	
+	╪┌\Э\▌]╔╩JJN┬И╪╦Ш\[Щ┌[
+[
+	▄	╦	┌Ъ╦[[ЩI╦	
+	╪┌\ЭZШ[ЫXI╩KЭ^██Э[Э
+JN┬И╪╦Ш\[Щ┌[
+█▄J	
+▌]KЪ▌[ЩKЬ▌[HOOH	█Ы▄Э	╚╚	█Ы▄ЭX┌\Э	╚И	┘KY▄ЪY	╩JJN┬И╪╦Ш\[Щ┌[
+[
+	▄	╦	╪┌\Э[Y┘[Щ	╦	
+	╪┌\Э[Y┘[Щ	╩KЭ^██Э[Э
+JN┬И╪╦Ш\[Щ┌[
+┘X▌[█К
+	┘]Z[╒]I╩K█▄J	
+	┘]Z[╦XЫ┘I╩KЬ\Щ[ЭЫ┘KЬ\Щ[ЭЫ┘JJJN┬И╪╦Ш\[Щ┌[
+┘X▌[█К
+	╪Ъ\Э[Ш┌[Щ╒]I╩K█▄J	
+	╪Ъ\Э\[Ш┌[Щ╔╩KЬ\Щ[ЭЫ┘KЬ\Щ[ЭЫ┘JJJN┬ИYИ
+▌]KЩ]Z[╩H╪╦Ш\[Щ┌[
+┘X▌[█К
+	┘\┌U]I╩K█▄J	
+	█XZY\┌KXЫ┘I╩KЬ\Щ[ЭЫ┘KЬ\Щ[ЭЫ┘JK[
+	┌I╦Э[	
+	╪[Э\Щ\┌K]]I╩KЭ^██Э[Э
+K█▄J	
+	╪[Э\Щ\┌KXЫ┘I╩KЬ\Щ[ЭЫ┘KЬ\Щ[ЭЫ┘JJJN┬И╪╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦
+	█Ы┘SЫ▌I╩JJN┬И╪╦Ш\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦
+	╪┌\Э[Щ▌XY┘I╩JJN┬ИЩ]\ЫИ╪╬┬ИBИЭ[Ш▌[█ИYШ]Z╪[J
+H┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[ЭЪ╦[Y\▄╪Y┘I╩N┬И██Ь▌╪╚HЭZ[Ш]Z╪[J
+N┬И██Ь▌Ъ[ЭH[
+	╪Э]█Й╦	╪┌\XЭИ██YЪ╦\Ъ[Э	╦<'хк	▌
+	┌Ш]Z╪[TЪ[Э	╩_X
+N┬ИЪ[ЭЭ\HH	╪Э]█Й╬┬ИЪ[ЭШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌Ы█▌H[
+	┘]Й╩N╚Ы█▌ЪYH	▄Ъ[Э\Ы█▌	╬╚Ы█▌Ш\[Щ┌[
+╪╦Ш██ЩSЫ┘JЭYJJN┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+Ы█▌
+N╚╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ШY
+	▄Ъ[Э[Щ╔╩N┬И██Ь▌█ЩHH
+
+HOИ╚╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ЬЩ[[▌ЩJ	▄Ъ[Э[Щ╔╩N╚YИ
+Ы█▌Ь\Щ[ЭЫ┘JHЫ█▌Ь\Щ[ЭЫ┘KЬЩ[[▌ЩP┌[
+Ы█▌
+N╚N┬И┌[Щ▌╦ШY]Щ[Э\▌[Щ\К	╪YЭ\ЬЪ[Э	╦█ЩK╚█Ш┘NИЭYHJN┬И┌[Щ▌╦ЬЪ[Э
+
+N┬ИJN┬И[ЭЮKШ\[Щ
+╪╦Ъ[Э
+N┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИ╦╚┌]H▄[█Ш[\▄┌\▌[Э[ШXЫY█ИH┘\ЭЩ\ЛЬЩYKYЫ▄ЫH]Y\▌[█Ь╚[И[ЮH[Щ▌XY┘K▄▄[[Щ╚\ЩH[Ь▌┘\ЩYЮH]И╦╚ЬЫ█HH╪[▌[]YШX▌╚Щ[▌╬╚]Щ\Ю][Щ╚[┘H
+[Щ[ЮHШZ[\ЩJH\┘\╚H┘ЩЫ[ЩH[Ь▌┘\Ь╦ВИЭ[Ш▌[█И┌\ЭШX▌╩
+H┬И██Ь▌┌\ЭH▌]KШ┌\ЭH▌]KЩ]Z[╦Ъ\ЭH┌\ЭЬ[Ш┌[Щ╪W╪]╪Ъ\Э┬И██Ь▌┌Y█ИHHOИ┌\ЭRKЬ┌Y█УШ[YJK	┘[Й╩KШX▌╚H┬ИY█ШNИ	▄┌Y█К┌\ЭШ\╪┘[Щ[ЭЬШ\┌W┌[Щ^
+_X[██И┌Y█И
+Ш[ЫXHШ\┌JNИ	▄┌Y█К┌\ЭЬ▄┌][█Ь╦У[██ЛЬШ\┌W┌[Щ^
+_XИЪ\ЭШZ▄┌]ШNИ	█Ш[Y\╦ЫШZ▄┌]ШSШ[YJЪ\ЭЫШZ▄┌]ШW┌[Щ^	┘[Й╩_HYH	╪Ъ\ЭЫШZ▄┌]ШW▄Y_XЪ\Э]NИ	█Ш[Y\╦Э]SШ[YJЪ\ЭЭ]W┌[Щ^	┘[Й╩_XN┬И██Ь▌[Щ]╚H╚Ь[Щ]╚И┌\ЭЬ▄┌][█Ь╬┬ИЫ▄И
+██Ь▌█Ш[YKH┘И╪ЪЩX▌Щ[ЭЪY\╩[Щ]╩JHШX▌╦Ь\┌
+	█Ш[Y_NИ	▄┌Y█КЬШ\┌W┌[Щ^
+_K▌\┘H	▄Э┌█W▄┌Y█Ч╪Ъ]Ш_I▄ЩY█Ъ]H╚	╦	╚
+╚ЩY█Ъ]HИ	╔▀I▄ЬЩ]Ы┘▄ШYH╚	╦Щ]Ы┘▄ШYI╚И	╔▀X
+N┬И██Ь▌▄┌\╚H	ЙИЩ▄┌\╬┬ИYИ
+▄┌\╚	ЙИ▄┌\╦Ъ▌ZШJHШX▌╦Ь\┌
+▌ZШH▄┌H
+X[Щ█Z╩NИ	┘▄┌\╦Ъ▌ZШKЬЩ\┘[Э╚	▐Y\╔╚И	█Ы╔▀H
+X\Ь╚▌\┘H	┘▄┌\╦Ъ▌ZШKЪ▌\┘W┘ЬЫ█W█Y█Ш_HЬЫ█HY█ШK	┘▄┌\╦Ъ▌ZШKЪ▌\┘W┘ЬЫ█W█[██ЯHЬЫ█H[██Й┘▄┌\╦Ъ▌ZШKЬЩYX┘Y╚	╬╚ЩYX┘YX\Ь╚[И▌█Л┘^[Y┌Y█Й╚И	╔▀JX
+N┬ИYИ
+▄┌\╚	ЙИ▄┌\╦Ь╪]\ЫИ	ЙИ▄┌\╦Ь╪]\ЫЛЬ╪YW▄╪]JH┬И██Ь▌╪YHH▄┌\╦Ь╪]\ЫЛЬ╪YW▄╪]K▄[ИH][HOИ][H╚	┌][KЬ▌\Э	┘X\ЫY\Й▀H╚	┌][KЩ[Щ	█]\Й▀XИ	▌[Ъ█Ы▌█Й╬┬ИШX▌╦Ь\┌
+╪YKШX▌]ЩH╚╪YH╪]NИЭ[ЫЪ[Щ╚Ы▌╦\┘H	▄╪YKЬ\┘_H┘И╦	▄▄[К╪YKШ▌\ЬЩ[Э
+_XИ╪YH╪]NИЫ▌Э[ЫЪ[Щ╚Ы▌╬╚Щ^	▄▄[К╪YKЫЩ^
+_X
+N┬ИYИ
+▄┌\╦Ь╪]\ЫЛШ\┌[XW▄┌[ЪKШX▌]ЩJHШX▌╦Ь\┌
+\┌[XH┌[ЪNИЭ[ЫЪ[Щ╚Ы▌╚[Э[	┘▄┌\╦Ь╪]\ЫЛШ\┌[XW▄┌[ЪKШ▌\ЬЩ[ЭЩ[Щ	█]\Й▀X
+N┬ИYИ
+▄┌\╦Ь╪]\ЫЛШ\Щ\┌[XW▄┌[ЪKШX▌]ЩJHШX▌╦Ь\┌
+\Щ\┌[XH┌[ЪNИЭ[ЫЪ[Щ╚Ы▌╚[Э[	┘▄┌\╦Ь╪]\ЫЛШ\Щ\┌[XW▄┌[ЪKШ▌\ЬЩ[ЭЩ[Щ	█]\Й▀X
+N┬ИBИYИ
+	ЙИЩ\┌H	ЙИЩ\┌KШ▌\ЬЩ[Э█XZY\┌JH┬И██Ь▌▌XИH
+Щ\┌KШ[Э\Щ\┌H╫JKЩЪ[Щ
+HOИKШ▌\ЬЩ[Э
+N┬ИШX▌╦Ь\┌
+▌\ЬЩ[ЭЪ[\┌▌\ЪH\Ъ[┘И	┘Щ\┌KШ▌\ЬЩ[Э█XZY\┌_HXZY\┌I▄▌XИ╚	▄▌XЛЫ▄ЩH[Э\Щ\┌H[Э[	▄▌XЛЩ[ЩXИ	╔▀X
+N┬ИBИ██Ь▌┘^R\█╚HЩ]╚]J
+KЭ╥T╙╘▌Ъ[Щ╩
+KЬ█X┘JL
+N┬ИYИ
+	ЙИЬ[Щ]╩H┬И╦╚[┘[ЩH▌\┘\╚┌]Z\И▄Щ╦╪╪▌\[Э╚[Щ\▄X▌╦█╚HRH╪[ИЩXYH]Y\▌[█Й▄╚▌█И▌\┘\╚ЬЫ█HH┌\ЭВИ██Ь▌▄Щ╚H╔╙X\Ь╔╦	╒Щ[Э\╔╦	╙Y\Ш▌\ЮI╦	╙[██Й╦	╘▌[Й╦	╙Y\Ш▌\ЮI╦	╒Щ[Э\╔╦	╙X\Ь╔╦	╥Э\]\Й╦	╘╪]\ЫЙ╦	╘╪]\ЫЙ╦	╥Э\]\Й╫N┬И██Ь▌\▄X▌╙┘ИH╚X\Ь╬И═╦KЭ\]\ОИ═K╦WK╪]\ЫОИ╠╦╦LK▌[ОИ═╫K[██ОИ═╫KY\Ш▌\ЮNИ═╫KЩ[Э\╬И═╫HN┬И██Ь▌X┘YH╪ЪЩX▌Щ[ЭЪY\╩Ь[Щ]╩KY█ШR[Щ^H┌\ЭШ\╪┘[Щ[ЭЬШ\┌W┌[Щ^┬ИЫ▄И
+]▌\┘HHN╚▌\┘HHLО╚▌\┘H
+╧HJH┬И██Ь▌Ш\┌HH
+Y█ШR[Щ^
+╚▌\┘HHКH	HLИ
+╚K▄ЩH▄Щ╓▄Ш\┌HHWK▄Щ]HЬ[Щ]╓█▄ЩN┬И██Ь▌[Ь┌YHHX┘YЩЪ[\К
+╦JHOИЭ┌█W▄┌Y█Ч╪Ъ]ШHOOH▌\┘JKЫX\
+
+█Ш[YWJHOИШ[YJN┬И██Ь▌┘Y[ИHX┘YЩЪ[\К
+█Ш[YKJHOИ
+\▄X▌╙┘Ц█Ш[YWH╫JKЬ██YJHOИ
+Э┌█W▄┌Y█Ч╪Ъ]ШH
+╚HHКH	HLИ
+╚HOOH▌\┘JJKЫX\
+
+█Ш[YWJHOИШ[YJN┬ИШX▌╦Ь\┌
+▌\┘H	┌▌\┘_H
+	▄┌Y█КШ\┌J_JNИ▄Щ	█▄ЩH┌]╚[И▌\┘H	█▄Щ]╚▄Щ]Э┌█W▄┌Y█Ч╪Ъ]ШH
+╚	╚
+	╚
+╚┌Y█К▄Щ]ЬШ\┌W┌[Щ^
+H
+╚	╩I╚И	▌[Ъ█Ы▌█Й▀I┌[Ь┌YKЫ[Щ▌╚	╬╚╪╪▌\YYЮH	╚
+╚[Ь┌YKЪЫ┌[К	╦	╩HИ	╬╚[\I▀I▄┘Y[ЛЫ[Щ▌╚	╬╚\▄X▌YЮH	╚
+╚┘Y[ЛЪЫ┌[К	╦	╩HИ	╔▀X
+N┬ИBИ██Ь▌Ш]ИHЫШ]Ш[\╪N┬ИYИ
+Ш]И	ЙИШ]ЛЬ▄┌][█Ь╩HШX▌╦Ь\┌
+Ш]Ш[\╪H
+JNИY█ШH	▄┌Y█КШ]ЛЫY█ШW▄Ш\┌W┌[Щ^
+_I╓╔╒Щ[Э\╔╦	╥Э\]\Й╦	╙[██Й╦	╘╪]\ЫЙ╦	╙X\Ь╔╫KЩЪ[\КИOИШ]ЛЬ▄┌][█Ь╓█ЧJKЫX\
+ИOИ	█ЯH	▄┌Y█КШ]ЛЬ▄┌][█Ь╓█ЧJ_X
+KЪЫ┌[К	╔╩_X
+N┬ИBИYИ
+	ЙИЩ\┌H	ЙИЩ\┌KЫXZY\┌JH┬И██Ь▌[HЩ\┌KЫXZY\┌KЬЫ█HHX]ЫX^
+[ЩЪ[Щ[Щ^
+HOИKШ▌\ЬЩ[Э
+K
+N┬ИШX▌╦Ь\┌
+XZY\┌H[Y[[ЩH
+\Ы▐[X]H]\╩NИ	╪[Ь█X┘JЬЫ█KЬЫ█H
+╚
+KЫX\
+HOИ	█KЫ▄ЩH	█KЬ▌\ЭH╚	█KЩ[ЩX
+KЪЫ┌[К	╬╚	╩_X
+N┬И██Ь▌]\ИH
+Щ\┌KШ[Э\Щ\┌H╫JKЩЪ[\КHOИKЩ[ЩПH┘^R\█╩N┬ИYИ
+]\ЛЫ[Щ▌
+HШX▌╦Ь\┌
+[Э\Щ\┌\╚[ИH▌\ЬЩ[ЭXZY\┌NИ	█]\ЛЫX\
+HOИ	╪KЫ▄ЩH	╪KЬ▌\ЭH╚	╪KЩ[ЩX
+KЪЫ┌[К	╬╚	╩_X
+N┬ИBИШX▌╦Ь\┌
+┘^I▄╚]NИ	▌┘^R\█▀X
+N┬И╦╚█ЫH╪[▌[]YXЩ[╚X]ЩHHЬЫ▌▄┘\О╚[ЬЩ]ЪY]┘YYЩKX\ЩXHЩXY[Щ▄╚╚Ы▌ВИЩ]\ЫИШX▌╬┬ИBИ╦╚Ш]]ЩH[ЩЫ┌Y\█ЫNИH██┘█HY[╪ИШ[ЫЩ\И\╚Ш]█ИЮHH\Щ[▌╚HY┘KИH┘\ЭЩ\И▌┌]┌\╚]█И[Щ┘ЩЛВИ╦╚HЫ▌█HШ[ЫЩ\И\╚Y[И█ИH\┌╚Y┘H
+Z┘H[HRH┘Y\╚]╚┌]█X[КH[Щ┌[HH╪[Y\ШH\╚▄[И
+BИ╦╚Ш[ЫЩ\И\╚HШ]]ЩHЪY]╚]█▌[█▌Щ\ИH┌]\КN╚]\╚┌▌█И█ИH▌\И╪▄ЩY[Ь╦ВИЭ[Ш▌[█И┘]Ш[ЫЩ\ТY[КЩX\██Л█КH┬И██Ь▌YHШ[ЫЩ\Т█Ь┌^ЩHИ┬ИYИ
+█КHШ[ЫЩ\Т█ШY
+ЩX\██КN╚[┘HШ[ЫЩ\Т█Щ[]JЩX\██КN┬И██Ь▌YHHШ[ЫЩ\Т█Ь┌^ЩHИY[╪ИH\Y╦ШY[╪О┬ИYИ
+YHOOHYXY[╪ИX\Y╦Ш██ЩЪY╩HЩ]\ЫО┬ИЮH┬ИYИ
+YJH╚Ы┌YЫ█Z\┘KЬЩ\██ЩJY[╪ЛЪYPШ[ЫЩ\И	ЙИY[╪ЛЪYPШ[ЫЩ\К
+JKШ╪]┌
+
+
+HOИ▀JN╚╪▌[Y[ЭЩ╪▌[Y[Э[[Y[ЭЬ▌[KЬ┘]Ы▄\ЭJ	╦KXYZZY┌	╦	╠	╩N╚BИ[┘H╚Ы┌YЫ█Z\┘KЬЩ\██ЩJY[╪ЛЬЩ\▌[YPШ[ЫЩ\И	ЙИY[╪ЛЬЩ\▌[YPШ[ЫЩ\К
+JKШ╪]┌
+
+
+HOИ▀JN╚┘]YZY┌
+\Y╦ЪZY┌
+N╚BИH╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИBИЭ[Ш▌[█И▐[Ш╨Ш[ЫЩ\КY┘JH╚┘]Ш[ЫЩ\ТY[К	╪┌]	╦Y┘HOOH	╪┌]	╩N╚BИЭ[Ш▌[█И┘]YZY┌
+^[╩H┬И██Ь▌ZY┌HЭ[XЩ\ЛЪ\╤Ъ[Ъ]J^[╩H	ЙИ^[╚И╚X]ЫZ[КX]ЬЫ▌[Щ
+^[╩KМ
+HИ┬ИYИ
+XШ[ЫЩ\Т█Ь┌^ЩJH\Y╦ЪZY┌HZY┌┬И╪▌[Y[ЭЩ╪▌[Y[Э[[Y[ЭЬ▌[KЬ┘]Ы▄\ЭJ	╦KXYZZY┌	╦	┌ZY┌\
+N┬ИBИ██Ь▌Y[Ъ]┌╚HYOИ╫Ш╪KX\\XЛW╠MЯW╫╠LI╦Э\▌
+Y	╔╩N┬И╦╚╕енИ┘YH^HЩXY[Щ╚ОИHЩ]╪\ЩYYЩYЫ▄ЩHH\Ы▌▄И[HЩXY[Щ╦[Щ█Ш┘HH^HЩYЫ▄ЩHHШ\┌\[
+Z┘H[HRJKВИ╦╚█ЫH[ИH[ЩЫ┌Y\┌]Y╚█И[ЩHЩX]\ЩH▌┌]┌Y█И[ИHYZ[И[Щ[╚[┘]┌\ЩHЩ\▌[╚\ЩHЬЩYKВИ██Ь▌Щ]╪\ЩYЫ▄ИHЩX]\ЩHOИ╚██Ь▌╚██ЩЪY╦Y[╪ИHH\Y╬╚Щ]\ЫИHJ██ЩЪY╚	ЙИY[╪И	ЙИ██ЩЪY╦ЬЩ]╪\ЩY	ЙИ██ЩЪY╦ЬЩ]╪\ЩY┘ЩX]\ЩWHOOHЭYH	ЙИY[Ъ]┌╩██ЩЪY╦ЬЩ]╪\ЩY┌Y
+JN╚N┬И██Ь▌╪]┌Ы▄ФЩ\▌[H
+
+HOИ[Ы╪┌╤╪]J	▌[Ы╪┌╔╦	╔╦Ш[┘KШ[┘JN╚╦╚H8енИЭ]█И]┘[И\╚H\┘\Й▄╚┌┌X┘NИЫ╚^ШHЫ█\[Ы\▄╚^Z[Щ╚\╚[█╚┘ЩЩ\ЩYИ██Ь▌РT╥W╒SУ╨╥╫╥╤VHH	┌Ю[▌\┌KЬШ\┌K][Ы╪┌╦ЭМI╬┬И██Ь▌Ш\┌U[Ы╪┌┘YH
+
+HOИ╚ЮH╚Щ]\ЫИ┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][JРT╥W╒SУ╨╥╫╥╤VJHOOH╪╪[\█╩Щ]╚]J
+JN╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚HN┬И╦╚Щ]╪\ЩYYЩYЫ▄ЩHH▌[ЩH\╚┘[Щ\Ш]YИЩ\██Щ\╚ЭYH┌[ИH\┘\ИX^H█╚ZXYИ^H╪]┌YHY\ЩH[Ь┌YBИ╦╚HЬЩYH┌[Щ▌╚YЭ\ИHЩX┘[ЭY▄ИHY█▌[Ы▌ЩH┌▌█И
+[ИYЫ╪Ы[HЩ]Щ\ИЫ╪┌▄╚H\┘\КKВИЭ[Ш▌[█ИЩ]╪\ЩY╪]J
+H┬И██Ь▌╚██ЩЪY╚HH\Y╬┬ИYИ
+X██ЩЪY╚██ЩЪY╦ЬЩ]╪\ЩY┌▌[ЩHOOHЭYH]KЫЫ▌╩
+H\Y╦ЩЬЩYU[Э[
+HЩ]\ЫИЫ█Z\┘KЬЩ\██ЩJЭYJN┬ИЩ]\ЫИ[Ы╪┌╤╪]J	▌[Ы╪┌╔╦
+	▌╪]┌YЫ█\	╩KЭYJN┬ИBИ╦╚^HH█X[[[▌[Э[Ь▌XY┘И╪]┌[Щ╚[ИY
+┘ЩИ[Ы\▄╚HYZ[И██ЩЪY▌\Щ\╚Ш^Ы▄Ь^NИЩXY[Щ\▄╦Ь^[Y[Э╩KВИ╦╚	▌[Ы╪┌╔╚█▌Щ\Ь╚█ЩH[K╒\Ы▌╙YЩH▌ZYK╘┌Y█ИX]┌╙[██И┌Y█Л╘Ш\┌\[┌YX[\\ЭЩ\ИЩXY[Щ╚▄И▌[ЩN┬И╦╚	╪┌]╪Ы█Э\╔╚█▌Щ\Ь╚^ШHRH]Y\▌[█Ь╦ИШ[╚▌ШZY┌ШX┌╚╚HZ[ИYЫ▌╚┌[И^[Y[Э╚\ЩHЫ▌┘]\ВИ]Ш^Ы▄Ь^T╪▄Ъ\HЭ[┬ИЭ[Ш▌[█И[Ь▌\ЩTШ^Ы▄Ь^T╪▄Ъ\
+
+H┬ИYИ
+┌[Щ▌╦ФШ^Ы▄Ь^JHЩ]\ЫИЫ█Z\┘KЬЩ\██ЩJ
+N┬ИYИ
+\Ш^Ы▄Ь^T╪▄Ъ\
+HШ^Ы▄Ь^T╪▄Ъ\HЩ]╚Ы█Z\┘J
+Щ\██ЩKЩZЩX▌
+HOИ┬И██Ь▌╪▄Ъ\H╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	▄╪▄Ъ\	╩N┬И╪▄Ъ\Ь▄Ш╚H	┌╬Л╦╪┌X┌█▌]ЬШ^Ы▄Ь^KШ██K▌МK╪┌X┌█▌]ЪЬ╔╬┬И╪▄Ъ\Ы█Ы╪YH
+
+HOИЩ\██ЩJ
+N╚╪▄Ъ\Ы█Щ\ЬЫ▄ИH
+
+HOИЩZЩX▌
+Щ]╚\ЬЫ▄К	▄Ш^Ы▄Ь^H╪▄Ъ\ШZ[Y╚╪Y	╩JN┬И╪▌[Y[ЭЪXYШ\[Щ┌[
+╪▄Ъ\
+N┬ИJN┬ИЩ]\ЫИШ^Ы▄Ь^T╪▄Ъ\┬ИBИ\▐[Ш╚Э[Ш▌[█И^UЪXTШ^Ы▄Ь^JЩX]\ЩJH┬ИЮH┬И██Ь▌XYHH]╪Z]▄▌
+	╦╪\K▄^[Y[Э╪▄ЩX]K[▄Щ\Й╦╚ЩX]\ЩHJN┬ИYИ
+[XYKЫ┌╚[XYKШЫ┘HXYKШЫ┘KЬ▌]\╚OOH	█┌╔╩HЩ]\ЫИШ[┘N┬И██Ь▌▄Щ\ИHXYKШЫ┘N┬И]╪Z][Ь▌\ЩTШ^Ы▄Ь^T╪▄Ъ\
+
+N┬ИЩ]\ЫИ]╪Z]Щ]╚Ы█Z\┘JЩ\██ЩHOИ┬И██Ь▌┌X┌█▌]HЩ]╚┌[Щ▌╦ФШ^Ы▄Ь^J┬И┘^NИ▄Щ\ЛЪ┘^W┌Y[[▌[ЭИ▄Щ\ЛШ[[▌[Э▌\ЬЩ[Ш▐NИ▄Щ\ЛШ▌\ЬЩ[Ш▐K▄Щ\Ч┌YИ▄Щ\ЛЫ▄Щ\Ч┌YШ[YNИ	╥Ю[▌\ЫX^XH\▌Ы╨┌]	╦И[Щ\ОИ\▐[Ш╚Щ\▄█Ь┘HOИ┬ИЮH┬И██Ь▌Щ\ЪYЪYYH]╪Z]▄▌
+	╦╪\K▄^[Y[Э▌Щ\ЪYЮI╦╚▄Щ\Ч┌YИЩ\▄█Ь┘KЬШ^Ы▄Ь^W█▄Щ\Ч┌Y^[Y[Э┌YИЩ\▄█Ь┘KЬШ^Ы▄Ь^W▄^[Y[Э┌Y┌Y█Ш]\ЩNИЩ\▄█Ь┘KЬШ^Ы▄Ь^W▄┌Y█Ш]\ЩKЩX]\ЩHJN┬ИЩ\██ЩJЩ\ЪYЪYYЫ┌╚	ЙИЩ\ЪYЪYYШЫ┘H	ЙИЩ\ЪYЪYYШЫ┘KЬ▌]\╚OOH	█┌╔╩N┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ\██ЩJШ[┘JN╚BИKИ[┘[И╚█Щ\█Z\▄╬И
+
+HOИЩ\██ЩJШ[┘JHKИJN┬И┌X┌█▌]Ы▄[К
+N┬ИJN┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚BИBИ╦╚H█X[╪\Щ┌]Х╪]┌HЬЩYHYИ[ЩФ^H8аоSИ[Ь▌XYО╚Щ\██Щ\╚	╪Y	╦	▄^I╚▄И	╪╪[Ш┘[	╦ВИЭ[Ш▌[█И[Ы╪┌╨┌█▄┘\КЫ█\^ЪX┘TЬ╩H┬ИЩ]\ЫИЩ]╚Ы█Z\┘JЩ\██ЩHOИ┬И██Ь▌▌Щ\Ы^HH[
+	┘]Й╦	▌\]K\▄\	╩N┬И██Ь▌╪\ЩH[
+	┘]Й╦	▌\]K\▄\X╪\Щ	╩N┬И██Ь▌YЭИH[
+	╪Э]█Й╦	╪ЭЙ╦
+	▌╪]┌ЬЩYPYЭЙ╩JN╚YЭЛЭ\HH	╪Э]█Й╬┬И██Ь▌^PЭИH[
+	╪Э]█Й╦	█[Ъ╦XЭЙ╦Ъ[
+
+	▄^R[Ь▌XYЭЙ╩K╚ЪX┘NИЪX┘TЬ╚JJN╚^PЭЛЭ\HH	╪Э]█Й╬┬И██Ь▌X▌[█Ь╚H[
+	┘]Й╦	▌\]K\▄\XX▌[█Ь╔╩N╚X▌[█Ь╦Ш\[Щ
+^PЭЛYЭКN┬И╪\ЩШ\[Щ
+[
+	▄	╦	▌\]K\▄\XЫ┘I╦Ы█\^
+KX▌[█Ь╩N┬И▌Щ\Ы^KШ\[Щ┌[
+╪\Щ
+N┬И██Ь▌█▄┘HHЩ\▌[OИ╚ЮH╚╪▌[Y[ЭШЫ┘KЬЩ[[▌ЩP┌[
+▌Щ\Ы^JN╚H╪]┌
+┘\ЬЫ▄КH╚╩И██ЩH
+Л╚HЩ\██ЩJЩ\▌[
+N╚N┬ИYЭЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ█▄┘J	╪Y	╩JN┬И^PЭЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ█▄┘J	▄^I╩JN┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+▌Щ\Ы^JN┬ИJN┬ИBИ\▐[Ш╚Э[Ш▌[█И[Ы╪┌╤╪]JЩX]\ЩKЫ█\^▌\Э╤ЬЩYU┌[Щ▌╦\┌╚HЭYJH┬ИYИ
+\▌]KЬ^[Y[Э╩HЩ]\ЫИ╪]┌Щ]╪\ЩYY
+Ы█\^▌\Э╤ЬЩYU┌[Щ▌╦\┌╩N┬И██Ь▌ЪX┘HHЩX]\ЩHOOH	╪┌]╪Ы█Э\╔╚╚▌]KЬ^[Y[Э╦Ш┌]╪Ы█Э\╫▄Ь╚И▌]KЬ^[Y[Э╦Э[Ы╪┌╫▄Ь╬┬И██Ь▌┌┌X┘HH]╪Z][Ы╪┌╨┌█▄┘\КЫ█\^
+	▌[Ы╪┌╘Ы█\	╩KЪX┘JN┬ИYИ
+┌┌X┘HOOH	▄^I╩H┬И██Ь▌┌╚H]╪Z]^UЪXTШ^Ы▄Ь^JЩX]\ЩJN┬ИYИ
+┌╚	ЙИ▌\Э╤ЬЩYU┌[Щ▌╩H\Y╦ЩЬЩYU[Э[H]KЫЫ▌╩
+H
+╚
+
+\Y╦Ш██ЩЪY╚	ЙИ\Y╦Ш██ЩЪY╦ЬЩ]╪\ЩY┘ЬЩYW█Z[Э]\╩HL
+H
+ИМ┬ИЩ]\ЫИ┌╬┬ИBИYИ
+┌┌X┘HOOH	╪Y	╩HЩ]\ЫИ╪]┌Щ]╪\ЩYY
+	╔╦▌\Э╤ЬЩYU┌[Щ▌╦Ш[┘JN┬ИЩ]\ЫИШ[┘N┬ИBИ╦╚\┌▄╦^\╚HY[ЩЩ\██Щ\╚ЭYH█Ш┘HH\┘\ИX^H█╚ZXY
+Щ]╪\ЩX\ЫЩY▄ИHY]┘[И╪\╚[Ш]ШZ[XЫJKВИЭ[Ш▌[█И╪]┌Щ]╪\ЩYY
+Ы█\^▌\Э╤ЬЩYU┌[Щ▌╦\┌╚HЭYJH┬И██Ь▌╚██ЩЪY╦Y[╪ИHH\Y╬┬ИYИ
+X██ЩЪY╚XY[╪ИXY[Ъ]┌╩██ЩЪY╦ЬЩ]╪\ЩY┌Y
+JHЩ]\ЫИЫ█Z\┘KЬЩ\██ЩJЭYJN┬ИYИ
+\┌╚	ЙИ
+]┌[Щ▌╦Ш██ЩЪ\ЫH]┌[Щ▌╦Ш██ЩЪ\ЫJЫ█\^
+JJHЩ]\ЫИЫ█Z\┘KЬЩ\██ЩJШ[┘JN┬ИЩ]\ЫИЩ]╚Ы█Z\┘JЩ\██ЩHOИ┬И]X\ЫЩYHШ[┘K┘]YHШ[┘N┬И██Ь▌[Щ\╚H╫N┬И██Ь▌Ъ[Ъ\┌HЩ\▌[OИ╚YИ
+┘]Y
+HЩ]\ЫО╚┘]YHЭYN╚YИ
+X\ЫЩY
+H\Y╦Ы\▌[Э\Ь▌]X[H]KЫЫ▌╩
+N╚╦╚Ы╚[Э\Ь▌]X[ЪY┌YЭ\ИHЩ]╪\ЩYYИ[Щ\╦ЩЫ▄СXX┌
+OИ╚ЮH╚ЬЩ[[▌ЩJ
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И██ЩH
+Л╚HJN╚Щ\██ЩJЩ\▌[
+N╚N┬И██Ь▌\▌[ИH
+Ш[YK[Щ\КHOИ╚ЮH╚██Ь▌HY[╪ЛШY\▌[Щ\КШ[YK[Щ\КN╚YИ
+	ЙИЭ[КHЭ[КOИ[Щ\╦Ь\┌
+
+JN╚[┘HYИ
+
+H[Щ\╦Ь\┌
+
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HN┬И\▌[К	██ФЩ]╪\ЩYЪY[╨YЩ]╪\Щ	╦
+
+HOИ╚X\ЫЩYHЭYN╚YИ
+▌\Э╤ЬЩYU┌[Щ▌╩H\Y╦ЩЬЩYU[Э[H]KЫЫ▌╩
+H
+╚
+██ЩЪY╦ЬЩ]╪\ЩY┘ЬЩYW█Z[Э]\╚L
+H
+ИМ╚JN┬И\▌[К	██ФЩ]╪\ЩYЪY[╨Y\█Z\▄┘Y	╦
+
+HOИЪ[Ъ\┌
+X\ЫЩY
+JN┬И\▌[К	██ФЩ]╪\ЩYЪY[╨YШZ[Y╙╪Y	╦
+
+HOИЪ[Ъ\┌
+ЭYJJN┬И\▌[К	██ФЩ]╪\ЩYЪY[╨YШZ[Y╘┌▌╔╦
+
+HOИЪ[Ъ\┌
+ЭYJJN┬ИЫ█Z\┘KЬЩ\██ЩJY[╪ЛЬЩ\\ЩTЩ]╪\ЩЪY[╨Y
+╚YYИ██ЩЪY╦ЬЩ]╪\ЩY┌Y\╒\▌[Щ╬И██ЩЪY╦Э\▌[Щ╚OOHЭYHJJBИЭ[К
+
+HOИY[╪ЛЬ┌▌╘Щ]╪\ЩЪY[╨Y
+
+JBИЭ[К
+
+HOИ╚YИ
+X\ЫЩY
+HЪ[Ъ\┌
+ЭYJN╚JBИШ╪]┌
+
+
+HOИЪ[Ъ\┌
+ЭYJJN┬ИJN┬ИBИ╦╚RH┌][▌╪[Ш┘NИHЩ]╚ЬЩYHRH]Y\▌[█Ь╚H^K[ИHЩ]╪\ЩYYЭ^\╚[▄ЩKИЭ[KXШ\┘Y[Ь▌┘\Ь╚\ЩH[╪^\╚ЬЩYKВИ██Ь▌US╒W╥╤VHH	┌Ю[▌\┌KШ┌]][▌KЭМI╬┬ИЭ[Ш▌[█ИЩXY][▌J
+H┬И██Ь▌┘^HH╪╪[\█╩Щ]╚]J
+JN┬ИЮH┬И██Ь▌╪]ЩYHФ╙╙ЛЬ\Ь┘J┌[Щ▌╦Ы╪╪[▌▄ШY┘KЩ┘]][JUS╒W╥╤VJJN┬ИYИ
+╪]ЩY	ЙИ╪]ЩYЩ]HOOH┘^H	ЙИЭ[XЩ\ЛЪ\╥[ЭY┘\К╪]ЩYЭ\┘Y
+H	ЙИЭ[XЩ\ЛЪ\╥[ЭY┘\К╪]ЩYШЫ█Э\╩JHЩ]\ЫИ╪]ЩY┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И▌\ЭHЬЩ\┌^H
+Л╚BИЩ]\ЫИ╚]NИ┘^K\┘YИЫ█Э\╬ИN┬ИBИЭ[Ш▌[█И▄Ъ]T][▌J][▌JH╚ЮH╚┌[Щ▌╦Ы╪╪[▌▄ШY┘KЬ┘]][JUS╒W╥╤VKФ╙╙ЛЬ▌Ъ[Щ┌YЮJ][▌JJN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌\Ь┌\▌Y
+Л╚HBИ\▐[Ш╚Э[Ш▌[█ИZT]Y\▌[█Р[▌┘Y
+
+H┬И██Ь▌╚██ЩЪY╦Y[╪ИHH\Y╬┬ИYИ
+X██ЩЪY╚XY[╪ИX██ЩЪY╦Ш┌]┘ЬЩYW▄]Y\▌[█Ь╚XY[Ъ]┌╩██ЩЪY╦ЬЩ]╪\ЩY┌Y
+JHЩ]\ЫИЭYN╚╦╚ЬЫ▌▄┘\Ь╚[Щ[Ы[Z]Y┘]\┬И██Ь▌][▌HHЩXY][▌J
+N┬ИYИ
+][▌KЭ\┘Y██ЩЪY╦Ш┌]┘ЬЩYW▄]Y\▌[█Ь╚
+╚][▌KШЫ█Э\╩H╚][▌KЭ\┘Y
+╧HN╚▄Ъ]T][▌J][▌JN╚Щ]\ЫИЭYN╚BИ██Ь▌Ы█\H
+	╪┌][Z]Ы█\	╩KЬЩ\X┘J	▐┘ЬЩY_I╦██ЩЪY╦Ш┌]┘ЬЩYW▄]Y\▌[█Ь╩KЬЩ\X┘J	▐╪Ы█Э\▀I╦██ЩЪY╦Ш┌]╪Ы█Э\╫▄]Y\▌[█Ь╩N┬ИYИ
+J]╪Z][Ы╪┌╤╪]J	╪┌]╪Ы█Э\╔╦Ы█\Ш[┘JJJHЩ]\ЫИШ[┘N┬И][▌KШЫ█Э\╚
+╧H██ЩЪY╦Ш┌]╪Ы█Э\╫▄]Y\▌[█Ь╬╚][▌KЭ\┘Y
+╧HN╚▄Ъ]T][▌J][▌JN┬ИЩ]\ЫИЭYN┬ИBИ╦╚[И╪╪╪\┌[█Ш[YЩ]┘Y[И╪▄ЩY[Ь╬ИЩ]Щ\И[ИHЪ\Ь▌Z[Э]K][▄▌█ЩH\ИЩ]╚▌┌]┌\╚[Щ\ИЩ]╚Z[Э]\╦ВИЭ[Ш▌[█ИX^XЩR[Э\Ь▌]X[
+
+H┬И██Ь▌╚██ЩЪY╦Y[╪ИHH\Y╬┬ИYИ
+X██ЩЪY╚XY[╪ИXY[Ъ]┌╩██ЩЪY╦Ъ[Э\Ь▌]X[┌Y
+JHЩ]\ЫО┬И\Y╦Ь▌┌]┌\╚
+╧HN┬И██Ь▌Ы▌╚H]KЫЫ▌╩
+N┬ИYИ
+Ы▌╚H\Y╦Ь▌\ЭYМ\Y╦Ь▌┌]┌\╚	H
+██ЩЪY╦Ъ[Э\Ь▌]X[┘]Щ\ЮH
+HOOHЫ▌╚H\Y╦Ы\▌[Э\Ь▌]X[
+██ЩЪY╦Ъ[Э\Ь▌]X[┘╪\▄┘X██Щ╚N
+H
+ИL
+HЩ]\ЫО┬И\Y╦Ы\▌[Э\Ь▌]X[HЫ▌╬┬ИЫ█Z\┘KЬЩ\██ЩJY[╪ЛЬЩ\\ЩR[Э\Ь▌]X[
+╚YYИ██ЩЪY╦Ъ[Э\Ь▌]X[┌Y\╒\▌[Щ╬И██ЩЪY╦Э\▌[Щ╚OOHЭYHJJBИЭ[К
+
+HOИY[╪ЛЬ┌▌╥[Э\Ь▌]X[
+
+JKШ╪]┌
+
+
+HOИ╚╩ИЫ╚Y]ШZ[XЫNИ╪\ЬЮH█И
+Л╚JN┬ИBИ██Ь▌Y[╪ФY┌[ИH
+
+HOИ
+┌[Щ▌╦Р╪\X┌]▄И	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╚	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╦РY[╪КHЭ[┬И╦╚Y[╪И\╚▌\ЭY█Ш┘H
+┌]H██Ь┘[ЭЫ▄ЫH┌\ЩHH]╚Щ\]Z\Щ\╚]
+KЫ▄ИHШ[ЫЩ\И[ЩH┘[██YK\▌\Y╦ВИЭ[Ш▌[█И[Ь▌\ЩPY[╪КY[╪Л██ЩЪY╩H┬ИYИ
+X\Y╦ЬЩXYJH┬И\Y╦ЬЩXYHH
+\▐[Ш╚
+
+HOИ┬И]╪Z]Y[╪ЛЪ[Ъ]X[^ЩJ╚[Ъ]X[^ЩQЫ▄Х\▌[Щ╬И██ЩЪY╦Э\▌[Щ╚OOHЭYHJN┬ИЮH┬И██Ь▌██Ь┘[ЭH]╪Z]Y[╪ЛЬЩ\]Y\▌██Ь┘[Э[ЩЫ╩
+N┬ИYИ
+██Ь┘[Э	ЙИ██Ь┘[ЭЪ\╨██Ь┘[ЭЫ▄ЫP]ШZ[XЫH	ЙИ██Ь┘[ЭЬ▌]\╚OOH	╘СTURTСQ	╩H]╪Z]Y[╪ЛЬ┌▌╨██Ь┘[ЭЫ▄ЫJ
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И██Ь┘[Э\╚█ЫHЩ\]Z\ЩY[И██YHЩY┌[█Ь╚
+Л╚BИJJ
+N┬ИBИЩ]\ЫИ\Y╦ЬЩXYN┬ИBИ╦╚HЭ[\╪▄ЩY[ИYЩ]┘Y[ИHЪ\Ь▌\Э[И▌\╚
+▌┌]┌Y█И[ИHYZ[И[Щ[
+KИЩ]Щ\ИЫ╪┌▄╚HЫ▌╬ИYИЫ╚YИ╦╚╪Y╚[ИHЩ]╚┘X██Щ╦▄ИHY┌[И\╚Z\▄┌[Щ╦H▌\╚┌[\H█╚█ЛВИ\▐[Ш╚Э[Ш▌[█И█ШЫ╪\Щ[Щ╨Y
+[Ъ]┘^HH	██ШЫ╪\Щ[Щ╫┌[Э\Ь▌]X[┌Y	╩H┬ИYИ
+X\Y╦Э╪Z][Щ╚	ЙИX\Y╦Ш██ЩЪY╩H]╪Z]┌][КЩXY[Щ\▄╘┘Y[ЛНL
+N┬И██Ь▌██ЩЪY╚H\Y╦Э╪Z][Щ╚\Y╦Ш██ЩЪY╦Y[╪ИHY[╪ФY┌[К
+N┬ИYИ
+XY[╪ИX██ЩЪY╚XY[Ъ]┌╩██ЩЪY╓▌[Ъ]┘^WJJHЩ]\ЫО┬ИЮH┬И]╪Z]┌][К[Ь▌\ЩPY[╪КY[╪Л██ЩЪY╩KМ
+N┬И]█ЩN┬И██Ь▌█▄┘YHЩ]╚Ы█Z\┘JЩ\██ЩHOИ╚█ЩHHЩ\██ЩN╚JN┬И██Ь▌[Щ\╚H╫N┬ИЫ▄И
+██Ь▌Ш[YH┘И╔┌[Э\Ь▌]X[Y\█Z\▄┘Y	╦	┌[Э\Ь▌]X[YШZ[Y╘┌▌╔╦	┌[Э\Ь▌]X[YШZ[Y╙╪Y	╫JH┬ИЮH╚[Щ\╦Ь\┌
+]╪Z]Y[╪ЛШY\▌[Щ\КШ[YK
+
+HOИ█ЩJ
+JJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И█\ИY┌[И
+Л╚BИBИ██Ь▌╪YYH]╪Z]┌][КЫ█Z\┘KЬЩ\██ЩJY[╪ЛЬЩ\\ЩR[Э\Ь▌]X[
+╚YYИ██ЩЪY╓▌[Ъ]┘^WK\╒\▌[Щ╬И██ЩЪY╦Э\▌[Щ╚OOHЭYHJJKЭ[К
+
+HOИЭYJKМШ[┘JN┬ИYИ
+╪YY
+H╚]╪Z]Y[╪ЛЬ┌▌╥[Э\Ь▌]X[
+
+N╚\Y╦Ы\▌[Э\Ь▌]X[H]KЫЫ▌╩
+N╚]╪Z]┌][К█▄┘YМ
+N╚BИЫ▄И
+██Ь▌[ЩH┘И[Щ\╩H╚ЮH╚YИ
+[ЩH	ЙИ[ЩKЬЩ[[▌ЩJH]╪Z][ЩKЬЩ[[▌ЩJ
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И██ЩH
+Л╚HBИH╪]┌
+┘\ЬЫ▄КH╚╩ИЫ╚YИ╪\ЬЮH█И
+Л╚BИBИ\▐[Ш╚Э[Ш▌[█И▌\Э\Y╩██ЩЪY╩H┬И██Ь▌Y[╪ИHY[╪ФY┌[К
+N┬ИYИ
+XY[╪ИXY[Ъ]┌╩██ЩЪY╦ШШ[ЫЩ\Ч┌Y
+JHЩ]\ЫО┬ИYИ
+\▌]KЫ█ШЫ╪\ЩY\Y╦Ы][Ш┌[Щ╩H╚\Y╦Э╪Z][Щ╚H██ЩЪY╬╚Щ]\ЫО╚H╦╚HШ[ЫЩ\И█ЫHYЭ\ИH┘[██YH╚╪Y[Щ╚╪▄ЩY[Ь┬И\Y╦Ш██ЩЪY╚H██ЩЪY╬╚\Y╦ШY[╪ИHY[╪О┬ИЮH┬И]╪Z][Ь▌\ЩPY[╪КY[╪Л██ЩЪY╩N┬ИY[╪ЛШY\▌[Щ\К	╪Ш[ЫЩ\РY┌^ЩP┌[Щ┘Y	╦┌^ЩHOИ┘]YZY┌
+┌^ЩH	ЙИ┌^ЩKЪZY┌
+JN┬И]╪Z]Y[╪ЛЬ┌▌╨Ш[ЫЩ\К╚YYИ██ЩЪY╦ШШ[ЫЩ\Ч┌YY┌^ЩNИ	╨QTUСW╨РSУСTЙ╦▄┌][█ОИ	╨У╒╙W╨╤SХTЙ╦X\Щ┌[ОИ\╒\▌[Щ╬И██ЩЪY╦Э\▌[Щ╚OOHЭYHJN┬ИH╪]┌
+┘\ЬЫ▄КH╚┘]YZY┌
+
+N╚BИBИ╦╚Щ\Y\╚▄Ъ][ИЮHHRH╪[ИЩHЩ\▄ЭYЮH[XZ[
+Ы▌[Щ╚\╚┘[Э┌]▌]H\┘\КKВИ╦╚ЩXY[И[Ь▌┘\И[▌Y┌]H█ЩI▄╚▌█ИЫ┌X┘H
+┌[И]\╚█ЩHЫ▄ИH[Щ▌XY┘JKВИ██Ь▌╪[Ф▄XZ╚H
+
+HOИHJ┌[Щ▌╦Ь▄YX┌▐[Э\┌\╚	ЙИ┌[Щ▌╦Ф▄YX┌▐[Э\┌\╒]\Ш[Ш┘JN┬ИЭ[Ш▌[█И▄XZ╩^
+H┬ИЮH┬И██Ь▌▐[ЭH┌[Щ▌╦Ь▄YX┌▐[Э\┌\╬┬ИYИ
+▐[ЭЬ▄XZ┌[Щ╩H╚▐[ЭШ╪[Ш┘[
+
+N╚Щ]\ЫО╚BИ██Ь▌[╚HЩ]╚┌[Щ▌╦Ф▄YX┌▐[Э\┌\╒]\Ш[Ш┘J^
+N┬И[╦Ы[Щ╚H╪[[Щ\ХRKУ╨╨ST╓▄▌]KЫ[Щ╫H	┘[ЛRSЙ╬┬И▐[ЭЬ▄XZ╩[╩N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩ИЫ╚Ы┌X┘H
+Л╚BИBИ██Ь▌╒С╫╘╘PR╤TИH	╧▌Щ╚ЪY]╨Ы▐HМННИ\ЪXKZY[ПHЭЭYHПП]HУM]НЪHНS^ИИЪ[HШ▌\ЬЩ[Э██▄ИЛ╧П]HУLMИНXMHHH╙LNНHШNНHНHHLИИЪ[HЫЫ█ЩHИ▌Ы┌┘OHШ▌\ЬЩ[Э██▄ИИ▌Ы┌┘K]┌YHМИИ▌Ы┌┘K[[ЩX╪\HЬЫ▌[ЩЛ╧П▄▌Щ╧Й╬┬ИЭ[Ш▌[█ИYZPШ\К[ЭЮK]Y\▌[█Л[Ь▌┘\КH┬И██Ь▌Ш\ИH[
+	┘]Й╦	╪ZKXШ\Й╩N┬ИYИ
+╪[Ф▄XZ╩
+JH┬И██Ь▌\▌[ИH[
+	╪Э]█Й╦	╪ZK[\▌[Й╩N╚\▌[ЛЭ\HH	╪Э]█Й╬╚\▌[ЛЪ[ЫЩ\ТSH╒С╫╘╘PR╤TО┬И\▌[ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦
+██^
+
+KЫY[ЭH╙╙╫╨╙╘KЩ[ЛЫY[ЭJKЫ\▌[И	╙\▌[Й╩N┬И\▌[ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ▄XZ╩[Ь▌┘\КJN┬ИШ\ЛШ\[Щ┌[
+\▌[КN┬ИBИYИ
+▌]KШ██ЭX▌[XZ[
+H┬И██Ь▌[Ъ╚H[
+	╪I╦	╪ZK\Щ\▄Э	╦
+	▄Щ\▄Э[Ь▌┘\Й╩JN┬И██Ь▌Ы┘HH]Y\▌[█ОЧЙ▄]Y\▌[█ЛЬ█X┘J╠
+_WЧР[Ь▌┘\ОЧЙ╪[Ь▌┘\ЛЬ█X┘JML
+_WЧХ┌]\╚▄Ы█Щ╚┌]]ЧШ┬И[Ъ╦ЪЩYИHXZ[╬Й▄▌]KШ██ЭX▌[XZ[O▄▌XЪЩX▌I┘[Ш█┘UTТP██\█Щ[Э
+	╘Щ\▄Э[ИRH[Ь▌┘\Й╩_IШЫ┘OI┘[Ш█┘UTТP██\█Щ[Э
+Ы┘J_X┬ИШ\ЛШ\[Щ┌[
+[Ъ╩N┬ИBИYИ
+Ш\ЛШ┌[Щ[ЛЫ[Щ▌
+H[ЭЮKШ\[Щ┌[
+Ш\КN┬ИBИ╦╚[Щ\ИXX┌[Ь▌┘\ОИHЫ▌╚┘И┌\╚]XY[Э╚H▌\ИЩX]\Щ\╚
+[HRH┘\╚H╪[YH╚┘Y\[▄H^▄Ъ[Щ╩KВИ]┌\\ЫИH┬ИЭ[Ш▌[█ИY┌]┌\╩
+H┬ИЩ[[▌ЩP┌]┌\╩
+N┬И██Ь▌Ш[Y\╚H
+██^
+
+KЫY[ЭH╙╙╫╨╙╘KЩ[ЛЫY[ЭJKШ┌\╚╙╙╫╨╙╘KЩ[ЛЫY[ЭKШ┌\╬┬И██Ь▌[H╓╔▄[I╦	°з"╔╦▄[Ф[WK╔▌\Ы▌	╦	№'ру╔╦▄[Х\Ы▌K╔█YЩY▌ZYI╦	°же╗ю#╔╦▄[УYЩQ▌ZYWK╔█Э[XЩ\Ь╔╦	№'х(Й╦▄[УЭ[Y\Ы█┘▐WK╔▄┌Y█ЫX]┌	╦	№'фдI╦▄[Ф┌Y█УX]┌WN┬И██Ь▌Ы▌╚H[
+	┘]Й╦	╪┌]X┌\╔╩N┬ИЫ▄И
+]HH╚H╚H
+╧HJH┬И██Ь▌┌┘^KX██Л█╫HH[╩┌\\ЫИ
+╚JH	H[Ы[Щ▌N┬И██Ь▌┌\H[
+	╪Э]█Й╦	╪┌]X┌\	╦	┌X██ЯH	█Ш[Y\╓┌┘^W_X
+N╚┌\Э\HH	╪Э]█Й╬┬И┌\ШY]Щ[Э\▌[Щ\К	╪█X┌╔╦█╩N┬ИЫ▌╦Ш\[Щ┌[
+┌\
+N┬ИBИ┌\\ЫИ
+╧HN┬И┌]┘╦Ш\[Щ┌[
+Ы▌╩N╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИЭ[Ш▌[█ИЩ[[▌ЩP┌]┌\╩
+H╚ЮH╚\ЬШ^KЩЬЫ█J┌]┘╦Ш┌[Щ[КKЩЪ[\К][HOИ][KШ█\▄╙Ш[YHOOH	╪┌]X┌\╔╩KЩЫ▄СXX┌
+][HOИ┌]┘╦ЬЩ[[▌ЩP┌[
+][JJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚HBИ██Ь▌\▌▄ЮHH╫N╚╦╚ЩX┘[Э\ЫЬ╚┘[Э╚H\▄┌\▌[Э█╚H┌]██Э[ЭY\╚[Ь▌XY┘ИЩ\▌\Э[Щ┬И\▐[Ш╚Э[Ш▌[█И\┌╨\▄┌\▌[Э
+]Y\ЮJH┬ИЩ[[▌ЩP┌]┌\╩
+N┬И██Ь▌[Щ[Щ╚H[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╦	°а)Й╩N╚┌]┘╦Ш\[Щ┌[
+[Щ[Щ╩N╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪\┌╔╦╚]Y\▌[█ОИ]Y\ЮK[Щ▌XY┘NИ▌]KЫ[Щ╦ШX▌╬И┌\ЭШX▌╩
+K\▌▄ЮNИ\▌▄ЮKЬ█X┘JLL
+HJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШ[Ь▌┘\КH╚[Щ[Щ╦Э^██Э[ЭHЫ┘KШ[Ь▌┘\О╚YZPШ\К[Щ[Щ╦]Y\ЮKЫ┘KШ[Ь▌┘\КN╚Y┌]┌\╩
+N╚\▌▄ЮKЬ\┌
+╚Ы█NИ	▌\┘\Й╦^И]Y\ЮKЬ█X┘J╠
+HK╚Ы█NИ	╪\▄┌\▌[Э	╦^ИЫ┘KШ[Ь▌┘\ЛЬ█X┘JM
+HJN╚Щ]\ЫИЭYN╚BИH╪]┌
+┘\ЬЫ▄КH╚╩ИШ[ШX┌╚╚H┘ЩЫ[ЩH[Ь▌┘\И
+Л╚BИ┌]┘╦ЬЩ[[▌ЩP┌[
+[Щ[Щ╩N╚Щ]\ЫИШ[┘N┬ИBИ╩ИKKKHЫ╚┌\ЭY]ИH┌]\┌▄╚Ы▄И]KX┘H[Щ[YH┘ИЪ\Э[И╪[▌[]\╚H┌\ЭKKKH
+Л┬И██Ь▌[ЭZ┘HH╚▌\И	┘╪Й╦╪ОИ	╔╦╪ОИ	╔╦╪ОИ	╔╦[Щ[Щ╬ИЭ[ЩX╪[▌[][Щ╬ИШ[┘HN┬И██Ь▌▌\Ы█\H
+
+HOИ
+[ЭZ┘KЬ▌\OOH	┘╪Й╚╚	╪┌]\┌╤╪Й╚И[ЭZ┘KЬ▌\OOH	▄╪Й╚╚	╪┌]\┌╘╪Й╚И	╪┌]\┌╒╪Й╩N┬ИЭ[Ш▌[█И▌\Э[ЭZ┘J
+H╚[ЭZ┘KЬ▌\H	┘╪Й╬╚[ЭZ┘KЩ╪ИH	╔╬╚[ЭZ┘KЬ╪ИH	╔╬╚[ЭZ┘KЭ╪ИH	╔╬╚[ЭZ┘KЬ[Щ[Щ╚HЭ[╚Щ\┘]┌]
+
+	╪┌]\┌╤╪Й╩JN╚BИЭ[Ш▌[█И\P┌\Э
+Ы┘K[Ь]╩H┬И▌]KШ┌\ЭHЫ┘KШ┌\Э╚▌]KЩ]Z[╚HЫ┘KЩ]Z[╚Э[╚▌]KЬЩ\██ЩYHЫ┘KЬЩ\██ЩY╪Ъ\ЭЭ[┬ИYИ
+▌]KЫX]┌┌╚OOH	█▌\Ь╔╩H╚▌]KЬ\ЭЩ\Р┌\ЭHЭ[╚▌]KЬ\ЭЩ\С]Z[╚HЭ[╚BИ▌]KЬ┌▌╙▌ЩTЩXY[Щ╚HШ[┘N╚	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH	╔╬┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	┌YI╦[XY┘NИЭ[N╚╦╚H█[\▌Ш][█ИЫ╚█Щ┘\ИX]┌\╚\╚┌\ЭИЩ[Щ\ФЩ[][█Ь┌\
+
+N┬ИЮH┬ИЫ▄И
+██Ь▌█Ш[YKШ[YWH┘И╪ЪЩX▌Щ[ЭЪY\╩[Ь]╩JH╚██Ь▌ЪY[H╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К█Ш[YOHЙ█Ш[Y_HЧX
+N╚YИ
+ЪY[
+HЪY[ЭШ[YHHШ[YN╚BИH╪]┌
+┘\ЬЫ▄КH╚╩ИHЫ▄ЫH\╚H██ЭЩ[ЪY[Ш┘H█ЫH
+Л╚BИЩ[Щ\Р┌\Э
+
+N╚	
+	╪┌\Э	╩KЪY[ИHШ[┘N┬И\┘S▌█ФШ\┌J
+N┬ИЫ┌Y╪┌Y[SЫ▌YЪX╪][█Ь╩
+N┬ИBИ\▐[Ш╚Э[Ш▌[█ИЪ[Ъ\┌[ЭZ┘J
+H┬ИYИ
+J]╪Z]Щ]╪\ЩY╪]J
+JJH╚[ЭZ┘KЬ▌\H	▌╪Й╬╚[ЭZ┘KЭ╪ИH	╔╬╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪┌]\┌╒╪Й╩JN╚Щ]\ЫО╚BИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	▄Ы╪┘\▄┌[Щ╔╩JN┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K╪Ъ\ЭX┌\Э	╦╚╪ОИ[ЭZ┘KЩ╪Л╪ОИ[ЭZ┘KЬ╪Л╪ОИ[ЭZ┘KЭ╪ИJN┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KШ┌\Э
+H┬И\P┌\Э
+Ы┘K╚╪ОИ[ЭZ┘KЩ╪Л╪ОИ[ЭZ┘KЬ╪Л╪ОИ[ЭZ┘KЭ╪ИJN┬И╪]ЩTЫ┘Ъ[J╚╪ОИ[ЭZ┘KЩ╪Л╪ОИ[ЭZ┘KЬ╪Л╪ОИ[ЭZ┘KЭ╪ИJN┬И██Ь▌[Щ[Щ╚H[ЭZ┘KЬ[Щ[Щ╬╚[ЭZ┘KЬ▌\HЭ[╚[ЭZ┘KЬ[Щ[Щ╚HЭ[╚[ЭZ┘KЬЩX╪[▌[][Щ╚HШ[┘N┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪┌\ЭЩXYI╩JN┬ИYИ
+[Щ[Щ╩H╚YИ
+\Ы▌]T▄X┌X[[Э[Э
+[Щ[Щ╩JHЫ▌]J[Щ[Щ╩N╚H[┘HYШ]Z╪[J
+N┬ИЩ]\ЫО┬ИBИ][ЭH	╔╬┬ИЮH┬И██Ь▌Ы▌[ЩH]╪Z]▄▌
+	╦╪\K▄X┘\╔╦╚]Y\ЮNИ[ЭZ┘KЬ╪ИJN┬ИYИ
+Ы▌[ЩЫ┌╚	ЙИЫ▌[ЩШЫ┘H	ЙИ\ЬШ^KЪ\╨\ЬШ^JЫ▌[ЩШЫ┘KЬ▌Y┘┘\▌[█Ь╩H	ЙИЫ▌[ЩШЫ┘KЬ▌Y┘┘\▌[█Ь╦Ы[Щ▌
+H[ЭH
+	┘Ы▌[ЩШЫ┘KЬ▌Y┘┘\▌[█Ь╦Ь█X┘J
+KЫX\
+][HOИ][KЫXЩ[
+KЪЫ┌[К	╚0н╚	╩_JX┬ИH╪]┌
+┘\ЬЫ▄КH╚╩И▌Y┘┘\▌[█Ь╚\ЩH▄[█Ш[
+Л╚BИ[ЭZ┘KЬ▌\H	▄╪Й╬┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦	▌
+	╪┌\ЭШZ[Y	╩_H	▌
+	╪┌]\┌╘╪Й╩_I┌[ЭX
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚[ЭZ┘KЬ▌\H	▄╪Й╬╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	▄┘\ЭЪX┘U[Ш]ШZ[XЫI╩JN╚BИBИ\▐[Ш╚Э[Ш▌[█И[ЭZ┘R[Ь]
+^ЬЫ█TЫ█\
+H┬ИYИ
+ЬЫ█TЫ█\
+H╚YИ
+[ЭZ┘KЬ[Щ[Щ╚OOHЭ[
+H[ЭZ┘KЬ[Щ[Щ╚H^╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦▌\Ы█\
+
+JN╚Щ]\ЫО╚BИYИ
+[ЭZ┘KЬ▌\OOH	┘╪Й╩H┬И██Ь▌╪ИH┌\ЭRKЬ\Ь┘PЪ\Э]J^
+N┬ИYИ
+Y╪КH╚YИ
+[ЭZ┘KЬ[Щ[Щ╚OOHЭ[	ЙИK╫╦Э\▌
+^
+JH╚[ЭZ┘KЬ[Щ[Щ╚H^╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦▌\Ы█\
+
+JN╚H[┘HYY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪┌]ШY[Ь]	╩JN╚Щ]\ЫО╚BИ[ЭZ┘KЩ╪ИH╪О╚[ЭZ┘KЬ▌\H	▄╪Й╬╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦▌\Ы█\
+
+JN╚Щ]\ЫО┬ИBИYИ
+[ЭZ┘KЬ▌\OOH	▄╪Й╩H┬ИYИ
+^ЭЪ[J
+KЫ[Щ▌КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦▌\Ы█\
+
+JN╚Щ]\ЫО╚BИ[ЭZ┘KЬ╪ИH^ЭЪ[J
+KЬ█X┘JМ
+N┬ИYИ
+[ЭZ┘KЭ╪КH╚[ЭZ┘KЬ▌\H	╪Э\▐I╬╚]╪Z]Ъ[Ъ\┌[ЭZ┘J
+N╚Щ]\ЫО╚H╦╚█ЫHHX┘H╪\╚▄Ы█Щ╬ИЩ]\┘HH[YH[ЩXYH┌]Щ[ВИ[ЭZ┘KЬ▌\H	▌╪Й╬╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦▌\Ы█\
+
+JN╚Щ]\ЫО┬ИBИ██Ь▌╪ИH┌\ЭRKЬ\Ь┘PЪ\Э[YJ^
+N┬ИYИ
+]╪КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪┌]ШY[Ь]	╩JN╚Щ]\ЫО╚BИ[ЭZ┘KЭ╪ИH╪О╚[ЭZ┘KЬ▌\H	╪Э\▐I╬┬И]╪Z]Ъ[Ъ\┌[ЭZ┘J
+N┬ИBИ╦╚[ЮH┘ИH▌\И██╦\┌┘Y▌ШZY┌[И┌][Ь▌XY┘И█ЫHЬЫ█HZ\И▌█ИY┘KИЩ]\ЫЬ╚ЭYH┌[И[ЩYИ╦╚█╚H╪[\И┌┌\╚H┘[Щ\Ш[RH\▄┌\▌[Э╚┘ЩЫ[ЩHIРHЫ▄И]ВИЭ[Ш▌[█ИЫ▌]T▄X┌X[[Э[Э
+]Y\ЮJH┬ИYИ
+┌\ЭRKЪ\╘\ЭЩ\Ф▄ЭШZ]Щ\]Y\▌
+]Y\ЮJJH╚Ы┌Y┌]\ЭЩ\Ф▄ЭШZ]
+
+N╚Щ]\ЫИЭYN╚BИYИ
+┌\ЭRKЪ\╙Э[Y\Ы█┘▐TЩ\]Y\▌
+]Y\ЮJJH╚Ы┌Y┌]Э[Y\Ы█┘▐J
+N╚Щ]\ЫИЭYN╚BИYИ
+┌\ЭRKЪ\╙YЩQ▌ZYTЩ\]Y\▌
+]Y\ЮJJH╚Ы┌Y┌]YЩQ▌ZYJ
+N╚Щ]\ЫИЭYN╚BИYИ
+┌\ЭRKЪ\╘[TЩ\]Y\▌
+]Y\ЮJJH╚▄[Ф[J
+N╚Ы┌Y▌\Э[T╪╪[К
+N╚Щ]\ЫИЭYN╚BИYИ
+┌\ЭRKЪ\╒\Ы▌Щ\]Y\▌
+]Y\ЮJJH┬И██Ь▌▄X╚HX]┌\Ы▌▄X╩]Y\ЮJN┬ИYИ
+▄X╩H╚Ы┌Y┌]\Ы▌
+▄X╩N╚Щ]\ЫИЭYN╚BИ┌]\Ы▌]╪Z][Щ╒▄X╚HЭYN┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦	▌\Ы▌█▄J
+KШ\┌▀H
+	╒TУ╒╒╘P╘╦ЫX\
+
+┌┘^WJHOИ\Ы▌█▄J
+KЭ▄X▄╓┌┘^WJKЪЫ┌[К	╦	╩_JX
+N┬ИЩ]\ЫИЭYN┬ИBИYИ
+┌]\Ы▌]╪Z][Щ╒▄X╩H┬И██Ь▌▄X╚HX]┌\Ы▌▄X╩]Y\ЮJN┬И┌]\Ы▌]╪Z][Щ╒▄X╚HШ[┘N┬ИYИ
+▄X╩H╚Ы┌Y┌]\Ы▌
+▄X╩N╚Щ]\ЫИЭYN╚BИBИЩ]\ЫИШ[┘N┬ИBИЭ[Ш▌[█И\┌╩┌▌█Л]Y\ЮKЬЫ█TЫ█\
+H┬И╦╚Ы▄ЫX[H╪]Y█И]Ъ[Щ╚Ы╚┌\ЭY]╚ЬЩX╪[▌[][Щ╚ИY][█Ш[H█▌Щ\Ь╚\[Щ╚HЩ]╚Ъ\Э]HЩ[▌╦И╦╚]Щ[И▌Y┌H
+Ы▌╚▌[JH┌\Э▌[^\▌╚┌[H]ЩX╪[▌[][█И\╚[ИЫ┘▄Щ\▄╦ВИYИ
+\▌]KШ┌\Э[ЭZ┘KЬЩX╪[▌[][Щ╩H┬ИYИ
+[ЭZ┘KЬ▌\OOH	╪Э\▐I╩HЩ]\ЫО┬ИYY\▄╪Y┘J	▌\┘\Й╦┌▌█КN╚Ы┌Y[ЭZ┘R[Ь]
+]Y\ЮKЬЫ█TЫ█\OOHЭYJN╚Щ]\ЫО┬ИBИYY\▄╪Y┘J	▌\┘\Й╦┌▌█КN┬ИYИ
+Ы▌]T▄X┌X[[Э[Э
+]Y\ЮJJHЩ]\ЫО┬И╦╚HШ\ЩHЪ\Э]H\Y┌]H┌\Э[ЩXYH█И[ЩYX[Ь╚HYЩЩ\Щ[Э▌[ЩKЫ▌H]Y\▌[█ИXЫ▌]\┬И╦╚█ЩH8а%ЩX╪[▌[]H[Ь▌XY┘И\┌┌[Щ╚HRH\▄┌\▌[Э┌X┌█▌[▌\Э┌\┘H[Ь▌┘\ИЬЫ█HH█┌\Э	▄┬И╦╚ШX▌╚XЫ▌][И[ЬЩ[]Y]H[Щ┌]ЩHHЫ█Ь┘[Ь┌X╪[ЩXY[Щ╦ВИ██Ь▌Щ]╤╪ИHX┌\ЭRKЪ\╥Ш]Z╪[TЩ\]Y\▌
+]Y\ЮJH╚┌\ЭRKЬ\Ь┘PЪ\Э]J]Y\ЮJHИЭ[┬ИYИ
+Щ]╤╪КH┬И[ЭZ┘KЬЩX╪[▌[][Щ╚HЭYN╚[ЭZ┘KЬ▌\H	▄╪Й╬╚[ЭZ┘KЩ╪ИHЩ]╤╪О╚[ЭZ┘KЬ╪ИH	╔╬╚[ЭZ┘KЭ╪ИH	╔╬╚[ЭZ┘KЬ[Щ[Щ╚HЭ[┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦	▌
+	╪┌]Щ]╤]I╩_H	▄▌\Ы█\
+
+_X
+N┬ИЩ]\ЫО┬ИBИЫ▌]J]Y\ЮJN┬ИBИ╦╚Ц[▌\ИYX[\ЭЩ\ИЛ\┌┘Y▌ШZY┌[И┌]И┘[Щ\Ш]H]\ЩH
+\┌┌[Щ╚Ы▄ИЪ\Э]Z[╚Ъ\Ь▌ЪXHH\▌X[И╦╚[ЭZ┘KXЫ▌ЩKYИ\ЩH\╚Ы╚┌\ЭY]
+H[Ь▌XY┘И█ЫH┘ЩЩ\Ъ[Щ╚]█ИH▌ЩHY┘KВИ\▐[Ш╚Э[Ш▌[█И┌]\ЭЩ\Ф▄ЭШZ]
+
+H┬И]ЩXY┬ИЮH╚ЩXYH┌\ЭRKЬ\ЭЩ\ХШZ]╩▌]KШ┌\Э▌]KЫ[Щ╩N╚H╪]┌
+┘\ЬЫ▄КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪[Ь▌┘\СШZ[Y	╩JN╚Щ]\ЫО╚BИYИ
+\▌]KЬ\ЭЩ\С┘[Щ\КH▌]KЬ\ЭЩ\С┘[Щ\ИH▌]KЫ^TЫ█HOOH	╪ЬЪYI╚╚	█X[Й╚И	▌██X[Й╬┬И██Ь▌█▄HH▌ЩU^
+
+N┬И██Ь▌Щ]Ъ[▌\╚H▌]KЬ\ЭЩ\Ф▄ЭШZ]	ЙИ▌]KЬ\ЭЩ\Ф▄ЭШZ]Ъ[XY┘N┬ИЮH┬И██Ь▌][▌HH]╪Z]┘]Ь██К	╦╪\K▄\ЭЩ\Л\▄ЭШZ]\][▌I╩N┬ИYИ
+][▌KЫ┌╚	ЙИ][▌KШЫ┘H	ЙИ][▌KШЫ┘KЬЩ[XZ[Ъ[Щ╚H
+H╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦\ЭЩ\У[Z]^
+
+JN╚Щ]\ЫО╚BИH╪]┌
+┘\ЬЫ▄КH╚╩ИH┘[Щ\Ш][█И[Щ┌[Э▌[[ЩЫ▄Ш┘\╚H[Z]
+Л╚BИYИ
+Щ]╪\ЩYЫ▄К	▄\ЭЩ\Й╩H	ЙИJ]╪Z]╪]┌Ы▄ФЩ\▌[
+
+JJHЩ]\ЫО┬И██Ь▌[Щ[Щ╚H[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╦█▄KЭШZ]╘▄ЭШZ]╪Y[Щ╩N┬И┌]┘╦Ш\[Щ┌[
+[Щ[Щ╩N╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИЮH┬И██Ь▌╚┌╦Ы┘HHH]╪Z]▄▌
+	╦╪\K▄\ЭЩ\Л\▄ЭШZ]	╦╚▌\┘M╫▄Ш\┌NИЩXYЪ▌\┘M╘Ш\┌KЩ[Э\╫▄Ш\┌NИЩXYЭЩ[Э\╘Ш\┌K┘[Щ\ОИ▌]KЬ\ЭЩ\С┘[Щ\ИJN┬И┌]┘╦ЬЩ[[▌ЩP┌[
+[Щ[Щ╩N┬ИYИ
+┌╚	ЙИЫ┘H	ЙИЫ┘KЬ▌]\╚OOH	█┌╔╚	ЙИЫ┘KЪ[XY┘JH┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬И	█┌╔╦[XY┘NИЫ┘KЪ[XY┘HN┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[Э	╩N┬И██Ь▌[Y╚H[
+	┌[Y╔╦	▌ШZ]╦\▄ЭШZ]	╩N╚[Y╦Ь▄Ш╚H]NЙ╪Ы┘KЪ[XY┘KЫZ[Y_N╪Ш\┘MН	╪Ы┘KЪ[XY┘KЩ]_X╚[Y╦Ш[H█▄KЭШZ]╘▄ЭШZ]ЭО┬И[ЭЮKШ\[Щ┌[
+[Y╩N┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬И┘][Y[▌]
+X^XЩP\┌╤Ы▄ФШ][Щ╦LМ
+N┬ИH[┘H┬И██Ь▌[Z]YHЫ┘H	ЙИЫ┘KШ█┘HOOH	▄\ЭЩ\Ч┘Z[W█[Z]	╬┬И▌]KЬ\ЭЩ\Ф▄ЭШZ]H[Z]Y╚╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИ	█[Z]	╚BИИ╚▌]\╬ИЫ┘H	ЙИЫ┘KЬ▌]\╚OOH	█┘ЩЙ╚╚	█┘ЩЙ╚И
+Щ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╩K[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИЩ]Ъ[▌\╚╚	┘ШZ[Y	╚ИЭ[N┬ИYY\▄╪Y┘J	╪\▄┌\▌[Э	╦[Z]Y╚\ЭЩ\У[Z]^
+
+HИЫ┘H	ЙИЫ┘KЬ▌]\╚OOH	█┘ЩЙ╚╚█▄KЭШZ]╘▄ЭШZ]┘ЩИИ█▄KЭШZ]╘▄ЭШZ][Ш]ШZ[XЫJN┬ИBИH╪]┌
+┘\ЬЫ▄КH╚┌]┘╦ЬЩ[[▌ЩP┌[
+[Щ[Щ╩N╚▌]KЬ\ЭЩ\Ф▄ЭШZ]H╚▌]\╬ИЩ]Ъ[▌\╚╚	█┌╔╚И	▌[Ш]ШZ[XЫI╦[XY┘NИЩ]Ъ[▌\╚Э[Ы▌X┘NИЩ]Ъ[▌\╚╚	┘ШZ[Y	╚ИЭ[N╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦█▄KЭШZ]╘▄ЭШZ][Ш]ШZ[XЫJN╚BИBИЭ[Ш▌[█ИЫ▌]J]Y\ЮJH┬ИYИ
+▌]KШ\▄┌\▌[Э	ЙИX┌\ЭRKЪ\╥Ш]Z╪[TЩ\]Y\▌
+]Y\ЮJH	ЙИK╫К┌]\╚^HY█ШW▀┌\ЩH\╚H[██Ч▀┌X┌[Щ]╚\ЩH[И▌\┘HW╩I╦Э\▌
+]Y\ЮJJH┬ИЫ┌Y
+\▐[Ш╚
+
+HOИ┬ИYИ
+J]╪Z]ZT]Y\▌[█Р[▌┘Y
+
+JJH╚\┌╙┘ЩЫ[ЩJ]Y\ЮJN╚Щ]\ЫО╚H╦╚▌]┘ИЬЩYHRH]Y\▌[█Ь╬ИHЭ[KXШ\┘Y[Ь▌┘\И\╚▌[ЬЩYBИYИ
+J]╪Z]\┌╨\▄┌\▌[Э
+]Y\ЮJJJH\┌╙┘ЩЫ[ЩJ]Y\ЮJN┬ИJJ
+N┬ИЩ]\ЫО┬ИBИ\┌╙┘ЩЫ[ЩJ]Y\ЮJN┬ИBИЭ[Ш▌[█И┌▌╙[Щ\╩[Щ\╩H┬И██Ь▌[ЭЮHH[
+	┘]Й╦	╪┌][Y\▄╪Y┘H\▄┌\▌[ЭЩXY[Щ╔╩N┬И[ЭЮKШ\[Щ┌[
+[
+	▄▌Ы█Щ╔╦Э[[Щ\╓╠JJN┬И[Щ\╦Ь█X┘JKLJKЩЫ▄СXX┌
+[ЩHOИ[ЭЮKШ\[Щ┌[
+[
+	▄	╦Э[[ЩJJJN┬И[ЭЮKШ\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦[Щ\╓█[Щ\╦Ы[Щ▌HWJJN┬ИYИ
+\▌]KШ\▄┌\▌[Э
+H[ЭЮKШ\[Щ┌[
+[
+	▄	╦	█]]Y[Ы▌I╦	╒╚\┌╚[И[▌\И▌█И█▄Щ╚[Щ┘]HШ]\Ш[Щ\K┘]\H┌]\▄┌\▌[Э
+┘YHСPQQJKЙ╩JN┬И┌]┘╦Ш\[Щ┌[
+[ЭЮJN╚┌]┘╦Ь╪▄Ы█▄H┌]┘╦Ь╪▄Ы█ZY┌┬ИBИЭ[Ш▌[█И^QЫ▄К
+H┬И██Ь▌┘Y█Y[ЭH▌]KЩ^H	ЙИ▌]KЩ^KЫ[██Ч▄Ш\┌H	ЙИ▌]KЩ^KЫ[██Ч▄Ш\┌V╠N┬ИЩ]\ЫИ┘Y█Y[Э╚╚[██ФШ\┌NИ┘Y█Y[ЭЪ[Щ^]NИ▌]KЩ^KЩ]K\╒┘^NИ▌]KЩ^KЩ]HOOH▌]KЭ┘^R\█╚HИЭ[┬ИBИЭ[Ш▌[█И┌▌╘ЩXY[Щ╩▄X╩H┬ИЮH╚┌▌╙[Щ\╩┌\ЭRKЬЩXYYЩJ▌]KШ┌\Э▌]KЩ]Z[╦▄X╦▌]KЫ[Щ╦^QЫ▄К
+JJN╚BИ╪]┌
+┘\ЬЫ▄КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪[Ь▌┘\СШZ[Y	╩JN╚BИBИЭ[Ш▌[█И┌▌╒┘^J
+H┬ИYИ
+\▌]KЩ^JH╚┌▌╘ЩXY[Щ╩	█YЩI╩N╚Щ]\ЫО╚BИЮH╚┌▌╙[Щ\╩┌\ЭRKЬЩXY┘^J▌]KШ┌\Э▌]KЩ]Z[╦▌]KЩ^K▌]KЫ[Щ╦\█╚OИ█╪┌╩\█╦▌]KЩ^KЩ]JJJN╚BИ╪]┌
+┘\ЬЫ▄КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪[Ь▌┘\СШZ[Y	╩JN╚BИBИ╦╚┘ЩЫ[ЩNИШ]Z╪[KH▄X╚ЩXY[Щ╦H▄X┌YЪX╚ШX▌▄И
+Ы▄И[Ю][Щ╚[┘JH┘^I▄╚ЩXY[Щ╚ЬЫ█HH┌\ЭЩ]Щ\ИHЩYЭ\╪[ВИЭ[Ш▌[█И\┌╙┘ЩЫ[ЩJ]Y\ЮJH┬ИYИ
+┌\ЭRKЪ\╥Ш]Z╪[TЩ\]Y\▌
+]Y\ЮJJH┬ИЮH╚YШ]Z╪[J
+N╚H╪]┌
+┘\ЬЫ▄КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪[Ь▌┘\СШZ[Y	╩JN╚BИЩ]\ЫО┬ИBИ██Ь▌▄X╚H┌\ЭRKЬЩXY[Щ╒▄X╩]Y\ЮJN┬ИYИ
+▄X╚	ЙИX┌\ЭRKЭ╪[Э╒┘^J]Y\ЮJJH╚┌▌╘ЩXY[Щ╩▄X╩N╚Щ]\ЫО╚BИYИ
+┌\ЭRKЭ╪[Э╒┘^J]Y\ЮJJH╚┌▌╒┘^J
+N╚Щ]\ЫО╚BИЮH┬И██Ь▌[Ь▌┘\ИH┌\ЭRKШ[Ь▌┘\Р┌\Э]Y\▌[█К▌]KШ┌\Э]Y\ЮK▌]KЫ[Щ╦▌]KЩ]Z[╩N┬ИYИ
+┌\ЭRKЪ\╤Ш[ШX┌╨[Ь▌┘\К[Ь▌┘\Л▌]KЫ[Щ╩JH┌▌╒┘^J
+N╚[┘HYY\▄╪Y┘J	╪\▄┌\▌[Э	╦[Ь▌┘\КN┬ИH╪]┌
+┘\ЬЫ▄КH╚YY\▄╪Y┘J	╪\▄┌\▌[Э	╦
+	╪[Ь▌┘\СШZ[Y	╩JN╚BИBИ	
+	╪┌]YЫ▄ЫI╩KШY]Щ[Э\▌[Щ\К	▄▌XЫZ]	╦]Щ[ЭOИ┬И]Щ[ЭЬЩ]Щ[ЭYШ][
+
+N┬И██Ь▌]Y\▌[█ИH┌]]Y\▌[█ЛЭШ[YKЭЪ[J
+N┬ИYИ
+\]Y\▌[█КHЩ]\ЫО┬И\┌╩]Y\▌[█Л]Y\▌[█КN╚┌]]Y\▌[█ЛЭШ[YHH	╔╬╚┌]]Y\▌[█ЛЩЫ╪▌\╩
+N┬ИJN┬И╦╚█YNИЩ[]XЫH]Y\▌[█Ь╚]▄[ИH┌][Щ\┌╚[H▌ШZY┌]╪^H
+\┌┌[Щ╚Ы▄ИЪ\Э]Z[╚Ъ\Ь▌┌[И\ЩH\╚Ы╚┌\Э
+KВИ╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╦ШZKX┌\	╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌]Y\▌[█ИHЭ]█ЛЭ^██Э[Э┬И┌▌╘Y┘J	╪┌]	╩N┬И\┌╩]Y\▌[█Л]Y\▌[█ЛЭYJN┬ИJJN┬И╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄Р[
+	╦ЬЫ█\	╩KЩЫ▄СXX┌
+Э]█ИOИЭ]█ЛШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ\┌╩Э]█ЛЭ^██Э[ЭЭ]█ЛЩ]\┘]Ь]Y\▌[█ЛЭYJJJN┬ВИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKH^▄Э╚┌\ЩH
+Л┬И╦╚Z[И^]╪[ИЩH┘[ЭЫ▌Y┌H█ЩI▄╚┌\ЩH┌Y]
+┌]╨\K[XZ[Ы▌\╩H▄И╪]ЩY\╚HЭЪ[KВИ██Ь▌SУSСW╒Q╘╚HЩ]╚┘]
+╔▄▄[Й╦	╪Й╦	▄▌Ы█Щ╔╦	┌I╦	┘[I╦	▄█X[	╦	╪I╦	▄▌\	╦	▄▌XЙ╫JN┬И██Ь▌Y╙┘ИHЫ┘HOИ▌Ъ[Щ╩
+Ы┘H	ЙИ
+Ы┘KЭY╙Ш[YHЫ┘KЭY╩JH	╔╩KЭ╙▌┘\Р╪\┘J
+N┬И██Ь▌▄]X\┌H^OИ▌Ъ[Щ╩^	╔╩KЬЩ\X┘J╫╩╦┘╦	╚	╩KЭЪ[J
+N┬ИЭ[Ш▌[█ИZ[Х^
+Ы┘JH┬ИYИ
+[Ы┘JHЩ]\ЫИ	╔╬┬И██Ь▌┌Y╚H\ЬШ^KЩЬЫ█JЫ┘KШ┌[Щ[И╫JN┬И╦╚█ЫH[[Y[Э╚[Ь┌YH
+H[KHXЫH┘[
+NИ┘Y\H▄X┘HЩ]┘Y[И[KИ┌]█▄┘H^[Ь┌YK^██Э[Э\╚ЪY┌ВИ██Ь▌█ЩQ[[Y[Э╚H┌Y╦Ы[Щ▌И	ЙИJЫ┘KШ┌[Ы┘\╚	ЙИЫ┘KШ┌[Ы┘\╦Ы[Щ▌OOH┌Y╦Ы[Щ▌
+N┬ИYИ
+█ЩQ[[Y[Э╩HЩ]\ЫИ▄]X\┌
+┌Y╦ЫX\
+Z[Х^
+KЪЫ┌[К	╚	╩JN┬И██Ь▌▌█ИHЫ┘KЭ^██Э[Э┬ИYИ
+▌█КHЩ]\ЫИ▄]X\┌
+▌█КN┬ИЩ]\ЫИ▄]X\┌
+┌Y╦ЫX\
+Z[Х^
+KЪЫ┌[К	╚	╩JN┬ИBИЭ[Ш▌[█И█U╒^
+Ы█▌
+H┬И██Ь▌▌]H╫N┬И██Ь▌╪[╚HЫ┘HOИ┬И██Ь▌Y╚HY╙┘КЫ┘JN┬ИYИ
+]Y╚Ы┘KЪY[И╔╪Э]█Й╦	▄╪▄Ъ\	╦	▄▌[I╦	▄▌Щ╔╦	▄┘[X▌	╦	┌[Ь]	╫KЪ[Ш█Y\╩Y╩JHЩ]\ЫО┬И██Ь▌┌Y╚H\ЬШ^KЩЬЫ█JЫ┘KШ┌[Щ[И╫JN┬ИYИ
+Y╚OOH	▌Й╩H╚██Ь▌[ЩHH┌Y╦ЫX\
+Z[Х^
+KЩЪ[\КЫ██X[КKЪЫ┌[К	╚	╩N╚YИ
+[ЩJH▌]Ь\┌
+[ЩJN╚Щ]\ЫО╚BИYИ
+Y╚OOH	█I╩H╚██Ь▌[ЩHHZ[Х^
+Ы┘JN╚YИ
+[ЩJH▌]Ь\┌
+	°а(И	╚
+╚[ЩJN╚Щ]\ЫО╚BИYИ
+╫Ъ╠KMЧI╦Э\▌
+Y╩HY╚OOH	▄▌[[X\ЮI╩H╚██Ь▌[ЩHH┌Y╦Ы[Щ▌╚▄]X\┌
+┌Y╦ЫX\
+Z[Х^
+KЪЫ┌[К	╚	╩JHИZ[Х^
+Ы┘JN╚YИ
+[ЩJH▌]Ь\┌
+	╔╦[ЩJN╚Щ]\ЫО╚BИYИ
+Z┌Y╦Ы[Щ▌Y╚OOH	▄	╚┌Y╦Щ]Щ\ЮJ┌YOИSУSСW╒Q╘╦Ъ\╩Y╙┘К┌Y
+JJJH╚██Ь▌[ЩHHZ[Х^
+Ы┘JN╚YИ
+[ЩJH▌]Ь\┌
+[ЩJN╚Щ]\ЫО╚BИ┌Y╦ЩЫ▄СXX┌
+╪[╩N┬ИN┬И╪[╩Ы█▌
+N┬ИЩ]\ЫИ▌]ЪЫ┌[К	╫Й╩KЬЩ\X┘J╫Ю╠╦K┘╦	╫ЧЙ╩KЭЪ[J
+N┬ИBИ╦╚HY\▄╪Y┘HЬЫ█HHYZ[И[Щ[
+[ЫЫ▌[Ш┘[Y[Э▄ИXZ[Э[Ш[Ш┘JK┌▌█И[Щ\ИHXY\ЛВИЭ[Ш▌[█И┌▌╙Ы▌X┘JЫ▌X┘JH┬ИЮH┬И██Ь▌█H╪▌[Y[ЭЩ┘][[Y[ЭЮRY
+	▄┌]K[Ы▌X┘I╩N┬ИYИ
+█	ЙИ█ЬЩ[[▌ЩJH█ЬЩ[[▌ЩJ
+N┬И██Ь▌XY\ИH╪▌[Y[ЭЬ]Y\ЮT┘[X▌▄К	╦ЫX\▌XY	╩N┬ИYИ
+[Ы▌X┘H\[┘ИЫ▌X┘KЭ^OOH	▄▌Ъ[Щ╔╚[Ы▌X┘KЭ^ZXY\КHЩ]\ЫО┬И██Ь▌Ш\ИH[
+	┘]Й╦┌]K[Ы▌X┘H	█Ы▌X┘KЪ┌[ЩOOH	█XZ[Э[Ш[Ш┘I╚╚	█XZ[Э[Ш[Ш┘I╚И	╔▀XЫ▌X┘KЭ^
+N┬ИШ\ЛЪYH	▄┌]K[Ы▌X┘I╬╚Ш\ЛЬ┘]]ЪXЭ]J	▄Ы█I╦	▄▌]\╔╩N┬ИYИ
+\[┘ИЫ▌X┘KЫ[Ъ╚OOH	▄▌Ъ[Щ╔╚	ЙИ╫Ъ╬Ч╫╦╦Э\▌
+Ы▌X┘KЫ[Ъ╩JH┬И██Ь▌[Ъ╚H[
+	╪I╦Э[	╚8бдЙ╩N╚[Ъ╦ЪЩYИHЫ▌X┘KЫ[Ъ╬╚[Ъ╦Э\Щ┘]H	╫╪Ы[Ъ╔╬╚[Ъ╦ЬЩ[H	█Ы█▄[Щ\ИЫ▄ЩYЩ\ЬЩ\Й╬╚Ш\ЛШ\[Щ┌[
+[Ъ╩N┬ИBИXY\ЛЪ[Ь┘\ЭYШX┘[Э[[Y[Э
+	╪YЭ\Щ[Щ	╦Ш\КN┬ИH╪]┌
+┘\ЬЫ▄КH╚╩ИHЫ▌X┘H\╚▄[█Ш[
+Л╚BИBИЭ[Ш▌[█И┌▌╒╪\▌
+Y\▄╪Y┘JH┬ИЮH┬И██Ь▌╪\▌H[
+	┘]Й╦	▌╪\▌	╦Y\▄╪Y┘JN┬И╪\▌Ь┘]]ЪXЭ]J	▄Ы█I╦	▄▌]\╔╩N┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+╪\▌
+N┬И┘][Y[▌]
+
+
+HOИ╚ЮH╚╪\▌ЬЩ[[▌ЩJ
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И[ЩXYH██ЩH
+Л╚HK╬
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩ИHY\▄╪Y┘H\╚H█▌\Э\▐H█ЫH
+Л╚BИBИ\▐[Ш╚Э[Ш▌[█И█▄U╨█\Ы╪\Щ
+^
+H┬ИЮH╚YИ
+Ш]ЪY╪]▄ЛШ█\Ы╪\Щ	ЙИШ]ЪY╪]▄ЛШ█\Ы╪\ЩЭ▄Ъ]U^
+H╚]╪Z]Ш]ЪY╪]▄ЛШ█\Ы╪\ЩЭ▄Ъ]U^
+^
+N╚Щ]\ЫИЭYN╚HH╪]┌
+┘\ЬЫ▄КH╚╩ИЮHH█\И╪^H
+Л╚BИЮH┬И██Ь▌\ЩXHH╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	▌^\ЩXI╩N┬И\ЩXKЭШ[YHH^╚\ЩXKЬ┘]]ЪXЭ]J	▄ЩXY█ЫI╦	╔╩N╚\ЩXKЬ▌[KЬ▄┌][█ИH	┘Ъ^Y	╬╚\ЩXKЬ▌[KЫ▄X┌]HH	╠	╬┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+\ЩXJN╚\ЩXKЬ┘[X▌
+
+N┬И██Ь▌█ЩHH╪▌[Y[ЭЩ^X╨██[X[Щ	ЙИ╪▌[Y[ЭЩ^X╨██[X[Щ
+	╪█▄I╩N┬И\ЩXKЬЩ[[▌ЩJ
+N┬ИЩ]\ЫИ█ЩHOOHЭYN┬ИH╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚BИBИ╦╚H┌]╨\┌\ЩHЭ]█ОИH█X[Ы▌[Щ▄ЩY[ИX██ЛВИ██Ь▌╨W╥P╙╙ИH	╧▌Щ╚ЪY]╨Ы▐HМННИ\ЪXKZY[ПHЭЭYHПП]HУLLИЛМШNKОKОNНMОЛМИМKООKLKМ╨NKОKОHLИЛМЮИИЪ[HИ┘ЩЩИЛ╧П]HУNН╚╦МX╦МЛKНKНKKНKОKНZНШ╦МИННЛН[ОKОX╦МKМЛМKННЫKНKН╪╦KМЛМЛKМЛНKМKНЛНKОKМHKНИKОHЛМKНKНОKНИKМЛН╦МЛМKННKKМЫН╦KО╦МЛKМЛНKМЛНЛKМ[KОKОX╦МЛМKНМЛННМ╚KМKKНHKНЛKНЛНЛLKНKОKLЛМ╦Н╦LKН╦KМ╦L╦М╦LKМЛMНЛLЛНKLKМKLKМKLЛМKLЛНЛLЛНMМKKМЛKОKМKLKОНЛLЛНИИЪ[HИ╠YШОMHЛ╧П▄▌Щ╧Й╬┬ИЭ[Ш▌[█И╪SXЩ[
+Э]█Л^
+H╚╦╚Э\▌HЫ▌[ЩX██О╚H^\╚Ы▄И╪▄ЩY[ИЩXY\Ь╚[ЩH█Щ╦\Щ\▄╚██\И██Ь▌X██ИH[
+	▄▄[Й╦	▌╪KZX██Й╩N╚X██ЛЪ[ЫЩ\ТSH╨W╥P╙╙О┬ИЭ]█ЛЬЩ\X┘P┌[Щ[КX██КN┬ИЭ]█ЛЬ┘]]ЪXЭ]J	╪\ЪXK[XЩ[	╦^
+N╚Э]█ЛЭ]HH^┬ИЩ]\ЫИЭ]█О┬ИBИ\▐[Ш╚Э[Ш▌[█И┌\ЩU^
+]K^
+H┬И██Ь▌Ы┘HH	▌]_WЙ╔╧I╦ЬЩ\X]
+X]ЫZ[К]KЫ[Щ▌
+J_WЧЙ▌^WЧ╕а%Ю[▌\ЫX^XH\▌Ы╨┌]0н╚	▌┌[Щ▌╦Ы╪╪][█И	ЙИ┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[И╚┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[ИИ	╔▀X┬И██Ь▌Ш]]ЩHH┌[Щ▌╦Р╪\X┌]▄И	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╚	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╦Ф┌\ЩN┬ИЮH┬ИYИ
+Ш]]ЩH	ЙИШ]]ЩKЬ┌\ЩJH╚]╪Z]Ш]]ЩKЬ┌\ЩJ╚]K^ИЫ┘KX[┘╒]NИ]HJN╚Щ]\ЫО╚BИYИ
+Ш]ЪY╪]▄ЛЬ┌\ЩJH╚]╪Z]Ш]ЪY╪]▄ЛЬ┌\ЩJ╚]K^ИЫ┘HJN╚Щ]\ЫО╚BИH╪]┌
+\ЬЫ▄КH╚YИ
+\ЬЫ▄И	ЙИ\ЬЫ▄ЛЫШ[YHOOH	╨XЫ▄Э\ЬЫ▄Й╩HЩ]\ЫО╚╩И▌\Э┌\┘H█▄H][Ь▌XY
+Л╚BИ╦╚Ы╚┌\ЩH┌Y]
+[И█\И\Щ\Ь┌[█Л▄ИH\┌▌▄ЬЫ▌▄┘\КNИ█▄HH^█╚]╪[И▌[ЩH\▌Y[Ю]┌\ЩKВИYИ
+]╪Z]█▄U╨█\Ы╪\Щ
+Ы┘JJH╚┌▌╒╪\▌
+
+	┘^▄Э█▄YY	╩JN╚Щ]\ЫО╚BИЮH┬И██Ь▌\ЫHTУШ▄ЩX]S╪ЪЩX▌TУ
+Щ]╚Ы╪К╪Ы┘WK╚\NИ	▌^▄Z[О╪┌\Ь┘]]]ЛN	╚JJN┬И██Ь▌[Ъ╚H╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	╪I╩N┬И[Ъ╦ЪЩYИH\Ы╚[Ъ╦Щ▌█Ы╪YH	▌]KЬЩ\X┘J╓╫Ч╫J╦┘╦	╦I╩KЬ█X┘J
+H	┌Ю[▌\┌I▀KЭ┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+[Ъ╩N╚[Ъ╦Ш█X┌╩
+N╚[Ъ╦ЬЩ[[▌ЩJ
+N┬И┘][Y[▌]
+
+
+HOИTУЬЩ]Ы┌┘S╪ЪЩX▌TУ
+\Ы
+KМ
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌[Щ╚[▄ЩH╚ЮH
+Л╚BИBИЭ[Ш▌[█И┌]^
+
+H┬ИЩ]\ЫИ\ЬШ^KЩЬЫ█J┌]┘╦Ш┌[Щ[И╫JKЫX\
+Y\▄╪Y┘HOИ┬И██Ь▌┌╚H▌Ъ[Щ╩Y\▄╪Y┘KШ█\▄╙Ш[YH	╔╩KЪ[Ш█Y\╩	▌\┘\Й╩H╚	╘I╚И	╨I╬┬И██Ь▌Ы┘HH█U╒^
+Y\▄╪Y┘JHZ[Х^
+Y\▄╪Y┘JN┬ИЩ]\ЫИЫ┘H╚	▌┌▀NИ	╪Ы┘_XИ	╔╬┬ИJKЩЪ[\КЫ██X[КKЪЫ┌[К	╫ЧЙ╩N┬ИBИЭ[Ш▌[█И▌[ЩU^
+
+H┬И██Ь▌\Э╚H╔
+	╪┌\Э\▌[[X\ЮI╩KЭ^██Э[Э█U╒^
+	
+	╪┌\Э\▌]╔╩JK	
+	╪┌\ЭZШ[ЫXI╩KЭ^██Э[ЭN┬И██Ь▌XЫ\╚H╓╔┘]Z[╒]I╦	┘]Z[╦XЫ┘I╫K╔╪Ъ\Э[Ш┌[Щ╒]I╦	╪Ъ\Э\[Ш┌[Щ╔╫K╔█XZY\┌U]I╦	█XZY\┌KXЫ┘I╫K╔╪[Э\Щ\┌I╦	╪[Э\Щ\┌KXЫ┘I╫WN┬ИЫ▄И
+██Ь▌┌┘^KYH┘ИXЫ\╩H┬И██Ь▌Ы┘HH	
+Y
+KXЫHHЫ┘H	ЙИЫ┘KЬ\Щ[ЭЫ┘N┬И██Ь▌^HXЫH╚█U╒^
+XЫJHИ	╔╬┬ИYИ
+^
+H\Э╦Ь\┌
+	╔╦┘^HOOH	╪[Э\Щ\┌I╚╚	
+	╪[Э\Щ\┌K]]I╩KЭ^██Э[ЭИ
+┘^JK^
+N┬ИBИЩ]\ЫИ\Э╦ЩЪ[\К\ЭOИ\ЭOOH[ЩYЪ[ЩY	ЙИ\ЭOOHЭ[
+KЪЫ┌[К	╫Й╩KЬЩ\X┘J╫Ю╠╦K┘╦	╫ЧЙ╩KЭЪ[J
+N┬ИBИ╦╚ОИ┌▌▄╚█ЫHH^╚Ъ[Э[Щ▄[Ь╚HЪ[ЭX[┘╦┌▄┘HФ╪]ЩH\╚ИИXZ┘\╚HЪ[KВИ╦╚[ЩЫ┌Y\ИH█X[Ш]]ЩHY┌[И
+ФЪ[Э
+H▄[Ь╚]X[┘╬╚ЬЫ▌▄┘\Ь╚\┘H┌[Щ▌╦ЬЪ[Э
+
+KВИ╦╚H█▄H┘И┌]\╚█И╪▄ЩY[ЛЩXYH╚Ъ[ЭИЫ╚Э]█Ь╚▄ИY╦]Щ\ЮH╪\Щ▄[ЛВИЭ[Ш▌[█И██ЩQЫ▄ФЪ[Э
+Ы┘JH┬И██Ь▌█▄HHЫ┘KШ██ЩSЫ┘JЭYJN┬ИYИ
+X█▄KЬ]Y\ЮT┘[X▌▄Р[
+HЩ]\ЫИ█▄N┬И█▄KЬ]Y\ЮT┘[X▌▄Р[
+	╪Э]█ЛЩ^▄Э\Ы▌╦Щ^▄ЭX┌]	╩KЩЫ▄СXX┌
+][HOИ╚ЮH╚][KЬЩ[[▌ЩJ
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И██ЩH
+Л╚HJN┬И█▄KЬ]Y\ЮT┘[X▌▄Р[
+	┘]Z[╔╩KЩЫ▄СXX┌
+][HOИ][KЬ┘]]ЪXЭ]J	█▄[Й╦	╔╩JN┬И█▄KЬ]Y\ЮT┘[X▌▄Р[
+	╓┌YI╩KЩЫ▄СXX┌
+][HOИ][KЬЩ[[▌ЩP]ЪXЭ]J	┌Y	╩JN┬И█▄KЬЩ[[▌ЩP]ЪXЭ]J	┌Y	╩N╚█▄KЬЩ[[▌ЩP]ЪXЭ]J	┌Y[Й╩N┬ИЩ]\ЫИ█▄N┬ИBИЭ[Ш▌[█ИЪ[ЭК]KXZ┘SЫ┘KШ[ШX┌╒^
+H┬И██Ь▌Ы█▌H╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	┘]Й╩N╚Ы█▌ЪYH	▄Ъ[Э\Ы█▌	╬┬И██Ь▌┌Y]H[
+	┘]Й╦	▄Л\┌Y]	╩N┬И┌Y]Ш\[Щ
+[
+	┌I╦Э[]JKXZ┘SЫ┘J
+K[
+	▄	╦	▄ЛYЫ█▌	╦8а%Ю[▌\ЫX^XH\▌Ы╨┌]0н╚	▌┌[Щ▌╦Ы╪╪][█И	ЙИ┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[И╚┌[Щ▌╦Ы╪╪][█ЛЫ▄ЪY┌[ИИ	╔▀X
+JN┬ИЫ█▌Ш\[Щ┌[
+┌Y]
+N┬И╪▌[Y[ЭШЫ┘KШ\[Щ┌[
+Ы█▌
+N╚╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ШY
+	▄Ъ[Э[Щ╔╩N┬И]Ъ[Ъ\┌YHШ[┘N┬И██Ь▌Ъ[Ъ\┌H
+
+HOИ┬ИYИ
+Ъ[Ъ\┌Y
+HЩ]\ЫО╚Ъ[Ъ\┌YHЭYN╚█X\Х[Y[▌]
+^\ЮJN┬И╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ЬЩ[[▌ЩJ	▄Ъ[Э[Щ╔╩N┬ИЮH╚Ы█▌ЬЩ[[▌ЩJ
+N╚H╪]┌
+┘\ЬЫ▄КH╚╩И[ЩXYH██ЩH
+Л╚BИЮH╚╪▌[Y[ЭЬЩ[[▌ЩQ]Щ[Э\▌[Щ\К	▌Ъ\┌XЪ[]X┌[Щ┘I╦█ХЪ\┌XЫJN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌]X┌Y
+Л╚BИN┬И╦╚HЪ[ЭX[┘╚Y\╚HY┘H┌[H]\╚▄[О╚█X[И\┌[ИH\┘\И██Y\╚ШX┌╚
+▄ИYЭ\ИHЩ]╚Z[Э]\╩KВИ]╪\╥Y[ИHШ[┘N┬ИЭ[Ш▌[█И█ХЪ\┌XЫJ
+H╚YИ
+╪▌[Y[ЭЭЪ\┌XЪ[]T▌]HOOH	┌Y[Й╩H╪\╥Y[ИHЭYN╚[┘HYИ
+╪\╥Y[КHЪ[Ъ\┌
+
+N╚BИЮH╚╪▌[Y[ЭШY]Щ[Э\▌[Щ\К	▌Ъ\┌XЪ[]X┌[Щ┘I╦█ХЪ\┌XЫJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИ██Ь▌^\ЮHH┘][Y[▌]
+Ъ[Ъ\┌N
+N┬ИYИ
+^\ЮH	ЙИ^\ЮKЭ[ЬЩYКH^\ЮKЭ[ЬЩYК
+N╚╦╚Щ]Щ\И┘Y\╚H\▌▄И┘\ЭЩ\ИЫ╪┘\▄╚[]ЩBИ██Ь▌Ш]]ЩTЪ[ЭH┌[Щ▌╦Р╪\X┌]▄И	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╚	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛФY┌[Ь╦ФФЪ[Э┬И██Ь▌[Р\H┌[Щ▌╦Р╪\X┌]▄И	ЙИ\[┘И┌[Щ▌╦Р╪\X┌]▄ЛЪ\╙Ш]]ЩT]Ы▄ЫHOOH	┘Э[Ш▌[█Й╚	ЙИ┌[Щ▌╦Р╪\X┌]▄ЛЪ\╙Ш]]ЩT]Ы▄ЫJ
+N┬ИYИ
+Ш]]ЩTЪ[Э	ЙИШ]]ЩTЪ[ЭЬЪ[Э
+H┬И┘][Y[▌]
+
+
+HOИ╚Ы█Z\┘KЬЩ\██ЩJШ]]ЩTЪ[ЭЬЪ[Э
+╚]HJJKШ╪]┌
+
+
+HOИ╚Ъ[Ъ\┌
+
+N╚Ы┌Y┌\ЩU^
+]KШ[ШX┌╒^
+
+JN╚JN╚K
+N┬ИH[┘HYИ
+[Р\
+H┬ИЪ[Ъ\┌
+
+N╚Ы┌Y┌\ЩU^
+]KШ[ШX┌╒^
+
+JN╚╦╚[И█\И\┌]▌]HИY┌[ОИ┌\ЩHH^[Ь▌XYИH[┘HYИ
+┌[Щ▌╦ЬЪ[Э
+H┬ИЮH╚┌[Щ▌╦ШY]Щ[Э\▌[Щ\К	╪YЭ\ЬЪ[Э	╦Ъ[Ъ\┌╚█Ш┘NИЭYHJN╚H╪]┌
+┘\ЬЫ▄КH╚╩И▄[█Ш[
+Л╚BИ┘][Y[▌]
+
+
+HOИ╚ЮH╚┌[Щ▌╦ЬЪ[Э
+
+N╚H╪]┌
+┘\ЬЫ▄КH╚Ъ[Ъ\┌
+
+N╚HKНL
+N┬ИH[┘HЪ[Ъ\┌
+
+N┬ИBИ	
+	▄ЛX┌]	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИЪ[ЭК
+	╪┌\Э]Y\▌[█Й╩K
+
+HOИ╚██Ь▌┘╚H██ЩQЫ▄ФЪ[Э
+┌]┘╩N╚┘╦Ш█\▄╙Ш[YHH	╪┌][┘╚Ъ[ЭX┌]	╬╚Щ]\ЫИ┘╬╚K┌]^
+JN┬И	
+	▄ЛZ▌[ЩI╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚YИ
+▌]KШ┌\Э
+HЪ[ЭК
+	┘^YXЬЫ▌╨Ъ\Э	╩K
+
+HOИ██ЩQЫ▄ФЪ[Э
+ЭZ[Ш]Z╪[J
+JK▌[ЩU^
+N╚JN┬И	
+	▄Л\Ш\┌I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬И██Ь▌XY[Щ╚H	▌
+	▄Ш\┌\[	╩_H0н╚	╔
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭX┬ИЪ[ЭКXY[Щ╦
+
+HOИ██ЩQЫ▄ФЪ[Э
+	
+	▄Ш\┌K[\▌	╩JK
+
+HOИ█U╒^
+	
+	▄Ш\┌K[\▌	╩JJN┬ИJN┬И	
+	┘^▄ЭX┌]	╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Ы┌Y┌\ЩU^
+	▌
+	╪┌\Э]Y\▌[█Й╩_X┌]^
+
+JN╚JN┬И	
+	┘^▄ЭZ▌[ЩI╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚YИ
+▌]KШ┌\Э
+HЫ┌Y┌\ЩU^
+	▌
+	┘^YXЬЫ▌╨Ъ\Э	╩_X▌[ЩU^
+
+JN╚JN┬И	
+	┘^▄Э\Ш\┌I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ╚Ы┌Y┌\ЩU^
+	▌
+	▄Ш\┌\[	╩_H0н╚	╔
+	▄Ш\┌K[[██Й╩KЭ^██Э[ЭX█U╒^
+	
+	▄Ш\┌K[\▌	╩JJN╚JN┬ВИ╩ИKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKH▌\Э
+Л┬И╦╚[Ь▌[XЫH\ИH┘\ЭЪX┘H█▄Ъ┘\И┘Y\╚H┌[]ШZ[XЫH[Щ┌▌▄╚HЬЪY[ЩHY┘H┘ЩЫ[ЩKВИЮH╚YИ
+Ш]ЪY╪]▄ЛЬ┘\ЭЪX┘U█▄Ъ┘\КHШ]ЪY╪]▄ЛЬ┘\ЭЪX┘U█▄Ъ┘\ЛЬЩY┌\▌\К	╦▄▌╦ЪЬ╔╩KШ╪]┌
+
+
+HOИ▀JN╚H╪]┌
+┘\ЬЫ▄КH╚╩ИЫ▌▌\▄ЭY
+Л╚BИЩ]┌
+	╦╪\K╪Ъ\Э\ЩXY[Щ\▄╔╦╚╪X┌NИ	█Ы╦\▌▄ЩI╚JKЭ[КЩ\▄█Ь┘HOИЩ\▄█Ь┘KЪЬ██К
+JKЭ[КЩXY[Щ\▄╚OИ┬И	
+	╪]ШZ[XЪ[]I╩KЭ^██Э[ЭHЩXY[Щ\▄╦Ш╪[Ч╪╪[▌[]H╚	╔╚И
+	▌[Ш]ШZ[XЫI╩N┬И	
+	╪Ъ\ЭYЪY[╔╩KЩ\╪XЫYH\ЩXY[Щ\▄╦Ш╪[Ч╪╪[▌[]N┬И▌]KШ\▄┌\▌[ЭHЩXY[Щ\▄╦Ш\▄┌\▌[Э╪]ШZ[XЫHOOHЭYN┬И▌]KЬ^[Y[Э╚HЩXY[Щ\▄╦Ь^[Y[Э╚	ЙИ\[┘ИЩXY[Щ\▄╦Ь^[Y[Э╦Ъ┘^W┌YOOH	▄▌Ъ[Щ╔╚╚ЩXY[Щ\▄╦Ь^[Y[Э╚ИЭ[┬И▌\Э\█ЩJ	▄ЩXY[Щ\▄╔╩N┬И▌]KШ██ЭX▌[XZ[H\[┘ИЩXY[Щ\▄╦Ш██ЭX▌┘[XZ[OOH	▄▌Ъ[Щ╔╚╚ЩXY[Щ\▄╦Ш██ЭX▌┘[XZ[И	╔╬┬И┌▌╙Ы▌X┘JЩXY[Щ\▄╦ЫЫ▌X┘JN┬И┘]X\┘\Р██ЩЪY╩ЩXY[Щ\▄╦ЭX\┘\Ь╩N┬ИЩ[Y[XЩ\У][Ш┌Y
+ЩXY[Щ\▄╦Ш\╪Y╚	ЙИЩXY[Щ\▄╦Ш\╪Y╦Щ[ШXЫYOOHЭYH╚ЩXY[Щ\▄╦Ш\╪Y╚ИЭ[
+N┬ИYИ
+ЩXY[Щ\▄╦Ш\╪Y╚	ЙИЩXY[Щ\▄╦Ш\╪Y╦Щ[ШXЫYOOHЭYJHЫ┌Y▌\Э\Y╩ЩXY[Щ\▄╦Ш\╪Y╩N┬И╦╚Y╚\ЩH┘ЩИ[Ы\▄╚H┘\ЭЩ\И╪\╚██ЩЪY▌\ЩY┌][ИY┘[Ь┘HXЫ\┌\ИYВИ╦╚Y┘[Ь┘H\╚H┘XЬ┌]HЫ┘▄Ш[NИ]\╚Ы▌╪YY[Ь┌YHH[Ь▌[Y\╚^H▌▄ЩH▄Ш\\И
+\┘HY[╪ИЫ▄ИШ]]ЩH\╩KВИ██Ь▌[Ь▌[Y\H
+
+
+HOИ┬ИЮH╚Щ]\ЫИ
+┌[Щ▌╦ЫX]┌YYXH	ЙИ┌[Щ▌╦ЫX]┌YYXJ	╩\▄^K[[┘NИ▌[Щ[█ЩJI╩KЫX]┌\╩H╫Ш[ЩЫ┌YX\Л╦Э\▌
+╪▌[Y[ЭЬЩYЩ\ЬЩ\И	╔╩N╚H╪]┌
+┘\ЬЫ▄КH╚Щ]\ЫИШ[┘N╚BИJJ
+N┬ИYИ
+Z[Ь▌[Y\	ЙИ╫Ш╪K\XЛW╠LМI╦Э\▌
+ЩXY[Щ\▄╦ШY┘[Ь┘W╪█Y[Э	╔╩JH┬ИЮH┬И██Ь▌YH╪▌[Y[ЭШ▄ЩX]Q[[Y[Э
+	▄╪▄Ъ\	╩N┬ИYШ\▐[Ш╚HЭYN╚YШ▄Ы▄▄╙▄ЪY┌[ИH	╪[Ы█Ю[[▌\╔╬┬ИYЬ▄Ш╚H╬Л╦▄Y┘XYЛЩ██┘█\▐[ЩX╪][█ЛШ██K▄Y┘XY┌Ь╦╪Y╪ЮY██┘█KЪЬ╧╪█Y[ЭI▄ЩXY[Щ\▄╦ШY┘[Ь┘W╪█Y[ЭX┬И╪▌[Y[ЭЪXYШ\[Щ┌[
+Y
+N┬ИH╪]┌
+┘\ЬЫ▄КH╚╩ИY╚\ЩH▄[█Ш[
+Л╚BИBИJKШ╪]┌
+
+
+HOИ╚	
+	╪]ШZ[XЪ[]I╩KЭ^██Э[ЭH
+	┌[Ь]\╪XЫY	╩N╚▌\Э\█ЩJ	▄ЩXY[Щ\▄╔╩N╚JN┬И██Ь▌╪]ЩYH╪Y┘][Щ▄╩
+N┬ИYИ
+╪]ЩY
+H┬И▌]KШ┌]HH╪]ЩYШ┌]N╚▌]KЭ\┘S╪╪][█ИH╪]ЩYЭ\┘S╪╪][█О╚▌]KЫ█ШЫ╪\ЩYHЭYN╚▌]KЭ\┘\УШ[YHH╪]ЩYЫШ[YN╚▌]KЭ\┘\С╪ИH╪]ЩYЩ╪О┬И	
+	▌┘[██YK\╪▄ЩY[Й╩KЪY[ИHЭYN╚╪▌[Y[ЭШЫ┘KШ█\▄╙\▌ЬЩ[[▌ЩJ	██ШЫ╪\Щ[Щ╦XX▌]ЩI╩N┬И\S[Щ▌XY┘J╪]ЩYЫ[Щ╩N┬И▌\Э█YJ
+N┬ИЫ┌Y][Ш┌▄\┌
+
+KЭ[К
+
+HOИ╪Z]
+ML
+JKЭ[КX^XЩS┘ЩЩ\Х\]JN┬ИYИ
+╪]ЩYЭ\┘S╪╪][█КHЫ┌YЩYЬЩ\┌┌]QЬЫ█S╪╪][█К
+N┬ИH[┘H╚\S[Щ▌XY┘J	┘[Й╩N╚┌▌╙█ШЫ╪\Щ[Щ╘▌\
+	▌┘[██YI╩N╚Ы┌YЭ[Ф▄\┌
+
+N╚BИЫ┌YЩ\▌▄ЩTЫ┘Ъ[J
+N┬И	
+	┘Ы▄Щ┘]\Ы┘Ъ[I╩KШY]Щ[Э\▌[Щ\К	╪█X┌╔╦
+
+HOИ┬ИЫ▄Щ┘]Ы┘Ъ[J
+N┬И▌]KШ┌\ЭHЭ[╚▌]KЩ]Z[╚HЭ[╚▌]KЬЩ\██ЩYHЭ[┬И▌]KЬ\ЭЩ\Р┌\ЭHЭ[╚▌]KЬ\ЭЩ\С]Z[╚HЭ[╚▌]KЬ┌▌╙▌ЩTЩXY[Щ╚HШ[┘N┬ИЫ▄И
+██Ь▌Y┘И╔▄\ЭЩ\ЛY╪Й╦	▄\ЭЩ\Л\╪Й╦	▄\ЭЩ\Л]╪Й╦	┘Ъ\Ь▌Y╪Й╦	┘Ъ\Ь▌\╪Й╦	┘Ъ\Ь▌]╪Й╫JH	
+Y
+KЭШ[YHH	╔╬┬И▌]KЩЪ\Ь▌┌\ЭHЭ[╚▌]KЩЪ\Ь▌]Z[╚HЭ[┬И	
+	▄Щ[][█Ь┌\\▌]\╔╩KЭ^██Э[ЭH	╔╬╚Щ[Щ\ФЩ[][█Ь┌\
+
+N┬И	
+	╪┌\Э	╩KЪY[ИHЭYN┬ИЩ[Щ\Х██╩
+N┬И┘]┌][ШXЫY
+ЭYJN╚▌\Э[ЭZ┘J
+N┬ИJN┬И	
+	╪]ШZ[XЪ[]I╩KЭ^██Э[ЭH
+	╪]ШZ[XЪ[]P┌X┌┌[Щ╔╩N┬ЯJJ
+N┬

@@ -155,6 +155,27 @@ def test_counters_keep_totals_only():
     assert "203.0.113" not in (store.data_dir() / "stats.json").read_text()
 
 
+def test_private_low_rating_is_saved_and_visible_only_in_admin(panel):
+    status, _, body = call(panel, "POST", "/api/rating", {"stars": 2, "reason": "The regenerate button failed", "language": "en"})
+    assert status == 200 and json.loads(body) == {"ok": True, "stars": 2}
+    assert call(panel, "POST", "/api/rating", {"stars": 1, "reason": "", "language": "te"})[0] == 400
+    cookie = sign_in(panel)
+    ratings = json.loads(call(panel, "GET", "/api/admin/state", cookie=cookie)[2])["ratings"]
+    assert ratings["total"] == 1 and ratings["average"] == 2
+    assert ratings["counts"]["2"] == 1 and ratings["recent"][0]["reason"] == "The regenerate button failed"
+
+
+def test_partner_quota_can_be_checked_before_an_ad(panel):
+    store.update({"JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY": "1"})
+    status, _, body = call(panel, "GET", "/api/partner-portrait-quota")
+    assert status == 200 and json.loads(body)["remaining"] == 1
+    request = {"house7_rashi": 4, "venus_rashi": 7, "gender": "woman"}
+    assert call(panel, "POST", "/api/partner-portrait", request)[0] in (200, 422)
+    assert json.loads(call(panel, "GET", "/api/partner-portrait-quota")[2])["remaining"] == 0
+    status, _, body = call(panel, "POST", "/api/partner-portrait", request)
+    assert status == 429 and json.loads(body)["code"] == "partner_daily_limit"
+
+
 def test_login_attempts_are_limited(panel):
     results = [call(panel, "POST", "/api/admin/login", {"password": "wrong-password-here"})[0] for _ in range(admin.MAX_FAILURES * 3 + 1)]
     assert results[-1] == 429

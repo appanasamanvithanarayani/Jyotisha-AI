@@ -383,6 +383,15 @@ body.page-chat #chat h2{padding-top:16px}
 .update-popup-body{margin:0 0 18px;font-size:.92rem;color:var(--muted);line-height:1.4}
 .update-popup-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .update-popup-actions .btn{flex:1}
+.rating-stars{display:flex;justify-content:center;gap:6px;margin:4px 0 18px}
+.rating-stars button{border:0;background:transparent;color:#b7adbf;padding:2px;font-size:2rem;line-height:1;cursor:pointer;box-shadow:none}
+.rating-stars button.on{color:#f2b72f;filter:drop-shadow(0 2px 5px rgba(242,183,47,.35))}
+.rating-reason label{display:block;margin:0 0 7px;font-weight:700}
+.rating-reason textarea{width:100%;resize:vertical;margin-bottom:7px}
+.rating-reason .btn{width:100%;margin-bottom:8px}
+.rating-error{min-height:18px;margin:0 0 6px;color:#c62828;font-size:.82rem}
+.rating-popup>.update-popup-card>.link-btn{display:block;margin:6px auto 0}
+.portrait-limit{color:var(--accent-b);font-weight:700}
 
 .chart-build{position:fixed!important;inset:0;z-index:110!important;display:grid;place-items:center;padding:20px;background:radial-gradient(520px 380px at 50% 30%,rgba(214,70,170,.35),transparent 70%),#150d2e}
 .chart-build-card{width:min(340px,100%);text-align:center;color:#fff}

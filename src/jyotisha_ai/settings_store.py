@@ -82,7 +82,7 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_FAL_MODEL", "AI chat", "fal.ai (Flux) model", "Used only when the image provider above is \"fal\". Leave empty for the built-in default (Flux Schnell: fast and inexpensive).", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}", example="fal-ai/flux/schnell"),
     Setting("BFL_API_KEY", "API keys", "Black Forest Labs API key (Flux images)", "From bfl.ai (your account's API Keys page) — a different service from fal.ai, with its own key. Write-only, like the other AI keys. Needed only when the image provider above is set to \"bfl\".", "secret"),
     Setting("JYOTISHA_BFL_MODEL", "AI chat", "Black Forest Labs (Flux) model", "Used only when the image provider above is \"bfl\". Leave empty for the built-in default (flux-3-image-klein). Use the exact model slug from the code sample on your Black Forest Labs account if it differs (the display name shown in their UI is not the same as the slug the API expects).", "pattern", "", pattern=r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", example="flux-3-image-klein"),
-    Setting("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", "AI chat", "Ideal-partner illustrations per visitor per day", "Image generation costs more than a question or even a palm reading.", "int", "3", minimum=1, maximum=50),
+    Setting("JYOTISHA_PARTNER_PORTRAIT_PER_VISITOR_DAY", "AI chat", "Ideal-partner illustrations per visitor per day", "Image generation costs more than a question or even a palm reading.", "int", "10", minimum=1, maximum=50),
     Setting("JYOTISHA_AI_TAROT", "AI chat", "AI-written Tarot readings", "The AI explains each 3-card Tarot draw in the user's language (counts toward the AI question limits). Off shows the built-in card meanings.", "bool", "1"),
     Setting("JYOTISHA_AI_MOON_SIGN", "AI chat", "AI-written Moon Sign page", "The AI writes the Moon Sign page (5 sections) once per sign and language; it is kept and shared. Off shows a short built-in description.", "bool", "1"),
     Setting("JYOTISHA_AI_RASHIPHAL", "AI chat", "AI-written daily Rashiphal", "The AI writes each day’s Rashiphal paragraph for the 12 signs (per language), based on the day’s planet positions. Off shows the built-in reading.", "bool", "1"),
@@ -380,3 +380,53 @@ class Stats:
 
 
 stats = Stats()
+
+
+# ----------------------------------------------------------------------------------------- private app ratings
+def record_rating(stars: object, reason: object = "", language: object = "") -> dict:
+    """Store an app rating for the owner. Low ratings require a short private explanation."""
+    if isinstance(stars, bool) or not isinstance(stars, int) or not 1 <= stars <= 5:
+        raise ValueError("rating must be a whole number from 1 to 5")
+    note = str(reason).strip() if isinstance(reason, str) else ""
+    if stars < 3 and not note:
+        raise ValueError("please tell us what went wrong")
+    if len(note) > 500 or re.search(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", note):
+        raise ValueError("feedback must be at most 500 characters")
+    lang = str(language).strip().lower() if isinstance(language, str) else ""
+    if not re.fullmatch(r"[a-z]{2,3}", lang):
+        lang = ""
+    row = {"time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "stars": stars,
+           "reason": note, "language": lang}
+    with _lock:
+        directory = data_dir()
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / "ratings.jsonl"
+        with path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+            if len(lines) > 1000:
+                path.write_text("\n".join(lines[-1000:]) + "\n", encoding="utf-8")
+        except OSError:
+            pass
+    return row
+
+
+def ratings_snapshot(limit: int = 100) -> dict:
+    """Aggregate rating totals and return recent private feedback for the admin panel."""
+    try:
+        lines = (data_dir() / "ratings.jsonl").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    rows = []
+    for line in lines:
+        try:
+            row = json.loads(line)
+            if isinstance(row, dict) and isinstance(row.get("stars"), int) and 1 <= row["stars"] <= 5:
+                rows.append(row)
+        except ValueError:
+            continue
+    counts = {str(stars): sum(row["stars"] == stars for row in rows) for stars in range(1, 6)}
+    average = round(sum(row["stars"] for row in rows) / len(rows), 2) if rows else 0
+    recent = [row for row in reversed(rows) if row.get("reason")][:max(0, min(limit, 100))]
+    return {"total": len(rows), "average": average, "counts": counts, "recent": recent}

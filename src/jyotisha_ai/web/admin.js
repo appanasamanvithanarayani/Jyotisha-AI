@@ -34,7 +34,7 @@
   function groups() {
     const names = [];
     state.settings.forEach(item => { if (!names.includes(item.group)) names.push(item.group); });
-    return ['Dashboard', 'Notifications', ...names, 'Change log'];
+    return ['Dashboard', 'Ratings', 'Notifications', ...names, 'Change log'];
   }
 
   function render() {
@@ -46,6 +46,7 @@
     });
     const view = $('view'); view.textContent = '';
     if (tab === 'Dashboard') dashboard(view);
+    else if (tab === 'Ratings') ratings(view);
     else if (tab === 'Change log') changeLog(view);
     else if (tab === 'Notifications') notifications(view);
     else settingsGroup(view, tab);
@@ -104,6 +105,34 @@
     wrap.appendChild(table); usage.appendChild(wrap); view.appendChild(usage);
     const foot = el('p', 'hint', `Settings are stored in ${state.server.data_dir}. You are signed out automatically after ${state.server.session_minutes} minutes.`);
     view.appendChild(foot);
+  }
+
+  function ratings(view) {
+    const data = state.ratings || { total: 0, average: 0, counts: {}, recent: [] };
+    const tiles = el('div', 'tiles');
+    tiles.append(tile('Ratings received', data.total || 0), tile('Average rating', data.total ? `${data.average} / 5` : '—'));
+    view.appendChild(tiles);
+
+    const breakdown = el('div', 'panel'); breakdown.appendChild(el('h2', null, 'Rating breakdown'));
+    const wrap = el('div', 'scroll'), table = el('table');
+    const head = el('tr'); ['Stars', 'Ratings'].forEach(label => head.appendChild(el('th', null, label))); table.appendChild(head);
+    [5, 4, 3, 2, 1].forEach(stars => {
+      const tr = el('tr'); tr.append(el('td', null, `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}`), el('td', null, String((data.counts || {})[String(stars)] || 0))); table.appendChild(tr);
+    });
+    wrap.appendChild(table); breakdown.appendChild(wrap); view.appendChild(breakdown);
+
+    const feedback = el('div', 'panel'); feedback.appendChild(el('h2', null, 'Private feedback'));
+    feedback.appendChild(el('p', 'hint', 'Reasons from 1–2 star ratings are shown here and are never posted to Google Play.'));
+    if (!(data.recent || []).length) feedback.appendChild(el('p', 'hint', 'No private feedback yet.'));
+    else {
+      const feedbackWrap = el('div', 'scroll'), feedbackTable = el('table'); feedbackTable.className = 'log';
+      const feedbackHead = el('tr'); ['When (UTC)', 'Rating', 'Language', 'Reason'].forEach(label => feedbackHead.appendChild(el('th', null, label))); feedbackTable.appendChild(feedbackHead);
+      data.recent.forEach(row => {
+        const tr = el('tr'); [row.time, `${row.stars} / 5`, row.language || '—', row.reason].forEach(value => tr.appendChild(el('td', null, String(value)))); feedbackTable.appendChild(tr);
+      });
+      feedbackWrap.appendChild(feedbackTable); feedback.appendChild(feedbackWrap);
+    }
+    view.appendChild(feedback);
   }
 
   function aiDaily(view, push) {
