@@ -726,6 +726,59 @@ test('"Your ideal partner": the illustration button sends only the two sign numb
   assert.equal(againBtn.textContent, '🔄 Generate again');   // can regenerate without leaving the card
 });
 
+test('"Your ideal partner": with no chart yet, a chat button asks for birth details right here instead of pointing at Kundli', async () => {
+  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  app.element('love-options').children[2].listeners.click();
+  const result = app.element('relationship-traits-result');
+  assert.match(result.children[0].textContent, /Create your own Kundli first/);
+  const chatBtn = result.children.find(item => item.tag === 'button');
+  assert.equal(chatBtn.textContent, '💬 Tell me your birth details in chat');
+  chatBtn.listeners.click();
+  assert.equal(app.element('page-chat').hidden, false);
+  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
+});
+
+test('"Your ideal partner": a failed generation says so plainly, not that the Kundli itself is incomplete', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, birth: syntheticBirth, partnerPortrait: { status: 'unavailable', image: null } });
+  await settle();
+  app.element('love-options').children[2].listeners.click();
+  app.element('relationship-traits-result').children.find(item => item.tag === 'button').listeners.click();
+  await settle();
+  const note = app.element('relationship-traits-result').children.find(item => item.className === 'muted-note' && /Could not create/.test(item.textContent));
+  assert.ok(note, 'a distinct message, not the "chart data is incomplete" one');
+});
+
+test('"Your ideal partner" asked straight in chat: birth details are collected there if missing, then the illustration shows up in the chat log', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const setup = { storage, birth: syntheticBirth, partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } };
+  const app = boot(setup);
+  await settle();
+  await typeInChat(app, 'What will my ideal partner look like?');
+  assert.equal(app.element('chat-log').children.at(-1).textContent, calendar.tr('en', 'chatAskDob'));
+  await typeInChat(app, '15-08-1995'); await typeInChat(app, 'Hyderabad, IN'); await typeInChat(app, '6:30 am');
+  await settle();
+  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6, gender: 'woman' }]);
+  const img = app.element('chat-log').children.at(-1).children.find(item => item.className === 'traits-portrait');
+  assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
+});
+
+test('"Your ideal partner" asked in chat with a chart already on hand: generates right away, with no AI assistant round trip', async () => {
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const setup = { storage, birth: syntheticBirth, assistant: true, partnerPortrait: { status: 'ok', image: { mime: 'image/png', data: 'ZmFrZQ==' } } };
+  const app = boot(setup);
+  await settle();
+  await typeInChat(app, 'show me my future husband');
+  await settle();
+  assert.deepEqual(setup.partnerPortraitRequests, [{ house7_rashi: 11, venus_rashi: 6, gender: 'woman' }]);
+  assert.ok(!app.requests.some(r => r.url === '/api/ask'));   // not sent to the general AI assistant
+  const img = app.element('chat-log').children.at(-1).children.find(item => item.className === 'traits-portrait');
+  assert.equal(img.src, 'data:image/png;base64,ZmFrZQ==');
+});
+
 test('"Your ideal partner": a Woman/Man toggle on the page itself picks the gender, with no need to visit Kundli matching first', async () => {
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));

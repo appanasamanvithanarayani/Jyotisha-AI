@@ -84,6 +84,17 @@
     const text = question.trim().toLowerCase();
     return text.length > 0 && text.length <= 300 && JATHAKAM_WORDS.some(word => text.includes(word));
   }
+  // Asking (in chat) to see what a partner might look like, so the ideal-partner illustration can be offered there too.
+  const PARTNER_PORTRAIT_WORDS = [
+    'ideal partner', 'my partner', 'partner portrait', 'partner image', 'partner picture', 'partner photo',
+    'future husband', 'future wife', 'husband look like', 'wife look like', 'life partner look', 'partner look like',
+    'ఆదర్శ భాగస్వామి', 'భాగస్వామి ఎలా', 'భర్త ఎలా ఉంటాడు', 'భార్య ఎలా ఉంటుంది', 'భాగస్వామి చిత్రం', 'భాగస్వామి ఫోటో',
+    'आदर्श साथी', 'साथी कैसा', 'पति कैसा दिखेगा', 'पत्नी कैसी दिखेगी', 'साथी की तस्वीर', 'साथी का चित्र'];
+  function isPartnerPortraitRequest(question) {
+    if (typeof question !== 'string') return false;
+    const text = question.trim().toLowerCase();
+    return text.length > 0 && text.length <= 300 && PARTNER_PORTRAIT_WORDS.some(word => text.includes(word.toLowerCase()));
+  }
   function fill(template, values) {
     return template.replace(/\{(\w+)\}/g, (_match, key) => String(values[key]));
   }
@@ -1150,7 +1161,7 @@
       venusRashi, venusSign: signName(venusRashi, language), venusTrait: text[venusRashi - 1],
     };
   }
-  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
+  const api = Object.freeze({ RASHI_NAMES, SOUTH_SLOTS, buildSouthIndianChart, northIndianLayout, answerChartQuestion, isJathakamRequest, isPartnerPortraitRequest, isFallbackAnswer, remedyHead, remedyNote, rashiOutlook, gocharaOutlook, gocharaHead, weekOutlook, monthOutlook, planetMoves, monthMovesHead, slowHead: language => (AREA_TEXT[language] || AREA_TEXT.en).slowHead, weekHead: language => (AREA_TEXT[language] || AREA_TEXT.en).weekHead, parseBirthDate, parseBirthTime, wantsToday, readToday, readingTopic, readLife, chartOverlap, partnerTraits, signName, bodyName });
   root.JyotishaChart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
