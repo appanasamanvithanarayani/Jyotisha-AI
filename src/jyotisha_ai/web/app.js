@@ -688,7 +688,7 @@
       const { ok, body, status } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi, gender });
       if (ok && body && body.status === 'ok' && body.image) {
         state.partnerPortrait = { status: 'ok', image: body.image };
-        setTimeout(maybeAskForRating, 1200);
+        ratingCompleted('partner');
       } else if (status === 429 && body && body.code === 'partner_daily_limit') {
         state.partnerPortrait = { status: previous ? 'ok' : 'unavailable', image: previous || null, notice: 'limit' };
       } else if (body && body.status === 'off') state.partnerPortrait = { status: 'off', image: previous || null };
@@ -2127,6 +2127,7 @@
       palmState.reading = ok && body && body.reading ? body.reading : null;
     } catch (_error) { palmState.status = 'unavailable'; palmState.reading = null; }
     palmState.step = 'result'; renderPalm();
+    if (palmState.reading) ratingCompleted('palm');
   }
   // A photo is ready (from the camera or the gallery): shrink it if needed, then read it (behind a ▶ button when the ad is on).
   async function handlePalmPhoto(photo) {
@@ -2414,13 +2415,22 @@
     te: { title: 'Jyotirmaya నచ్చిందా?', body: 'మీ అనుభవానికి ఎన్ని stars ఇస్తారు?', reason: 'ఏం improve చేయాలో చెప్పండి', placeholder: 'మీకు నచ్చనిది లేదా ఎదురైన సమస్య…', send: 'Feedback పంపండి', thanks: 'ధన్యవాదాలు! మీ feedback మాకు చాలా ఉపయోగపడుతుంది.', close: 'తర్వాత' },
     hi: { title: 'Jyotirmaya कैसा लगा?', body: 'आप अपने अनुभव को कितने stars देंगे?', reason: 'हमें बताएं कि क्या सुधारना चाहिए', placeholder: 'आपको क्या पसंद नहीं आया या क्या समस्या हुई…', send: 'Feedback भेजें', thanks: 'धन्यवाद! आपका feedback हमें बेहतर बनाने में मदद करेगा।', close: 'बाद में' },
   }[state.lang] || { title: 'Enjoying Jyotirmaya?', body: 'How many stars would you give your experience?', reason: 'Please tell us what we should improve', placeholder: 'What did you dislike or what went wrong?', send: 'Send feedback', thanks: 'Thank you! Your feedback helps us improve.', close: 'Maybe later' });
+  function ratingState() {
+    try { return JSON.parse(window.localStorage.getItem(RATING_KEY)) || {}; } catch (_error) { return {}; }
+  }
   function rememberRating(value) { try { window.localStorage.setItem(RATING_KEY, JSON.stringify(value)); } catch (_error) { /* optional */ } }
+  // Count only completed user results. Merely opening or restoring a page never calls this function.
+  function ratingCompleted(feature) {
+    const saved = ratingState();
+    if (saved.submitted) return;
+    rememberRating({ ...saved, completed: (Number(saved.completed) || 0) + 1, lastFeature: feature });
+    setTimeout(maybeAskForRating, 1200);
+  }
   function maybeAskForRating() {
     if (!document || typeof document.querySelector !== 'function') return;
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(RATING_KEY));
-      if (saved && (saved.submitted || (saved.snoozeUntil && Date.now() < saved.snoozeUntil))) return;
-    } catch (_error) { /* ask */ }
+    const saved = ratingState();
+    if (saved.submitted || (saved.snoozeUntil && Date.now() < saved.snoozeUntil)
+      || (saved.nextCompletion && (Number(saved.completed) || 0) < saved.nextCompletion)) return;
     rateApp(true);
   }
   function rateApp(automatic = false) {
@@ -2435,7 +2445,10 @@
     const later = el('button', 'link-btn', copy.close); later.type = 'button';
     const close = submitted => {
       try { document.body.removeChild(overlay); } catch (_error) { /* gone */ }
-      if (!submitted && automatic) rememberRating({ submitted: false, snoozeUntil: Date.now() + 7 * 86400000 });
+      if (!submitted && automatic) {
+        const saved = ratingState(), completed = Number(saved.completed) || 0;
+        rememberRating({ ...saved, submitted: false, snoozeUntil: Date.now() + 7 * 86400000, nextCompletion: completed + 3 });
+      }
     };
     const thank = () => {
       card.replaceChildren(el('strong', 'update-popup-title', copy.title), el('p', 'update-popup-body', copy.thanks));
@@ -2903,6 +2916,7 @@
       tarot.reading = ok && body && body.reading ? body.reading : false;
     } catch (_error) { tarot.reading = false; }
     if (tarot.step === 'result') renderTarot();
+    ratingCompleted('tarot');
   }
   function renderTarot() { renderTarotBody(); decorate($('tarot'), tarotCopy().title); }
   function renderTarotBody() {
@@ -3133,6 +3147,7 @@
     state.rashiPick = rashi;
     try { window.localStorage.setItem(RASHI_KEY, String(rashi)); } catch (_error) { /* not remembered */ }
     renderRashi();
+    if (state.day && (!rewardedFor('rashiphal') || rashiUnlocked())) ratingCompleted('rashiphal');
   }
   function renderRashiPicker() {
     const copy = toolText().rashi, mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
@@ -3388,6 +3403,7 @@
         if (!(await watchForResult())) return;
         try { window.localStorage.setItem(RASHI_UNLOCK_KEY, localIso(new Date())); } catch (_error) { /* not remembered: asks again next time */ }
         renderRashi();
+        if (state.day) ratingCompleted('rashiphal');
       });
       box.replaceChildren(el('h3', 'rashi-reading-title', `${RASHI_ICONS[state.rashiPick - 1]} ${signName(state.rashiPick)}`), el('p', 'rashi-hint', copy.unlockNote || TOOLS_COPY.en.rashi.unlockNote), see);
       return;
@@ -3904,6 +3920,7 @@
         setChatEnabled(true); intake.step = null; resetChat(t('chartReady'));
         showPage('kundli');
         const target = $('chart'); if (target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ratingCompleted('kundli');
       }
     } catch (_error) { $('result').textContent = t('serviceUnavailable'); }
     if (!state.chart) { setChatEnabled(true); startIntake(); }
@@ -4376,7 +4393,7 @@
         const img = el('img', 'traits-portrait'); img.src = `data:${body.image.mime};base64,${body.image.data}`; img.alt = copy.traitsPortraitBtn;
         entry.appendChild(img);
         chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-        setTimeout(maybeAskForRating, 1200);
+        ratingCompleted('partner');
       } else {
         const limited = body && body.code === 'partner_daily_limit';
         state.partnerPortrait = limited ? { status: previous ? 'ok' : 'unavailable', image: previous || null, notice: 'limit' }

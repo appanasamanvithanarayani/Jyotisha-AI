@@ -436,7 +436,8 @@ function fakeCamera(app) {
 
 test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrunk and read, the lines are shown', async () => {
   const reading = { heart: 'Heart text.', head: 'Head text.', life: 'Life text.', fate: 'Fate text.', summary: 'Summary text.' };
-  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), palm: { status: 'ok', reading } });
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, palm: { status: 'ok', reading } });
   await settle();
   const inputs = fakeCamera(app);
   homeCard(app, 'Palm reading').listeners.click();
@@ -471,6 +472,7 @@ test('Palm reading: pick a hand, tips, Scan opens the camera, the photo is shrun
   const photoBox = result.find(item => item.className === 'palm-photo');
   assert.ok(photoBox && photoBox.children.some(item => item.className === 'palm-preview'));   // the user's own photo, from memory
   assert.ok(!result.some(item => item.className === 'rekha-legend'), 'no overlay legend: this reading has no line points');
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.rating.v1')), { completed: 1, lastFeature: 'palm' });
 });
 
 test('Palm reading: when the AI traces lines, they are drawn over the photo with a legend and an estimate note', async () => {
@@ -509,7 +511,8 @@ test('Palm reading: a photo without a clear palm asks for another one', async ()
 
 test('Tarot: pick a topic, pick 3 of 12 face-down cards, then past / present / future with the AI reading', async () => {
   const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
-  const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), tarot: { status: 'ok', reading } });
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, tarot: { status: 'ok', reading } });
   await settle();
   homeCard(app, 'Tarot').listeners.click();
   assert.equal(app.element('top').children.find(item => item.id === 'page-tarot').hidden, false);
@@ -536,6 +539,7 @@ test('Tarot: pick a topic, pick 3 of 12 face-down cards, then past / present / f
   assert.deepEqual(faces.map(face => face.children[0].textContent), ['Past', 'Present', 'Future']);
   const secs = page.filter(item => /^tarot-sec/.test(item.className));
   assert.deepEqual(secs.map(sec => sec.children[1].textContent), ['Past text.', 'Present text.', 'Future text.', 'Advice text.']);
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.rating.v1')), { completed: 1, lastFeature: 'tarot' });
   page.find(item => item.className === 'tarot-actions').children[0].listeners.click();   // ask the AI about this draw
   await settle();
   assert.equal(app.element('top').children.find(item => item.id === 'page-chat').hidden, false);
@@ -1252,6 +1256,7 @@ test('Rashiphal: pick a sign to see its AI paragraph, lucky colour, numbers and 
   app.element('rashi-picker').children[5].listeners.click();                    // Kanya
   await settle(); await settle();
   assert.equal(storage.getItem('jyotisha.rashi.v1'), '6');
+  assert.deepEqual(JSON.parse(storage.getItem('jyotisha.rating.v1')), { completed: 1, lastFeature: 'rashiphal' });
   const reading = app.element('rashi-reading').children;
   assert.match(reading[0].textContent, /రాశి ఫలితాలు/);
   const jumps = reading[1].children;                                             // quick links at the top
