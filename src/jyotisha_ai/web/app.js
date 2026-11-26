@@ -644,28 +644,23 @@
       score.appendChild(el('small', null, copy[match.verdict]));
       result.appendChild(score);
       for (const [flag, key] of [[match.nadiDosha, 'nadiDosha'], [match.bhakootDosha, 'bhakootDosha']]) if (flag) result.appendChild(el('p', 'dosha-flag', copy[key]));
-      const matchContext = `${Math.round(mine * 1000)}-${Math.round(theirs * 1000)}`;
-      const matchUnlocked = contentUnlocked('kundli_match_full', matchContext);
       const kuja = details => details && details.doshas && details.doshas.kuja ? details.doshas.kuja.present : null;
       const me = kuja(firstInfo), them = kuja(state.partnerDetails);
-      if (matchUnlocked && me !== null && them !== null) {
+      if (me !== null && them !== null) {
         const box = el('div', 'manglik-row');
         box.append(el('b', null, copy.manglik), el('span', null, `${others ? copy.boy : copy.you}: ${me ? copy.yes : copy.no} · ${others ? copy.girl : copy.partner}: ${them ? copy.yes : copy.no}`));
         if (me && them) box.appendChild(el('small', null, copy.manglikBoth)); else if (me || them) box.appendChild(el('small', null, copy.manglikOne));
         result.appendChild(box);
       }
-      if (matchUnlocked) {
-        const fold = el('details', 'fold'); fold.open = true;
-        fold.appendChild(el('summary', null, copy.details));
-        const list = el('ul', 'koota-list');
-        for (const koota of match.kootas) {
-          const item = el('li', koota.points === 0 ? 'zero' : '');
-          item.append(el('span', null, copy.kootas[koota.key]), el('b', null, `${koota.points} / ${koota.max}`)); list.appendChild(item);
-        }
-        fold.appendChild(list); result.appendChild(fold);
-      } else {
-        const offer = premiumOffer('kundli_match_full', matchContext, renderRelationship); if (offer) result.appendChild(offer);
+      const fold = el('details', 'fold');
+      fold.appendChild(el('summary', null, copy.details));
+      const list = el('ul', 'koota-list');
+      for (const koota of match.kootas) {
+        const item = el('li', koota.points === 0 ? 'zero' : '');
+        item.append(el('span', null, copy.kootas[koota.key]), el('b', null, `${koota.points} / ${koota.max}`));
+        list.appendChild(item);
       }
+      fold.appendChild(list); result.appendChild(fold);
     } catch (_error) { result.appendChild(el('p', null, copy.error)); }
   }
   // "Your ideal partner": a stylized AI illustration from the 7th house and Venus traits alone (never a photo, never
@@ -687,7 +682,6 @@
           renderRelationship(); return;
         }
       } catch (_error) { /* the real request still enforces the limit */ }
-      if (state.payments && playPlugin() && !(await purchaseProduct('partner_portrait', `${localIso(new Date())}-${Date.now()}`))) return;
       if (rewardedFor('partner') && !(await watchForResult())) return;
       state.partnerPortrait = { status: 'loading', image: previous || null };
       renderRelationship();
@@ -784,29 +778,6 @@
       host.appendChild(card(copy.sadeTitle, sade.active ? copy[`phase${sade.phase}`] || copy.phase2 : copy.sadeNo, !sade.active, lines));
     }
     host.appendChild(el('p', 'muted-note', copy.doshaNote));
-    const context = state.userDob || (state.resolved && state.resolved.date) || 'current-kundli';
-    const remediesUnlocked = contentUnlocked('dosha_remedies', context);
-    if (remediesUnlocked) {
-      const remedies = el('section', 'premium-result');
-      remedies.append(el('h4', null, '🪔 Detailed remedies'), el('p', null, kuja && kuja.present
-        ? 'Keep Tuesdays calm and disciplined, avoid impulsive commitments, and discuss major relationship decisions patiently.'
-        : 'Your chart does not show a strong Kuja warning. Maintain steady routines, thoughtful communication, and regular prayer or meditation.'),
-      el('p', null, saturn && saturn.sade_sati && saturn.sade_sati.active
-        ? 'For the current Saturn period, choose consistency over shortcuts, serve elders or people in need, and review finances every Saturday.'
-        : 'For Saturn balance, keep promises, help someone in need on Saturdays, and build progress through small consistent actions.'));
-      host.appendChild(remedies);
-    } else { const offer = premiumOffer('dosha_remedies', context, renderDoshas); if (offer) host.appendChild(offer); }
-    if (contentUnlocked('kundli_complete', context) && state.payments && playPlugin()) {
-      const complete = el('section', 'premium-result'); complete.appendChild(el('h4', null, '📜 Complete personal Kundli report'));
-      for (const topic of ['life', 'career', 'money', 'study', 'marriage', 'health']) {
-        try {
-          const lines = chartUI.readLife(state.chart, state.details, topic, state.lang, null);
-          const section = el('details', 'fold'); section.appendChild(el('summary', null, lines[0]));
-          lines.slice(1).forEach(line => section.appendChild(el('p', null, line))); complete.appendChild(section);
-        } catch (_error) { /* keep the remaining report sections */ }
-      }
-      host.appendChild(complete);
-    } else { const complete = premiumOffer('kundli_complete', context, renderDoshas); if (complete) host.appendChild(complete); }
   }
   // Home: a few clear choices; each card shows something about the user (their dasha, doshas, sign, the next festival).
   function nextFestivalText() {
@@ -2296,9 +2267,7 @@
         }
       }
       const tabNames = copy.tabs || TOOLS_COPY.en.palm.tabs;
-      const palmContext = `${localIso(new Date())}-${palmState.hand}`;
-      const palmUnlocked = contentUnlocked('palm_detailed', palmContext);
-      const groups = palmUnlocked ? [['life', 'summary'], ['heart'], ['head', 'fate']] : [['life', 'summary']];
+      const groups = [['life', 'summary'], ['heart'], ['head', 'fate']];
       const icons = { heart: '❤️', head: '🧠', life: '🌱', fate: '⭐', summary: '✨' };
       const tabs = el('div', 'tabs-line'); tabs.setAttribute('role', 'tablist');
       const panels = groups.map((keys, index) => {
@@ -2311,7 +2280,7 @@
         }
         return panel;
       });
-      tabNames.slice(0, groups.length).forEach((name, index) => {
+      tabNames.forEach((name, index) => {
         const button = el('button', index === palmState.tab ? 'on' : '', name); button.type = 'button';
         button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', index === palmState.tab ? 'true' : 'false');
         button.addEventListener('click', () => {
@@ -2323,7 +2292,6 @@
       });
       box.appendChild(tabs);
       panels.forEach(panel => box.appendChild(panel));
-      if (!palmUnlocked) { const offer = premiumOffer('palm_detailed', palmContext, renderPalm); if (offer) box.appendChild(offer); }
     }
     const actions = el('div', 'tarot-actions');
     if (reading) {
@@ -2879,21 +2847,16 @@
     const ready = !!(sm.first && sm.second && tool);
     if (sm.shown && ready) {
       const result = tool.signMatch(sm.first, sm.second);
-      const matchContext = `${sm.first}-${sm.second}`;
-      const fullUnlocked = contentUnlocked('sign_match_full', matchContext);
       const out = el('section', 'sm-result');
       const verdict = copy.verdict[result.verdict];
       out.append(el('div', 'sm-percent', `${result.percent}%`), el('h4', null, verdict), el('p', null, copy.text[result.verdict]));
       const row = (label, points, max) => { const line = el('p', 'sm-row'); line.append(el('span', null, label), el('b', null, `${points} / ${max}`)); return line; };
-      if (fullUnlocked) {
-        out.append(row(copy.friendship, result.maitri, 5), row(copy.family, result.bhakoot, 7));
-        if (result.bhakootDosha) out.appendChild(el('p', 'num-note', copy.dosha));
-      }
+      out.append(row(copy.friendship, result.maitri, 5), row(copy.family, result.bhakoot, 7));
+      if (result.bhakootDosha) out.appendChild(el('p', 'num-note', copy.dosha));
       box.appendChild(out);
-      if (fullUnlocked) {
-        const full = el('button', 'chip-btn', `${copy.full} ›`); full.type = 'button'; full.addEventListener('click', () => openTool('relationship'));
-        box.append(full, el('p', 'num-note', copy.note));
-      } else { const offer = premiumOffer('sign_match_full', matchContext, renderSignMatch); if (offer) box.appendChild(offer); }
+      const full = el('button', 'chip-btn', `${copy.full} ›`); full.type = 'button';
+      full.addEventListener('click', () => openTool('relationship'));
+      box.append(full, el('p', 'num-note', copy.note));
     }
     // The main button, grey until both signs are chosen; a video icon marks the ad before the result.
     const see = el('button', `palm-scan${rewardedFor('signmatch') ? ' reward-btn' : ''}${ready ? '' : ' is-off'}`, copy.see); see.type = 'button'; see.disabled = !ready;
@@ -3022,24 +2985,21 @@
     });
     box.appendChild(row);
     const reading = tarot.reading, lines = [];
-    const tarotContext = `${localIso(new Date())}-${tarot.topic}-${cards.map(card => `${card.id}${card.reversed ? 'r' : 'u'}`).join('-')}`;
-    const tarotUnlocked = contentUnlocked('tarot_detailed', tarotContext);
     ['past', 'present', 'future'].forEach((key, i) => {
       const card = cards[i], meaning = TAROT[card.id][card.reversed ? 2 : 1];
-      const text = tarotUnlocked && reading ? reading[key] : tarotUnlocked && reading === null ? copy.loading : `${tarotName(card.id)}: ${meaning}.`;
+      const text = reading ? reading[key] : reading === null ? copy.loading : `${tarotName(card.id)}: ${meaning}.`;
       const sec = el('section', `tarot-sec${reading === null ? ' loading' : ''}`);
       sec.append(el('h4', null, `${copy.positions[i]} · ${tarotName(card.id)}${card.reversed ? ` (${copy.reversed})` : ''}`), el('p', null, text));
       box.appendChild(sec);
       lines.push(`${copy.positions[i]} · ${tarotName(card.id)}: ${text}`);
     });
-    if (tarotUnlocked && reading !== null) {
+    if (reading !== null) {
       const advice = reading ? reading.advice : copy.fallbackAdvice;
       const sec = el('section', 'tarot-sec advice');
       sec.append(el('h4', null, `✨ ${copy.advice}`), el('p', null, advice));
       box.appendChild(sec);
       lines.push(`✨ ${advice}`);
     }
-    if (!tarotUnlocked) { const offer = premiumOffer('tarot_detailed', tarotContext, renderTarot); if (offer) box.appendChild(offer); }
     const actions = el('div', 'tarot-actions');
     const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
     askAi.addEventListener('click', () => {
@@ -3050,8 +3010,7 @@
     share.addEventListener('click', () => { void shareText(`🃏 ${copy.title}: ${copy.topics[tarot.topic]}`, lines.join('\n\n')); });
     const again = el('button', 'chip-btn', `↻ ${copy.again}`); again.type = 'button';
     again.addEventListener('click', () => { tarot.step = 'topic'; renderTarot(); try { window.scrollTo(0, 0); } catch (_error) { /* optional */ } });
-    if (tarotUnlocked) actions.appendChild(askAi);
-    actions.append(share, again);
+    actions.append(askAi, share, again);
     box.appendChild(actions);
   }
   // Tarot, asked straight in chat: a fresh three-card draw and reading for the matched topic, shown as a message.
@@ -3361,12 +3320,6 @@
   }
   function renderRashiWeek() {
     const key = `${state.city}|${state.selectedDate}`;
-    const forecastContext = `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
-    if (!contentUnlocked('rashiphal_forecast_7d', forecastContext)) {
-      $('rashi-moon').textContent = t('viewWeek');
-      const offer = premiumOffer('rashiphal_forecast_7d', forecastContext, renderRashi); if (offer) $('rashi-list').appendChild(offer);
-      return;
-    }
     if (!state.week || state.week.key !== key) { $('rashi-moon').textContent = t('dpLoading'); void loadWeek(); return; }
     const days = state.week.days;
     if (!days.length) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
@@ -4102,90 +4055,17 @@
     if (!config || config.rewarded_kundli !== true || Date.now() < appAds.freeUntil) return Promise.resolve(true);
     return unlockGate('unlock', t('watchAdPrompt'), true);
   }
-  // Google Play is the only payment surface in the Android app. The server verifies every token before the native
-  // plugin consumes it, so a forged client response or a replayed token never unlocks content.
-  const entitlementKey = (productId, contextId) => `jyotisha.play.v1:${productId}:${contextId}`;
-  const hasEntitlement = (productId, contextId) => { try { return window.localStorage.getItem(entitlementKey(productId, contextId)) === '1'; } catch (_error) { return false; } };
-  const contentUnlocked = (productId, contextId) => !state.payments || !playPlugin() || hasEntitlement(productId, contextId);
-  const saveEntitlement = (productId, contextId) => { try { window.localStorage.setItem(entitlementKey(productId, contextId), '1'); } catch (_error) { /* current session still proceeds */ } };
-  const playPlugin = () => window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PlayBilling;
-  function productPrice(productId) {
-    const product = state.payments && state.payments.products && state.payments.products[productId];
-    return product && (product.formattedPrice || `₹${product.price_rs}`);
-  }
-  async function loadPlayProducts() {
-    const plugin = playPlugin(), products = state.payments && state.payments.products;
-    if (!plugin || !plugin.getProducts || !products) return;
-    try {
-      const reply = await plugin.getProducts({ productIds: Object.keys(products) });
-      for (const item of (reply && reply.products) || []) if (products[item.productId]) Object.assign(products[item.productId], item);
-    } catch (_error) { /* purchase buttons retain their clearly labelled fallback INR prices */ }
-  }
-  const pendingContextKey = productId => `jyotisha.play.pending.v1:${productId}`;
-  async function restorePlayPurchases() {
-    const plugin = playPlugin();
-    if (!plugin || !plugin.restorePurchases || !state.payments || state.payments.provider !== 'google_play') return;
-    try {
-      const reply = await plugin.restorePurchases();
-      for (const purchase of (reply && reply.purchases) || []) {
-        const productId = purchase.products && purchase.products[0];
-        if (!productId || !state.payments.products[productId]) continue;
-        let contextId = '';
-        try { contextId = window.localStorage.getItem(pendingContextKey(productId)) || ''; } catch (_error) { /* cannot safely restore without its context */ }
-        if (!contextId) continue;
-        const checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: purchase.purchaseToken, context_id: contextId });
-        if (checked.ok && checked.body && checked.body.status === 'ok') {
-          saveEntitlement(productId, contextId); await plugin.completePurchase({ purchaseToken: purchase.purchaseToken });
-          try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
-        }
-      }
-    } catch (_error) { /* retried on the next launch */ }
-  }
-  async function purchaseProduct(productId, contextId) {
-    const plugin = playPlugin();
-    if (!state.payments || !plugin || !plugin.purchase) return false;
-    try {
-      try { window.localStorage.setItem(pendingContextKey(productId), contextId); } catch (_error) { /* restoration may be unavailable */ }
-      const account = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`jyotisha|${state.userName || ''}|${state.userDob || ''}`));
-      const obfuscatedAccountId = Array.from(new Uint8Array(account)).map(byte => byte.toString(16).padStart(2, '0')).join('').slice(0, 64);
-      const bought = await plugin.purchase({ productId, obfuscatedAccountId });
-      if (!bought || !bought.purchaseToken) return false;
-      const checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: bought.purchaseToken, context_id: contextId });
-      if (!checked.ok || !checked.body || checked.body.status !== 'ok') return false;
-      saveEntitlement(productId, contextId);
-      await plugin.completePurchase({ purchaseToken: bought.purchaseToken });
-      try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
-      return true;
-    } catch (_error) { return false; }
-  }
-  function paidCopy(productId) {
-    const name = state.payments && state.payments.products && state.payments.products[productId] && state.payments.products[productId].title;
-    const localized = {
-      te: ['మీ ఫలితంలో ఇంకా లోతుగా తెలుసుకోవాలా?', 'Google Play ద్వారా సురక్షితంగా అన్‌లాక్ చేయండి', 'అన్‌లాక్ చేయండి'],
-      hi: ['अपने परिणाम को और गहराई से जानना चाहते हैं?', 'Google Play से सुरक्षित रूप से अनलॉक करें', 'अनलॉक करें'],
-      en: ['Want to understand this result more deeply?', 'Secure one-time purchase through Google Play', 'Unlock'],
-    }[state.lang] || ['Want to understand this result more deeply?', 'Secure one-time purchase through Google Play', 'Unlock'];
-    return { title: name || localized[0], note: localized[1], button: localized[2] };
-  }
-  function premiumOffer(productId, contextId, onUnlock) {
-    if (!state.payments || !playPlugin()) return null;
-    const copy = paidCopy(productId), card = el('section', 'premium-offer');
-    card.append(el('h4', null, `✨ ${copy.title}`), el('p', null, copy.note));
-    const button = el('button', 'palm-scan', `${copy.button} · ${productPrice(productId)}`); button.type = 'button';
-    button.addEventListener('click', async () => {
-      button.disabled = true;
-      const ok = await purchaseProduct(productId, contextId);
-      button.disabled = false;
-      if (ok && onUnlock) onUnlock();
-    });
-    card.appendChild(button); return card;
-  }
+  // Pay a small amount instead of watching an ad (off unless the admin configures Razorpay: readiness.payments).
+  // 'unlock' covers one Palm/Tarot/Life Guide/Sign match/Moon sign/Rashiphal/ideal-partner reading or Kundli;
+  // 'chat_bonus' covers extra AI questions. Falls straight back to the plain ad flow when payments are not set up.
   let razorpayScript = null;
   function ensureRazorpayScript() {
     if (window.Razorpay) return Promise.resolve();
     if (!razorpayScript) razorpayScript = new Promise((resolve, reject) => {
-      const script = document.createElement('script'); script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = resolve; script.onerror = reject; document.head.appendChild(script);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(); script.onerror = () => reject(new Error('razorpay script failed to load'));
+      document.head.appendChild(script);
     });
     return razorpayScript;
   }
@@ -4193,36 +4073,50 @@
     try {
       const made = await post('/api/payment/create-order', { feature });
       if (!made.ok || !made.body || made.body.status !== 'ok') return false;
+      const order = made.body;
       await ensureRazorpayScript();
       return await new Promise(resolve => {
-        const order = made.body;
-        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
-          handler: async response => { try { const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, feature }); resolve(verified.ok && verified.body && verified.body.status === 'ok'); } catch (_error) { resolve(false); } },
-          modal: { ondismiss: () => resolve(false) } });
+        const checkout = new window.Razorpay({
+          key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
+          handler: async response => {
+            try {
+              const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, feature });
+              resolve(verified.ok && verified.body && verified.body.status === 'ok');
+            } catch (_error) { resolve(false); }
+          },
+          modal: { ondismiss: () => resolve(false) },
+        });
         checkout.open();
       });
     } catch (_error) { return false; }
   }
-  function legacyUnlockChooser(promptText, priceRs) {
+  // A small card with "Watch a free ad" and "Pay ₹N instead"; resolves 'ad', 'pay' or 'cancel'.
+  function unlockChooser(promptText, priceRs) {
     return new Promise(resolve => {
-      const overlay = el('div', 'update-popup'), card = el('div', 'update-popup-card');
+      const overlay = el('div', 'update-popup');
+      const card = el('div', 'update-popup-card');
       const adBtn = el('button', 'btn', t('watchFreeAdBtn')); adBtn.type = 'button';
       const payBtn = el('button', 'link-btn', fill(t('payInsteadBtn'), { price: priceRs })); payBtn.type = 'button';
-      const actions = el('div', 'update-popup-actions'); actions.append(payBtn, adBtn); card.append(el('p', 'update-popup-body', promptText), actions); overlay.appendChild(card);
-      const close = result => { try { overlay.remove(); } catch (_error) { /* gone */ } resolve(result); };
-      adBtn.addEventListener('click', () => close('ad')); payBtn.addEventListener('click', () => close('pay')); document.body.appendChild(overlay);
+      const actions = el('div', 'update-popup-actions'); actions.append(payBtn, adBtn);
+      card.append(el('p', 'update-popup-body', promptText), actions);
+      overlay.appendChild(card);
+      const close = result => { try { document.body.removeChild(overlay); } catch (_error) { /* gone */ } resolve(result); };
+      adBtn.addEventListener('click', () => close('ad'));
+      payBtn.addEventListener('click', () => close('pay'));
+      document.body.appendChild(overlay);
     });
   }
   async function unlockGate(feature, promptText, startsFreeWindow, ask = true) {
-    if (feature === 'chat_bonus' && state.payments && state.payments.provider === 'google_play' && playPlugin()) return purchaseProduct('ai_questions_5', localIso(new Date()));
-    if (state.payments && state.payments.key_id) {
-      const price = feature === 'chat_bonus' ? state.payments.chat_bonus_rs : state.payments.unlock_rs;
-      const choice = await legacyUnlockChooser(promptText || t('unlockPrompt'), price);
-      if (choice === 'pay') return payViaRazorpay(feature);
-      if (choice === 'ad') return watchRewardedAd('', startsFreeWindow, false);
-      return false;
+    if (!state.payments) return watchRewardedAd(promptText, startsFreeWindow, ask);
+    const price = feature === 'chat_bonus' ? state.payments.chat_bonus_rs : state.payments.unlock_rs;
+    const choice = await unlockChooser(promptText || t('unlockPrompt'), price);
+    if (choice === 'pay') {
+      const ok = await payViaRazorpay(feature);
+      if (ok && startsFreeWindow) appAds.freeUntil = Date.now() + ((appAds.config && appAds.config.rewarded_free_minutes) || 10) * 60000;
+      return ok;
     }
-    return watchRewardedAd(promptText, startsFreeWindow, ask);
+    if (choice === 'ad') return watchRewardedAd('', startsFreeWindow, false);
+    return false;
   }
   // Asks, plays the ad, and resolves true once the user may go ahead (reward earned, or the ad itself was unavailable).
   function watchRewardedAd(promptText, startsFreeWindow, ask = true) {
@@ -4258,15 +4152,12 @@
   function writeQuota(quota) { try { window.localStorage.setItem(QUOTA_KEY, JSON.stringify(quota)); } catch (_error) { /* not persisted */ } }
   async function aiQuestionAllowed() {
     const { config, admob } = appAds;
-    const paidChat = !!(state.payments && playPlugin());
-    if (!paidChat && (!config || !admob || !config.chat_free_questions || !adUnitOk(config.rewarded_id))) return true;
-    const freeQuestions = paidChat ? 3 : config.chat_free_questions;
-    const bonusQuestions = paidChat ? 5 : config.chat_bonus_questions;
+    if (!config || !admob || !config.chat_free_questions || !adUnitOk(config.rewarded_id)) return true;   // browsers and unlimited setups
     const quota = readQuota();
-    if (quota.used < freeQuestions + quota.bonus) { quota.used += 1; writeQuota(quota); return true; }
-    const prompt = t('chatLimitPrompt').replace('{free}', freeQuestions).replace('{bonus}', bonusQuestions);
+    if (quota.used < config.chat_free_questions + quota.bonus) { quota.used += 1; writeQuota(quota); return true; }
+    const prompt = t('chatLimitPrompt').replace('{free}', config.chat_free_questions).replace('{bonus}', config.chat_bonus_questions);
     if (!(await unlockGate('chat_bonus', prompt, false))) return false;
-    quota.bonus += bonusQuestions; quota.used += 1; writeQuota(quota);
+    quota.bonus += config.chat_bonus_questions; quota.used += 1; writeQuota(quota);
     return true;
   }
   // An occasional ad between screens: never in the first minute, at most one per few switches and per few minutes.
@@ -4369,21 +4260,6 @@
     chipTurn += 1;
     chatLog.appendChild(row); chatLog.scrollTop = chatLog.scrollHeight;
   }
-  function addActionPlanOffer(answer) {
-    const context = `${localIso(new Date())}-${history.length}`;
-    if (hasEntitlement('ai_action_plan_7d', context)) return;
-    const offer = premiumOffer('ai_action_plan_7d', context, async () => {
-      try {
-        const prompt = `Based only on this guidance, create a practical personalized 7-day action plan with one safe, achievable action per day: ${String(answer).slice(0, 900)}`;
-        const reply = await post('/api/ask', { question: prompt, language: state.lang, facts: chartFacts(), history: history.slice(-6) });
-        if (reply.ok && reply.body && reply.body.answer) {
-          const entry = el('div', 'chat-message assistant'); entry.append(el('b', null, '✨ 7-day action plan'), el('p', null, reply.body.answer));
-          chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
-        }
-      } catch (_error) { /* entitlement remains available for this result */ }
-    });
-    if (offer) { offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight; }
-  }
   function removeChatChips() { try { Array.from(chatLog.children).filter(item => item.className === 'chat-chips').forEach(item => chatLog.removeChild(item)); } catch (_error) { /* optional */ } }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
   async function askAssistant(query) {
@@ -4391,7 +4267,7 @@
     const pending = el('div', 'chat-message assistant', '…'); chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
     try {
       const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts: chartFacts(), history: history.slice(-10) });
-      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); addActionPlanOffer(body.answer); addChatChips(); return true; }
+      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); addChatChips(); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); return true; }
     } catch (_error) { /* fall back to the offline answer */ }
     chatLog.removeChild(pending); return false;
   }
@@ -4750,8 +4626,7 @@
     $('availability').textContent = readiness.can_calculate ? '' : t('unavailable');
     $('birth-fields').disabled = !readiness.can_calculate;
     state.assistant = readiness.assistant_available === true;
-    state.payments = readiness.payments || null;
-    if (state.payments && state.payments.provider === 'google_play') void loadPlayProducts().then(restorePlayPurchases);
+    state.payments = readiness.payments && typeof readiness.payments.key_id === 'string' ? readiness.payments : null;
     startupDone('readiness');
     state.contactEmail = typeof readiness.contact_email === 'string' ? readiness.contact_email : '';
     showNotice(readiness.notice);
