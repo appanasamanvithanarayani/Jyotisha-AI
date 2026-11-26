@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 
-from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, partner_portrait, payments, push, settings_store as store, tarot
+from jyotisha_ai import admin, assistant, daily_nudges, daily_rashiphal, life_guide, life_guide_text, moon_sign, palm, partner_portrait, payments, play_billing, push, settings_store as store, tarot
 from jyotisha_ai.ayanamsha import AyanamshaUnavailableError, TRUE_METHOD_ID, true_lahiri_for_utc
 from jyotisha_ai.birth_resolution import BirthResolutionError, _approved_catalog, _matching_places, _pinned_zone, nearby_place, resolve_birth, suggest_places
 from jyotisha_ai.chart import calculate_chart
@@ -49,7 +49,7 @@ OBSERVABILITY_ROUTES = {
     "/api/rashiphal": "rashiphal", "/api/life-guide": "life_guide", "/api/life-guide-text": "life_guide_text",
     "/api/moon-sign": "moon_sign", "/api/tarot": "tarot", "/api/palm": "palm",
     "/api/partner-portrait": "partner_portrait", "/api/rating": "rating",
-    "/api/payment/create-order": "payments", "/api/payment/verify": "payments",
+    "/api/payment/create-order": "payments", "/api/payment/verify": "payments", "/api/play-purchase/verify": "payments",
 }
 
 
@@ -220,11 +220,13 @@ def _app_ads() -> dict | None:
 
 
 def _payments_config() -> dict | None:
-    """Prices (Rs) for paying instead of watching an ad, or None while payments are not configured."""
-    if not payments.enabled():
-        return None
-    return {"key_id": payments.key_id(), "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
-            "unlock_rs": payments.price_paise("unlock") // 100}
+    """Public product catalog; Play supplies the authoritative localized prices on-device."""
+    if play_billing.enabled():
+        return play_billing.public_config()
+    if payments.enabled():
+        return {"key_id": payments.key_id(), "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
+                "unlock_rs": payments.price_paise("unlock") // 100}
+    return None
 
 
 def _notice() -> dict | None:
@@ -788,7 +790,7 @@ class LocalHandler(BaseHTTPRequestHandler):
                 limited_code = "partner_daily_limit"
         if allowed and path == "/api/rating":
             allowed = limiter.allow(f"rating-day:{who}", 5, 86400.0)
-        if allowed and path in ("/api/payment/create-order", "/api/payment/verify"):
+        if allowed and path in ("/api/payment/create-order", "/api/payment/verify", "/api/play-purchase/verify"):
             # Each real order/verify call reaches Razorpay's API; a per-minute cap is enough to stop abuse.
             allowed = limiter.allow(f"payment:{who}", 10, 60.0)
         if allowed and path in ("/api/ask", "/api/tarot", "/api/palm"):   # AI calls share the same allowance
@@ -869,9 +871,11 @@ class LocalHandler(BaseHTTPRequestHandler):
             "server": {"ai_provider": current, "ai_ready": current is not None, "host": (self.headers.get("Host") or "")[:100],
                        "data_dir": str(store.data_dir()), "session_minutes": admin.SESSION_SECONDS // 60},
             "live": {"app_ads": _app_ads(), "notice": _notice(), "adsense": _adsense_client() or None},
-            "payments": {"ready": payments.enabled(), "provider": store.value("JYOTISHA_PAYMENTS_PROVIDER") or None,
+            "payments": {"ready": play_billing.enabled() or payments.enabled(),
+                         "provider": "google_play" if store.value("JYOTISHA_PLAY_BILLING", "0") == "1" else (store.value("JYOTISHA_PAYMENTS_PROVIDER") or None),
                          "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
-                         "reading_unlock_rs": payments.price_paise("unlock") // 100},
+                         "reading_unlock_rs": payments.price_paise("unlock") // 100,
+                         **({"products": play_billing.public_config()["products"]} if store.value("JYOTISHA_PLAY_BILLING", "0") == "1" else {})},
             "push": {**push.status(), "languages": list(assistant.LANGUAGES.items()), "pages": list(push.PAGES)},
         }
 
@@ -1133,7 +1137,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             if observed_feature:
                 store.analytics.observe(self._visitor(), observed_feature, success, round((clock_time.monotonic() - observed_at) * 1000))
 
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/usage", "/api/install") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/play-purchase/verify", "/api/usage", "/api/install") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1221,6 +1225,11 @@ class LocalHandler(BaseHTTPRequestHandler):
                 return
             elif path == "/api/payment/verify":
                 payment_result = payments.verify_payment(payload)
+                observe(payment_result.get("status") == "ok")
+                self._json(200, payment_result)
+                return
+            elif path == "/api/play-purchase/verify":
+                payment_result = play_billing.verify(payload, self._visitor())
                 observe(payment_result.get("status") == "ok")
                 self._json(200, payment_result)
                 return

@@ -14,6 +14,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PdfPrintPlugin.class);    // plugins must be registered before super.onCreate
         registerPlugin(ShortcutsPlugin.class);
         registerPlugin(SystemBarsPlugin.class);   // status bar hidden; navigation bar colour follows the app's look
+        registerPlugin(PlayBillingPlugin.class);
         super.onCreate(savedInstanceState);
         SystemBarsPlugin.hideStatusBar(getWindow());   // applied here too so it never flashes in before the first JS call
         ShortcutsPlugin.handleIntent(getIntent());   // the app was opened from a Shortcuts button

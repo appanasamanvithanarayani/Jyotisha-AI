@@ -46,6 +46,32 @@ improvement collection are explicitly disabled. Keep the Play Console Data safet
 up to date when enabling it.
 
 ## Release to Google Play
+
+### One-time products
+
+Create these as **one-time products** in Play Console. The IDs must match exactly; prices are configured in Play
+Console (the app displays Google's localized price, while the values below are the intended India prices):
+
+| Product ID | Price |
+|---|---:|
+| `dosha_remedies` | ₹9 |
+| `kundli_complete` | ₹19 |
+| `ai_questions_5` | ₹9 |
+| `ai_action_plan_7d` | ₹9 |
+| `rashiphal_forecast_7d` | ₹9 |
+| `tarot_detailed` | ₹5 |
+| `palm_detailed` | ₹5 |
+| `sign_match_full` | ₹3 |
+| `partner_portrait` | ₹3 |
+| `kundli_match_full` | ₹9 |
+
+Grant the backend service account access to the app in Play Console. On the server set
+`JYOTISHA_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` to the complete service-account JSON (or mount the file and set
+`JYOTISHA_GOOGLE_PLAY_CREDENTIALS` to its path), then switch on **Enable Google Play purchases** in the admin panel.
+Never put the service-account JSON in the APK, repository, or a browser-facing setting.
+
+Test with a build installed from an internal testing track and a licence tester account. A sideloaded APK normally
+cannot return real product details. Keep each product active before testing.
 1. **Build → Generate Signed App Bundle (AAB)**. Create a keystore and keep it somewhere safe and backed up (also never commit it).
 2. Upload the `.aab` in Play Console (turn on Play App Signing). The package name `store.karthiktraders.jyotisha` can
    never be changed after you publish, so edit `appId` in `capacitor.config.json` now if you want another one.
