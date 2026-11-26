@@ -172,6 +172,11 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     store.analytics.viewed("random-device-token-a-12345", "numerology")
     store.analytics.observe("random-device-token-a-12345", "tarot", True, 120)
     store.analytics.observe("random-device-token-b-67890", "palm", False, 250)
+    store.analytics.ad_event("random-device-token-a-12345", "rewarded", "requested")
+    store.analytics.ad_event("random-device-token-a-12345", "rewarded", "shown")
+    store.analytics.ad_event("random-device-token-a-12345", "rewarded", "rewarded")
+    store.analytics.ad_event("random-device-token-a-12345", "rewarded", "dismissed")
+    store.analytics.ad_event("random-device-token-b-67890", "interstitial", "failed")
     store.analytics.installed("random-device-token-a-12345", "android")
     store.analytics.installed("random-device-token-a-12345", "android")
     store.analytics.profile_birth_year("random-device-token-a-12345", "2000-06-15")
@@ -186,6 +191,8 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     assert snapshot["observability"]["palm"]["failure"] == 1 and snapshot["observability"]["palm"]["max_ms"] == 250
     assert snapshot["feature_unique_users"]["tarot"] == 1 and snapshot["feature_unique_users"]["palm"] == 1
     assert snapshot["new_user_features"]["numerology"] == 1
+    assert snapshot["ad_periods"]["30"]["rewarded"] == {"requested": 1, "shown": 1, "rewarded": 1, "dismissed": 1, "failed": 0}
+    assert snapshot["ad_periods"]["all"]["interstitial"]["failed"] == 1
     first = next(user for user in snapshot["users"] if user["generation_count"] == 2)
     assert first["generations"]["kundli"] == 1 and len(first["id"]) == 10
     assert first["birth_year"] == 2000 and first["age_range"] in ("25–34", "18–24")

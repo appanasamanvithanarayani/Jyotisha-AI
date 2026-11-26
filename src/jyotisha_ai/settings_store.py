@@ -400,6 +400,8 @@ GENERATION_TYPES = ("kundli", "ai_chat", "rashiphal", "life_guide", "moon_sign",
 FEATURE_TYPES = ("home", "research_chart", "kundli", "panchang", "calendar", "festivals", "relationship", "place_search",
                  "nearby_place", "ai_chat", "nudges", "rashiphal", "life_guide", "life_guide_text", "moon_sign", "tarot",
                  "palm", "partner_portrait", "numerology", "sign_match", "doshas", "dasha", "rating", "payments")
+AD_FORMATS = ("banner", "interstitial", "rewarded")
+AD_EVENTS = ("requested", "shown", "rewarded", "dismissed", "failed")
 
 
 class Analytics:
@@ -527,6 +529,18 @@ class Analytics:
                 day["new_installs"] = int(day.get("new_installs", 0)) + 1
             self._save()
 
+    def ad_event(self, visitor: str, ad_format: str, event: str) -> None:
+        """Record aggregate native ad lifecycle events; no ad identifiers or revenue data are retained."""
+        if not visitor or ad_format not in AD_FORMATS or event not in AD_EVENTS:
+            return
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            _, _, day = self._visit(visitor, today)
+            events = day.setdefault("ads", {}).setdefault(ad_format, {})
+            events[event] = int(events.get(event, 0)) + 1
+            self._save()
+
     def profile_birth_year(self, visitor: str, dob: object) -> None:
         """Keep only a birth year and broad current age range; the exact birth date is deliberately discarded."""
         if not visitor or not isinstance(dob, str):
@@ -650,6 +664,17 @@ class Analytics:
                         "new_installs": sum(1 for user in self._data["users"].values() if start <= user.get("installed_at", "") <= today_name)}
             periods = {str(period_days): period_summary(period_days) for period_days in (7, 14, 30, 90)}
             periods["all"] = period_summary(None)
+            def ad_summary(period_days: int | None) -> dict:
+                start = "" if period_days is None else (date.today() - timedelta(days=period_days - 1)).isoformat()
+                totals = {ad_format: {event: 0 for event in AD_EVENTS} for ad_format in AD_FORMATS}
+                for day_name, row in self._data["days"].items():
+                    if not start or start <= day_name <= today_name:
+                        for ad_format in AD_FORMATS:
+                            for event in AD_EVENTS:
+                                totals[ad_format][event] += int(row.get("ads", {}).get(ad_format, {}).get(event, 0))
+                return totals
+            ad_periods = {str(period_days): ad_summary(period_days) for period_days in (7, 14, 30, 90)}
+            ad_periods["all"] = ad_summary(None)
             return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),
                     "new_installs_today": day_rows[0]["new_installs"] if day_rows else 0, "new_installs_period": new_installs_period,
                     "install_platforms": platforms, "active_today": day_rows[0]["unique_users"] if day_rows else 0,
@@ -657,7 +682,8 @@ class Analytics:
                     "new_period": sum(row["new_users"] for row in day_rows), "generation_totals": generation_totals,
                     "feature_views": feature_views, "feature_unique_users": {feature: len(users) for feature, users in feature_user_sets.items()},
                     "new_user_features": {feature: len(users) for feature, users in new_user_feature_sets.items()}, "observability": observability,
-                    "days": day_rows, "history": history, "comparisons": comparisons, "periods": periods, "users": recent_users}
+                    "days": day_rows, "history": history, "comparisons": comparisons, "periods": periods,
+                    "ad_periods": ad_periods, "users": recent_users}
 
 
 analytics = Analytics()

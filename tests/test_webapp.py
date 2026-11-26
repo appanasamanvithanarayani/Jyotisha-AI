@@ -97,9 +97,13 @@ def test_client_only_feature_usage_is_served_and_recorded(local_server):
     _, headers, page = request(local_server, "GET", "/")
     cookie = headers["Set-Cookie"].split(";", 1)[0]
     assert b'src="/usage.js"' in page
+    assert b'src="/ad-tracking.js"' in page
     status, script_headers, script = request(local_server, "GET", "/usage.js")
     assert status == 200 and script_headers["Content-Type"] == "application/javascript; charset=utf-8"
     assert b"/api/usage" in script and b"/api/install" in script and b"numerology" in script
+    status, script_headers, script = request(local_server, "GET", "/ad-tracking.js")
+    assert status == 200 and script_headers["Content-Type"] == "application/javascript; charset=utf-8"
+    assert b"/api/ad-event" in script and b"onRewardedVideoAdReward" in script
     status, _, body = request(local_server, "POST", "/api/usage", json.dumps({"feature": "numerology"}),
                               {"Content-Type": "application/json", "Cookie": cookie})
     assert status == 200 and json.loads(body) == {"ok": True}
@@ -111,9 +115,17 @@ def test_client_only_feature_usage_is_served_and_recorded(local_server):
         assert status == 200 and json.loads(body) == {"ok": True}
     snapshot = webapp.store.analytics.snapshot()
     assert snapshot["total_installs"] == 1 and snapshot["new_installs_today"] == 1
+    for event in ("requested", "shown", "rewarded", "dismissed"):
+        status, _, body = request(local_server, "POST", "/api/ad-event", json.dumps({"format": "rewarded", "event": event}),
+                                  {"Content-Type": "application/json", "Cookie": cookie})
+        assert status == 200 and json.loads(body) == {"ok": True}
+    snapshot = webapp.store.analytics.snapshot()
+    assert snapshot["ad_periods"]["7"]["rewarded"]["rewarded"] == 1
     assert request(local_server, "POST", "/api/usage", json.dumps({"feature": "unknown"}),
                    {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
     assert request(local_server, "POST", "/api/install", json.dumps({"platform": "web"}),
+                   {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
+    assert request(local_server, "POST", "/api/ad-event", json.dumps({"format": "video", "event": "watched"}),
                    {"Content-Type": "application/json", "Cookie": cookie})[0] == 400
 
 

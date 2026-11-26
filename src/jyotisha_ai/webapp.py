@@ -1101,6 +1101,9 @@ class LocalHandler(BaseHTTPRequestHandler):
         elif path == "/usage.js":
             body = files("jyotisha_ai.web").joinpath("usage.js").read_bytes()
             self._send(200, body, "application/javascript; charset=utf-8")
+        elif path == "/ad-tracking.js":
+            body = files("jyotisha_ai.web").joinpath("ad-tracking.js").read_bytes()
+            self._send(200, body, "application/javascript; charset=utf-8")
         elif path == "/api/status":
             self._json(200, research_status(self.server.project_root))
         elif path == "/api/birth-readiness":
@@ -1137,7 +1140,7 @@ class LocalHandler(BaseHTTPRequestHandler):
             if observed_feature:
                 store.analytics.observe(self._visitor(), observed_feature, success, round((clock_time.monotonic() - observed_at) * 1000))
 
-        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/play-purchase/verify", "/api/usage", "/api/install") and not path.startswith("/api/admin/"):
+        if path not in ("/api/chart", "/api/birth-chart", "/api/panchang-noon", "/api/panchang-month", "/api/day-panchang", "/api/month-calendar", "/api/places", "/api/nearby-place", "/api/ask", "/api/nudges", "/api/rashiphal", "/api/life-guide", "/api/life-guide-text", "/api/moon-sign", "/api/tarot", "/api/palm", "/api/partner-portrait", "/api/rating", "/api/payment/create-order", "/api/payment/verify", "/api/play-purchase/verify", "/api/usage", "/api/install", "/api/ad-event") and not path.startswith("/api/admin/"):
             self._json(404, {"error": "not found"})
             return
         if not self._origin_ok():
@@ -1177,6 +1180,14 @@ class LocalHandler(BaseHTTPRequestHandler):
                 if platform not in ("android", "ios"):
                     raise ValueError("unknown platform")
                 store.analytics.installed(self._visitor(), platform)
+                self._json(200, {"ok": True})
+                return
+            if path == "/api/ad-event":
+                ad_format = payload.get("format") if isinstance(payload, dict) else None
+                event = payload.get("event") if isinstance(payload, dict) else None
+                if ad_format not in store.AD_FORMATS or event not in store.AD_EVENTS:
+                    raise ValueError("unknown ad event")
+                store.analytics.ad_event(self._visitor(), ad_format, event)
                 self._json(200, {"ok": True})
                 return
             store.stats.record({"/api/birth-chart": "birth_chart", "/api/day-panchang": "day_panchang", "/api/month-calendar": "month_calendar",

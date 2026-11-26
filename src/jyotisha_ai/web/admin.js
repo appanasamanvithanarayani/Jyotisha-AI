@@ -481,13 +481,32 @@
   }
 
   function monetization(view) {
-    intro(view, 'Monetization', 'A consolidated view of ad pressure, paid unlock pricing and production readiness.');
+    intro(view, 'Monetization', 'A consolidated view of ad delivery, paid unlock pricing and production readiness.', trendPicker());
     const ads = state.live.app_ads, pay = state.payments || {};
+    const adMetrics = (((state.analytics || {}).ad_periods || {})[trendRange] || {});
+    const adCount = (format, event) => Number(((adMetrics[format] || {})[event]) || 0);
     const tiles = el('div', 'tiles');
     tiles.append(tile('App advertising', ads ? 'On' : 'Off', ads ? 'on-text' : 'off-text', 'AdMob'),
       tile('Ad inventory', ads ? (ads.testing ? 'Test' : 'Live') : '—', '', 'AdMob'),
       tile('Chat bonus', `₹${pay.chat_bonus_rs || 9}`, '', 'Razorpay'), tile('Reading unlock', `₹${pay.reading_unlock_rs || 9}`, '', 'Razorpay'));
     view.appendChild(tiles);
+    const delivery = el('div', 'panel'); delivery.append(el('h2', null, 'Ad viewing & delivery'),
+      el('p', 'hint', 'Watched counts only rewarded ads where the ad SDK granted the reward. Requested counts attempts; shown/loaded counts SDK display callbacks.'));
+    const adTiles = el('div', 'tiles');
+    adTiles.append(tile('Rewarded ads watched', adCount('rewarded', 'rewarded'), '', trendLabel()),
+      tile('Rewarded ads shown', adCount('rewarded', 'shown'), '', trendLabel()),
+      tile('Interstitials shown', adCount('interstitial', 'shown'), '', trendLabel()),
+      tile('Banner loads', adCount('banner', 'shown'), '', trendLabel()));
+    delivery.appendChild(adTiles);
+    const deliveryWrap = el('div', 'scroll'), deliveryTable = el('table'), deliveryHead = el('tr');
+    ['Format', 'Requested', 'Shown / loaded', 'Watched / rewarded', 'Dismissed', 'Failed'].forEach(label => deliveryHead.appendChild(el('th', null, label)));
+    deliveryTable.appendChild(deliveryHead);
+    [['banner', 'Banner'], ['interstitial', 'Interstitial'], ['rewarded', 'Rewarded']].forEach(([format, label]) => {
+      const row = el('tr'); [label, adCount(format, 'requested'), adCount(format, 'shown'), format === 'rewarded' ? adCount(format, 'rewarded') : '—',
+        adCount(format, 'dismissed'), adCount(format, 'failed')].forEach(value => row.appendChild(el('td', null, String(value))));
+      deliveryTable.appendChild(row);
+    });
+    deliveryWrap.appendChild(deliveryTable); delivery.appendChild(deliveryWrap); view.appendChild(delivery);
     const grid = el('div', 'grid-even');
     const adPanel = el('div', 'panel'); adPanel.append(el('h2', null, 'Advertising configuration'), el('p', 'hint', 'Current behavior delivered to Android clients.'));
     const adList = el('div', 'status-list'); adPanel.appendChild(adList);
