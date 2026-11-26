@@ -526,6 +526,19 @@
       paymentTable.appendChild(row);
     });
     paymentWrap.appendChild(paymentTable); paymentsPanel.appendChild(paymentWrap); view.appendChild(paymentsPanel);
+    const transactionPanel = el('div', 'panel'); transactionPanel.append(el('h2', null, 'Recent verified payments'),
+      el('p', 'hint', 'Transaction references are one-way-derived identifiers for matching rows without exposing the full Razorpay payment ID.'));
+    const transactionWrap = el('div', 'scroll'), transactionTable = el('table'), transactionHead = el('tr');
+    ['When (UTC)', 'Transaction ID', 'User ID', 'Category', 'Amount'].forEach(label => transactionHead.appendChild(el('th', null, label)));
+    transactionTable.appendChild(transactionHead);
+    const categoryNames = { chat_bonus: 'Extra AI questions', unlock: 'Reading unlock' };
+    (paymentMetrics.transactions || []).forEach(transaction => {
+      const row = el('tr'); [String(transaction.time || '').replace('T', ' '), transaction.id || '—', transaction.user_id || 'Unavailable',
+        categoryNames[transaction.feature] || transaction.feature || 'Unknown', money(transaction.amount_paise)].forEach(value => row.appendChild(el('td', null, String(value))));
+      transactionTable.appendChild(row);
+    });
+    if (!(paymentMetrics.transactions || []).length) transactionPanel.appendChild(el('p', 'hint', `No verified payments in ${trendLabel().toLowerCase()}.`));
+    transactionWrap.appendChild(transactionTable); transactionPanel.appendChild(transactionWrap); view.appendChild(transactionPanel);
     const grid = el('div', 'grid-even');
     const adPanel = el('div', 'panel'); adPanel.append(el('h2', null, 'Advertising configuration'), el('p', 'hint', 'Current behavior delivered to Android clients.'));
     const adList = el('div', 'status-list'); adPanel.appendChild(adList);

@@ -565,6 +565,12 @@ class Analytics:
             metric[event] = int(metric.get(event, 0)) + 1
             if event == "successful":
                 metric["revenue_paise"] = int(metric.get("revenue_paise", 0)) + amount
+                transactions = self._data.setdefault("payment_transactions", [])
+                transactions.append({"id": payment_hash[:12].upper(),
+                                     "user_id": self._anonymous_id(visitor)[:10] if visitor else "Unavailable",
+                                     "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                     "feature": feature, "amount_paise": amount})
+                self._data["payment_transactions"] = transactions[-500:]
             self._save()
             return True
 
@@ -713,8 +719,22 @@ class Analytics:
                             for event in PAYMENT_EVENTS:
                                 features[feature][event] += int(source.get(event, 0))
                             features[feature]["revenue_paise"] += int(source.get("revenue_paise", 0))
+                transactions = []
+                for transaction in self._data.get("payment_transactions", []):
+                    if not isinstance(transaction, dict):
+                        continue
+                    transaction_day = str(transaction.get("time", ""))[:10]
+                    if (not start or transaction_day >= start) and transaction_day <= today_name:
+                        user_id = str(transaction.get("user_id", "Unavailable"))
+                        transactions.append({"id": str(transaction.get("id", ""))[:12],
+                                             "user_id": user_id[:10] if user_id != "Unavailable" else user_id,
+                                             "time": str(transaction.get("time", ""))[:25],
+                                             "feature": transaction.get("feature") if transaction.get("feature") in PAYMENT_FEATURES else "",
+                                             "amount_paise": int(transaction.get("amount_paise", 0))})
+                transactions.sort(key=lambda row: row["time"], reverse=True)
                 return {event: sum(row[event] for row in features.values()) for event in PAYMENT_EVENTS} | {
-                    "revenue_paise": sum(row["revenue_paise"] for row in features.values()), "features": features}
+                    "revenue_paise": sum(row["revenue_paise"] for row in features.values()), "features": features,
+                    "transactions": transactions[:100]}
             payment_periods = {str(period_days): payment_summary(period_days) for period_days in (7, 14, 30, 90)}
             payment_periods["all"] = payment_summary(None)
             return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),

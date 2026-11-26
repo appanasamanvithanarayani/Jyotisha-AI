@@ -201,6 +201,10 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     assert snapshot["payment_periods"]["30"]["revenue_paise"] == 900
     assert snapshot["payment_periods"]["all"]["features"]["unlock"]["orders"] == 1
     assert snapshot["payment_periods"]["all"]["features"]["chat_bonus"]["failed"] == 1
+    transaction = snapshot["payment_periods"]["all"]["transactions"][0]
+    assert transaction["feature"] == "unlock" and transaction["amount_paise"] == 900
+    assert transaction["user_id"] == store.analytics._anonymous_id("random-device-token-a-12345")[:10]
+    assert len(transaction["id"]) == 12 and transaction["id"].isalnum()
     first = next(user for user in snapshot["users"] if user["generation_count"] == 2)
     assert first["generations"]["kundli"] == 1 and len(first["id"]) == 10
     assert first["birth_year"] == 2000 and first["age_range"] in ("25–34", "18–24")

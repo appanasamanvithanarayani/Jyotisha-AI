@@ -1297,3 +1297,5 @@ def test_payment_endpoints_create_a_real_order_and_verify_the_signature(local_se
     metrics = webapp.store.analytics.snapshot()["payment_periods"]["7"]
     assert metrics["orders"] == 1 and metrics["successful"] == 1 and metrics["failed"] == 1
     assert metrics["revenue_paise"] == 900 and metrics["features"]["unlock"]["successful"] == 1
+    assert len(metrics["transactions"]) == 1 and metrics["transactions"][0]["feature"] == "unlock"
+    assert metrics["transactions"][0]["user_id"] == "Unavailable"
