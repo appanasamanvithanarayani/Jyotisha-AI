@@ -177,6 +177,10 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     store.analytics.ad_event("random-device-token-a-12345", "rewarded", "rewarded")
     store.analytics.ad_event("random-device-token-a-12345", "rewarded", "dismissed")
     store.analytics.ad_event("random-device-token-b-67890", "interstitial", "failed")
+    store.analytics.payment_event("random-device-token-a-12345", "unlock", "orders", 900)
+    assert store.analytics.payment_event("random-device-token-a-12345", "unlock", "successful", 900, "pay_private_123")
+    assert not store.analytics.payment_event("random-device-token-a-12345", "unlock", "successful", 900, "pay_private_123")
+    store.analytics.payment_event("random-device-token-b-67890", "chat_bonus", "failed")
     store.analytics.installed("random-device-token-a-12345", "android")
     store.analytics.installed("random-device-token-a-12345", "android")
     store.analytics.profile_birth_year("random-device-token-a-12345", "2000-06-15")
@@ -193,13 +197,17 @@ def test_anonymous_analytics_counts_new_returning_users_and_generation_types():
     assert snapshot["new_user_features"]["numerology"] == 1
     assert snapshot["ad_periods"]["30"]["rewarded"] == {"requested": 1, "shown": 1, "rewarded": 1, "dismissed": 1, "failed": 0}
     assert snapshot["ad_periods"]["all"]["interstitial"]["failed"] == 1
+    assert snapshot["payment_periods"]["30"]["successful"] == 1
+    assert snapshot["payment_periods"]["30"]["revenue_paise"] == 900
+    assert snapshot["payment_periods"]["all"]["features"]["unlock"]["orders"] == 1
+    assert snapshot["payment_periods"]["all"]["features"]["chat_bonus"]["failed"] == 1
     first = next(user for user in snapshot["users"] if user["generation_count"] == 2)
     assert first["generations"]["kundli"] == 1 and len(first["id"]) == 10
     assert first["birth_year"] == 2000 and first["age_range"] in ("25–34", "18–24")
     assert first["usage"]["numerology"] == 1 and first["usage"]["tarot"] == 1
     assert first["platform"] == "android" and first["installed_at"]
     saved = (store.data_dir() / "analytics.json").read_text()
-    assert "random-device-token" not in saved and "2000-06-15" not in saved
+    assert "random-device-token" not in saved and "2000-06-15" not in saved and "pay_private_123" not in saved
 
 
 def test_admin_analytics_exposes_history_and_period_comparisons():

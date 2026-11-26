@@ -485,6 +485,8 @@
     const ads = state.live.app_ads, pay = state.payments || {};
     const adMetrics = (((state.analytics || {}).ad_periods || {})[trendRange] || {});
     const adCount = (format, event) => Number(((adMetrics[format] || {})[event]) || 0);
+    const paymentMetrics = (((state.analytics || {}).payment_periods || {})[trendRange] || {});
+    const money = paise => `₹${(Number(paise || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     const tiles = el('div', 'tiles');
     tiles.append(tile('App advertising', ads ? 'On' : 'Off', ads ? 'on-text' : 'off-text', 'AdMob'),
       tile('Ad inventory', ads ? (ads.testing ? 'Test' : 'Live') : '—', '', 'AdMob'),
@@ -507,6 +509,23 @@
       deliveryTable.appendChild(row);
     });
     deliveryWrap.appendChild(deliveryTable); delivery.appendChild(deliveryWrap); view.appendChild(delivery);
+    const paymentsPanel = el('div', 'panel'); paymentsPanel.append(el('h2', null, 'Razorpay payments'),
+      el('p', 'hint', 'Successful means the server verified Razorpay’s signature. Gross does not subtract fees or refunds and is not settlement status.'));
+    const paymentTiles = el('div', 'tiles');
+    paymentTiles.append(tile('Verified gross', money(paymentMetrics.revenue_paise), '', trendLabel()),
+      tile('Successful payments', paymentMetrics.successful || 0, '', trendLabel()),
+      tile('Orders created', paymentMetrics.orders || 0, '', trendLabel()),
+      tile('Failed verification', paymentMetrics.failed || 0, '', trendLabel()));
+    paymentsPanel.appendChild(paymentTiles);
+    const paymentWrap = el('div', 'scroll'), paymentTable = el('table'), paymentHead = el('tr');
+    ['Purchase', 'Orders', 'Successful', 'Failed', 'Verified gross'].forEach(label => paymentHead.appendChild(el('th', null, label)));
+    paymentTable.appendChild(paymentHead);
+    [['chat_bonus', 'Extra AI questions'], ['unlock', 'Reading unlock']].forEach(([feature, label]) => {
+      const metric = ((paymentMetrics.features || {})[feature] || {}), row = el('tr');
+      [label, metric.orders || 0, metric.successful || 0, metric.failed || 0, money(metric.revenue_paise)].forEach(value => row.appendChild(el('td', null, String(value))));
+      paymentTable.appendChild(row);
+    });
+    paymentWrap.appendChild(paymentTable); paymentsPanel.appendChild(paymentWrap); view.appendChild(paymentsPanel);
     const grid = el('div', 'grid-even');
     const adPanel = el('div', 'panel'); adPanel.append(el('h2', null, 'Advertising configuration'), el('p', 'hint', 'Current behavior delivered to Android clients.'));
     const adList = el('div', 'status-list'); adPanel.appendChild(adList);

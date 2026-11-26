@@ -399,6 +399,8 @@ FEATURE_TYPES = ("home", "research_chart", "kundli", "panchang", "calendar", "fe
                  "palm", "partner_portrait", "numerology", "sign_match", "doshas", "dasha", "rating", "payments")
 AD_FORMATS = ("banner", "interstitial", "rewarded")
 AD_EVENTS = ("requested", "shown", "rewarded", "dismissed", "failed")
+PAYMENT_FEATURES = ("chat_bonus", "unlock")
+PAYMENT_EVENTS = ("orders", "successful", "failed")
 
 
 class Analytics:
@@ -538,6 +540,34 @@ class Analytics:
             events[event] = int(events.get(event, 0)) + 1
             self._save()
 
+    def payment_event(self, visitor: str, feature: str, event: str, amount_paise: int = 0,
+                      payment_id: str = "") -> bool:
+        """Record aggregate Razorpay events; successful payment IDs are one-way hashed and counted only once."""
+        if feature not in PAYMENT_FEATURES or event not in PAYMENT_EVENTS:
+            return False
+        amount = max(0, min(int(amount_paise), 99_900))
+        today = date.today().isoformat()
+        with self._lock:
+            self._load()
+            if event == "successful":
+                if not payment_id:
+                    return False
+                payment_hash = hashlib.sha256(("jyotisha-payment|" + payment_id).encode("utf-8", "ignore")).hexdigest()
+                seen = self._data.setdefault("payment_ids", {})
+                if payment_hash in seen:
+                    return False
+                seen[payment_hash] = today
+            if visitor:
+                _, _, day = self._visit(visitor, today)
+            else:
+                day = self._data["days"].setdefault(today, {"users": [], "new_users": 0, "generations": {}})
+            metric = day.setdefault("payments", {}).setdefault(feature, {})
+            metric[event] = int(metric.get(event, 0)) + 1
+            if event == "successful":
+                metric["revenue_paise"] = int(metric.get("revenue_paise", 0)) + amount
+            self._save()
+            return True
+
     def profile_birth_year(self, visitor: str, dob: object) -> None:
         """Keep only a birth year and broad current age range; the exact birth date is deliberately discarded."""
         if not visitor or not isinstance(dob, str):
@@ -672,6 +702,21 @@ class Analytics:
                 return totals
             ad_periods = {str(period_days): ad_summary(period_days) for period_days in (7, 14, 30, 90)}
             ad_periods["all"] = ad_summary(None)
+            def payment_summary(period_days: int | None) -> dict:
+                start = "" if period_days is None else (date.today() - timedelta(days=period_days - 1)).isoformat()
+                features = {feature: {event: 0 for event in PAYMENT_EVENTS} | {"revenue_paise": 0}
+                            for feature in PAYMENT_FEATURES}
+                for day_name, row in self._data["days"].items():
+                    if not start or start <= day_name <= today_name:
+                        for feature in PAYMENT_FEATURES:
+                            source = row.get("payments", {}).get(feature, {})
+                            for event in PAYMENT_EVENTS:
+                                features[feature][event] += int(source.get(event, 0))
+                            features[feature]["revenue_paise"] += int(source.get("revenue_paise", 0))
+                return {event: sum(row[event] for row in features.values()) for event in PAYMENT_EVENTS} | {
+                    "revenue_paise": sum(row["revenue_paise"] for row in features.values()), "features": features}
+            payment_periods = {str(period_days): payment_summary(period_days) for period_days in (7, 14, 30, 90)}
+            payment_periods["all"] = payment_summary(None)
             return {"total_users": len(self._data["users"]), "total_installs": len(installed_users),
                     "new_installs_today": day_rows[0]["new_installs"] if day_rows else 0, "new_installs_period": new_installs_period,
                     "install_platforms": platforms, "active_today": day_rows[0]["unique_users"] if day_rows else 0,
@@ -680,7 +725,7 @@ class Analytics:
                     "feature_views": feature_views, "feature_unique_users": {feature: len(users) for feature, users in feature_user_sets.items()},
                     "new_user_features": {feature: len(users) for feature, users in new_user_feature_sets.items()}, "observability": observability,
                     "days": day_rows, "history": history, "comparisons": comparisons, "periods": periods,
-                    "ad_periods": ad_periods, "users": recent_users}
+                    "ad_periods": ad_periods, "payment_periods": payment_periods, "users": recent_users}
 
 
 analytics = Analytics()

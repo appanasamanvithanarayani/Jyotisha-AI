@@ -1287,6 +1287,13 @@ def test_payment_endpoints_create_a_real_order_and_verify_the_signature(local_se
     status, _, body = request(local_server, "POST", "/api/payment/verify",
         json.dumps({"order_id": "order_abc123", "payment_id": "pay_xyz", "signature": genuine, "feature": "unlock"}), {"Content-Type": "application/json"})
     assert status == 200 and json.loads(body) == {"status": "ok", "feature": "unlock"}
+    # A duplicate callback is valid but cannot inflate successful-payment or revenue totals.
+    status, _, body = request(local_server, "POST", "/api/payment/verify",
+        json.dumps({"order_id": "order_abc123", "payment_id": "pay_xyz", "signature": genuine, "feature": "unlock"}), {"Content-Type": "application/json"})
+    assert status == 200 and json.loads(body) == {"status": "ok", "feature": "unlock"}
     status, _, body = request(local_server, "POST", "/api/payment/verify",
         json.dumps({"order_id": "order_abc123", "payment_id": "pay_xyz", "signature": "0" * 64, "feature": "unlock"}), {"Content-Type": "application/json"})
     assert status == 200 and json.loads(body) == {"status": "invalid"}
+    metrics = webapp.store.analytics.snapshot()["payment_periods"]["7"]
+    assert metrics["orders"] == 1 and metrics["successful"] == 1 and metrics["failed"] == 1
+    assert metrics["revenue_paise"] == 900 and metrics["features"]["unlock"]["successful"] == 1

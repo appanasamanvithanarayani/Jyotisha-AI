@@ -1231,11 +1231,18 @@ class LocalHandler(BaseHTTPRequestHandler):
                 return
             elif path == "/api/payment/create-order":
                 payment_result = payments.create_order(payload)
+                if payment_result.get("status") == "ok":
+                    store.analytics.payment_event(self._visitor(), payload["feature"], "orders", payment_result.get("amount", 0))
                 observe(payment_result.get("status") == "ok")
                 self._json(200, payment_result)
                 return
             elif path == "/api/payment/verify":
                 payment_result = payments.verify_payment(payload)
+                if payment_result.get("status") == "ok":
+                    store.analytics.payment_event(self._visitor(), payment_result["feature"], "successful",
+                                                  payments.price_paise(payment_result["feature"]), payload.get("payment_id", ""))
+                elif isinstance(payload, dict) and payload.get("feature") in store.PAYMENT_FEATURES:
+                    store.analytics.payment_event(self._visitor(), payload["feature"], "failed")
                 observe(payment_result.get("status") == "ok")
                 self._json(200, payment_result)
                 return
