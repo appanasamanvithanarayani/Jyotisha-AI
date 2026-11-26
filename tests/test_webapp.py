@@ -1015,6 +1015,17 @@ def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_
     assert b"Test &lt;b&gt;Studio&lt;/b&gt;" in body
 
 
+def test_refund_policy_is_public_and_has_clear_timelines(local_server, monkeypatch):
+    monkeypatch.setenv("JYOTISHA_DEVELOPER", "Example Operator")
+    monkeypatch.setenv("JYOTISHA_CONTACT", "refunds@example.com")
+    status, headers, body = request(local_server, "GET", "/refund")
+    assert status == 200 and headers["Content-Type"] == "text/html; charset=utf-8"
+    assert b"Refund and cancellation policy" in body and b"Example Operator" in body
+    assert b"refunds@example.com" in body and b"7 calendar days" in body and b"5 business days" in body
+    assert b"{{CONTACT}}" not in body and b"{{DEVELOPER}}" not in body
+    assert b'href="/privacy"' in body
+
+
 def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(local_server, monkeypatch):
     for name in ("JYOTISHA_APP_ADS", "JYOTISHA_ADMOB_BANNER_ID", "JYOTISHA_ADMOB_TESTING", "JYOTISHA_ADSENSE_CLIENT", "JYOTISHA_ADMOB_INTERSTITIAL_ID"):
         monkeypatch.delenv(name, raising=False)

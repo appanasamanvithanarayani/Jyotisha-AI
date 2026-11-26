@@ -1037,6 +1037,10 @@ class LocalHandler(BaseHTTPRequestHandler):
             page = files("jyotisha_ai.web").joinpath("privacy.html").read_text(encoding="utf-8")
             page = page.replace("{{ADS_ITEM}}", _privacy_ads_item()).replace("{{DEVELOPER}}", html.escape(store.value("JYOTISHA_DEVELOPER", "Samanvitha")))
             self._send(200, page.replace("{{CONTACT}}", html.escape(store.value("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
+        elif path == "/refund":
+            page = files("jyotisha_ai.web").joinpath("refund.html").read_text(encoding="utf-8")
+            page = page.replace("{{DEVELOPER}}", html.escape(store.value("JYOTISHA_DEVELOPER", "Samanvitha")))
+            self._send(200, page.replace("{{CONTACT}}", html.escape(store.value("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/ads.txt":
             client = _adsense_client()
             if not client:
