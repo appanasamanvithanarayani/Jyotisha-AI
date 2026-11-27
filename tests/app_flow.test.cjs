@@ -26,6 +26,13 @@ test('all six bottom tabs stay in one grid row', () => {
   assert.equal((html.match(/<a href="#(?:home|calendar|kundli|relationship|chat|rashi)"/g) || []).length, 6);
 });
 
+test('the month-view day numbers use a colour that is readable in the dark/mystic themes, not a fixed dark one', () => {
+  const css = fs.readFileSync(path.join(root, 'app.css'), 'utf8');
+  const rule = css.match(/\.month-day b\s*\{([^}]+)\}/);
+  assert.ok(rule, 'a .month-day b rule exists');
+  assert.doesNotMatch(rule[1], /--night2/, '--night2 is not redefined for the dark/mystic themes, so text set to it disappears on their (also dark) card background');
+});
+
 test("the Android app's hardware Back button (window.__jyotishaBack) steps back through visited screens, then exits from Home", async () => {
   const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
   await settle();
@@ -986,6 +993,33 @@ test('Home offers tool cards and the Kundli shows one view at a time, including 
   assert.match(cards[0].children[1].textContent, /house 7 from the Lagna/);
   assert.match(cards[1].children[0].children[1].textContent, /phase 2 of 3/);
   assert.match(cards[1].children[1].textContent, /2025.*2032/);
+});
+
+test('Rashiphal life areas: a plain word always goes with the colour, and an older reader gets a flowing paragraph instead of a bullet list', async () => {
+  const planetRashis = { Sun: 7, Mars: 4, Mercury: 7, Jupiter: 4, Venus: 7, Saturn: 12, Rahu: 11, Ketu: 5 };
+  const young = { ...syntheticBirth, chart: { ...syntheticBirth.chart, input: { birth_datetime: '1995-08-15T06:30:00+05:30' } } };
+  const storageYoung = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storageYoung.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const appYoung = boot({ storage: storageYoung, birth: young, dayExtra: { planet_rashis: planetRashis } });
+  await settle();
+  homeCard(appYoung, 'Rashiphal').listeners.click();
+  await settle();
+  const mineCard = app => app.element('rashi-list').children.find(item => /\bmine\b/.test(item.className));
+  const areasOf = card => card.children.find(item => item.className === 'rashi-areas');
+  const young1 = areasOf(mineCard(appYoung));
+  assert.ok(young1.children.length > 1, 'one line per area for a younger reader');
+  assert.match(young1.children[0].children[0].textContent, /\((?:Favorable|Mixed|Needs care)\):/, 'a plain word, not only a colour');
+
+  const old = { ...syntheticBirth, chart: { ...syntheticBirth.chart, input: { birth_datetime: '1960-01-01T06:00:00+05:30' } } };
+  const storageOld = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storageOld.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1960-01-01', pob: 'Hyderabad, IN', tob: '06:00' }));
+  const appOld = boot({ storage: storageOld, birth: old, dayExtra: { planet_rashis: planetRashis } });
+  await settle();
+  homeCard(appOld, 'Rashiphal').listeners.click();
+  await settle();
+  const old1 = areasOf(mineCard(appOld));
+  assert.equal(old1.children.length, 1, 'one flowing paragraph for an older reader, not a bullet list');
+  assert.match(old1.children[0].textContent, / — (?:Favorable|Mixed|Needs care)\. /);
 });
 
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {

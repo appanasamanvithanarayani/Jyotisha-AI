@@ -2081,9 +2081,32 @@
   }
   const tinted = tone => (tone === 'good' ? '🟢' : tone === 'caution' ? '🔴' : '🟡');
   const dayLabel = iso => { const label = calendarUI.weekdayName(state.lang, new Date(`${iso}T12:00:00Z`).getUTCDay(), 'short'); return label; };
+  // Already known from the Kundli itself (chart.input.birth_datetime), so no extra question is needed to use it.
+  function userAge() {
+    const raw = state.chart && state.chart.input && state.chart.input.birth_datetime;
+    if (!raw) return null;
+    const birth = new Date(raw);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getUTCFullYear() - birth.getUTCFullYear();
+    if (now.getUTCMonth() < birth.getUTCMonth() || (now.getUTCMonth() === birth.getUTCMonth() && now.getUTCDate() < birth.getUTCDate())) age -= 1;
+    return age;
+  }
+  const OLDER_READER_AGE = 55;   // a flowing paragraph reads easier than a list of coloured bullet points past this age
   function areaBlock(areas) {
     const box = el('div', 'rashi-areas');
-    for (const item of areas) { const row = el('p', null); row.append(el('strong', null, `${tinted(item.tone)} ${item.name}: `), item.text); box.appendChild(row); }
+    const age = userAge();
+    // The colour alone (red/green/yellow) means nothing without knowing the convention, so a plain word always
+    // goes with it (Favorable/Mixed/Needs care) — in both the list and the paragraph form below.
+    if (age !== null && age >= OLDER_READER_AGE) {
+      box.appendChild(el('p', null, areas.map(item => `${item.name} — ${item.toneWord}. ${item.text}`).join(' ')));
+      return box;
+    }
+    for (const item of areas) {
+      const row = el('p', null);
+      row.append(el('strong', null, `${tinted(item.tone)} ${item.name} (${item.toneWord}): `), item.text);
+      box.appendChild(row);
+    }
     return box;
   }
   function remedyBlock(card, lines) {
