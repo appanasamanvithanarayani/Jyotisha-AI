@@ -106,9 +106,26 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             BillingResult launched = client.launchBillingFlow(getActivity(), flow.build());
             if (launched.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 synchronized (PlayBillingPlugin.this) { purchaseCall = null; }
-                call.reject(launched.getDebugMessage(), "PURCHASE_NOT_LAUNCHED");
+                if (launched.getResponseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
+                    resolveOwnedPurchase(productId, call);
+                } else call.reject(launched.getDebugMessage(), "PURCHASE_NOT_LAUNCHED");
             }
         }));
+    }
+
+    /** A consumable may still be owned when payment succeeded but the app was recreated before verification/consume. */
+    private void resolveOwnedPurchase(String productId, PluginCall call) {
+        client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(), (result, purchases) -> {
+            if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                call.reject(result.getDebugMessage(), "RESTORE_FAILED"); return;
+            }
+            for (Purchase purchase : purchases) {
+                if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED && purchase.getProducts().contains(productId)) {
+                    call.resolve(purchaseJson(purchase)); return;
+                }
+            }
+            call.reject("Google Play reported this item as owned but did not return its purchase", "OWNED_PURCHASE_NOT_FOUND");
+        });
     }
 
     @Override
@@ -116,6 +133,9 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
         PluginCall call = purchaseCall; purchaseCall = null;
         if (call == null) return;
         if (result.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) { call.reject("Purchase cancelled", "PURCHASE_CANCELLED"); return; }
+        if (result.getResponseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
+            resolveOwnedPurchase(call.getString("productId", ""), call); return;
+        }
         if (result.getResponseCode() != BillingClient.BillingResponseCode.OK || purchases == null || purchases.isEmpty()) {
             call.reject(result.getDebugMessage(), "PURCHASE_FAILED"); return;
         }
