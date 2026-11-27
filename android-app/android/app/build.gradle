@@ -37,8 +37,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bumped automatically by .github/workflows/android-build.yml on every release build; no need to edit by hand.
-        versionCode 28
-        versionName "1.0.28"
+        versionCode 29
+        versionName "1.0.29"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "META_APP_ID", "\"${metaAppId}\""
         buildConfigField "String", "META_CLIENT_TOKEN", "\"${metaClientToken}\""
