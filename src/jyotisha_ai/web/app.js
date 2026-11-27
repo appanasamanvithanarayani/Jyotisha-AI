@@ -2331,7 +2331,17 @@
       const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
       askAi.addEventListener('click', () => {
         const question = fill(copy.askQ, { summary: reading.summary.slice(0, 180) }).slice(0, 290);
-        showPage('chat'); ask(question, question, true);
+        const facts = [
+          'Reading source: completed palm scan',
+          `Hand scanned: ${palmState.hand}`,
+          `Palm overview: ${reading.summary}`,
+          `Life line reading: ${reading.life}`,
+          `Heart line reading: ${reading.heart}`,
+          `Head line reading: ${reading.head}`,
+          `Fate line reading: ${reading.fate}`,
+          `Today's date: ${localIso(new Date())}`,
+        ].filter(fact => !/undefined$|null$/.test(fact));
+        showPage('chat'); ask(question, question, true, facts);
       });
       const share = el('button', 'chip-btn', `↗ ${copy.share}`); share.type = 'button';
       share.addEventListener('click', () => { void shareText(`✋ ${copy.title}`, lines.join('\n\n')); });
@@ -4468,11 +4478,13 @@
   }
   function removeChatChips() { try { Array.from(chatLog.children).filter(item => item.className === 'chat-chips').forEach(item => chatLog.removeChild(item)); } catch (_error) { /* optional */ } }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
-  async function askAssistant(query) {
+  let readingContextFacts = null;   // a completed Palm (and later other readings) can answer without a birth chart
+  async function askAssistant(query, factsOverride) {
     removeChatChips();
     const pending = el('div', 'chat-message assistant', '…'); chatLog.appendChild(pending); chatLog.scrollTop = chatLog.scrollHeight;
     try {
-      const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts: chartFacts(), history: history.slice(-10) });
+      const facts = Array.isArray(factsOverride) && factsOverride.length ? factsOverride : chartFacts();
+      const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts, history: history.slice(-10) });
       if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); addActionPlanOffer(body.answer); addChatChips(); return true; }
     } catch (_error) { /* fall back to the offline answer */ }
     chatLog.removeChild(pending); return false;
@@ -4555,10 +4567,26 @@
     }
     return false;
   }
-  function ask(shown, query, fromPrompt) {
+  function ask(shown, query, fromPrompt, contextFacts) {
+    if (Array.isArray(contextFacts) && contextFacts.length) {
+      readingContextFacts = contextFacts;
+      // This came from an already completed reading's own Ask AI button. Do not reinterpret words such as
+      // "palm reading" as a request to reopen the scanner, and do not replace its facts with chart intake.
+      addMessage('user', shown);
+      route(query, readingContextFacts);
+      return;
+    }
     // Normally gated on having no chart yet; "recalculating" additionally covers typing a new birth date below,
     // even though a (now stale) chart still exists while that recalculation is in progress.
     if (!state.chart || intake.recalculating) {
+      // A completed reading is already personal input. Answer it directly from those facts instead of forcing the
+      // user through DOB / place / time intake. Keep that context for natural follow-up questions in the same chat.
+      if (!intake.recalculating && readingContextFacts && fromPrompt !== true) {
+        addMessage('user', shown);
+        if (routeSpecialIntent(query)) return;
+        route(query, readingContextFacts);
+        return;
+      }
       if (intake.step === 'busy') return;
       addMessage('user', shown); void intakeInput(query, fromPrompt === true); return;
     }
@@ -4608,11 +4636,11 @@
       }
     } catch (_error) { chatLog.removeChild(pending); state.partnerPortrait = { status: previous ? 'ok' : 'unavailable', image: previous || null, notice: previous ? 'failed' : null }; addMessage('assistant', copy.traitsPortraitUnavailable); }
   }
-  function route(query) {
+  function route(query, factsOverride) {
     if (state.assistant && !chartUI.isJathakamRequest(query) && !/^(What is my Lagna\?|Where is the Moon\?|Which planets are in house 1\?)$/.test(query)) {
       void (async () => {
         if (!(await aiQuestionAllowed())) { askOffline(query); return; }   // out of free AI questions: the rule-based answer is still free
-        if (!(await askAssistant(query))) askOffline(query);
+        if (!(await askAssistant(query, factsOverride))) askOffline(query);
       })();
       return;
     }
