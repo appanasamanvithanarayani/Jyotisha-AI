@@ -11,7 +11,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from google.auth.transport._http_client import Request
+from google.auth.exceptions import GoogleAuthError
+from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 
 from jyotisha_ai import settings_store as store
@@ -88,7 +89,10 @@ def _google_purchase(product_id: str, purchase_token: str) -> dict:
     credentials = _credentials()
     if credentials is None:
         raise ValueError("Google Play purchase verification is not configured")
-    credentials.refresh(Request())
+    try:
+        credentials.refresh(Request())
+    except GoogleAuthError as exc:
+        raise ValueError("Google Play service-account authentication failed") from exc
     package = urllib.parse.quote(PACKAGE_NAME, safe="")
     token = urllib.parse.quote(purchase_token, safe="")
     url = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{package}/purchases/productsv2/tokens/{token}"
