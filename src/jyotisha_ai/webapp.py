@@ -791,9 +791,13 @@ class LocalHandler(BaseHTTPRequestHandler):
                 limited_code = "partner_daily_limit"
         if allowed and path == "/api/rating":
             allowed = limiter.allow(f"rating-day:{who}", 5, 86400.0)
-        if allowed and path in ("/api/payment/create-order", "/api/payment/verify", "/api/play-purchase/verify"):
+        if allowed and path in ("/api/payment/create-order", "/api/payment/verify"):
             # Each real order/verify call reaches Razorpay's API; a per-minute cap is enough to stop abuse.
             allowed = limiter.allow(f"payment:{who}", 10, 60.0)
+        if allowed and path == "/api/play-purchase/verify":
+            # The Android client deliberately retries a completed Play purchase while Google's Publisher API catches
+            # up.  Keep a separate allowance so those recovery attempts cannot be blocked by earlier checkout taps.
+            allowed = limiter.allow(f"play-verify:{who}", 30, 60.0)
         if allowed and path in ("/api/ask", "/api/tarot", "/api/palm"):   # AI calls share the same allowance
             today = clock_time.strftime("%Y-%m-%d", clock_time.gmtime())
             # These three can be changed in the admin panel without restarting.
