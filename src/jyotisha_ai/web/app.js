@@ -4461,13 +4461,14 @@
     chipTurn += 1;
     chatLog.appendChild(row); chatLog.scrollTop = chatLog.scrollHeight;
   }
-  function addActionPlanOffer(answer) {
+  function addActionPlanOffer(answer, factsOverride) {
     const context = `${localIso(new Date())}-${history.length}`;
     if (hasEntitlement('ai_action_plan_7d', context)) return;
     const offer = premiumOffer('ai_action_plan_7d', context, async () => {
       try {
         const prompt = `Based only on this guidance, create a practical personalized 7-day action plan with one safe, achievable action per day: ${String(answer).slice(0, 900)}`;
-        const reply = await post('/api/ask', { question: prompt, language: state.lang, facts: chartFacts(), history: history.slice(-6) });
+        const facts = Array.isArray(factsOverride) && factsOverride.length ? factsOverride : chartFacts();
+        const reply = await post('/api/ask', { question: prompt, language: state.lang, facts, history: history.slice(-6) });
         if (reply.ok && reply.body && reply.body.answer) {
           const entry = el('div', 'chat-message assistant'); entry.append(el('b', null, '✨ 7-day action plan'), el('p', null, reply.body.answer));
           chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
@@ -4485,7 +4486,7 @@
     try {
       const facts = Array.isArray(factsOverride) && factsOverride.length ? factsOverride : chartFacts();
       const { ok, body } = await post('/api/ask', { question: query, language: state.lang, facts, history: history.slice(-10) });
-      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); addActionPlanOffer(body.answer); addChatChips(); return true; }
+      if (ok && body && body.answer) { pending.textContent = body.answer; addAiBar(pending, query, body.answer); history.push({ role: 'user', text: query.slice(0, 300) }, { role: 'assistant', text: body.answer.slice(0, 1400) }); addActionPlanOffer(body.answer, factsOverride); addChatChips(); return true; }
     } catch (_error) { /* fall back to the offline answer */ }
     chatLog.removeChild(pending); return false;
   }
@@ -4639,11 +4640,12 @@
   function route(query, factsOverride) {
     if (state.assistant && !chartUI.isJathakamRequest(query) && !/^(What is my Lagna\?|Where is the Moon\?|Which planets are in house 1\?)$/.test(query)) {
       void (async () => {
-        if (!(await aiQuestionAllowed())) { askOffline(query); return; }   // out of free AI questions: the rule-based answer is still free
-        if (!(await askAssistant(query, factsOverride))) askOffline(query);
+        if (!(await aiQuestionAllowed())) { if (factsOverride) addMessage('assistant', t('serviceUnavailable')); else askOffline(query); return; }
+        if (!(await askAssistant(query, factsOverride))) { if (factsOverride) addMessage('assistant', t('serviceUnavailable')); else askOffline(query); }
       })();
       return;
     }
+    if (factsOverride) { addMessage('assistant', t('serviceUnavailable')); return; }
     askOffline(query);
   }
   function showLines(lines) {
