@@ -7,6 +7,10 @@ import pytest
 from jyotisha_ai import play_billing
 
 
+def test_google_auth_transport_supports_https() -> None:
+    assert play_billing.Request.__module__ == "google.auth.transport.requests"
+
+
 def test_catalog_contains_the_approved_products_and_prices() -> None:
     assert {key: row["price_rs"] for key, row in play_billing.PRODUCTS.items()} == {
         "dosha_remedies": 9, "kundli_complete": 19, "ai_questions_5": 9, "ai_action_plan_7d": 9,
