@@ -62,6 +62,20 @@ def test_verified_token_cannot_unlock_a_different_product(tmp_path, monkeypatch:
         play_billing.verify({"product_id": "dosha_remedies", "purchase_token": token, "context_id": "birth-1"}, "visitor-a")
 
 
+@pytest.mark.parametrize("product_id", sorted(play_billing.PRODUCTS))
+def test_every_catalog_product_can_be_verified(product_id: str, tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JYOTISHA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("JYOTISHA_PLAY_BILLING", "1")
+    monkeypatch.setattr(play_billing, "_credentials", lambda: object())
+    seen = []
+    monkeypatch.setattr(play_billing, "_google_purchase", lambda product, token: seen.append((product, token)) or {})
+    token = f"token-{product_id}-" + "x" * 30
+    result = play_billing.verify({"product_id": product_id, "purchase_token": token, "context_id": "result-1"}, "visitor")
+    assert result["status"] == "ok"
+    assert result["product_id"] == product_id
+    assert seen == [(product_id, token)]
+
+
 @pytest.mark.parametrize("product", ["unknown", ""])
 def test_unknown_products_are_rejected(product: str) -> None:
     with pytest.raises(ValueError, match="unknown"):
