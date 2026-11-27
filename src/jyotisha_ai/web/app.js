@@ -4174,6 +4174,13 @@
       if (checked && checked.ok && checked.body && checked.body.status === 'ok') return checked;
       if (attempt < 2) await wait(1000 * (attempt + 1));
     }
+    const reason = checked && checked.body && checked.body.error ? String(checked.body.error) : '';
+    const message = {
+      te: 'మీ చెల్లింపు Google Playలో ఉంది, కానీ సర్వర్ verification పూర్తికాలేదు. మళ్లీ payment చేయకండి.',
+      hi: 'आपका भुगतान Google Play में है, लेकिन server verification पूरा नहीं हुआ। दोबारा payment न करें।',
+      en: 'Your payment is in Google Play, but server verification did not finish. Do not pay again.',
+    }[state.lang] || 'Your payment is in Google Play, but server verification did not finish. Do not pay again.';
+    showToast(`${message}${reason ? ` (${reason})` : ''}`);
     return checked;
   }
   let restoringPlayPurchases = false;
