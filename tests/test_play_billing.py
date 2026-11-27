@@ -28,7 +28,7 @@ def test_selected_and_enabled_are_separate_until_credentials_exist(monkeypatch: 
     assert play_billing.enabled() is False
 
 
-def test_verified_token_is_replay_safe(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verified_token_is_replay_safe_and_recovers_after_reinstall(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JYOTISHA_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("JYOTISHA_PLAY_BILLING", "1")
     monkeypatch.setattr(play_billing, "_credentials", lambda: object())
@@ -38,10 +38,24 @@ def test_verified_token_is_replay_safe(tmp_path, monkeypatch: pytest.MonkeyPatch
     assert play_billing.verify(payload, "visitor-a")["status"] == "ok"
     assert play_billing.verify(payload, "visitor-a")["already_verified"] is True
     assert calls == [("kundli_complete", payload["purchase_token"])]
-    with pytest.raises(ValueError, match="already used"):
-        play_billing.verify(payload, "visitor-b")
+    recovered = play_billing.verify(payload, "visitor-b")
+    assert recovered["status"] == "ok"
+    assert recovered["already_verified"] is True
+    assert recovered["recovered"] is True
+    assert calls == [("kundli_complete", payload["purchase_token"]), ("kundli_complete", payload["purchase_token"])]
     ledger = json.loads((tmp_path / "play-purchases.json").read_text())
-    assert list(ledger.values()) == [{"context_id": "birth-1", "owner": play_billing.hashlib.sha256(b"play-owner|visitor-a").hexdigest()[:24], "product_id": "kundli_complete"}]
+    assert list(ledger.values()) == [{"context_id": "birth-1", "owner": play_billing.hashlib.sha256(b"play-owner|visitor-b").hexdigest()[:24], "product_id": "kundli_complete"}]
+
+
+def test_verified_token_cannot_unlock_a_different_product(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JYOTISHA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("JYOTISHA_PLAY_BILLING", "1")
+    monkeypatch.setattr(play_billing, "_credentials", lambda: object())
+    monkeypatch.setattr(play_billing, "_google_purchase", lambda product, token: {})
+    token = "token-" + "a" * 30
+    assert play_billing.verify({"product_id": "kundli_complete", "purchase_token": token, "context_id": "birth-1"}, "visitor-a")["status"] == "ok"
+    with pytest.raises(ValueError, match="already used"):
+        play_billing.verify({"product_id": "dosha_remedies", "purchase_token": token, "context_id": "birth-1"}, "visitor-a")
 
 
 @pytest.mark.parametrize("product", ["unknown", ""])
