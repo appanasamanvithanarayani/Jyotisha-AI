@@ -1701,6 +1701,55 @@ test('Google Play can buy the five-question pack while Razorpay code remains ava
   assert.ok(!app.requests.some(r => r.url === '/api/payment/create-order'));
 });
 
+test('Google Play restores a paid palm result after Android recreates the app during checkout', async () => {
+  const calls = [];
+  const token = 'play-token-restored-after-activity-recreation';
+  const contextId = `${new Date().toLocaleDateString('en-CA')}-right`;
+  const reading = { life: 'Steady life-line guidance.', summary: 'Balanced overall reading.', heart: 'Warm heart-line guidance.', head: 'Focused head-line guidance.', fate: 'Patient fate-line guidance.' };
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'palm_detailed', formattedPrice: '₹5.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: token, products: ['palm_detailed'] }] }),
+    completePurchase: async input => { calls.push(input); return input; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.play.pending.v1:palm_detailed', contextId);
+  storage.setItem('jyotisha.play.resume.v1:palm_detailed', JSON.stringify({
+    contextId, createdAt: Date.now(), page: 'palm', palm: { hand: 'right', reading, status: 'ok' },
+  }));
+  const payments = { provider: 'google_play', products: { palm_detailed: { title: 'Detailed palm guidance', price_rs: 5 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play } }, payments });
+  await settle(); await settle();
+  assert.equal(storage.getItem(`jyotisha.play.v1:palm_detailed:${contextId}`), '1');
+  assert.equal(storage.getItem('jyotisha.play.pending.v1:palm_detailed'), null);
+  assert.equal(storage.getItem('jyotisha.play.resume.v1:palm_detailed'), null);
+  assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
+  assert.ok(calls.some(call => call.purchaseToken === token));
+  assert.ok(app.requests.some(request => request.url === '/api/play-purchase/verify'));
+});
+
+test('Google Play returns to the paid weekly Rashiphal after Android recreates the app', async () => {
+  const token = 'play-token-restored-weekly-forecast';
+  const selectedDate = new Date().toLocaleDateString('en-CA');
+  const contextId = `${selectedDate}-4`;
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'rashiphal_forecast_7d', formattedPrice: '₹9.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: token, products: ['rashiphal_forecast_7d'] }] }),
+    completePurchase: async input => input,
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.play.pending.v1:rashiphal_forecast_7d', contextId);
+  storage.setItem('jyotisha.play.resume.v1:rashiphal_forecast_7d', JSON.stringify({
+    contextId, createdAt: Date.now(), page: 'rashi', rashi: { selectedDate, rashiPick: 4 },
+  }));
+  const payments = { provider: 'google_play', products: { rashiphal_forecast_7d: { title: 'Personalized 7-day forecast', price_rs: 9 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play } }, payments });
+  await settle(); await settle(); await settle();
+  assert.equal(storage.getItem(`jyotisha.play.v1:rashiphal_forecast_7d:${contextId}`), '1');
+  assert.equal(storage.getItem('jyotisha.play.pending.v1:rashiphal_forecast_7d'), null);
+  assert.equal(app.element('top').children.find(item => item.id === 'page-rashi').hidden, false);
+  assert.ok(app.requests.some(request => request.url === '/api/day-panchang' && request.body.date === selectedDate));
+});
+
 test('the AI chat has no daily limit in a browser or when the chat switch is off', async () => {
   const ad = fakeRewardedAdMob();
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });

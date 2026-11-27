@@ -4124,9 +4124,63 @@
     } catch (_error) { /* purchase buttons retain their clearly labelled fallback INR prices */ }
   }
   const pendingContextKey = productId => `jyotisha.play.pending.v1:${productId}`;
+  const purchaseResumeKey = productId => `jyotisha.play.resume.v1:${productId}`;
+  function rememberPurchaseScreen(productId, contextId) {
+    const resume = { contextId, createdAt: Date.now(), page: currentPage };
+    // Google Play may briefly leave the app (and the phone can reclaim the WebView). Keep only the generated
+    // palm text, never the user's photo, so a paid reading can still be delivered after Android recreates us.
+    if (productId === 'palm_detailed' && palmState.reading) {
+      resume.palm = { hand: palmState.hand, reading: palmState.reading, status: palmState.status };
+    } else if (productId === 'rashiphal_forecast_7d') {
+      resume.rashi = { selectedDate: state.selectedDate, rashiPick: state.rashiPick || null };
+    }
+    try { window.localStorage.setItem(purchaseResumeKey(productId), JSON.stringify(resume)); } catch (_error) { /* optional recovery */ }
+  }
+  function clearPurchaseResume(productId) {
+    try { window.localStorage.removeItem(purchaseResumeKey(productId)); } catch (_error) { /* optional */ }
+  }
+  function resumePurchasedScreen(productId, contextId) {
+    let resume = null;
+    try { resume = JSON.parse(window.localStorage.getItem(purchaseResumeKey(productId)) || 'null'); } catch (_error) { resume = null; }
+    if (!resume || resume.contextId !== contextId || !Number.isFinite(resume.createdAt) || Date.now() - resume.createdAt > 86400000) {
+      clearPurchaseResume(productId); return;
+    }
+    if (productId === 'palm_detailed' && resume.palm && resume.palm.reading) {
+      palmState.hand = resume.palm.hand === 'left' ? 'left' : 'right';
+      palmState.reading = resume.palm.reading; palmState.status = resume.palm.status || 'ok';
+      palmState.step = 'result'; palmState.tab = 0; palmState.preview = null;
+      showPage('palm'); renderPalm();
+    } else if (productId === 'rashiphal_forecast_7d' && resume.rashi) {
+      state.rashiMode = 'week';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(resume.rashi.selectedDate || '')) state.selectedDate = resume.rashi.selectedDate;
+      if (Number.isInteger(resume.rashi.rashiPick) && resume.rashi.rashiPick >= 1 && resume.rashi.rashiPick <= 12) state.rashiPick = resume.rashi.rashiPick;
+      showPage('rashi'); renderRashi();
+    } else {
+      const pageByProduct = { dosha_remedies: 'kundli', kundli_complete: 'kundli', ai_questions_5: 'chat',
+        ai_action_plan_7d: 'chat', tarot_detailed: 'tarot', sign_match_full: 'signmatch',
+        partner_portrait: 'relationship', kundli_match_full: 'relationship' };
+      if (pageByProduct[productId]) showPage(pageByProduct[productId]);
+    }
+    clearPurchaseResume(productId);
+    showToast({ te: 'చెల్లింపు విజయవంతమైంది — మీ ఫలితం అన్‌లాక్ అయింది.', hi: 'भुगतान सफल रहा — आपका परिणाम अनलॉक हो गया है।', en: 'Payment successful — your result is unlocked.' }[state.lang] || 'Payment successful — your result is unlocked.');
+  }
+  async function verifyPlayPurchase(productId, purchaseToken, contextId) {
+    let checked = null;
+    // A new order can take a moment to appear in the Android Publisher API. Retrying here prevents a completed
+    // charge from being stranded just because the first verification request raced Google Play propagation.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try { checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: purchaseToken, context_id: contextId }); }
+      catch (_error) { checked = null; }
+      if (checked && checked.ok && checked.body && checked.body.status === 'ok') return checked;
+      if (attempt < 2) await wait(1000 * (attempt + 1));
+    }
+    return checked;
+  }
+  let restoringPlayPurchases = false;
   async function restorePlayPurchases() {
     const plugin = playPlugin();
-    if (!plugin || !plugin.restorePurchases || !state.payments || state.payments.provider !== 'google_play') return;
+    if (restoringPlayPurchases || !plugin || !plugin.restorePurchases || !state.payments || state.payments.provider !== 'google_play') return;
+    restoringPlayPurchases = true;
     try {
       const reply = await plugin.restorePurchases();
       for (const purchase of (reply && reply.purchases) || []) {
@@ -4135,25 +4189,31 @@
         let contextId = '';
         try { contextId = window.localStorage.getItem(pendingContextKey(productId)) || ''; } catch (_error) { /* cannot safely restore without its context */ }
         if (!contextId) continue;
-        const checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: purchase.purchaseToken, context_id: contextId });
-        if (checked.ok && checked.body && checked.body.status === 'ok') {
+        const checked = await verifyPlayPurchase(productId, purchase.purchaseToken, contextId);
+        if (checked && checked.ok && checked.body && checked.body.status === 'ok') {
           saveEntitlement(productId, contextId); await plugin.completePurchase({ purchaseToken: purchase.purchaseToken });
           try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
+          resumePurchasedScreen(productId, contextId);
         }
       }
-    } catch (_error) { /* retried on the next launch */ }
+    } catch (_error) { /* retried on the next launch or resume */ }
+    finally { restoringPlayPurchases = false; }
   }
+  // MainActivity calls this after returning from Google Play or a UPI app. The delay lets BillingClient deliver its
+  // normal callback first; restore is the safety net when Android recreated the activity and that callback was lost.
+  window.__jyotishaRestorePlayPurchases = () => { setTimeout(() => { void restorePlayPurchases(); }, 1200); };
   async function purchaseProduct(productId, contextId) {
     const plugin = playPlugin();
     if (!playBillingActive() || !plugin.purchase || !state.payments.products[productId]) return false;
     try {
       try { window.localStorage.setItem(pendingContextKey(productId), contextId); } catch (_error) { /* restoration may be unavailable */ }
+      rememberPurchaseScreen(productId, contextId);
       const account = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`jyotisha|${state.userName || ''}|${state.userDob || ''}`));
       const obfuscatedAccountId = Array.from(new Uint8Array(account)).map(byte => byte.toString(16).padStart(2, '0')).join('').slice(0, 64);
       const bought = await plugin.purchase({ productId, obfuscatedAccountId });
       if (!bought || !bought.purchaseToken) return false;
-      const checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: bought.purchaseToken, context_id: contextId });
-      if (!checked.ok || !checked.body || checked.body.status !== 'ok') return false;
+      const checked = await verifyPlayPurchase(productId, bought.purchaseToken, contextId);
+      if (!checked || !checked.ok || !checked.body || checked.body.status !== 'ok') return false;
       saveEntitlement(productId, contextId);
       await plugin.completePurchase({ purchaseToken: bought.purchaseToken });
       try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
@@ -4178,7 +4238,7 @@
       button.disabled = true;
       const ok = await purchaseProduct(productId, contextId);
       button.disabled = false;
-      if (ok && onUnlock) onUnlock();
+      if (ok) { if (onUnlock) onUnlock(); clearPurchaseResume(productId); }
     });
     card.appendChild(button); return card;
   }
@@ -4216,7 +4276,11 @@
     });
   }
   async function unlockGate(feature, promptText, startsFreeWindow, ask = true) {
-    if (feature === 'chat_bonus' && state.payments && state.payments.provider === 'google_play' && playPlugin()) return purchaseProduct('ai_questions_5', localIso(new Date()));
+    if (feature === 'chat_bonus' && state.payments && state.payments.provider === 'google_play' && playPlugin()) {
+      const bought = await purchaseProduct('ai_questions_5', localIso(new Date()));
+      if (bought) clearPurchaseResume('ai_questions_5');
+      return bought;
+    }
     if (state.payments && state.payments.key_id) {
       const price = feature === 'chat_bonus' ? state.payments.chat_bonus_rs : state.payments.unlock_rs;
       const choice = await legacyUnlockChooser(promptText || t('unlockPrompt'), price);

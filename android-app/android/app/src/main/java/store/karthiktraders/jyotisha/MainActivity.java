@@ -50,5 +50,8 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {   // Capacitor's BridgeActivity.onResume() is public; overriding it as protected fails to compile
         super.onResume();
         SystemBarsPlugin.hideStatusBar(getWindow());   // back from another app or the notification shade: hide it again
+        WebView web = getBridge() != null ? getBridge().getWebView() : null;
+        if (web != null) web.evaluateJavascript(
+                "window.__jyotishaRestorePlayPurchases && window.__jyotishaRestorePlayPurchases()", null);
     }
 }
