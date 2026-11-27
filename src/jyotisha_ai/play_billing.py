@@ -125,18 +125,29 @@ def verify(payload: object, visitor: str) -> dict:
         return {"status": "off"}
     token_hash = hashlib.sha256(purchase_token.encode()).hexdigest()
     owner = hashlib.sha256(("play-owner|" + visitor).encode()).hexdigest()[:24]
+    expected = {"owner": owner, "product_id": product_id, "context_id": context_id}
     with _lock:
         ledger = _read_ledger()
         existing = ledger.get(token_hash)
         if existing:
-            if existing == {"owner": owner, "product_id": product_id, "context_id": context_id}:
+            if existing == expected:
                 return {"status": "ok", "product_id": product_id, "context_id": context_id, "already_verified": True}
-            raise ValueError("this purchase was already used")
+            if not isinstance(existing, dict) or existing.get("product_id") != product_id:
+                raise ValueError("this purchase was already used")
+    # A reinstall changes the anonymous visitor cookie and may also recreate the screen context.  The purchase token
+    # remains available only through the purchasing Google account, so re-check it with Google before moving the
+    # unfinished entitlement to the current installation.  This is what lets an ITEM_ALREADY_OWNED purchase recover
+    # instead of permanently stranding paid content behind the unlock button.
     _google_purchase(product_id, purchase_token)
     with _lock:
         ledger = _read_ledger()
-        if token_hash in ledger:
+        current = ledger.get(token_hash)
+        if current and (not isinstance(current, dict) or current.get("product_id") != product_id):
             raise ValueError("this purchase was already used")
-        ledger[token_hash] = {"owner": owner, "product_id": product_id, "context_id": context_id}
+        recovered = bool(current)
+        ledger[token_hash] = expected
         _write_ledger(ledger)
-    return {"status": "ok", "product_id": product_id, "context_id": context_id, "already_verified": False}
+    return {
+        "status": "ok", "product_id": product_id, "context_id": context_id,
+        "already_verified": recovered, "recovered": recovered,
+    }
