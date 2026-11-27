@@ -4187,6 +4187,10 @@
     showToast(`${message}${reason ? ` (${reason})` : ''}`);
     return checked;
   }
+  async function completePlayPurchase(plugin, purchaseToken) {
+    try { await plugin.completePurchase({ purchaseToken }); return true; }
+    catch (_error) { return false; } // entitlement is already server-verified; restoration retries consumption later
+  }
   let restoringPlayPurchases = false;
   async function restorePlayPurchases() {
     const plugin = playPlugin();
@@ -4202,8 +4206,9 @@
         if (!contextId) continue;
         const checked = await verifyPlayPurchase(productId, purchase.purchaseToken, contextId);
         if (checked && checked.ok && checked.body && checked.body.status === 'ok') {
-          saveEntitlement(productId, contextId); await plugin.completePurchase({ purchaseToken: purchase.purchaseToken });
-          try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
+          saveEntitlement(productId, contextId);
+          const completed = await completePlayPurchase(plugin, purchase.purchaseToken);
+          if (completed) try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
           resumePurchasedScreen(productId, contextId);
         }
       }
@@ -4226,8 +4231,8 @@
       const checked = await verifyPlayPurchase(productId, bought.purchaseToken, contextId);
       if (!checked || !checked.ok || !checked.body || checked.body.status !== 'ok') return false;
       saveEntitlement(productId, contextId);
-      await plugin.completePurchase({ purchaseToken: bought.purchaseToken });
-      try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
+      const completed = await completePlayPurchase(plugin, bought.purchaseToken);
+      if (completed) try { window.localStorage.removeItem(pendingContextKey(productId)); } catch (_error) { /* optional */ }
       return true;
     } catch (_error) { return false; }
   }
