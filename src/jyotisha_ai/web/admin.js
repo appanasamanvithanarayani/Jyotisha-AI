@@ -483,6 +483,8 @@
   function monetization(view) {
     intro(view, 'Monetization', 'A consolidated view of ad delivery, paid unlock pricing and production readiness.', trendPicker());
     const ads = state.live.app_ads, pay = state.payments || {};
+    const providers = pay.providers || {};
+    const providerLabel = [providers.google_play && 'Google Play', providers.razorpay && 'Razorpay'].filter(Boolean).join(' + ') || 'Not configured';
     const adMetrics = (((state.analytics || {}).ad_periods || {})[trendRange] || {});
     const adCount = (format, event) => Number(((adMetrics[format] || {})[event]) || 0);
     const paymentMetrics = (((state.analytics || {}).payment_periods || {})[trendRange] || {});
@@ -490,7 +492,7 @@
     const tiles = el('div', 'tiles');
     tiles.append(tile('App advertising', ads ? 'On' : 'Off', ads ? 'on-text' : 'off-text', 'AdMob'),
       tile('Ad inventory', ads ? (ads.testing ? 'Test' : 'Live') : '—', '', 'AdMob'),
-      tile('Chat bonus', `₹${pay.chat_bonus_rs || 9}`, '', 'Razorpay'), tile('Reading unlock', `₹${pay.reading_unlock_rs || 9}`, '', 'Razorpay'));
+      tile('Chat bonus', `₹${pay.chat_bonus_rs || 9}`, '', providerLabel), tile('Reading unlock', `₹${pay.reading_unlock_rs || 9}`, '', providerLabel));
     view.appendChild(tiles);
     const delivery = el('div', 'panel'); delivery.append(el('h2', null, 'Ad viewing & delivery'),
       el('p', 'hint', 'Watched counts only rewarded ads where the ad SDK granted the reward. Requested counts attempts; shown/loaded counts SDK display callbacks.'));
@@ -509,8 +511,8 @@
       deliveryTable.appendChild(row);
     });
     deliveryWrap.appendChild(deliveryTable); delivery.appendChild(deliveryWrap); view.appendChild(delivery);
-    const paymentsPanel = el('div', 'panel'); paymentsPanel.append(el('h2', null, 'Razorpay payments'),
-      el('p', 'hint', 'Successful means the server verified Razorpay’s signature. Gross does not subtract fees or refunds and is not settlement status.'));
+    const paymentsPanel = el('div', 'panel'); paymentsPanel.append(el('h2', null, 'Verified payments'),
+      el('p', 'hint', 'Successful means the server verified the Razorpay signature or Google Play purchase token. Gross does not subtract fees, refunds, or taxes and is not settlement status.'));
     const paymentTiles = el('div', 'tiles');
     paymentTiles.append(tile('Verified gross', money(paymentMetrics.revenue_paise), '', trendLabel()),
       tile('Successful payments', paymentMetrics.successful || 0, '', trendLabel()),
@@ -520,7 +522,14 @@
     const paymentWrap = el('div', 'scroll'), paymentTable = el('table'), paymentHead = el('tr');
     ['Purchase', 'Orders', 'Successful', 'Failed', 'Verified gross'].forEach(label => paymentHead.appendChild(el('th', null, label)));
     paymentTable.appendChild(paymentHead);
-    [['chat_bonus', 'Extra AI questions'], ['unlock', 'Reading unlock']].forEach(([feature, label]) => {
+    const categoryNames = {
+      chat_bonus: 'Extra AI questions (Razorpay)', unlock: 'Reading unlock (Razorpay)',
+      dosha_remedies: 'Doshas + remedies', kundli_complete: 'Complete Kundli', ai_questions_5: '5 AI questions',
+      ai_action_plan_7d: 'AI 7-day plan', rashiphal_forecast_7d: 'Rashiphal 7-day forecast',
+      tarot_detailed: 'Detailed Tarot', palm_detailed: 'Detailed palm reading', sign_match_full: 'Full sign match',
+      partner_portrait: 'Partner portrait', kundli_match_full: 'Full Kundli match',
+    };
+    Object.entries(categoryNames).forEach(([feature, label]) => {
       const metric = ((paymentMetrics.features || {})[feature] || {}), row = el('tr');
       [label, metric.orders || 0, metric.successful || 0, metric.failed || 0, money(metric.revenue_paise)].forEach(value => row.appendChild(el('td', null, String(value))));
       paymentTable.appendChild(row);
@@ -531,7 +540,6 @@
     const transactionWrap = el('div', 'scroll'), transactionTable = el('table'), transactionHead = el('tr');
     ['When (UTC)', 'Transaction ID', 'User ID', 'Category', 'Amount'].forEach(label => transactionHead.appendChild(el('th', null, label)));
     transactionTable.appendChild(transactionHead);
-    const categoryNames = { chat_bonus: 'Extra AI questions', unlock: 'Reading unlock' };
     (paymentMetrics.transactions || []).forEach(transaction => {
       const row = el('tr'); [String(transaction.time || '').replace('T', ' '), transaction.id || '—', transaction.user_id || 'Unavailable',
         categoryNames[transaction.feature] || transaction.feature || 'Unknown', money(transaction.amount_paise)].forEach(value => row.appendChild(el('td', null, String(value))));
@@ -548,8 +556,10 @@
     statusLine(adList, 'Interstitial', !!(ads && ads.interstitial_id), ads && ads.interstitial_id ? 'Ad unit is configured' : 'No active interstitial');
     const payPanel = el('div', 'panel'); payPanel.append(el('h2', null, 'Payment readiness'), el('p', 'hint', 'Razorpay keys remain write-only.'));
     const payList = el('div', 'status-list'); payPanel.appendChild(payList);
-    statusLine(payList, 'Provider', !!pay.provider, pay.provider || 'No provider selected');
-    statusLine(payList, 'Checkout ready', !!pay.ready, pay.ready ? 'Key ID and secret are configured' : 'Complete provider and key configuration');
+    statusLine(payList, 'Google Play Billing', !!providers.google_play,
+      providers.google_play ? 'Products and server verification are ready' : (pay.google_play_selected ? 'Selected; add server verification credentials' : 'Off'));
+    statusLine(payList, 'Razorpay checkout', !!providers.razorpay,
+      providers.razorpay ? 'Key ID and secret are configured' : 'Off or incomplete');
     statusLine(payList, 'Extra questions', !!pay.ready, `₹${pay.chat_bonus_rs || 9} per bonus pack`);
     statusLine(payList, 'Single reading', !!pay.ready, `₹${pay.reading_unlock_rs || 9} per unlock`);
     grid.append(adPanel, payPanel); view.appendChild(grid);
@@ -566,7 +576,9 @@
     const imageProvider = state.settings.find(item => item.key === 'JYOTISHA_IMAGE_PROVIDER');
     statusLine(list, 'AI image provider', !!(imageProvider && imageProvider.value), imageProvider && imageProvider.value ? imageProvider.value : 'No image provider selected');
     statusLine(list, 'Firebase push', state.push.ready, state.push.ready ? state.push.project : 'Firebase service key not found');
-    statusLine(list, 'Razorpay checkout', state.payments.ready, state.payments.ready ? 'Payment signature verification enabled' : 'Payments unavailable');
+    const paymentProviders = state.payments.providers || {};
+    statusLine(list, 'Google Play Billing', !!paymentProviders.google_play, paymentProviders.google_play ? 'Purchase-token verification enabled' : 'Unavailable');
+    statusLine(list, 'Razorpay checkout', !!paymentProviders.razorpay, paymentProviders.razorpay ? 'Payment-signature verification enabled' : 'Unavailable');
     panel.appendChild(el('p', 'hint', `Settings data: ${state.server.data_dir}`)); view.appendChild(panel);
   }
 

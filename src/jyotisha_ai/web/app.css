@@ -432,6 +432,11 @@ body.page-chat #chat h2{padding-top:16px}
 .dosha-status{font-weight:800;font-size:.85rem;color:var(--good2)}
 .dosha-card.warn .dosha-status{color:#c25a12}
 .dosha-card p{margin:6px 0 0;font-size:.86rem;color:var(--ink)}
+.premium-offer,.premium-result{margin:14px 0;padding:16px;border:1px solid color-mix(in srgb,var(--saffron) 45%,var(--line));border-radius:18px;background:linear-gradient(145deg,color-mix(in srgb,var(--saffron) 10%,var(--surface)),var(--surface));box-shadow:0 8px 24px #4f25100d}
+.premium-offer h4,.premium-result h4{margin:0 0 6px;color:var(--ink)}
+.premium-offer p,.premium-result p{margin:5px 0 12px;color:var(--muted);font-size:.9rem}
+.premium-offer .palm-scan{margin:8px 0 0;width:100%}
+.chat-premium{margin:10px 4px;max-width:88%;align-self:flex-start}
 .relationship-score.match-excellent strong,.relationship-score.match-good strong{color:var(--good2)}
 .relationship-score.match-low strong{color:var(--bad2)}
 .dosha-flag{margin:8px 0 0;padding:8px 12px;border-radius:12px;background:#fff1e6;color:#9a4510;font-size:.84rem;font-weight:650}

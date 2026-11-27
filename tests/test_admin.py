@@ -90,7 +90,10 @@ def test_cookie_is_httponly_strict_and_header_is_required(panel):
 def test_admin_state_includes_safe_payment_status(panel):
     cookie = sign_in(panel)
     state = json.loads(call(panel, "GET", "/api/admin/state", cookie=cookie)[2])
-    assert state["payments"] == {"ready": False, "provider": None, "chat_bonus_rs": 9, "reading_unlock_rs": 9}
+    assert state["payments"] == {"ready": False, "provider": None,
+                                  "providers": {"google_play": False, "razorpay": False},
+                                  "google_play_selected": False,
+                                  "chat_bonus_rs": 9, "reading_unlock_rs": 9}
     assert "RAZORPAY_KEY_SECRET" not in json.dumps(state["payments"])
 
 

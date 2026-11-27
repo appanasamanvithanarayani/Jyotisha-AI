@@ -55,7 +55,7 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_REWARDED_NUMBERS", "Android app ads", "Watch an ad to work out Numerology for new details", "Shown for the date of birth saved on the phone; the 'Show my numbers' button for a new person plays a rewarded ad.", "bool", "0"),
     Setting("JYOTISHA_REWARDED_CHAT", "Android app ads", "Watch an ad for more AI questions", "Gives free AI questions a day, then a rewarded ad buys more.", "bool", "0"),
     Setting("JYOTISHA_ADMOB_REWARDED_ID", "Android app ads", "Rewarded ad unit ID", "From AdMob. Leave empty to use Google's test rewarded ad.", "pattern", "", pattern=UNIT_ID, example="ca-app-pub-1234567890123456/1234567890"),
-    Setting("JYOTISHA_CHAT_FREE_QUESTIONS", "Android app ads", "Free AI questions per day", "Per phone, before an ad is needed.", "int", "10", minimum=1, maximum=100),
+    Setting("JYOTISHA_CHAT_FREE_QUESTIONS", "Android app ads", "Free AI questions per day", "Per phone, before a paid five-question pack is needed.", "int", "3", minimum=1, maximum=100),
     Setting("JYOTISHA_CHAT_BONUS_QUESTIONS", "Android app ads", "Extra questions per ad watched", "", "int", "5", minimum=1, maximum=100),
     Setting("JYOTISHA_ONBOARDING_ADS", "Android app ads", "Full-screen ads in the welcome steps", "One full-screen ad after the opening screen and one after the name and birth-date step (first start only).", "bool", "1"),
     Setting("JYOTISHA_ONBOARDING_BANNER", "Android app ads", "Ad box on the language and birth-date steps", "A 300 x 250 ad under the language list and the date-of-birth wheels on the first start (uses the banner ad unit).", "bool", "1"),
@@ -92,7 +92,10 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("JYOTISHA_ASK_PER_VISITOR_MINUTE", "AI chat", "AI questions per visitor per minute", "Slows down automated use.", "int", "8", minimum=1, maximum=1000),
     Setting("GEMINI_API_KEY", "API keys", "Gemini API key", "Write-only: once saved it is shown only as the last four characters.", "secret"),
     Setting("ANTHROPIC_API_KEY", "API keys", "Anthropic (Claude) API key", "Write-only, like the Gemini key.", "secret"),
-    # ---- Payments (an alternative to watching an ad; off until a provider is chosen and its keys are set)
+    # ---- Google Play one-time products. Server verification uses a service-account JSON supplied as an environment
+    # variable/path; it is deliberately not pasted into the admin UI or sent to the app.
+    Setting("JYOTISHA_PLAY_BILLING", "Payments", "Enable Google Play purchases", "For the Android app, prefer Google Play Billing when its products and server verification credentials are ready. Razorpay remains configured for web checkout and as a fallback until Play is fully ready.", "bool", "0"),
+    # ---- Razorpay remains available when Google Play Billing is switched off.
     Setting("JYOTISHA_PAYMENTS_PROVIDER", "Payments", "Payment provider", "Lets users pay a small amount instead of watching an ad, for extra AI questions or a single reading unlock. Off (empty) until you add the keys below and choose a provider; no card or UPI details ever reach this server, only Razorpay's own signed confirmation.", "choice", "", choices=("", "razorpay")),
     Setting("RAZORPAY_KEY_ID", "Payments", "Razorpay Key ID", "From your Razorpay dashboard (Settings -> API Keys). Safe to use in the app itself.", "pattern", "", pattern=r"rzp_(live|test)_[A-Za-z0-9]{10,}", example="rzp_live_abcdEFGH1234"),
     Setting("RAZORPAY_KEY_SECRET", "Payments", "Razorpay Key Secret", "Write-only, like the AI provider keys. Never shown to users or sent to the browser.", "secret"),
@@ -399,7 +402,11 @@ FEATURE_TYPES = ("home", "research_chart", "kundli", "panchang", "calendar", "fe
                  "palm", "partner_portrait", "numerology", "sign_match", "doshas", "dasha", "rating", "payments")
 AD_FORMATS = ("banner", "interstitial", "rewarded")
 AD_EVENTS = ("requested", "shown", "rewarded", "dismissed", "failed")
-PAYMENT_FEATURES = ("chat_bonus", "unlock")
+PAYMENT_FEATURES = (
+    "chat_bonus", "unlock", "dosha_remedies", "kundli_complete", "ai_questions_5", "ai_action_plan_7d",
+    "rashiphal_forecast_7d", "tarot_detailed", "palm_detailed", "sign_match_full", "partner_portrait",
+    "kundli_match_full",
+)
 PAYMENT_EVENTS = ("orders", "successful", "failed")
 
 
@@ -542,7 +549,7 @@ class Analytics:
 
     def payment_event(self, visitor: str, feature: str, event: str, amount_paise: int = 0,
                       payment_id: str = "") -> bool:
-        """Record aggregate Razorpay events; successful payment IDs are one-way hashed and counted only once."""
+        """Record aggregate payment events; successful provider references are one-way hashed and counted once."""
         if feature not in PAYMENT_FEATURES or event not in PAYMENT_EVENTS:
             return False
         amount = max(0, min(int(amount_paise), 99_900))

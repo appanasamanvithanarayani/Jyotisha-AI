@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { webcrypto } = require('node:crypto');
 require('./load-locales.cjs');
 
 const root = path.join(__dirname, '..', 'src', 'jyotisha_ai', 'web');
@@ -131,6 +132,7 @@ function boot(setup = {}) {
     if (url === '/api/partner-portrait') { (setup.partnerPortraitRequests || (setup.partnerPortraitRequests = [])).push(JSON.parse(options.body)); return reply(setup.partnerPortrait || { status: 'off', image: null }); }
     if (url === '/api/payment/create-order') { (setup.paymentOrders || (setup.paymentOrders = [])).push(JSON.parse(options.body)); return reply(setup.paymentOrder || { status: 'ok', order_id: 'order_test', amount: 900, currency: 'INR', key_id: 'rzp_test_abc' }); }
     if (url === '/api/payment/verify') { (setup.paymentVerifies || (setup.paymentVerifies = [])).push(JSON.parse(options.body)); return reply(setup.paymentVerify || { status: 'ok', feature: JSON.parse(options.body).feature }); }
+    if (url === '/api/play-purchase/verify') { (setup.playVerifies || (setup.playVerifies = [])).push(JSON.parse(options.body)); return reply(setup.playVerify || { status: 'ok', product_id: JSON.parse(options.body).product_id }); }
     if (url === '/api/month-calendar') return reply(month);
     if (url === '/api/day-panchang') return reply({ day: { ...day, ...(setup.dayExtra || {}), date: JSON.parse(options.body).date } });
     if (url === '/api/birth-chart') return reply(setup.birth || {});
@@ -138,7 +140,7 @@ function boot(setup = {}) {
     return reply({ suggestions: [] });
   };
   const context = {
-    document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {},
+    document, fetch, Intl, Date, console, setTimeout, clearTimeout, navigator: setup.navigator || {}, FormData: class {}, crypto: webcrypto, TextEncoder,
     window: { JyotishaCalendar: calendar, JyotishaPanchangNames: names, JyotishaChart: chart, matchUI: match, JyotishaNudges: nudges, JyotishaArt: art, JyotishaNumerology: numerologyTool, scrollTo() {}, history: setup.history, addEventListener: setup.windowEvents ? (name, fn) => { setup.windowEvents[name] = fn; } : undefined, localStorage: setup.storage, Capacitor: setup.capacitor, confirm: setup.confirm, matchMedia: () => ({ matches: false }), Razorpay: setup.razorpay },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
@@ -1646,11 +1648,12 @@ test('after the free AI questions of the day, a rewarded ad buys more; declining
 test('after the free AI questions, paying instead of watching an ad also buys more, once payments are configured', async () => {
   const ad = fakeRewardedAdMob();
   const rz = fakeRazorpay('success');
+  const disabledPlay = { purchase: async () => { throw new Error('Google Play must stay off for Razorpay config'); } };
   const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
   storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
   const config = { enabled: true, banner_id: rewardedConfig.banner_id, testing: true, rewarded_id: rewardedConfig.rewarded_id, chat_free_questions: 1, chat_bonus_questions: 3 };
   const payments = { key_id: 'rzp_test_abc', chat_bonus_rs: 9, unlock_rs: 9 };
-  const app = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin } }, appAds: config, payments, razorpay: rz.Razorpay, assistant: true, birth: syntheticBirth });
+  const app = boot({ storage, capacitor: { Plugins: { AdMob: ad.plugin, PlayBilling: disabledPlay } }, appAds: config, payments, razorpay: rz.Razorpay, assistant: true, birth: syntheticBirth });
   await settle();
   const aiRequests = () => app.requests.filter(r => r.url === '/api/ask').length;
   await typeInChat(app, 'will my business grow');
@@ -1665,6 +1668,37 @@ test('after the free AI questions, paying instead of watching an ad also buys mo
   assert.deepEqual(app.requests.find(r => r.url === '/api/payment/create-order').body, { feature: 'chat_bonus' });
   assert.equal(aiRequests(), 2);
   assert.equal(ad.calls.filter(c => c[0] === 'showRewardVideoAd').length, 0);
+});
+
+test('Google Play can buy the five-question pack while Razorpay code remains available', async () => {
+  const calls = [];
+  const ad = fakeRewardedAdMob();
+  const play = {
+    getProducts: async ({ productIds }) => { calls.push(['getProducts', productIds]); return { products: [{ productId: 'ai_questions_5', formattedPrice: '₹9.00' }] }; },
+    restorePurchases: async () => ({ purchases: [] }),
+    purchase: async input => { calls.push(['purchase', input.productId]); return { purchaseToken: 'play-token-abcdefghijklmnopqrstuvwxyz', products: [input.productId] }; },
+    completePurchase: async input => { calls.push(['complete', input.purchaseToken]); return input; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const config = { enabled: true, banner_id: rewardedConfig.banner_id, testing: true, rewarded_id: rewardedConfig.rewarded_id, chat_free_questions: 1, chat_bonus_questions: 5 };
+  const payments = { provider: 'google_play', products: { ai_questions_5: { title: '5 additional AI questions', price_rs: 9 } }, key_id: 'rzp_test_still_available', chat_bonus_rs: 9, unlock_rs: 9 };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play, AdMob: ad.plugin } }, appAds: config, payments, assistant: true, birth: syntheticBirth });
+  await settle(); await settle();
+  await typeInChat(app, 'will my business grow');
+  await typeInChat(app, 'what about money');
+  await typeInChat(app, 'what about health');
+  await typeInChat(app, 'what is my next step');
+  await settle();
+  assert.equal(app.requests.filter(r => r.url === '/api/ask').length, 4);
+  const verification = app.requests.find(r => r.url === '/api/play-purchase/verify');
+  assert.ok(verification, JSON.stringify({ calls, requests: app.requests.map(request => request.url) }));
+  assert.deepEqual(verification.body, {
+    product_id: 'ai_questions_5', purchase_token: 'play-token-abcdefghijklmnopqrstuvwxyz', context_id: new Date().toLocaleDateString('en-CA'),
+  });
+  assert.ok(calls.some(call => call[0] === 'purchase' && call[1] === 'ai_questions_5'));
+  assert.ok(calls.some(call => call[0] === 'complete'));
+  assert.ok(!app.requests.some(r => r.url === '/api/payment/create-order'));
 });
 
 test('the AI chat has no daily limit in a browser or when the chat switch is off', async () => {

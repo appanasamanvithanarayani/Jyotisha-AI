@@ -1268,6 +1268,20 @@ def test_payments_are_off_by_default_and_appear_in_readiness_once_configured(loc
     assert payments()["unlock_rs"] == 14
 
 
+def test_google_play_and_razorpay_can_be_published_together(monkeypatch):
+    monkeypatch.setattr(webapp.play_billing, "enabled", lambda: True)
+    monkeypatch.setattr(webapp.play_billing, "public_config", lambda: {
+        "provider": "google_play", "products": {"tarot_detailed": {"price_rs": 5}}
+    })
+    monkeypatch.setattr(webapp.payments, "enabled", lambda: True)
+    monkeypatch.setattr(webapp.payments, "key_id", lambda: "rzp_test_abc123")
+    monkeypatch.setattr(webapp.payments, "price_paise", lambda feature: {"chat_bonus": 900, "unlock": 700}[feature])
+    assert webapp._payments_config() == {
+        "provider": "google_play", "products": {"tarot_detailed": {"price_rs": 5}},
+        "key_id": "rzp_test_abc123", "chat_bonus_rs": 9, "unlock_rs": 7,
+    }
+
+
 def test_payment_endpoints_create_a_real_order_and_verify_the_signature(local_server, monkeypatch):
     import io
     monkeypatch.setenv("JYOTISHA_PAYMENTS_PROVIDER", "razorpay")
