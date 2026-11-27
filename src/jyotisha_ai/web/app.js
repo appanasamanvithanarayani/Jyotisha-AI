@@ -240,6 +240,7 @@
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
         details: 'Planet-by-planet details', transitGood: 'Favourable', transitCare: 'Take care', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see today’s reading.',
         unlock: '▶ See today’s reading', unlockNote: 'Watch one short ad to open today’s Rashiphal for all signs.',
+        weekTease: '✨ Curious what this whole week holds for you?', weekTeaseButton: 'See my 7-day forecast',
         luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis · Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
@@ -335,6 +336,7 @@
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
         details: 'గ్రహాల వారీగా వివరాలు', transitGood: 'అనుకూలం', transitCare: 'జాగ్రత్త', jump: { transits: 'గ్రహ సంచారం', remedies: 'పరిహారాలు', full: 'పూర్తి జాతకం', ask: 'AIని అడగండి' }, hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
         unlock: '▶ నేటి రాశిఫలం చూడండి', unlockNote: 'ఒక చిన్న యాడ్ చూస్తే ఈరోజు అన్ని రాశుల ఫలాలు తెరుచుకుంటాయి.',
+        weekTease: '✨ ఈ వారం మీకు ఎలా ఉంటుందో తెలుసుకోవాలని ఉందా?', weekTeaseButton: 'నా 7-రోజుల ఫలితం చూడండి',
         luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
@@ -430,6 +432,7 @@
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
         details: 'ग्रह-वार विवरण', transitGood: 'अनुकूल', transitCare: 'सावधानी', jump: { transits: 'ग्रह गोचर', remedies: 'उपाय', full: 'पूरी कुंडली', ask: 'AI से पूछें' }, hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
         unlock: '▶ आज का राशिफल देखें', unlockNote: 'एक छोटा विज्ञापन देखें, आज सभी राशियों का राशिफल खुल जाएगा।',
+        weekTease: '✨ जानना चाहते हैं कि यह हफ़्ता आपके लिए कैसा रहेगा?', weekTeaseButton: 'मेरा 7-दिन का फलादेश देखें',
         luckyTitle: 'शुभ संकेत', luckyDay: 'रंग और दिशा: आज सभी राशियों के लिए एक · अंक: आपकी राशि के लिए', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
@@ -863,9 +866,11 @@
       if (art && art[extra.art || key]) picture.innerHTML = art[extra.art || key](); else picture.textContent = extra.emoji || '✨';
       button.append(picture, el('b', null, title), el('small', null, sub));
       if (extra.badge) button.appendChild(el('span', 'art-badge', extra.badge));
+      if (extra.premium) button.appendChild(el('span', 'premium-badge', '✨'));   // a quiet cue that something special is behind this card
       button.addEventListener('click', onClick);
       return button;
     };
+    const premium = playBillingActive();   // which home cards hint at a paid add-on, so curiosity works even before opening the page
     const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
     const sections = text.sections || TOOLS_COPY.en.sections;
     const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
@@ -873,17 +878,17 @@
     $('tool-grid').replaceChildren(
       section(sections.chart, [
         card('lifeguide', lgCopy().card[0], lgCopy().card[1], openLifeGuide, { badge: text.daily || TOOLS_COPY.en.daily }),
-        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily, premium }),
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign),
-        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'))]),
+        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'), { premium: premium && !!state.chart })]),
       section(sections.palm || TOOLS_COPY.en.sections.palm, [
-        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
-        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
+        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm, { premium }),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot, { premium }),
         card('numerology', numCopy().card[0], numberLine() || numCopy().card[1], openNumerology)]),
       section(sections.love, [
-        card('match', copy.match[0], copy.match[1], open('relationship')),
-        card('signmatch', smCopy().card[0], smCopy().card[1], openSignMatch),
-        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
+        card('match', copy.match[0], copy.match[1], open('relationship'), { premium }),
+        card('signmatch', smCopy().card[0], smCopy().card[1], openSignMatch, { premium }),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'), { premium: premium && !!state.chart })]),
       section(sections.time, [
         // Today's Panchang first, so it is seen without swiping.
         card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang),
@@ -3342,10 +3347,22 @@
     spot.card.open = true;                       // the details card is folded; open it, then scroll to the section
     try { spot[name].scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* older browsers */ }
   }
+  const weekForecastContext = () => `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
+  function weekForecastTease() {
+    if (!playBillingActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return null;
+    const copy = toolText().rashi || TOOLS_COPY.en.rashi, card = el('section', 'premium-offer week-tease');
+    card.append(el('p', null, copy.weekTease || TOOLS_COPY.en.rashi.weekTease));
+    const button = el('button', 'palm-scan', `${copy.weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton} · ${productPrice('rashiphal_forecast_7d')}`);
+    button.type = 'button';
+    button.addEventListener('click', () => { state.rashiMode = 'week'; renderRashi(); });
+    card.appendChild(button);
+    return card;
+  }
   function renderRashiDay() {
     const day = state.day;
     if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
     $('rashi-moon').textContent = `${calendarUI.formatDate(state.lang, day.date, 'full')} · ${t('moonsign')}: ${signName(day.moon_rashi[0].index)}`;
+    const tease = weekForecastTease(); if (tease) $('rashi-list').appendChild(tease);
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     const detail = chartUI.gocharaOutlook(day, state.lang), moonCards = chartUI.rashiOutlook(day, state.lang);
     for (const item of moonCards) {
@@ -3395,7 +3412,7 @@
   }
   function renderRashiWeek() {
     const key = `${state.city}|${state.selectedDate}`;
-    const forecastContext = `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
+    const forecastContext = weekForecastContext();
     if (!contentUnlocked('rashiphal_forecast_7d', forecastContext)) {
       $('rashi-moon').textContent = t('viewWeek');
       const offer = premiumOffer('rashiphal_forecast_7d', forecastContext, renderRashi); if (offer) $('rashi-list').appendChild(offer);
@@ -3472,7 +3489,11 @@
     $('rashi-reading').replaceChildren();
     renderRashiPicker();
     $('rashi-title').textContent = t('rashiphal');
-    document.querySelectorAll('#rashi-mode button').forEach(button => button.classList.toggle('on', button.dataset.rmode === state.rashiMode));
+    const weekTeasing = playBillingActive() && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext());
+    document.querySelectorAll('#rashi-mode button').forEach(button => {
+      button.classList.toggle('on', button.dataset.rmode === state.rashiMode);
+      if (button.dataset.rmode === 'week') button.classList.toggle('tease', weekTeasing);
+    });
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');

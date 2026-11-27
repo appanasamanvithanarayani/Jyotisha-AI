@@ -1022,6 +1022,51 @@ test('Rashiphal life areas: a plain word always goes with the colour, and an old
   assert.match(old1.children[0].textContent, / — (?:Favorable|Mixed|Needs care)\. /);
 });
 
+test('with Play Billing on, Home cards for every paid add-on carry a quiet ✨ cue, even before the user opens them', async () => {
+  const payments = { provider: 'google_play', products: {
+    rashiphal_forecast_7d: { price_rs: 9 }, palm_detailed: { price_rs: 5 }, tarot_detailed: { price_rs: 5 },
+    partner_portrait: { price_rs: 3 }, sign_match_full: { price_rs: 3 }, dosha_remedies: { price_rs: 9 }, kundli_complete: { price_rs: 19 },
+  } };
+  const play = { getProducts: async () => ({ products: [] }), restorePurchases: async () => ({ purchases: [] }) };
+  const hasPremiumBadge = card => card.children.some(child => child.className === 'premium-badge');
+
+  const withoutChart = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), payments, capacitor: { Plugins: { PlayBilling: play } } });
+  await settle(); await settle();
+  for (const title of ['Rashiphal', 'Palm reading', 'Tarot', 'Kundli matching', 'Sign match']) assert.ok(hasPremiumBadge(homeCard(withoutChart, title)), `${title} should hint at its paid add-on`);
+  assert.ok(!hasPremiumBadge(homeCard(withoutChart, 'Moon sign')), 'a card with no paid add-on stays plain');
+  assert.ok(!hasPremiumBadge(homeCard(withoutChart, 'Doshas')), 'without a Kundli yet, the free Kundli nudge is the only call to action, not a premium cue');
+
+  const chartStorage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  chartStorage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const withChart = boot({ storage: chartStorage, payments, capacitor: { Plugins: { PlayBilling: play } }, birth: syntheticBirth });
+  await settle(); await settle();
+  assert.ok(hasPremiumBadge(homeCard(withChart, 'Doshas')), 'once a Kundli exists, its paid add-on gets the same cue');
+  assert.ok(hasPremiumBadge(homeCard(withChart, 'Dasha periods')));
+
+  const billingOff = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
+  await settle();
+  assert.ok(!hasPremiumBadge(homeCard(billingOff, 'Palm reading')), 'with Play Billing off, no payment cue is shown at all');
+});
+
+test('a curiosity nudge toward the paid weekly forecast appears on the Day view and leads straight to it', async () => {
+  const payments = { provider: 'google_play', products: { rashiphal_forecast_7d: { title: 'Personalized 7-day forecast', price_rs: 9 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'rashiphal_forecast_7d', formattedPrice: '₹9.00' }] }), restorePurchases: async () => ({ purchases: [] }) };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } } });
+  await settle(); await settle();
+  homeCard(app, 'Rashiphal').listeners.click();
+  await settle();
+  app.element('rashi-picker').children[0].listeners.click();   // picking a sign is what fills in the day view
+  await settle();
+  const tease = app.element('rashi-list').children.find(item => /\bweek-tease\b/.test(item.className));
+  assert.ok(tease, 'the Day view offers a nudge toward the paid weekly forecast, so a user who never opens Week still learns it exists');
+  assert.match(tease.children[0].textContent, /this whole week/);
+  tease.children[1].listeners.click();   // the nudge button jumps straight to the Week tab, where the real purchase offer lives
+  await settle();
+  const offer = app.element('rashi-list').children.find(item => item.className === 'premium-offer');
+  assert.ok(offer, 'tapping the nudge switches straight to Week and shows the purchase offer there');
+});
+
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
   const app = boot();
   await enter(app, 'en');
