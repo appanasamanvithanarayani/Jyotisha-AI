@@ -4165,16 +4165,20 @@
     showToast({ te: 'చెల్లింపు విజయవంతమైంది — మీ ఫలితం అన్‌లాక్ అయింది.', hi: 'भुगतान सफल रहा — आपका परिणाम अनलॉक हो गया है।', en: 'Payment successful — your result is unlocked.' }[state.lang] || 'Payment successful — your result is unlocked.');
   }
   async function verifyPlayPurchase(productId, purchaseToken, contextId) {
-    let checked = null;
+    let checked = null, verificationReason = '';
     // A new order can take a moment to appear in the Android Publisher API. Retrying here prevents a completed
     // charge from being stranded just because the first verification request raced Google Play propagation.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try { checked = await post('/api/play-purchase/verify', { product_id: productId, purchase_token: purchaseToken, context_id: contextId }); }
       catch (_error) { checked = null; }
       if (checked && checked.ok && checked.body && checked.body.status === 'ok') return checked;
+      const latestReason = checked && checked.body && checked.body.error ? String(checked.body.error) : '';
+      // A final 429 must not hide the useful verification error returned by an earlier attempt.
+      if (latestReason && (!verificationReason || !latestReason.toLowerCase().includes('too many requests'))) verificationReason = latestReason;
+      if (checked && checked.status === 429) break;
       if (attempt < 2) await wait(1000 * (attempt + 1));
     }
-    const reason = checked && checked.body && checked.body.error ? String(checked.body.error) : '';
+    const reason = verificationReason || (checked && checked.body && checked.body.error ? String(checked.body.error) : '');
     const message = {
       te: 'మీ చెల్లింపు Google Playలో ఉంది, కానీ సర్వర్ verification పూర్తికాలేదు. మళ్లీ payment చేయకండి.',
       hi: 'आपका भुगतान Google Play में है, लेकिन server verification पूरा नहीं हुआ। दोबारा payment न करें।',
