@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SystemBarsPlugin.class);   // status bar hidden; navigation bar colour follows the app's look
         registerPlugin(PlayBillingPlugin.class);
         super.onCreate(savedInstanceState);
+        if (getBridge() != null) getBridge().setWebViewClient(new PaymentWebViewClient(getBridge(), this));   // UPI apps in Razorpay Checkout
         SystemBarsPlugin.hideStatusBar(getWindow());   // applied here too so it never flashes in before the first JS call
         ShortcutsPlugin.handleIntent(getIntent());   // the app was opened from a Shortcuts button
         // The phone's Back button goes back through the app's own screens; only on the first screen does it close

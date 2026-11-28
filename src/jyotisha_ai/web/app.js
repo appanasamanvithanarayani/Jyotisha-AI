@@ -4450,7 +4450,7 @@
       await ensureRazorpayScript();
       const order = made.body;
       return await new Promise(resolve => {
-        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
+        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat', ...razorpayAppOptions(),
           handler: async response => {
             try {
               const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, product_id: productId, context_id: contextId });
@@ -4514,6 +4514,9 @@
     });
     card.appendChild(button); return card;
   }
+  // Inside the Android app Razorpay Checkout runs in a WebView, where it only lists UPI apps (GPay, PhonePe, Paytm…)
+  // when asked to; the app then opens the UPI app's link itself (MainActivity).
+  const razorpayAppOptions = () => (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? { webview_intent: true } : {});
   let razorpayScript = null;
   function ensureRazorpayScript() {
     if (window.Razorpay) return Promise.resolve();
@@ -4530,7 +4533,7 @@
       await ensureRazorpayScript();
       return await new Promise(resolve => {
         const order = made.body;
-        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
+        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat', ...razorpayAppOptions(),
           handler: async response => { try { const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, feature }); resolve(verified.ok && verified.body && verified.body.status === 'ok'); } catch (_error) { resolve(false); } },
           modal: { ondismiss: () => resolve(false) } });
         checkout.open();

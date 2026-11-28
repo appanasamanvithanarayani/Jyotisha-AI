@@ -1748,6 +1748,28 @@ function fakeRazorpay(outcome) {
   return { Razorpay, calls };
 }
 
+test('Razorpay Checkout asks for the UPI app list only inside the Android app, where the WebView needs it', async () => {
+  const open = async native => {
+    const ad = fakeRewardedAdMob(), rz = fakeRazorpay('success');
+    const payments = { key_id: 'rzp_test_abc', chat_bonus_rs: 9, unlock_rs: 9 };
+    const capacitor = { Plugins: { AdMob: ad.plugin } };
+    const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }), capacitor,
+      appAds: resultsConfig, payments, razorpay: rz.Razorpay, tarot: { status: 'ok', reading: { past: 'P.', present: 'Pr.', future: 'F.', advice: 'A.' } } });
+    await settle(); await settle();
+    homeCard(app, 'Tarot').listeners.click();
+    app.element('tarot').children[2].children[0].listeners.click();
+    for (const n of [0, 1, 2]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+    app.element('tarot').children.find(item => /reward-btn/.test(item.className)).listeners.click();
+    await settle();
+    if (native) capacitor.isNativePlatform = () => true;   // the flag is read when checkout opens
+    app.context.document.body.children.find(item => item.className === 'update-popup').children[0].children[1].children[0].listeners.click();   // Pay instead
+    await settle(); await settle();
+    return rz.calls[0];
+  };
+  assert.equal((await open(true)).webview_intent, true, 'in the Android app: show GPay, PhonePe, Paytm and other UPI apps');
+  assert.equal((await open(false)).webview_intent, undefined, 'in a normal browser Razorpay handles UPI by itself');
+});
+
 test('"▶ See my reading": once payments are configured, a chooser offers "pay instead" alongside the free ad, and a real order is verified before unlocking', async () => {
   const ad = fakeRewardedAdMob();
   const rz = fakeRazorpay('success');

@@ -1,5 +1,6 @@
 """Local app interface tests with synthetic requests; not astronomy validation."""
 
+import html
 import base64
 import http.client
 import json
@@ -1051,6 +1052,20 @@ def test_refund_policy_is_public_and_has_clear_timelines(local_server, monkeypat
     assert b"refunds@example.com" in body and b"7 calendar days" in body and b"5 business days" in body
     assert b"{{CONTACT}}" not in body and b"{{DEVELOPER}}" not in body
     assert b'href="/privacy"' in body
+
+
+def test_pricing_page_lists_every_paid_item_at_its_real_price(local_server, monkeypatch):
+    monkeypatch.setenv("JYOTISHA_DEVELOPER", "Example Operator")
+    monkeypatch.setenv("JYOTISHA_CONTACT", "help@example.com")
+    monkeypatch.setenv("JYOTISHA_PRICE_UNLOCK_RS", "12")
+    status, headers, body = request(local_server, "GET", "/pricing")
+    page = body.decode("utf-8")
+    assert status == 200 and headers["Content-Type"] == "text/html; charset=utf-8"
+    for product in webapp.play_billing.PRODUCTS.values():   # the same catalogue the app sells from
+        assert f"{html.escape(product['title'])}</td><td class=\"price\">₹{product['price_rs']}" in page
+    assert "Unlock one reading (instead of watching an ad)</td><td class=\"price\">₹12" in page
+    assert "Example Operator" in page and "help@example.com" in page and "{{" not in page
+    assert 'href="/refund"' in page and 'href="/privacy"' in page
 
 
 def test_app_ads_switch_defaults_off_and_turns_on_with_test_or_real_banner_ids(local_server, monkeypatch):
