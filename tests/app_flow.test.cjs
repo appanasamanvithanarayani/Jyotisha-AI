@@ -1092,7 +1092,31 @@ test('a pop-up toward the paid weekly forecast appears while someone is actually
   assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'tapping its button dismisses the pop-up');
   // It only shows once per day, remembered the same way every other once-a-day nudge in this app is.
   const today = new Date(); const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  assert.equal(storage.getItem('jyotisha.week-popup.v1'), iso);
+  assert.equal(storage.getItem('jyotisha.engage-popup.v1:week'), iso);
+});
+
+test('the same engagement pop-up pattern nudges toward the paid detailed Palm reading while someone is reading their result', async () => {
+  const reading = { heart: 'H.', head: 'He.', life: 'L.', fate: 'F.', summary: 'S.' };
+  const payments = { provider: 'google_play', products: { palm_detailed: { title: 'Detailed palm guidance', price_rs: 5 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'palm_detailed', formattedPrice: '₹5.00' }] }), purchase: async () => ({ purchaseToken: 'token-palm-tease' }), completePurchase: async () => true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } }, palm: { status: 'ok', reading } });
+  await settle(); await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change(); await settle(); await settle();
+  assert.ok(app.element('palmread').children.some(item => item.className === 'premium-offer'), 'the static offer is there, same as before');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds of reading the palm result, the pop-up appears');
+  assert.match(popup.children[1].textContent, /Heart and Fate lines/);
+  popup.children[2].listeners.click();   // its button buys the add-on directly
+  await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'palm_detailed'));
+  assert.ok(!app.element('palmread').children.some(item => item.className === 'premium-offer'), 'bought: the offer is gone and the full reading shows');
 });
 
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {

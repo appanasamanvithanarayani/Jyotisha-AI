@@ -282,7 +282,8 @@
         cam: { hint: 'Place your open palm inside the outline', dark: 'Too dark. Move to brighter light and press again.', gallery: 'Choose a photo', close: 'Close', snap: 'Take photo' }, tabs: ['Palm', 'Love', 'Career'], lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
         ready: 'Your palm photo is ready.', see: '▶ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
         askQ: 'My palm reading says: “{summary}” What should I focus on now?',
-        rekhaNote: 'These lines are the AI’s best guess from your photo, shown as a guide — not an exact trace.' },
+        rekhaNote: 'These lines are the AI’s best guess from your photo, shown as a guide — not an exact trace.',
+        tease: '✨ Curious what your Heart and Fate lines reveal?', teaseButton: 'See my full palm reading' },
       tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
         topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
@@ -378,7 +379,8 @@
         cam: { hint: 'మీ తెరిచిన అరచేతిని అవుట్‌లైన్ లోపల ఉంచండి', dark: 'చాలా చీకటిగా ఉంది. ఎక్కువ వెలుతురులోకి వెళ్లి మళ్లీ నొక్కండి.', gallery: 'ఫోటో ఎంచుకోండి', close: 'మూసివేయండి', snap: 'ఫోటో తీయండి' }, tabs: ['హస్తం', 'ప్రేమ', 'ఉద్యోగం'], lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
         ready: 'మీ అరచేయి ఫోటో సిద్ధం.', see: '▶ నా రీడింగ్ చూడండి', again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
         askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?',
-        rekhaNote: 'ఈ గీతలు మీ ఫోటో నుండి AI అంచనా వేసినవి, మార్గదర్శనం కోసం మాత్రమే — ఖచ్చితమైన రేఖలు కావు.' },
+        rekhaNote: 'ఈ గీతలు మీ ఫోటో నుండి AI అంచనా వేసినవి, మార్గదర్శనం కోసం మాత్రమే — ఖచ్చితమైన రేఖలు కావు.',
+        tease: '✨ మీ హృదయ మరియు అదృష్ట రేఖలు ఏమి చెబుతున్నాయో తెలుసుకోవాలా?', teaseButton: 'నా పూర్తి హస్త రేఖా ఫలితం చూడండి' },
       tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
         topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
@@ -474,7 +476,8 @@
         cam: { hint: 'अपनी खुली हथेली को आउटलाइन के अंदर रखें', dark: 'बहुत अंधेरा है। तेज़ रोशनी में जाकर फिर दबाएँ।', gallery: 'फ़ोटो चुनें', close: 'बंद करें', snap: 'फ़ोटो लें' }, tabs: ['हथेली', 'प्रेम', 'करियर'], lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
         ready: 'आपकी हथेली की फ़ोटो तैयार है।', see: '▶ मेरी रीडिंग देखें', again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
         askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?',
-        rekhaNote: 'ये रेखाएँ आपकी फोटो से AI के अनुमान पर आधारित हैं, केवल मार्गदर्शन के लिए — सटीक रेखाएँ नहीं।' },
+        rekhaNote: 'ये रेखाएँ आपकी फोटो से AI के अनुमान पर आधारित हैं, केवल मार्गदर्शन के लिए — सटीक रेखाएँ नहीं।',
+        tease: '✨ जानना चाहते हैं आपकी हृदय और भाग्य रेखा क्या कहती है?', teaseButton: 'मेरी पूरी हस्तरेखा देखें' },
       tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
         topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
@@ -2264,6 +2267,16 @@
     document.body.appendChild(overlay);
     try { await video.play(); } catch (_error) { /* shown anyway */ }
   }
+  function schedulePalmDetailPopup(contextId) {
+    scheduleEngagementPopup('palm', {
+      productId: 'palm_detailed',
+      // Re-checked at fire time: still on the Palm result for this same photo, and still unpurchased.
+      stillRelevant: () => currentPage === 'palm' && palmState.step === 'result' && !!palmState.reading && !contentUnlocked('palm_detailed', contextId),
+      text: () => (toolText().palm || TOOLS_COPY.en.palm).tease || TOOLS_COPY.en.palm.tease,
+      buttonText: () => (toolText().palm || TOOLS_COPY.en.palm).teaseButton || TOOLS_COPY.en.palm.teaseButton,
+      onAction: () => { void purchaseProduct('palm_detailed', contextId).then(ok => { if (ok) { clearPurchaseResume('palm_detailed'); renderPalm(); } }); },
+    });
+  }
   function renderPalm() { renderPalmBody(); decorate($('palmread'), palmCopy().title); }
   function renderPalmBody() {
     const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
@@ -2352,7 +2365,10 @@
       });
       box.appendChild(tabs);
       panels.forEach(panel => box.appendChild(panel));
-      if (!palmUnlocked) { const offer = premiumOffer('palm_detailed', palmContext, renderPalm); if (offer) box.appendChild(offer); }
+      if (!palmUnlocked) {
+        const offer = premiumOffer('palm_detailed', palmContext, renderPalm); if (offer) box.appendChild(offer);
+        schedulePalmDetailPopup(palmContext);
+      }
     }
     const actions = el('div', 'tarot-actions');
     if (reading) {
@@ -3358,33 +3374,17 @@
     card.appendChild(button);
     return card;
   }
-  const WEEK_POPUP_DELAY_MS = 4000;   // long enough that it only reaches someone actually reading their day's reading, not just passing through
-  const WEEK_POPUP_KEY = 'jyotisha.week-popup.v1';
-  const weekPopupShownToday = () => { try { return window.localStorage.getItem(WEEK_POPUP_KEY) === localIso(new Date()); } catch (_error) { return false; } };
-  let weekPopupTimer = null;
-  function showWeekForecastPopup() {
-    weekPopupTimer = null;
-    // Re-check everything at fire time: by now the user may have left Rashiphal, switched to Week themselves, or bought it.
-    if (weekPopupShownToday() || currentPage !== 'rashi' || state.rashiMode !== 'day' || !state.rashiPick) return;
-    if (!playBillingActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return;
-    try { window.localStorage.setItem(WEEK_POPUP_KEY, localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
-    const copy = toolText().rashi || TOOLS_COPY.en.rashi;
-    const popup = el('div', 'curiosity-popup');
-    const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
-    const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
-    close.addEventListener('click', dismiss);
-    const button = el('button', 'palm-scan', `${copy.weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton} · ${productPrice('rashiphal_forecast_7d')}`);
-    button.type = 'button';
-    button.addEventListener('click', () => { dismiss(); state.rashiMode = 'week'; renderRashi(); });
-    popup.append(close, el('p', null, copy.weekTease || TOOLS_COPY.en.rashi.weekTease), button);
-    document.body.appendChild(popup);
-    setTimeout(dismiss, 12000);
-  }
   // Fires once a day, only while the user is actually sitting on their own sign's reading — not a static banner,
   // but a nudge that shows up because they are engaged right now.
   function scheduleWeekForecastPopup() {
-    if (weekPopupTimer || weekPopupShownToday()) return;
-    weekPopupTimer = setTimeout(showWeekForecastPopup, WEEK_POPUP_DELAY_MS);
+    scheduleEngagementPopup('week', {
+      productId: 'rashiphal_forecast_7d',
+      // Re-checked at fire time: by now the user may have left Rashiphal, switched to Week themselves, or bought it.
+      stillRelevant: () => currentPage === 'rashi' && state.rashiMode === 'day' && !!state.rashiPick && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext()),
+      text: () => (toolText().rashi || TOOLS_COPY.en.rashi).weekTease || TOOLS_COPY.en.rashi.weekTease,
+      buttonText: () => (toolText().rashi || TOOLS_COPY.en.rashi).weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton,
+      onAction: () => { state.rashiMode = 'week'; renderRashi(); },
+    });
   }
   function renderRashiDay() {
     const day = state.day;
@@ -4197,6 +4197,31 @@
   function productPrice(productId) {
     const product = state.payments && state.payments.products && state.payments.products[productId];
     return product && (product.formattedPrice || `₹${product.price_rs}`);
+  }
+  // A pop-up tied to actually using a feature, not a timer that fires regardless of what the user is doing: each
+  // caller schedules one while the user is reading a specific result, and it only fires if that is still true when
+  // the delay is up — and only once a day per feature, so it nudges without nagging.
+  const ENGAGEMENT_POPUP_DELAY_MS = 4000;
+  const engagementPopupKey = id => `jyotisha.engage-popup.v1:${id}`;
+  const engagementPopupShownToday = id => { try { return window.localStorage.getItem(engagementPopupKey(id)) === localIso(new Date()); } catch (_error) { return false; } };
+  const engagementPopupTimers = {};
+  function showEngagementPopup(id, config) {
+    delete engagementPopupTimers[id];
+    if (engagementPopupShownToday(id) || !playBillingActive() || !config.stillRelevant()) return;
+    try { window.localStorage.setItem(engagementPopupKey(id), localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
+    const popup = el('div', 'curiosity-popup');
+    const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
+    const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
+    close.addEventListener('click', dismiss);
+    const button = el('button', 'palm-scan', `${config.buttonText()} · ${productPrice(config.productId)}`); button.type = 'button';
+    button.addEventListener('click', () => { dismiss(); config.onAction(); });
+    popup.append(close, el('p', null, config.text()), button);
+    document.body.appendChild(popup);
+    setTimeout(dismiss, 12000);
+  }
+  function scheduleEngagementPopup(id, config) {
+    if (engagementPopupTimers[id] || engagementPopupShownToday(id)) return;
+    engagementPopupTimers[id] = setTimeout(() => showEngagementPopup(id, config), ENGAGEMENT_POPUP_DELAY_MS);
   }
   async function loadPlayProducts() {
     const plugin = playPlugin(), products = state.payments && state.payments.products;
