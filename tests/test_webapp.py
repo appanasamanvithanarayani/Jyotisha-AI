@@ -1263,7 +1263,10 @@ def test_payments_are_off_by_default_and_appear_in_readiness_once_configured(loc
     monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_abc123")
     assert payments() is None            # key id alone is not enough; the secret is required too
     monkeypatch.setenv("RAZORPAY_KEY_SECRET", "shh")
-    assert payments() == {"key_id": "rzp_test_abc123", "chat_bonus_rs": 9, "unlock_rs": 9}
+    configured = payments()
+    assert configured["key_id"] == "rzp_test_abc123" and configured["chat_bonus_rs"] == 9 and configured["unlock_rs"] == 9
+    assert configured["provider"] == "razorpay"   # Play Billing is off, so Razorpay also sells the named products
+    assert configured["products"]["tarot_detailed"]["price_rs"] == 5
     monkeypatch.setenv("JYOTISHA_PRICE_UNLOCK_RS", "14")
     assert payments()["unlock_rs"] == 14
 
@@ -1313,3 +1316,28 @@ def test_payment_endpoints_create_a_real_order_and_verify_the_signature(local_se
     assert metrics["revenue_paise"] == 900 and metrics["features"]["unlock"]["successful"] == 1
     assert len(metrics["transactions"]) == 1 and metrics["transactions"][0]["feature"] == "unlock"
     assert metrics["transactions"][0]["user_id"] == "Unavailable"
+
+
+def test_payment_endpoints_also_sell_a_named_product_through_razorpay_when_play_billing_is_off(local_server, monkeypatch):
+    import hashlib
+    import hmac
+    import io
+    monkeypatch.setenv("JYOTISHA_PAYMENTS_PROVIDER", "razorpay")
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_abc123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "my-secret")
+
+    monkeypatch.setattr(webapp.payments.urllib.request, "urlopen", lambda req, timeout=0: io.BytesIO(json.dumps({"id": "order_palm1"}).encode()))
+    status, _, body = request(local_server, "POST", "/api/payment/create-order",
+        json.dumps({"product_id": "palm_detailed", "context_id": "2026-01-01-right"}), {"Content-Type": "application/json"})
+    result = json.loads(body)
+    assert status == 200 and result == {"status": "ok", "order_id": "order_palm1", "amount": 500, "currency": "INR", "key_id": "rzp_test_abc123"}
+
+    genuine = hmac.new(b"my-secret", b"order_palm1|pay_1", hashlib.sha256).hexdigest()
+    status, _, body = request(local_server, "POST", "/api/payment/verify",
+        json.dumps({"order_id": "order_palm1", "payment_id": "pay_1", "signature": genuine, "product_id": "palm_detailed", "context_id": "2026-01-01-right"}),
+        {"Content-Type": "application/json"})
+    assert status == 200 and json.loads(body) == {"status": "ok", "product_id": "palm_detailed", "context_id": "2026-01-01-right", "already_verified": False}
+
+    metrics = webapp.store.analytics.snapshot()["payment_periods"]["7"]
+    assert metrics["orders"] == 1 and metrics["successful"] == 1
+    assert metrics["revenue_paise"] == 500 and metrics["features"]["palm_detailed"]["successful"] == 1

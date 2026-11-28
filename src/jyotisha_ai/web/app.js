@@ -715,9 +715,9 @@
           renderRelationship(); return;
         }
       } catch (_error) { /* the real request still enforces the limit */ }
-      const paidWithPlay = playBillingActive();
-      if (paidWithPlay && !(await purchaseProduct('partner_portrait', `${localIso(new Date())}-${Date.now()}`))) return;
-      if (!paidWithPlay && rewardedFor('partner') && !(await watchForResult())) return;
+      const paidForPortrait = paidAddonsActive();
+      if (paidForPortrait && !(await purchaseProduct('partner_portrait', `${localIso(new Date())}-${Date.now()}`))) return;
+      if (!paidForPortrait && rewardedFor('partner') && !(await watchForResult())) return;
       state.partnerPortrait = { status: 'loading', image: previous || null };
       renderRelationship();
       const { ok, body, status } = await post('/api/partner-portrait', { house7_rashi: house7Rashi, venus_rashi: venusRashi, gender });
@@ -834,7 +834,7 @@
         onAction: () => { void purchaseProduct('dosha_remedies', context).then(ok => { if (ok) { clearPurchaseResume('dosha_remedies'); renderDoshas(); } }); },
       });
     }
-    if (contentUnlocked('kundli_complete', context) && playBillingActive()) {
+    if (contentUnlocked('kundli_complete', context) && paidAddonsActive()) {
       const complete = el('section', 'premium-result'); complete.appendChild(el('h4', null, '📜 Complete personal Kundli report'));
       for (const topic of ['life', 'career', 'money', 'study', 'marriage', 'health']) {
         try {
@@ -904,7 +904,7 @@
       button.addEventListener('click', onClick);
       return button;
     };
-    const premium = playBillingActive();   // which home cards hint at a paid add-on, so curiosity works even before opening the page
+    const premium = paidAddonsActive();   // which home cards hint at a paid add-on, so curiosity works even before opening the page
     const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
     const sections = text.sections || TOOLS_COPY.en.sections;
     const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
@@ -3414,7 +3414,7 @@
   }
   const weekForecastContext = () => `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
   function weekForecastTease() {
-    if (!playBillingActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return null;
+    if (!paidAddonsActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return null;
     const copy = toolText().rashi || TOOLS_COPY.en.rashi, card = el('section', 'premium-offer week-tease');
     card.append(el('p', null, copy.weekTease || TOOLS_COPY.en.rashi.weekTease));
     const button = el('button', 'palm-scan', `${copy.weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton} · ${productPrice('rashiphal_forecast_7d')}`);
@@ -3567,7 +3567,7 @@
     $('rashi-reading').replaceChildren();
     renderRashiPicker();
     $('rashi-title').textContent = t('rashiphal');
-    const weekTeasing = playBillingActive() && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext());
+    const weekTeasing = paidAddonsActive() && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext());
     document.querySelectorAll('#rashi-mode button').forEach(button => {
       button.classList.toggle('on', button.dataset.rmode === state.rashiMode);
       if (button.dataset.rmode === 'week') button.classList.toggle('tease', weekTeasing);
@@ -4239,10 +4239,14 @@
   // and for web checkout. The server verifies every Play token before the native plugin consumes it.
   const entitlementKey = (productId, contextId) => `jyotisha.play.v1:${productId}:${contextId}`;
   const hasEntitlement = (productId, contextId) => { try { return window.localStorage.getItem(entitlementKey(productId, contextId)) === '1'; } catch (_error) { return false; } };
-  const contentUnlocked = (productId, contextId) => !playBillingActive() || hasEntitlement(productId, contextId);
+  const contentUnlocked = (productId, contextId) => !paidAddonsActive() || hasEntitlement(productId, contextId);
   const saveEntitlement = (productId, contextId) => { try { window.localStorage.setItem(entitlementKey(productId, contextId), '1'); } catch (_error) { /* current session still proceeds */ } };
   const playPlugin = () => window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PlayBilling;
   const playBillingActive = () => !!(state.payments && state.payments.provider === 'google_play' && state.payments.products && playPlugin());
+  // Razorpay covers the same 10 add-ons when Play Billing is off: same product catalogue, same entitlement storage,
+  // just a web checkout instead of the native Play purchase sheet.
+  const razorpayActive = () => !!(state.payments && state.payments.provider === 'razorpay' && state.payments.products && state.payments.key_id);
+  const paidAddonsActive = () => playBillingActive() || razorpayActive();
   function productPrice(productId) {
     const product = state.payments && state.payments.products && state.payments.products[productId];
     return product && (product.formattedPrice || `₹${product.price_rs}`);
@@ -4256,7 +4260,7 @@
   const engagementPopupTimers = {};
   function showEngagementPopup(id, config) {
     delete engagementPopupTimers[id];
-    if (engagementPopupShownToday(id) || !playBillingActive() || !config.stillRelevant()) return;
+    if (engagementPopupShownToday(id) || !paidAddonsActive() || !config.stillRelevant()) return;
     try { window.localStorage.setItem(engagementPopupKey(id), localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
     const popup = el('div', 'curiosity-popup');
     const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
@@ -4284,12 +4288,22 @@
   const purchaseResumeKey = productId => `jyotisha.play.resume.v1:${productId}`;
   function rememberPurchaseScreen(productId, contextId) {
     const resume = { contextId, createdAt: Date.now(), page: currentPage };
-    // Google Play may briefly leave the app (and the phone can reclaim the WebView). Keep only the generated
-    // palm text, never the user's photo, so a paid reading can still be delivered after Android recreates us.
+    // Google Play (and Razorpay's checkout) may briefly leave the app, and the phone can reclaim the WebView while
+    // it is away. Keep only what is needed to show the paid result without asking the user to redo anything —
+    // never a photo, never typed-in partner details beyond what is already saved.
     if (productId === 'palm_detailed' && palmState.reading) {
       resume.palm = { hand: palmState.hand, reading: palmState.reading, status: palmState.status };
     } else if (productId === 'rashiphal_forecast_7d') {
       resume.rashi = { selectedDate: state.selectedDate, rashiPick: state.rashiPick || null };
+    } else if (productId === 'tarot_detailed' && tarot.chosen && tarot.chosen.length === 3) {
+      resume.tarot = { topic: tarot.topic, spread: tarot.spread, chosen: tarot.chosen, reading: tarot.reading === undefined ? null : tarot.reading };
+    } else if (productId === 'sign_match_full' && sm.first && sm.second) {
+      resume.signmatch = { first: sm.first, second: sm.second };
+    } else if (productId === 'kundli_match_full') {
+      resume.match = { matchWho: state.matchWho, myRole: state.myRole, partnerChart: state.partnerChart,
+        partnerDetails: state.partnerDetails, firstChart: state.firstChart, firstDetails: state.firstDetails };
+    } else if (productId === 'partner_portrait') {
+      resume.portrait = { gender: state.partnerGender };
     }
     try { window.localStorage.setItem(purchaseResumeKey(productId), JSON.stringify(resume)); } catch (_error) { /* optional recovery */ }
   }
@@ -4312,10 +4326,31 @@
       if (/^\d{4}-\d{2}-\d{2}$/.test(resume.rashi.selectedDate || '')) state.selectedDate = resume.rashi.selectedDate;
       if (Number.isInteger(resume.rashi.rashiPick) && resume.rashi.rashiPick >= 1 && resume.rashi.rashiPick <= 12) state.rashiPick = resume.rashi.rashiPick;
       showPage('rashi'); renderRashi();
+    } else if (productId === 'tarot_detailed' && resume.tarot && Array.isArray(resume.tarot.spread) && Array.isArray(resume.tarot.chosen) && resume.tarot.chosen.length === 3) {
+      tarot.topic = resume.tarot.topic; tarot.spread = resume.tarot.spread; tarot.chosen = resume.tarot.chosen; tarot.reading = resume.tarot.reading;
+      tarot.step = 'result';
+      showPage('tarot'); renderTarot();
+      if (tarot.reading === null || tarot.reading === undefined) void loadTarotReading();   // the AI reading never finished fetching before we were interrupted
+    } else if (productId === 'sign_match_full' && resume.signmatch && resume.signmatch.first && resume.signmatch.second) {
+      sm.first = resume.signmatch.first; sm.second = resume.signmatch.second; sm.shown = true;
+      showPage('signmatch'); renderSignMatch();
+    } else if (productId === 'kundli_match_full' && resume.match) {
+      state.matchWho = resume.match.matchWho || 'me'; state.myRole = resume.match.myRole || 'groom';
+      state.partnerChart = resume.match.partnerChart || null; state.partnerDetails = resume.match.partnerDetails || null;
+      state.firstChart = resume.match.firstChart || null; state.firstDetails = resume.match.firstDetails || null;
+      state.loveMode = 'match';
+      showPage('relationship'); renderRelationship();
+    } else if (productId === 'partner_portrait' && resume.portrait && state.chart) {
+      state.partnerGender = resume.portrait.gender || state.partnerGender; state.loveMode = 'traits';
+      showPage('relationship');
+      try {
+        const read = chartUI.partnerTraits(state.chart, state.lang);
+        void generatePartnerPortrait(read.house7Rashi, read.venusRashi, state.partnerGender);
+      } catch (_error) { renderRelationship(); }
     } else {
-      const pageByProduct = { dosha_remedies: 'kundli', kundli_complete: 'kundli', ai_questions_5: 'chat',
-        ai_action_plan_7d: 'chat', tarot_detailed: 'tarot', sign_match_full: 'signmatch',
-        partner_portrait: 'relationship', kundli_match_full: 'relationship' };
+      // Doshas and the complete Kundli report are read straight from the user's own saved chart, so simply
+      // returning to the right page already shows the now-unlocked content — nothing ephemeral to restore.
+      const pageByProduct = { dosha_remedies: 'kundli', kundli_complete: 'kundli' };
       if (pageByProduct[productId]) showPage(pageByProduct[productId]);
     }
     clearPurchaseResume(productId);
@@ -4375,9 +4410,9 @@
   // MainActivity calls this after returning from Google Play or a UPI app. The delay lets BillingClient deliver its
   // normal callback first; restore is the safety net when Android recreated the activity and that callback was lost.
   window.__jyotishaRestorePlayPurchases = () => { setTimeout(() => { void restorePlayPurchases(); }, 1200); };
-  async function purchaseProduct(productId, contextId) {
+  async function purchaseProductViaPlay(productId, contextId) {
     const plugin = playPlugin();
-    if (!playBillingActive() || !plugin.purchase || !state.payments.products[productId]) return false;
+    if (!plugin.purchase || !state.payments.products[productId]) return false;
     try {
       try { window.localStorage.setItem(pendingContextKey(productId), contextId); } catch (_error) { /* restoration may be unavailable */ }
       rememberPurchaseScreen(productId, contextId);
@@ -4393,17 +4428,46 @@
       return true;
     } catch (_error) { return false; }
   }
+  // Same product catalogue as Play Billing, paid through Razorpay's web checkout instead of a native purchase sheet.
+  async function purchaseProductViaRazorpay(productId, contextId) {
+    if (!state.payments.products[productId]) return false;
+    try {
+      const made = await post('/api/payment/create-order', { product_id: productId, context_id: contextId });
+      if (!made.ok || !made.body || made.body.status !== 'ok') return false;
+      await ensureRazorpayScript();
+      const order = made.body;
+      return await new Promise(resolve => {
+        const checkout = new window.Razorpay({ key: order.key_id, amount: order.amount, currency: order.currency, order_id: order.order_id, name: 'Jyotirmaya AstroChat',
+          handler: async response => {
+            try {
+              const verified = await post('/api/payment/verify', { order_id: response.razorpay_order_id, payment_id: response.razorpay_payment_id, signature: response.razorpay_signature, product_id: productId, context_id: contextId });
+              const ok = verified.ok && verified.body && verified.body.status === 'ok';
+              if (ok) saveEntitlement(productId, contextId);
+              resolve(ok);
+            } catch (_error) { resolve(false); }
+          },
+          modal: { ondismiss: () => resolve(false) } });
+        checkout.open();
+      });
+    } catch (_error) { return false; }
+  }
+  async function purchaseProduct(productId, contextId) {
+    if (playBillingActive()) return purchaseProductViaPlay(productId, contextId);
+    if (razorpayActive()) return purchaseProductViaRazorpay(productId, contextId);
+    return false;
+  }
   function paidCopy(productId) {
     const name = state.payments && state.payments.products && state.payments.products[productId] && state.payments.products[productId].title;
+    const viaPlay = playBillingActive();
     const localized = {
-      te: ['మీ ఫలితంలో ఇంకా లోతుగా తెలుసుకోవాలా?', 'Google Play ద్వారా సురక్షితంగా అన్‌లాక్ చేయండి', 'అన్‌లాక్ చేయండి'],
-      hi: ['अपने परिणाम को और गहराई से जानना चाहते हैं?', 'Google Play से सुरक्षित रूप से अनलॉक करें', 'अनलॉक करें'],
-      en: ['Want to understand this result more deeply?', 'Secure one-time purchase through Google Play', 'Unlock'],
-    }[state.lang] || ['Want to understand this result more deeply?', 'Secure one-time purchase through Google Play', 'Unlock'];
+      te: ['మీ ఫలితంలో ఇంకా లోతుగా తెలుసుకోవాలా?', viaPlay ? 'Google Play ద్వారా సురక్షితంగా అన్‌లాక్ చేయండి' : 'సురక్షితమైన ఒక్కసారి చెల్లింపుతో అన్‌లాక్ చేయండి', 'అన్‌లాక్ చేయండి'],
+      hi: ['अपने परिणाम को और गहराई से जानना चाहते हैं?', viaPlay ? 'Google Play से सुरक्षित रूप से अनलॉक करें' : 'एक सुरक्षित एक-बार भुगतान से अनलॉक करें', 'अनलॉक करें'],
+      en: ['Want to understand this result more deeply?', viaPlay ? 'Secure one-time purchase through Google Play' : 'Secure one-time purchase', 'Unlock'],
+    }[state.lang] || ['Want to understand this result more deeply?', viaPlay ? 'Secure one-time purchase through Google Play' : 'Secure one-time purchase', 'Unlock'];
     return { title: name || localized[0], note: localized[1], button: localized[2] };
   }
   function premiumOffer(productId, contextId, onUnlock) {
-    if (!playBillingActive()) return null;
+    if (!paidAddonsActive()) return null;
     const copy = paidCopy(productId), card = el('section', 'premium-offer');
     card.append(el('h4', null, `✨ ${copy.title}`), el('p', null, copy.note));
     const button = el('button', 'palm-scan', `${copy.button} · ${productPrice(productId)}`); button.type = 'button';
@@ -4449,7 +4513,7 @@
     });
   }
   async function unlockGate(feature, promptText, startsFreeWindow, ask = true) {
-    if (feature === 'chat_bonus' && state.payments && state.payments.provider === 'google_play' && playPlugin()) {
+    if (feature === 'chat_bonus' && paidAddonsActive()) {
       const bought = await purchaseProduct('ai_questions_5', localIso(new Date()));
       if (bought) clearPurchaseResume('ai_questions_5');
       return bought;
@@ -4497,7 +4561,7 @@
   function writeQuota(quota) { try { window.localStorage.setItem(QUOTA_KEY, JSON.stringify(quota)); } catch (_error) { /* not persisted */ } }
   async function aiQuestionAllowed() {
     const { config, admob } = appAds;
-    const paidChat = playBillingActive();
+    const paidChat = paidAddonsActive();
     if (!paidChat && (!config || !admob || !config.chat_free_questions || !adUnitOk(config.rewarded_id))) return true;
     const freeQuestions = paidChat ? 3 : config.chat_free_questions;
     const bonusQuestions = paidChat ? 5 : config.chat_bonus_questions;
@@ -4621,6 +4685,9 @@
           chatLog.appendChild(entry); chatLog.scrollTop = chatLog.scrollHeight;
         }
       } catch (_error) { /* entitlement remains available for this result */ }
+      // Already paid for this specific answer: remove the offer so it cannot be bought a second time for no extra
+      // benefit. A new answer gets its own offer, with its own context, which can always be bought again.
+      try { chatLog.removeChild(offer); } catch (_error) { /* already gone */ }
     });
     if (offer) {
       offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight;
