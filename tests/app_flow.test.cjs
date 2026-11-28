@@ -1119,6 +1119,106 @@ test('the same engagement pop-up pattern nudges toward the paid detailed Palm re
   assert.ok(!app.element('palmread').children.some(item => item.className === 'premium-offer'), 'bought: the offer is gone and the full reading shows');
 });
 
+test('the engagement pop-up also nudges toward the detailed Tarot reading while someone is looking at their draw', async () => {
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const payments = { provider: 'google_play', products: { tarot_detailed: { title: 'Detailed Tarot interpretation', price_rs: 5 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'tarot_detailed', formattedPrice: '₹5.00' }] }), purchase: async () => ({ purchaseToken: 'token-tarot-tease' }), completePurchase: async () => true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } }, tarot: { status: 'ok', reading } });
+  await settle(); await settle();
+  homeCard(app, 'Tarot').listeners.click();
+  app.element('tarot').children[2].children[1].listeners.click();   // Career
+  for (const n of [2, 5, 9]) app.element('tarot').children.find(item => item.className === 'tarot-spread').children[n].listeners.click();
+  await settle();
+  assert.ok(app.element('tarot').children.some(item => item.className === 'premium-offer'), 'the static offer is there, same as before');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds of looking at the draw, the pop-up appears');
+  assert.match(popup.children[1].textContent, /cards really mean/);
+  popup.children[2].listeners.click();
+  await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'tarot_detailed'));
+  assert.ok(!app.element('tarot').children.some(item => item.className === 'premium-offer'), 'bought: the offer is gone and the full reading shows');
+});
+
+test('the engagement pop-up also nudges toward the full Sign match while someone is looking at their result', async () => {
+  const payments = { provider: 'google_play', products: { sign_match_full: { title: 'Full sign compatibility explanation', price_rs: 3 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'sign_match_full', formattedPrice: '₹3.00' }] }), purchase: async () => ({ purchaseToken: 'token-signmatch-tease' }), completePurchase: async () => true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } } });
+  await settle(); await settle();
+  homeCard(app, 'Sign match').listeners.click();
+  const page = () => app.element('signmatch').children;
+  const tiles = () => page().find(item => item.className === 'moon-pick').children;
+  tiles()[0].listeners.click(); tiles()[7].listeners.click();
+  page().find(item => /palm-scan/.test(item.className)).listeners.click();
+  await settle();
+  assert.ok(page().some(item => item.className === 'sm-result'));
+  assert.ok(page().some(item => item.className === 'premium-offer'), 'the static offer is there, same as before');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds of looking at the result, the pop-up appears');
+  assert.match(popup.children[1].textContent, /Mind & Family/);
+  popup.children[2].listeners.click();
+  await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'sign_match_full'));
+  assert.ok(!page().some(item => item.className === 'premium-offer'), 'bought: the offer is gone and the full score shows');
+});
+
+test('the engagement pop-up also nudges toward detailed dosha remedies while someone is on that Kundli tab', async () => {
+  const doshas = { kuja: { present: true, from_lagna: true, from_moon: false, house_from_lagna: 7, house_from_moon: 3, reduced: false },
+    saturn: { sade_sati: { active: false, phase: null, current: null, next: null }, ashtama_shani: { active: false, current: null, next: null }, ardhashtama_shani: { active: false, current: null, next: null } } };
+  const birth = { ...syntheticBirth, details: { ...(syntheticBirth.details || {}), doshas } };
+  const payments = { provider: 'google_play', products: { dosha_remedies: { title: 'Doshas & detailed remedies', price_rs: 9 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'dosha_remedies', formattedPrice: '₹9.00' }] }), purchase: async () => ({ purchaseToken: 'token-dosha-tease' }), completePurchase: async () => true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.profile.v1', JSON.stringify({ dob: '1995-08-15', pob: 'Hyderabad, IN', tob: '06:30' }));
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } }, birth });
+  await settle(); await settle();
+  homeCard(app, 'Doshas').listeners.click();
+  await settle();
+  const remediesOffer = () => app.element('dosha-body').children.find(item => item.className === 'premium-offer' && /detailed remedies/.test(item.children[0].textContent));
+  assert.ok(remediesOffer(), 'the static offer is there, same as before');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds on the Doshas tab, the pop-up appears');
+  assert.match(popup.children[1].textContent, /remedies for the doshas/);
+  popup.children[2].listeners.click();
+  await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'dosha_remedies'));
+  assert.ok(!remediesOffer(), 'bought: the remedies offer is gone');
+});
+
+test('the engagement pop-up also nudges toward the 7-day AI action plan while someone is in chat', async () => {
+  const reading = { heart: 'Warm.', head: 'Practical.', life: 'Steady.', fate: 'Self-directed.', summary: 'Balanced.' };
+  const payments = { provider: 'google_play', products: { ai_action_plan_7d: { title: 'Personalized 7-day action plan', price_rs: 9 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'ai_action_plan_7d', formattedPrice: '₹9.00' }] }), purchase: async () => ({ purchaseToken: 'token-plan-tease' }), completePurchase: async () => true };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } }, palm: { status: 'ok', reading }, assistant: true });
+  await settle();
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change(); await settle(); await settle();
+  app.element('palmread').children.find(item => item.className === 'tarot-actions').children[0].listeners.click();   // Ask AI about my palm
+  await settle(); await settle();
+  const planOffer = () => app.element('chat-log').children.find(item => item.className === 'premium-offer');
+  assert.ok(planOffer(), 'the static offer is there, same as before');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds in chat, the pop-up appears');
+  assert.match(popup.children[1].textContent, /7-day plan/);
+  popup.children[2].listeners.click();
+  await settle(); await settle();
+  assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'ai_action_plan_7d'));
+  assert.ok(app.element('chat-log').children.some(item => item.className === 'chat-message assistant' && item.children[0] && item.children[0].textContent === '✨ 7-day action plan'), 'bought: the plan was requested and shown');
+});
+
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
   const app = boot();
   await enter(app, 'en');

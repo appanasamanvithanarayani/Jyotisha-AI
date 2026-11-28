@@ -152,6 +152,7 @@
       manglikBoth: 'Both are Manglik — traditionally this cancels out.', manglikOne: 'Only one is Manglik — many families consult an astrologer about this.',
       note: 'Conventional Ashtakoota rules, not expert-reviewed. Use it as a guide, not as a decision about marriage. Enter another person’s details only with their consent; they are not saved on this device.',
       error: 'Calculated chart data is incomplete; no matching was made.',
+      matchTease: '✨ Curious how all 8 kootas scored for this match?', matchTeaseButton: 'See all 8 kootas',
     },
     te: {
       nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
@@ -178,6 +179,7 @@
       manglikBoth: 'ఇద్దరికీ కుజ దోషం ఉంది — సంప్రదాయంగా ఇది పరిహారమవుతుంది.', manglikOne: 'ఒకరికి మాత్రమే కుజ దోషం ఉంది — చాలా కుటుంబాలు దీని గురించి జ్యోతిష్కుడిని సంప్రదిస్తాయి.',
       note: 'ఇవి సంప్రదాయ అష్టకూట నియమాలు, నిపుణుల సమీక్ష పొందలేదు. వివాహ నిర్ణయంగా కాకుండా మార్గదర్శిగా మాత్రమే వాడండి. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి; అవి ఈ పరికరంలో సేవ్ కావు.',
       error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పొంతన చూడలేదు.',
+      matchTease: '✨ ఈ పొంతనకు అన్ని 8 కూటాల స్కోరు తెలుసుకోవాలా?', matchTeaseButton: 'అన్ని 8 కూటాలు చూడండి',
     },
     hi: {
       nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
@@ -204,6 +206,7 @@
       manglikBoth: 'दोनों मांगलिक हैं — परंपरा में यह दोष कट जाता है।', manglikOne: 'केवल एक मांगलिक है — कई परिवार इसके लिए ज्योतिषी से परामर्श करते हैं।',
       note: 'ये पारंपरिक अष्टकूट नियम हैं, विशेषज्ञ समीक्षा नहीं हुई। इसे विवाह का निर्णय नहीं, केवल मार्गदर्शन मानें। किसी और का विवरण उनकी सहमति से ही दर्ज करें; यह इस डिवाइस पर सहेजा नहीं जाता।',
       error: 'गणना की गई कुंडली अधूरी है; मिलान नहीं किया गया।',
+      matchTease: '✨ जानना चाहते हैं इस मिलान में सभी 8 कूट कैसे रहे?', matchTeaseButton: 'सभी 8 कूट देखें',
     },
   };
   // Kundli views, doshas and the Home tool cards.
@@ -265,7 +268,8 @@
         verdict: { excellent: 'Excellent match', good: 'Good match', average: 'Average match', low: 'Needs patience' },
         text: { excellent: 'Your signs get along naturally: easy understanding and a shared outlook.', good: 'A comfortable pairing, with a few differences to adjust to.', average: 'Some differences to work on. Patience and talking things through help.', low: 'Quite different natures. It can work with understanding and effort.' },
         friendship: 'Mind & friendship', family: 'Family & prosperity', dosha: 'The two signs sit in a difficult position from each other (Bhakoot dosha). Many families check this before a marriage.',
-        full: 'Full 36-point Kundli matching', note: 'Based on the two Moon signs only. Guidance for reflection, not a prediction.', shareLine: '{a} + {b}: {percent}% sign match, {verdict}.' },
+        full: 'Full 36-point Kundli matching', note: 'Based on the two Moon signs only. Guidance for reflection, not a prediction.', shareLine: '{a} + {b}: {percent}% sign match, {verdict}.',
+        tease: '✨ Curious about the Mind & Family scores behind this match?', teaseButton: 'See the full match' },
       numerology: { card: ['Numerology', 'Your numbers from name & birth date'], title: 'Numerology', intro: 'Your Moolank, Bhagyank and name number, worked out from your date of birth and name.',
         dob: 'Date of birth', name: 'Name (in English letters)', show: 'Show my numbers', bad: 'Please enter a valid date of birth.', change: 'Change',
         moolank: ['Moolank', 'Birth number · how you are'], bhagyank: ['Bhagyank', 'Destiny number · where life leads'], nameNum: ['Name number', 'How others see you'],
@@ -289,6 +293,7 @@
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
         positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cards…',
         see: '▶ See my reading', again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
+        tease: '✨ Curious what the cards really mean for you?', teaseButton: 'See my full tarot reading',
         askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
       moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
         approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
@@ -301,6 +306,8 @@
           'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
           'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
       sections: { chart: 'Your chart', palm: 'Palm, tarot & numbers', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      doshaTease: '✨ Curious about remedies for the doshas in your chart?', doshaTeaseButton: 'See my detailed remedies',
+      planTease: '✨ Curious what a 7-day plan for this would look like?', planTeaseButton: 'Get my 7-day action plan',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -362,7 +369,8 @@
         verdict: { excellent: 'అద్భుతమైన పొంతన', good: 'మంచి పొంతన', average: 'సగటు పొంతన', low: 'ఓపిక అవసరం' },
         text: { excellent: 'మీ రాశులు సహజంగా కలుస్తాయి: సులభమైన అవగాహన, ఒకేలాంటి దృక్పథం.', good: 'సౌకర్యవంతమైన జంట, కొన్ని తేడాలకు సర్దుకుపోవాలి.', average: 'కొన్ని తేడాలపై కృషి చేయాలి. ఓపిక, మాట్లాడుకోవడం సహాయపడతాయి.', low: 'స్వభావాలు చాలా భిన్నం. అవగాహన, కృషితో సాగవచ్చు.' },
         friendship: 'మనసు, స్నేహం', family: 'కుటుంబం, సంపద', dosha: 'రెండు రాశులు ఒకదానికొకటి కష్టమైన స్థానంలో ఉన్నాయి (భకూట దోషం). చాలా కుటుంబాలు పెళ్లికి ముందు దీన్ని చూస్తాయి.',
-        full: 'పూర్తి 36 గుణాల జాతక పొంతన', note: 'రెండు చంద్ర రాశుల ఆధారంగా మాత్రమే. ఆలోచనకు మార్గదర్శనం, జోస్యం కాదు.', shareLine: '{a} + {b}: {percent}% రాశి పొంతన, {verdict}.' },
+        full: 'పూర్తి 36 గుణాల జాతక పొంతన', note: 'రెండు చంద్ర రాశుల ఆధారంగా మాత్రమే. ఆలోచనకు మార్గదర్శనం, జోస్యం కాదు.', shareLine: '{a} + {b}: {percent}% రాశి పొంతన, {verdict}.',
+        tease: '✨ ఈ పొంతన వెనుక మనస్సు & కుటుంబం స్కోర్లు తెలుసుకోవాలా?', teaseButton: 'పూర్తి పొంతన చూడండి' },
       numerology: { card: ['సంఖ్యా శాస్త్రం', 'పేరు, పుట్టిన తేదీ నుంచి మీ సంఖ్యలు'], title: 'సంఖ్యా శాస్త్రం', intro: 'మీ పుట్టిన తేదీ, పేరు ఆధారంగా మీ మూలాంకం, భాగ్యాంకం, నామ సంఖ్య.',
         dob: 'పుట్టిన తేదీ', name: 'పేరు (ఇంగ్లీష్ అక్షరాల్లో)', show: 'నా సంఖ్యలు చూపించు', bad: 'దయచేసి సరైన పుట్టిన తేదీ ఇవ్వండి.', change: 'మార్చండి',
         moolank: ['మూలాంకం', 'జన్మ సంఖ్య · మీ స్వభావం'], bhagyank: ['భాగ్యాంకం', 'అదృష్ట సంఖ్య · జీవిత మార్గం'], nameNum: ['నామ సంఖ్య', 'ఇతరులు మిమ్మల్ని ఎలా చూస్తారు'],
@@ -386,6 +394,7 @@
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
         positions: ['గతం', 'వర్తమానం', 'భవిష్యత్తు'], reversed: 'తలకిందులు', advice: 'మీకో సందేశం', loading: 'మీ కార్డులు చదువుతున్నాం…',
         see: '▶ నా రీడింగ్ చూడండి', again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
+        tease: '✨ కార్డులు మీ కోసం ఏమి చెబుతున్నాయో తెలుసుకోవాలా?', teaseButton: 'నా పూర్ణ టారో ఫలితం చూడండి',
         askQ: '{topic} టారో రీడింగ్‌లో నాకు {cards} వచ్చాయి. దీని అర్థం ఏమిటి?' },
       moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
         approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
@@ -398,6 +407,8 @@
           'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
           'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
       sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు, టారో & సంఖ్యలు', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      doshaTease: '✨ మీ జాతకంలోని దోషాలకు పరిహారాలు తెలుసుకోవాలా?', doshaTeaseButton: 'నా వివరమైన పరిహారాలు చూడండి',
+      planTease: '✨ దీనికి 7-రోజుల ప్రణాళిక ఎలా ఉంటుందో తెలుసుకోవాలా?', planTeaseButton: 'నా 7-రోజుల ప్రణాళిక పొందండి',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -459,7 +470,8 @@
         verdict: { excellent: 'उत्तम मिलान', good: 'अच्छा मिलान', average: 'औसत मिलान', low: 'धैर्य चाहिए' },
         text: { excellent: 'आपकी राशियाँ सहज मेल खाती हैं: आसान समझ और एक-सा नज़रिया।', good: 'आरामदायक जोड़ी, कुछ अंतर के साथ तालमेल बिठाना होगा।', average: 'कुछ अंतर पर काम करना होगा। धैर्य और बातचीत मदद करेंगे।', low: 'स्वभाव काफ़ी अलग हैं। समझ और कोशिश से बात बन सकती है।' },
         friendship: 'मन और मित्रता', family: 'परिवार और समृद्धि', dosha: 'दोनों राशियाँ एक-दूसरे से कठिन स्थिति में हैं (भकूट दोष)। कई परिवार विवाह से पहले इसे देखते हैं।',
-        full: 'पूरा 36 गुण कुंडली मिलान', note: 'केवल दो चंद्र राशियों पर आधारित। चिंतन के लिए मार्गदर्शन, भविष्यवाणी नहीं।', shareLine: '{a} + {b}: {percent}% राशि मिलान, {verdict}।' },
+        full: 'पूरा 36 गुण कुंडली मिलान', note: 'केवल दो चंद्र राशियों पर आधारित। चिंतन के लिए मार्गदर्शन, भविष्यवाणी नहीं।', shareLine: '{a} + {b}: {percent}% राशि मिलान, {verdict}।',
+        tease: '✨ जानना चाहते हैं इस मिलान के पीछे मन और परिवार के अंक?', teaseButton: 'पूरा मिलान देखें' },
       numerology: { card: ['अंक ज्योतिष', 'नाम और जन्म तिथि से आपके अंक'], title: 'अंक ज्योतिष', intro: 'आपकी जन्म तिथि और नाम से आपका मूलांक, भाग्यांक और नामांक।',
         dob: 'जन्म तिथि', name: 'नाम (अंग्रेज़ी अक्षरों में)', show: 'मेरे अंक दिखाएँ', bad: 'कृपया सही जन्म तिथि डालें।', change: 'बदलें',
         moolank: ['मूलांक', 'जन्म अंक · आपका स्वभाव'], bhagyank: ['भाग्यांक', 'भाग्य अंक · जीवन की दिशा'], nameNum: ['नामांक', 'दूसरे आपको कैसे देखते हैं'],
@@ -483,6 +495,7 @@
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
         positions: ['अतीत', 'वर्तमान', 'भविष्य'], reversed: 'उल्टा', advice: 'आपके लिए संदेश', loading: 'आपके कार्ड पढ़ रहे हैं…',
         see: '▶ मेरी रीडिंग देखें', again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
+        tease: '✨ जानना चाहते हैं कार्ड आपके लिए क्या कहते हैं?', teaseButton: 'मेरी पूरी टैरो रीडिंग देखें',
         askQ: '{topic} टैरो रीडिंग में मुझे {cards} मिले। इसका मेरे लिए क्या अर्थ है?' },
       moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
         approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
@@ -495,6 +508,8 @@
           'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
           'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
       sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा, टैरो और अंक', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      doshaTease: '✨ अपनी कुंडली के दोषों के उपाय जानना चाहते हैं?', doshaTeaseButton: 'मेरे विस्तृत उपाय देखें',
+      planTease: '✨ जानना चाहते हैं इसके लिए 7-दिन की योजना कैसी होगी?', planTeaseButton: 'मेरी 7-दिन की योजना पाएँ',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -671,6 +686,13 @@
         fold.appendChild(list); result.appendChild(fold);
       } else {
         const offer = premiumOffer('kundli_match_full', matchContext, renderRelationship); if (offer) result.appendChild(offer);
+        scheduleEngagementPopup('kundlimatch', {
+          productId: 'kundli_match_full',
+          stillRelevant: () => currentPage === 'relationship' && state.loveMode === 'match' && !contentUnlocked('kundli_match_full', matchContext),
+          text: () => loveText().matchTease || RELATIONSHIP_COPY.en.matchTease,
+          buttonText: () => loveText().matchTeaseButton || RELATIONSHIP_COPY.en.matchTeaseButton,
+          onAction: () => { void purchaseProduct('kundli_match_full', matchContext).then(ok => { if (ok) { clearPurchaseResume('kundli_match_full'); renderRelationship(); } }); },
+        });
       }
     } catch (_error) { result.appendChild(el('p', null, copy.error)); }
   }
@@ -802,7 +824,16 @@
         ? 'For the current Saturn period, choose consistency over shortcuts, serve elders or people in need, and review finances every Saturday.'
         : 'For Saturn balance, keep promises, help someone in need on Saturdays, and build progress through small consistent actions.'));
       host.appendChild(remedies);
-    } else { const offer = premiumOffer('dosha_remedies', context, renderDoshas); if (offer) host.appendChild(offer); }
+    } else {
+      const offer = premiumOffer('dosha_remedies', context, renderDoshas); if (offer) host.appendChild(offer);
+      scheduleEngagementPopup('doshas', {
+        productId: 'dosha_remedies',
+        stillRelevant: () => currentPage === 'kundli' && state.kundliView === 'doshas' && !contentUnlocked('dosha_remedies', context),
+        text: () => toolText().doshaTease || TOOLS_COPY.en.doshaTease,
+        buttonText: () => toolText().doshaTeaseButton || TOOLS_COPY.en.doshaTeaseButton,
+        onAction: () => { void purchaseProduct('dosha_remedies', context).then(ok => { if (ok) { clearPurchaseResume('dosha_remedies'); renderDoshas(); } }); },
+      });
+    }
     if (contentUnlocked('kundli_complete', context) && playBillingActive()) {
       const complete = el('section', 'premium-result'); complete.appendChild(el('h4', null, '📜 Complete personal Kundli report'));
       for (const topic of ['life', 'career', 'money', 'study', 'marriage', 'health']) {
@@ -2948,7 +2979,16 @@
       if (fullUnlocked) {
         const full = el('button', 'chip-btn', `${copy.full} ›`); full.type = 'button'; full.addEventListener('click', () => openTool('relationship'));
         box.append(full, el('p', 'num-note', copy.note));
-      } else { const offer = premiumOffer('sign_match_full', matchContext, renderSignMatch); if (offer) box.appendChild(offer); }
+      } else {
+        const offer = premiumOffer('sign_match_full', matchContext, renderSignMatch); if (offer) box.appendChild(offer);
+        scheduleEngagementPopup('signmatch', {
+          productId: 'sign_match_full',
+          stillRelevant: () => currentPage === 'signmatch' && sm.shown && `${sm.first}-${sm.second}` === matchContext && !contentUnlocked('sign_match_full', matchContext),
+          text: () => smCopy().tease || TOOLS_COPY.en.signmatch.tease,
+          buttonText: () => smCopy().teaseButton || TOOLS_COPY.en.signmatch.teaseButton,
+          onAction: () => { void purchaseProduct('sign_match_full', matchContext).then(ok => { if (ok) { clearPurchaseResume('sign_match_full'); renderSignMatch(); } }); },
+        });
+      }
     }
     // The main button, grey until both signs are chosen; a video icon marks the ad before the result.
     const see = el('button', `palm-scan${rewardedFor('signmatch') ? ' reward-btn' : ''}${ready ? '' : ' is-off'}`, copy.see); see.type = 'button'; see.disabled = !ready;
@@ -3094,7 +3134,16 @@
       box.appendChild(sec);
       lines.push(`✨ ${advice}`);
     }
-    if (!tarotUnlocked) { const offer = premiumOffer('tarot_detailed', tarotContext, renderTarot); if (offer) box.appendChild(offer); }
+    if (!tarotUnlocked) {
+      const offer = premiumOffer('tarot_detailed', tarotContext, renderTarot); if (offer) box.appendChild(offer);
+      scheduleEngagementPopup('tarot', {
+        productId: 'tarot_detailed',
+        stillRelevant: () => currentPage === 'tarot' && tarot.reading !== undefined && !contentUnlocked('tarot_detailed', tarotContext),
+        text: () => tarotCopy().tease || TOOLS_COPY.en.tarot.tease,
+        buttonText: () => tarotCopy().teaseButton || TOOLS_COPY.en.tarot.teaseButton,
+        onAction: () => { void purchaseProduct('tarot_detailed', tarotContext).then(ok => { if (ok) { clearPurchaseResume('tarot_detailed'); renderTarot(); } }); },
+      });
+    }
     const actions = el('div', 'tarot-actions');
     const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
     askAi.addEventListener('click', () => {
@@ -4573,7 +4622,16 @@
         }
       } catch (_error) { /* entitlement remains available for this result */ }
     });
-    if (offer) { offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight; }
+    if (offer) {
+      offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight;
+      scheduleEngagementPopup('actionplan', {
+        productId: 'ai_action_plan_7d',
+        stillRelevant: () => currentPage === 'chat' && !hasEntitlement('ai_action_plan_7d', context),
+        text: () => toolText().planTease || TOOLS_COPY.en.planTease,
+        buttonText: () => toolText().planTeaseButton || TOOLS_COPY.en.planTeaseButton,
+        onAction: () => offer.children[offer.children.length - 1].listeners.click(),
+      });
+    }
   }
   function removeChatChips() { try { Array.from(chatLog.children).filter(item => item.className === 'chat-chips').forEach(item => chatLog.removeChild(item)); } catch (_error) { /* optional */ } }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting
