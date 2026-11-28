@@ -1217,6 +1217,9 @@ test('the engagement pop-up also nudges toward the 7-day AI action plan while so
   await settle(); await settle();
   assert.ok(app.requests.some(r => r.url === '/api/play-purchase/verify' && r.body.product_id === 'ai_action_plan_7d'));
   assert.ok(app.element('chat-log').children.some(item => item.className === 'chat-message assistant' && item.children[0] && item.children[0].textContent === '✨ 7-day action plan'), 'bought: the plan was requested and shown');
+  assert.ok(!app.element('chat-log').children.some(item => item.className === 'premium-offer'), 'the offer for this answer cannot be bought a second time');
+  await typeInChat(app, 'What about my family life?');
+  assert.ok(app.element('chat-log').children.some(item => item.className === 'premium-offer'), 'a new answer gets its own, freshly purchasable offer');
 });
 
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
@@ -2004,6 +2007,59 @@ test('Google Play returns to the paid weekly Rashiphal after Android recreates t
   assert.equal(storage.getItem('jyotisha.play.pending.v1:rashiphal_forecast_7d'), null);
   assert.equal(app.element('top').children.find(item => item.id === 'page-rashi').hidden, false);
   assert.ok(app.requests.some(request => request.url === '/api/day-panchang' && request.body.date === selectedDate));
+});
+
+test('Google Play restores a paid Tarot reading after Android recreates the app during checkout', async () => {
+  const token = 'play-token-restored-tarot';
+  const today = new Date().toLocaleDateString('en-CA');
+  const spread = Array.from({ length: 12 }, (_unused, n) => ({ id: n, reversed: false }));
+  const chosen = [2, 5, 9];
+  const contextId = `${today}-career-${chosen.map(n => `${spread[n].id}u`).join('-')}`;
+  const reading = { past: 'Past text.', present: 'Present text.', future: 'Future text.', advice: 'Advice text.' };
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'tarot_detailed', formattedPrice: '₹5.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: token, products: ['tarot_detailed'] }] }),
+    completePurchase: async input => input,
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.play.pending.v1:tarot_detailed', contextId);
+  storage.setItem('jyotisha.play.resume.v1:tarot_detailed', JSON.stringify({
+    contextId, createdAt: Date.now(), page: 'tarot', tarot: { topic: 'career', spread, chosen, reading },
+  }));
+  const payments = { provider: 'google_play', products: { tarot_detailed: { title: 'Detailed Tarot interpretation', price_rs: 5 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play } }, payments });
+  await settle(); await settle();
+  assert.equal(storage.getItem(`jyotisha.play.v1:tarot_detailed:${contextId}`), '1');
+  assert.equal(storage.getItem('jyotisha.play.pending.v1:tarot_detailed'), null);
+  assert.equal(storage.getItem('jyotisha.play.resume.v1:tarot_detailed'), null);
+  assert.equal(app.element('top').children.find(item => item.id === 'page-tarot').hidden, false);
+  const secs = app.element('tarot').children.filter(item => /^tarot-sec/.test(item.className));
+  assert.deepEqual(secs.map(sec => sec.children[1].textContent), ['Past text.', 'Present text.', 'Future text.', 'Advice text.']);
+  assert.ok(app.requests.some(request => request.url === '/api/play-purchase/verify'));
+});
+
+test('Google Play restores a paid Sign match after Android recreates the app during checkout', async () => {
+  const token = 'play-token-restored-signmatch';
+  const contextId = '1-8';   // Aries + Scorpio
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'sign_match_full', formattedPrice: '₹3.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: token, products: ['sign_match_full'] }] }),
+    completePurchase: async input => input,
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.play.pending.v1:sign_match_full', contextId);
+  storage.setItem('jyotisha.play.resume.v1:sign_match_full', JSON.stringify({
+    contextId, createdAt: Date.now(), page: 'signmatch', signmatch: { first: 1, second: 8 },
+  }));
+  const payments = { provider: 'google_play', products: { sign_match_full: { title: 'Full sign compatibility explanation', price_rs: 3 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play } }, payments });
+  await settle(); await settle();
+  assert.equal(storage.getItem(`jyotisha.play.v1:sign_match_full:${contextId}`), '1');
+  assert.equal(storage.getItem('jyotisha.play.pending.v1:sign_match_full'), null);
+  assert.equal(app.element('top').children.find(item => item.id === 'page-signmatch').hidden, false);
+  assert.ok(app.element('signmatch').children.some(item => item.className === 'sm-result'));
+  assert.ok(!app.element('signmatch').children.some(item => item.className === 'premium-offer'), 'the full, paid score shows, not the offer');
+  assert.ok(app.requests.some(request => request.url === '/api/play-purchase/verify'));
 });
 
 test('a verified Play purchase unlocks its result even when consumption must retry later', async () => {

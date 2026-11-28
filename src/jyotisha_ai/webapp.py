@@ -220,10 +220,14 @@ def _app_ads() -> dict | None:
 
 
 def _payments_config() -> dict | None:
-    """Public payment configuration; native Play prices are replaced with localized on-device prices."""
+    """Public payment configuration; native Play prices are replaced with localized on-device prices. Google Play
+    Billing takes priority for the named one-time products when both are configured; Razorpay sells the same
+    products by its own web checkout whenever Play Billing is off."""
     config: dict = {}
     if play_billing.enabled():
         config.update(play_billing.public_config())
+    elif payments.enabled():
+        config.update({"provider": "razorpay", "products": payments.product_catalog()})
     if payments.enabled():
         config.update({"key_id": payments.key_id(), "chat_bonus_rs": payments.price_paise("chat_bonus") // 100,
                        "unlock_rs": payments.price_paise("unlock") // 100})
@@ -1243,17 +1247,21 @@ class LocalHandler(BaseHTTPRequestHandler):
             elif path == "/api/payment/create-order":
                 payment_result = payments.create_order(payload)
                 if payment_result.get("status") == "ok":
-                    store.analytics.payment_event(self._visitor(), payload["feature"], "orders", payment_result.get("amount", 0))
+                    key = payload.get("feature") or payload.get("product_id")
+                    store.analytics.payment_event(self._visitor(), key, "orders", payment_result.get("amount", 0))
                 observe(payment_result.get("status") == "ok")
                 self._json(200, payment_result)
                 return
             elif path == "/api/payment/verify":
-                payment_result = payments.verify_payment(payload)
+                payment_result = payments.verify_payment(payload, self._visitor())
+                key = payment_result.get("feature") or payment_result.get("product_id")
                 if payment_result.get("status") == "ok":
-                    store.analytics.payment_event(self._visitor(), payment_result["feature"], "successful",
-                                                  payments.price_paise(payment_result["feature"]), payload.get("payment_id", ""))
-                elif isinstance(payload, dict) and payload.get("feature") in store.PAYMENT_FEATURES:
-                    store.analytics.payment_event(self._visitor(), payload["feature"], "failed")
+                    store.analytics.payment_event(self._visitor(), key, "successful",
+                                                  payments.price_paise_for(key), payload.get("payment_id", ""))
+                elif isinstance(payload, dict):
+                    failed_key = payload.get("feature") or payload.get("product_id")
+                    if failed_key in store.PAYMENT_FEATURES:
+                        store.analytics.payment_event(self._visitor(), failed_key, "failed")
                 observe(payment_result.get("status") == "ok")
                 self._json(200, payment_result)
                 return
