@@ -1002,6 +1002,33 @@ def test_ads_are_off_by_default_and_switch_on_only_with_a_valid_adsense_id(local
     assert json.loads(request(local_server, "GET", "/api/birth-readiness")[2])["adsense_client"] == "ca-pub-1234567890123456"
 
 
+def test_razorpay_checkout_is_allowed_by_csp_only_once_razorpay_is_actually_configured(local_server, monkeypatch):
+    for name in ("JYOTISHA_PAYMENTS_PROVIDER", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "JYOTISHA_ADSENSE_CLIENT"):
+        monkeypatch.delenv(name, raising=False)
+    status, headers, _ = request(local_server, "GET", "/privacy")
+    csp = headers["Content-Security-Policy"]
+    assert "razorpay" not in csp, "no Razorpay CSP exception while payments are off: nothing to allow"
+
+    monkeypatch.setenv("JYOTISHA_PAYMENTS_PROVIDER", "razorpay")
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_abc123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "shh")
+    status, headers, _ = request(local_server, "GET", "/privacy")
+    csp = headers["Content-Security-Policy"]
+    # Without these, the browser silently blocks checkout.razorpay.com/v1/checkout.js: the "pay instead" button
+    # just does nothing, with no visible error, while the server-side order is still created successfully.
+    assert "script-src" in csp and "https://checkout.razorpay.com" in csp
+    assert "connect-src" in csp and "https://api.razorpay.com" in csp
+    assert "frame-src" in csp and "https://checkout.razorpay.com" in csp
+    assert "default-src 'none'" in csp   # the rest of the policy stays strict
+
+    # Both ad and payment exceptions must coexist in one policy, not clobber each other.
+    monkeypatch.setenv("JYOTISHA_ADSENSE_CLIENT", "ca-pub-1234567890123456")
+    status, headers, _ = request(local_server, "GET", "/privacy")
+    csp = headers["Content-Security-Policy"]
+    assert "https://pagead2.googlesyndication.com" in csp and "https://checkout.razorpay.com" in csp
+    assert csp.count("frame-src") == 1   # one combined directive, not two conflicting ones
+
+
 def test_privacy_page_names_the_developer_and_the_reporting_route_and_readiness_exposes_a_valid_contact(local_server, monkeypatch):
     monkeypatch.delenv("JYOTISHA_DEVELOPER", raising=False)
     monkeypatch.setenv("JYOTISHA_CONTACT", "help@example.com")
