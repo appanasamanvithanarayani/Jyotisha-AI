@@ -1067,6 +1067,34 @@ test('a curiosity nudge toward the paid weekly forecast appears on the Day view 
   assert.ok(offer, 'tapping the nudge switches straight to Week and shows the purchase offer there');
 });
 
+test('a pop-up toward the paid weekly forecast appears while someone is actually reading their own sign, not on a timer regardless of what they are doing', async () => {
+  const payments = { provider: 'google_play', products: { rashiphal_forecast_7d: { title: 'Personalized 7-day forecast', price_rs: 9 } } };
+  const play = { getProducts: async () => ({ products: [{ productId: 'rashiphal_forecast_7d', formattedPrice: '₹9.00' }] }), restorePurchases: async () => ({ purchases: [] }) };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  const app = boot({ storage, payments, capacitor: { Plugins: { PlayBilling: play } } });
+  await settle(); await settle();
+  homeCard(app, 'Rashiphal').listeners.click();
+  await settle();
+  // Just browsing the grid (no sign picked yet): no pop-up should ever be scheduled.
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'browsing the grid alone must not trigger the pop-up');
+  app.element('rashi-picker').children[0].listeners.click();   // now they are actually reading their sign's reading
+  await settle();
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'not yet: the dwell time has not passed');
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  const popup = app.context.document.body.children.find(item => item.className === 'curiosity-popup');
+  assert.ok(popup, 'after a few seconds of actually reading, the pop-up appears');
+  assert.match(popup.children[1].textContent, /this whole week/);
+  popup.children[2].listeners.click();   // its button jumps to Week, same as the static banner's
+  await settle();
+  const offer = app.element('rashi-list').children.find(item => item.className === 'premium-offer');
+  assert.ok(offer, 'the pop-up button leads to the same purchase offer');
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'tapping its button dismisses the pop-up');
+  // It only shows once per day, remembered the same way every other once-a-day nudge in this app is.
+  const today = new Date(); const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  assert.equal(storage.getItem('jyotisha.week-popup.v1'), iso);
+});
+
 test('without a Kundli, Home nudges the user to make one and the personal cards ask for it', async () => {
   const app = boot();
   await enter(app, 'en');

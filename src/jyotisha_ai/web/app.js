@@ -3358,11 +3358,40 @@
     card.appendChild(button);
     return card;
   }
+  const WEEK_POPUP_DELAY_MS = 4000;   // long enough that it only reaches someone actually reading their day's reading, not just passing through
+  const WEEK_POPUP_KEY = 'jyotisha.week-popup.v1';
+  const weekPopupShownToday = () => { try { return window.localStorage.getItem(WEEK_POPUP_KEY) === localIso(new Date()); } catch (_error) { return false; } };
+  let weekPopupTimer = null;
+  function showWeekForecastPopup() {
+    weekPopupTimer = null;
+    // Re-check everything at fire time: by now the user may have left Rashiphal, switched to Week themselves, or bought it.
+    if (weekPopupShownToday() || currentPage !== 'rashi' || state.rashiMode !== 'day' || !state.rashiPick) return;
+    if (!playBillingActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return;
+    try { window.localStorage.setItem(WEEK_POPUP_KEY, localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
+    const copy = toolText().rashi || TOOLS_COPY.en.rashi;
+    const popup = el('div', 'curiosity-popup');
+    const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
+    const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
+    close.addEventListener('click', dismiss);
+    const button = el('button', 'palm-scan', `${copy.weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton} · ${productPrice('rashiphal_forecast_7d')}`);
+    button.type = 'button';
+    button.addEventListener('click', () => { dismiss(); state.rashiMode = 'week'; renderRashi(); });
+    popup.append(close, el('p', null, copy.weekTease || TOOLS_COPY.en.rashi.weekTease), button);
+    document.body.appendChild(popup);
+    setTimeout(dismiss, 12000);
+  }
+  // Fires once a day, only while the user is actually sitting on their own sign's reading — not a static banner,
+  // but a nudge that shows up because they are engaged right now.
+  function scheduleWeekForecastPopup() {
+    if (weekPopupTimer || weekPopupShownToday()) return;
+    weekPopupTimer = setTimeout(showWeekForecastPopup, WEEK_POPUP_DELAY_MS);
+  }
   function renderRashiDay() {
     const day = state.day;
     if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
     $('rashi-moon').textContent = `${calendarUI.formatDate(state.lang, day.date, 'full')} · ${t('moonsign')}: ${signName(day.moon_rashi[0].index)}`;
     const tease = weekForecastTease(); if (tease) $('rashi-list').appendChild(tease);
+    if (state.rashiPick) scheduleWeekForecastPopup();   // they picked a sign: they are actually reading, not just browsing
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     const detail = chartUI.gocharaOutlook(day, state.lang), moonCards = chartUI.rashiOutlook(day, state.lang);
     for (const item of moonCards) {
