@@ -74,5 +74,10 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
+        <!-- Razorpay Checkout can hand a payment to the UPI apps installed on the phone (GPay, PhonePe, Paytm…). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
     </queries>
 </manifest>

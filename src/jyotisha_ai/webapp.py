@@ -1069,6 +1069,16 @@ class LocalHandler(BaseHTTPRequestHandler):
             page = files("jyotisha_ai.web").joinpath("refund.html").read_text(encoding="utf-8")
             page = page.replace("{{DEVELOPER}}", html.escape(store.value("JYOTISHA_DEVELOPER", "Samanvitha")))
             self._send(200, page.replace("{{CONTACT}}", html.escape(store.value("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
+        elif path == "/pricing":
+            # Payment providers (Razorpay's website review) ask for a public pricing page; built from the same
+            # catalogue the app sells from, so the listed prices can never drift from the real ones.
+            rows = [(product["title"], product["price_rs"]) for product in play_billing.PRODUCTS.values()]
+            rows += [("Extra AI questions (instead of watching an ad)", payments.price_paise("chat_bonus") // 100),
+                     ("Unlock one reading (instead of watching an ad)", payments.price_paise("unlock") // 100)]
+            table = "\n  ".join(f'<tr><td>{html.escape(title)}</td><td class="price">₹{rupees}</td></tr>' for title, rupees in rows)
+            page = files("jyotisha_ai.web").joinpath("pricing.html").read_text(encoding="utf-8")
+            page = page.replace("{{ROWS}}", table).replace("{{DEVELOPER}}", html.escape(store.value("JYOTISHA_DEVELOPER", "Samanvitha")))
+            self._send(200, page.replace("{{CONTACT}}", html.escape(store.value("JYOTISHA_CONTACT", "the contact listed on the app store page"))).encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/ads.txt":
             client = _adsense_client()
             if not client:
