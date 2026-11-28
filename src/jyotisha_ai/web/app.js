@@ -4253,15 +4253,16 @@
   }
   // A pop-up tied to actually using a feature, not a timer that fires regardless of what the user is doing: each
   // caller schedules one while the user is reading a specific result, and it only fires if that is still true when
-  // the delay is up — and only once a day per feature, so it nudges without nagging.
+  // the delay is up. Not capped to once a day — only a short cooldown (in memory, not persisted) so it cannot
+  // stack into a loop while someone stays on the same screen.
   const ENGAGEMENT_POPUP_DELAY_MS = 4000;
-  const engagementPopupKey = id => `jyotisha.engage-popup.v1:${id}`;
-  const engagementPopupShownToday = id => { try { return window.localStorage.getItem(engagementPopupKey(id)) === localIso(new Date()); } catch (_error) { return false; } };
+  const ENGAGEMENT_POPUP_COOLDOWN_MS = 60000;
   const engagementPopupTimers = {};
+  const engagementPopupLastShown = {};
   function showEngagementPopup(id, config) {
     delete engagementPopupTimers[id];
-    if (engagementPopupShownToday(id) || !paidAddonsActive() || !config.stillRelevant()) return;
-    try { window.localStorage.setItem(engagementPopupKey(id), localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
+    if (!paidAddonsActive() || !config.stillRelevant()) return;
+    engagementPopupLastShown[id] = Date.now();
     const popup = el('div', 'curiosity-popup');
     const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
     const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
@@ -4273,7 +4274,7 @@
     setTimeout(dismiss, 12000);
   }
   function scheduleEngagementPopup(id, config) {
-    if (engagementPopupTimers[id] || engagementPopupShownToday(id)) return;
+    if (engagementPopupTimers[id] || Date.now() - (engagementPopupLastShown[id] || 0) < ENGAGEMENT_POPUP_COOLDOWN_MS) return;
     engagementPopupTimers[id] = setTimeout(() => showEngagementPopup(id, config), ENGAGEMENT_POPUP_DELAY_MS);
   }
   async function loadPlayProducts() {

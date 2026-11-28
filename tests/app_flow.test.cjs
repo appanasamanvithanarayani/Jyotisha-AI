@@ -1090,9 +1090,14 @@ test('a pop-up toward the paid weekly forecast appears while someone is actually
   const offer = app.element('rashi-list').children.find(item => item.className === 'premium-offer');
   assert.ok(offer, 'the pop-up button leads to the same purchase offer');
   assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'tapping its button dismisses the pop-up');
-  // It only shows once per day, remembered the same way every other once-a-day nudge in this app is.
-  const today = new Date(); const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  assert.equal(storage.getItem('jyotisha.engage-popup.v1:week'), iso);
+  // Not capped to once a day: picking the sign again right away schedules another one, just not instantly
+  // (a short cooldown keeps it from stacking into a loop on the same screen).
+  app.element('rashi-picker').children[1].listeners.click();
+  await settle();
+  app.element('rashi-picker').children[0].listeners.click();
+  await settle();
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'still inside the cooldown: not yet again');
 });
 
 test('the same engagement pop-up pattern nudges toward the paid detailed Palm reading while someone is reading their result', async () => {
