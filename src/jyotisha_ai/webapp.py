@@ -141,6 +141,12 @@ BASE_CSP = ("default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 's
             "worker-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'")
 ADS_SCRIPT = "https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagservices.com https://partner.googleadservices.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
 ADS_FRAME = "https://googleads.g.doubleclick.net https://*.googlesyndication.com https://tpc.googlesyndication.com https://www.google.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
+# Razorpay Checkout loads its own script and opens payment-method UI (UPI apps, 3D-Secure, bank pages) in an iframe;
+# without these the browser silently blocks the script tag and "pay instead" does nothing, with no visible error.
+RAZORPAY_SCRIPT = "https://checkout.razorpay.com"
+RAZORPAY_CONNECT = "https://api.razorpay.com https://lumberjack.razorpay.com"
+RAZORPAY_FRAME = "https://api.razorpay.com https://checkout.razorpay.com"
+RAZORPAY_IMG = "https://*.razorpay.com"
 ADS_CONNECT = "https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google"
 
 
@@ -247,11 +253,18 @@ def _notice() -> dict | None:
 
 
 def _content_security_policy() -> str:
-    if not _adsense_client():
+    ads, razorpay = bool(_adsense_client()), payments.enabled()
+    if not ads and not razorpay:
         return BASE_CSP
-    return (BASE_CSP.replace("script-src 'self' 'unsafe-inline'", f"script-src 'self' 'unsafe-inline' {ADS_SCRIPT}")
-            .replace("img-src 'self' data:", "img-src 'self' data: https:")
-            .replace("connect-src 'self'", f"connect-src 'self' {ADS_CONNECT}") + f"; frame-src {ADS_FRAME}")
+    csp = BASE_CSP
+    script = " ".join(filter(None, [ADS_SCRIPT if ads else "", RAZORPAY_SCRIPT if razorpay else ""]))
+    connect = " ".join(filter(None, [ADS_CONNECT if ads else "", RAZORPAY_CONNECT if razorpay else ""]))
+    frame = " ".join(filter(None, [ADS_FRAME if ads else "", RAZORPAY_FRAME if razorpay else ""]))
+    img = " ".join(filter(None, ["https:" if ads else "", RAZORPAY_IMG if razorpay else ""]))
+    csp = csp.replace("script-src 'self' 'unsafe-inline'", f"script-src 'self' 'unsafe-inline' {script}")
+    csp = csp.replace("connect-src 'self'", f"connect-src 'self' {connect}")
+    csp = csp.replace("img-src 'self' data:", f"img-src 'self' data: {img}")
+    return f"{csp}; frame-src {frame}"
 
 
 def _privacy_ads_item() -> str:
