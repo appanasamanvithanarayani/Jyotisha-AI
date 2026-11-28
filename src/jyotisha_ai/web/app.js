@@ -152,6 +152,7 @@
       manglikBoth: 'Both are Manglik — traditionally this cancels out.', manglikOne: 'Only one is Manglik — many families consult an astrologer about this.',
       note: 'Conventional Ashtakoota rules, not expert-reviewed. Use it as a guide, not as a decision about marriage. Enter another person’s details only with their consent; they are not saved on this device.',
       error: 'Calculated chart data is incomplete; no matching was made.',
+      matchTease: '✨ Curious how all 8 kootas scored for this match?', matchTeaseButton: 'See all 8 kootas',
     },
     te: {
       nav: 'ప్రేమ', eyebrow: 'సంబంధాలు', title: 'ప్రేమ & జాతక పొంతన', intro: 'మీరు ఏది చూడాలనుకుంటున్నారో ఎంచుకోండి.',
@@ -178,6 +179,7 @@
       manglikBoth: 'ఇద్దరికీ కుజ దోషం ఉంది — సంప్రదాయంగా ఇది పరిహారమవుతుంది.', manglikOne: 'ఒకరికి మాత్రమే కుజ దోషం ఉంది — చాలా కుటుంబాలు దీని గురించి జ్యోతిష్కుడిని సంప్రదిస్తాయి.',
       note: 'ఇవి సంప్రదాయ అష్టకూట నియమాలు, నిపుణుల సమీక్ష పొందలేదు. వివాహ నిర్ణయంగా కాకుండా మార్గదర్శిగా మాత్రమే వాడండి. మరొకరి వివరాలను వారి సమ్మతితోనే నమోదు చేయండి; అవి ఈ పరికరంలో సేవ్ కావు.',
       error: 'గణించిన జాతక సమాచారం అసంపూర్ణంగా ఉంది; పొంతన చూడలేదు.',
+      matchTease: '✨ ఈ పొంతనకు అన్ని 8 కూటాల స్కోరు తెలుసుకోవాలా?', matchTeaseButton: 'అన్ని 8 కూటాలు చూడండి',
     },
     hi: {
       nav: 'प्रेम', eyebrow: 'संबंध', title: 'प्रेम और कुंडली मिलान', intro: 'आप क्या देखना चाहते हैं, चुनें।',
@@ -204,6 +206,7 @@
       manglikBoth: 'दोनों मांगलिक हैं — परंपरा में यह दोष कट जाता है।', manglikOne: 'केवल एक मांगलिक है — कई परिवार इसके लिए ज्योतिषी से परामर्श करते हैं।',
       note: 'ये पारंपरिक अष्टकूट नियम हैं, विशेषज्ञ समीक्षा नहीं हुई। इसे विवाह का निर्णय नहीं, केवल मार्गदर्शन मानें। किसी और का विवरण उनकी सहमति से ही दर्ज करें; यह इस डिवाइस पर सहेजा नहीं जाता।',
       error: 'गणना की गई कुंडली अधूरी है; मिलान नहीं किया गया।',
+      matchTease: '✨ जानना चाहते हैं इस मिलान में सभी 8 कूट कैसे रहे?', matchTeaseButton: 'सभी 8 कूट देखें',
     },
   };
   // Kundli views, doshas and the Home tool cards.
@@ -240,6 +243,7 @@
         ask: 'Ask AI about my day', askQ: 'How is today for my rashi {sign}? Please tell me from my chart.', full: 'See my full Jathakam', share: 'Share on WhatsApp',
         details: 'Planet-by-planet details', transitGood: 'Favourable', transitCare: 'Take care', jump: { transits: 'Planet transits', remedies: 'Remedies', full: 'Full Jathakam', ask: 'Ask AI' }, hint: 'Pick your rashi above to see today’s reading.',
         unlock: '▶ See today’s reading', unlockNote: 'Watch one short ad to open today’s Rashiphal for all signs.',
+        weekTease: '✨ Curious what this whole week holds for you?', weekTeaseButton: 'See my 7-day forecast',
         luckyTitle: 'Lucky factors', luckyDay: 'Colour and direction: today, same for all rashis · Numbers: for your rashi', luckySign: 'Special for your rashi', colour: 'Colour', numbers: 'Numbers', direction: 'Direction',
         colours: { Sun: 'Orange, red', Moon: 'White, silver', Mars: 'Red, coral', Mercury: 'Green', Jupiter: 'Yellow, gold', Venus: 'White, pink', Saturn: 'Blue, black', Rahu: 'Grey', Ketu: 'Brown' },
         directions: { Sun: 'East', Moon: 'North-west', Mars: 'South', Mercury: 'North', Jupiter: 'North-east', Venus: 'South-east', Saturn: 'West', Rahu: 'South-west', Ketu: 'North-west' } },
@@ -264,7 +268,8 @@
         verdict: { excellent: 'Excellent match', good: 'Good match', average: 'Average match', low: 'Needs patience' },
         text: { excellent: 'Your signs get along naturally: easy understanding and a shared outlook.', good: 'A comfortable pairing, with a few differences to adjust to.', average: 'Some differences to work on. Patience and talking things through help.', low: 'Quite different natures. It can work with understanding and effort.' },
         friendship: 'Mind & friendship', family: 'Family & prosperity', dosha: 'The two signs sit in a difficult position from each other (Bhakoot dosha). Many families check this before a marriage.',
-        full: 'Full 36-point Kundli matching', note: 'Based on the two Moon signs only. Guidance for reflection, not a prediction.', shareLine: '{a} + {b}: {percent}% sign match, {verdict}.' },
+        full: 'Full 36-point Kundli matching', note: 'Based on the two Moon signs only. Guidance for reflection, not a prediction.', shareLine: '{a} + {b}: {percent}% sign match, {verdict}.',
+        tease: '✨ Curious about the Mind & Family scores behind this match?', teaseButton: 'See the full match' },
       numerology: { card: ['Numerology', 'Your numbers from name & birth date'], title: 'Numerology', intro: 'Your Moolank, Bhagyank and name number, worked out from your date of birth and name.',
         dob: 'Date of birth', name: 'Name (in English letters)', show: 'Show my numbers', bad: 'Please enter a valid date of birth.', change: 'Change',
         moolank: ['Moolank', 'Birth number · how you are'], bhagyank: ['Bhagyank', 'Destiny number · where life leads'], nameNum: ['Name number', 'How others see you'],
@@ -281,12 +286,14 @@
         cam: { hint: 'Place your open palm inside the outline', dark: 'Too dark. Move to brighter light and press again.', gallery: 'Choose a photo', close: 'Close', snap: 'Take photo' }, tabs: ['Palm', 'Love', 'Career'], lines: { heart: 'Heart line', head: 'Head line', life: 'Life line', fate: 'Fate line', summary: 'Your palm says' },
         ready: 'Your palm photo is ready.', see: '▶ See my reading', again: 'Scan again', askAi: 'Ask AI about my palm', share: 'Share', privacy: 'Your photo is used only for this reading and is not saved.',
         askQ: 'My palm reading says: “{summary}” What should I focus on now?',
-        rekhaNote: 'These lines are the AI’s best guess from your photo, shown as a guide — not an exact trace.' },
+        rekhaNote: 'These lines are the AI’s best guess from your photo, shown as a guide — not an exact trace.',
+        tease: '✨ Curious what your Heart and Fate lines reveal?', teaseButton: 'See my full palm reading' },
       tarot: { card: ['Tarot', 'Ask the cards about love, career, money…'], title: 'Tarot', ask: 'What do you want to ask the cards?',
         topics: { love: 'Love', career: 'Career', money: 'Money', health: 'Health', luck: 'Luck', family: 'Family' },
         pick: 'Pick 3 cards', picked: '{n} of 3 chosen', shuffle: 'Focus on your question, then pick three cards.',
         positions: ['Past', 'Present', 'Future'], reversed: 'Reversed', advice: 'Message for you', loading: 'Reading your cards…',
         see: '▶ See my reading', again: 'New reading', askAi: 'Ask AI about this', share: 'Share', fallbackAdvice: 'Take the message of the middle card to heart today, and move one small step at a time.',
+        tease: '✨ Curious what the cards really mean for you?', teaseButton: 'See my full tarot reading',
         askQ: 'I drew {cards} in a {topic} tarot reading. What does it mean for me?' },
       moon: { card: ['Moon sign', 'Your Chandra rashi & nature'], title: 'Moon Sign', nakshatra: 'Nakshatra', pada: 'pada',
         approx: 'Approximate: add your birth time for an exact Moon sign.', need: 'Add your date of birth to see your Moon sign.', add: 'Add my birth details',
@@ -299,6 +306,8 @@
           'Optimistic and honest, you love learning, travel and the big picture.', 'Practical and patient, you are responsible and quietly ambitious.',
           'Independent and thoughtful, you are a friendly mind who cares about people.', 'Dreamy and kind, you are compassionate, creative and naturally spiritual.'] },
       sections: { chart: 'Your chart', palm: 'Palm, tarot & numbers', love: 'Love & match', time: 'Time & festivals' }, daily: 'Daily',
+      doshaTease: '✨ Curious about remedies for the doshas in your chart?', doshaTeaseButton: 'See my detailed remedies',
+      planTease: '✨ Curious what a 7-day plan for this would look like?', planTeaseButton: 'Get my 7-day action plan',
       greet: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good night', hello: 'Namaste 🙏' },
       aiEyebrow: 'AI astrologer', tryAsking: 'Try asking', persona: { hello: 'Namaste{name}! 🙏 I am Jyotirmaya, your astrologer. I can guide you on love, career, money, health and your days ahead.' }, panchangCard: ['Today’s Panchang', 'Tithi, Rahu Kalam & muhurtas'],
       tools: { jathakam: ['Jathakam', 'Your birth chart & predictions'], festivals: ['Festivals', 'Upcoming festivals & holidays'], match: ['Kundli matching', 'Guna Milan out of 36'], doshas: ['Doshas', 'Kuja dosha & Sade Sati'], dasha: ['Dasha periods', 'Which planet’s period you are in'], rashi: ['Rashiphal', 'Day, week, month'], chat: ['Ask AI', 'Questions about your life'] },
@@ -335,6 +344,7 @@
         ask: 'నా రోజు గురించి AIని అడగండి', askQ: 'ఈ రోజు నా రాశి {sign}కి ఎలా ఉంటుంది? నా జాతకం ప్రకారం చెప్పండి.', full: 'పూర్తి జాతకం తెలుసుకోండి', share: 'WhatsAppలో షేర్ చేయండి',
         details: 'గ్రహాల వారీగా వివరాలు', transitGood: 'అనుకూలం', transitCare: 'జాగ్రత్త', jump: { transits: 'గ్రహ సంచారం', remedies: 'పరిహారాలు', full: 'పూర్తి జాతకం', ask: 'AIని అడగండి' }, hint: 'ఈ రోజు ఫలితాలు చూడటానికి పైన మీ రాశిని ఎంచుకోండి.',
         unlock: '▶ నేటి రాశిఫలం చూడండి', unlockNote: 'ఒక చిన్న యాడ్ చూస్తే ఈరోజు అన్ని రాశుల ఫలాలు తెరుచుకుంటాయి.',
+        weekTease: '✨ ఈ వారం మీకు ఎలా ఉంటుందో తెలుసుకోవాలని ఉందా?', weekTeaseButton: 'నా 7-రోజుల ఫలితం చూడండి',
         luckyTitle: 'అదృష్ట సూచక అంశాలు', luckyDay: 'రంగు, దిక్కు: ఈరోజు అన్ని రాశులకు ఒకటే · సంఖ్యలు: మీ రాశికి', luckySign: 'మీ రాశికి ప్రత్యేకం', colour: 'రంగు', numbers: 'సంఖ్యలు', direction: 'దిక్కు',
         colours: { Sun: 'కాషాయం, ఎరుపు', Moon: 'తెలుపు, వెండి', Mars: 'ఎరుపు, పగడపు రంగు', Mercury: 'ఆకుపచ్చ', Jupiter: 'పసుపు, బంగారు', Venus: 'తెలుపు, గులాబీ', Saturn: 'నీలం, నలుపు', Rahu: 'బూడిద రంగు', Ketu: 'గోధుమ రంగు' },
         directions: { Sun: 'తూర్పు', Moon: 'వాయువ్యం', Mars: 'దక్షిణం', Mercury: 'ఉత్తరం', Jupiter: 'ఈశాన్యం', Venus: 'ఆగ్నేయం', Saturn: 'పశ్చిమం', Rahu: 'నైరుతి', Ketu: 'వాయువ్యం' } },
@@ -359,7 +369,8 @@
         verdict: { excellent: 'అద్భుతమైన పొంతన', good: 'మంచి పొంతన', average: 'సగటు పొంతన', low: 'ఓపిక అవసరం' },
         text: { excellent: 'మీ రాశులు సహజంగా కలుస్తాయి: సులభమైన అవగాహన, ఒకేలాంటి దృక్పథం.', good: 'సౌకర్యవంతమైన జంట, కొన్ని తేడాలకు సర్దుకుపోవాలి.', average: 'కొన్ని తేడాలపై కృషి చేయాలి. ఓపిక, మాట్లాడుకోవడం సహాయపడతాయి.', low: 'స్వభావాలు చాలా భిన్నం. అవగాహన, కృషితో సాగవచ్చు.' },
         friendship: 'మనసు, స్నేహం', family: 'కుటుంబం, సంపద', dosha: 'రెండు రాశులు ఒకదానికొకటి కష్టమైన స్థానంలో ఉన్నాయి (భకూట దోషం). చాలా కుటుంబాలు పెళ్లికి ముందు దీన్ని చూస్తాయి.',
-        full: 'పూర్తి 36 గుణాల జాతక పొంతన', note: 'రెండు చంద్ర రాశుల ఆధారంగా మాత్రమే. ఆలోచనకు మార్గదర్శనం, జోస్యం కాదు.', shareLine: '{a} + {b}: {percent}% రాశి పొంతన, {verdict}.' },
+        full: 'పూర్తి 36 గుణాల జాతక పొంతన', note: 'రెండు చంద్ర రాశుల ఆధారంగా మాత్రమే. ఆలోచనకు మార్గదర్శనం, జోస్యం కాదు.', shareLine: '{a} + {b}: {percent}% రాశి పొంతన, {verdict}.',
+        tease: '✨ ఈ పొంతన వెనుక మనస్సు & కుటుంబం స్కోర్లు తెలుసుకోవాలా?', teaseButton: 'పూర్తి పొంతన చూడండి' },
       numerology: { card: ['సంఖ్యా శాస్త్రం', 'పేరు, పుట్టిన తేదీ నుంచి మీ సంఖ్యలు'], title: 'సంఖ్యా శాస్త్రం', intro: 'మీ పుట్టిన తేదీ, పేరు ఆధారంగా మీ మూలాంకం, భాగ్యాంకం, నామ సంఖ్య.',
         dob: 'పుట్టిన తేదీ', name: 'పేరు (ఇంగ్లీష్ అక్షరాల్లో)', show: 'నా సంఖ్యలు చూపించు', bad: 'దయచేసి సరైన పుట్టిన తేదీ ఇవ్వండి.', change: 'మార్చండి',
         moolank: ['మూలాంకం', 'జన్మ సంఖ్య · మీ స్వభావం'], bhagyank: ['భాగ్యాంకం', 'అదృష్ట సంఖ్య · జీవిత మార్గం'], nameNum: ['నామ సంఖ్య', 'ఇతరులు మిమ్మల్ని ఎలా చూస్తారు'],
@@ -376,12 +387,14 @@
         cam: { hint: 'మీ తెరిచిన అరచేతిని అవుట్‌లైన్ లోపల ఉంచండి', dark: 'చాలా చీకటిగా ఉంది. ఎక్కువ వెలుతురులోకి వెళ్లి మళ్లీ నొక్కండి.', gallery: 'ఫోటో ఎంచుకోండి', close: 'మూసివేయండి', snap: 'ఫోటో తీయండి' }, tabs: ['హస్తం', 'ప్రేమ', 'ఉద్యోగం'], lines: { heart: 'హృదయ రేఖ', head: 'మస్తిష్క రేఖ', life: 'జీవన రేఖ', fate: 'భాగ్య రేఖ', summary: 'మీ అరచేయి చెప్పేది' },
         ready: 'మీ అరచేయి ఫోటో సిద్ధం.', see: '▶ నా రీడింగ్ చూడండి', again: 'మళ్ళీ స్కాన్', askAi: 'నా అరచేయి గురించి AIని అడగండి', share: 'షేర్', privacy: 'మీ ఫోటో ఈ ఒక్క పఠనానికే వాడబడుతుంది, సేవ్ చేయబడదు.',
         askQ: 'నా హస్త రేఖా పఠనం ఇలా చెప్పింది: “{summary}” ఇప్పుడు నేను దేనిపై దృష్టి పెట్టాలి?',
-        rekhaNote: 'ఈ గీతలు మీ ఫోటో నుండి AI అంచనా వేసినవి, మార్గదర్శనం కోసం మాత్రమే — ఖచ్చితమైన రేఖలు కావు.' },
+        rekhaNote: 'ఈ గీతలు మీ ఫోటో నుండి AI అంచనా వేసినవి, మార్గదర్శనం కోసం మాత్రమే — ఖచ్చితమైన రేఖలు కావు.',
+        tease: '✨ మీ హృదయ మరియు అదృష్ట రేఖలు ఏమి చెబుతున్నాయో తెలుసుకోవాలా?', teaseButton: 'నా పూర్తి హస్త రేఖా ఫలితం చూడండి' },
       tarot: { card: ['టారో', 'ప్రేమ, ఉద్యోగం, డబ్బు గురించి కార్డులను అడగండి'], title: 'టారో', ask: 'కార్డులను ఏమి అడగాలనుకుంటున్నారు?',
         topics: { love: 'ప్రేమ', career: 'ఉద్యోగం', money: 'డబ్బు', health: 'ఆరోగ్యం', luck: 'అదృష్టం', family: 'కుటుంబం' },
         pick: '3 కార్డులు ఎంచుకోండి', picked: '3లో {n} ఎంచుకున్నారు', shuffle: 'మీ ప్రశ్నపై మనసు నిలిపి, మూడు కార్డులు ఎంచుకోండి.',
         positions: ['గతం', 'వర్తమానం', 'భవిష్యత్తు'], reversed: 'తలకిందులు', advice: 'మీకో సందేశం', loading: 'మీ కార్డులు చదువుతున్నాం…',
         see: '▶ నా రీడింగ్ చూడండి', again: 'కొత్త రీడింగ్', askAi: 'దీని గురించి AIని అడగండి', share: 'షేర్', fallbackAdvice: 'మధ్య కార్డు సందేశాన్ని ఈరోజు గుర్తుంచుకోండి; ఒక్కో చిన్న అడుగు వేయండి.',
+        tease: '✨ కార్డులు మీ కోసం ఏమి చెబుతున్నాయో తెలుసుకోవాలా?', teaseButton: 'నా పూర్ణ టారో ఫలితం చూడండి',
         askQ: '{topic} టారో రీడింగ్‌లో నాకు {cards} వచ్చాయి. దీని అర్థం ఏమిటి?' },
       moon: { card: ['చంద్ర రాశి', 'మీ చంద్ర రాశి & స్వభావం'], title: 'చంద్ర రాశి', nakshatra: 'నక్షత్రం', pada: 'పాదం',
         approx: 'సుమారుగా: ఖచ్చితమైన చంద్ర రాశి కోసం పుట్టిన సమయం ఇవ్వండి.', need: 'మీ చంద్ర రాశి చూడటానికి పుట్టిన తేదీ ఇవ్వండి.', add: 'పుట్టిన వివరాలు ఇవ్వండి',
@@ -394,6 +407,8 @@
           'ఆశావాదులు, నిజాయితీపరులు; నేర్చుకోవడం, ప్రయాణాలు ఇష్టం.', 'ఆచరణాత్మకంగా, ఓపికగా ఉంటారు; బాధ్యతగా, నిశ్శబ్దంగా ఎదుగుతారు.',
           'స్వతంత్రులు, ఆలోచనాపరులు; స్నేహపూర్వకంగా, సమాజం గురించి ఆలోచిస్తారు.', 'కలలు కనే మనసు, దయ; కరుణ, సృజనాత్మకత, ఆధ్యాత్మికత సహజం.'] },
       sections: { chart: 'మీ జాతకం', palm: 'హస్త రేఖలు, టారో & సంఖ్యలు', love: 'ప్రేమ & పొంతన', time: 'కాలం & పండుగలు' }, daily: 'రోజువారీ',
+      doshaTease: '✨ మీ జాతకంలోని దోషాలకు పరిహారాలు తెలుసుకోవాలా?', doshaTeaseButton: 'నా వివరమైన పరిహారాలు చూడండి',
+      planTease: '✨ దీనికి 7-రోజుల ప్రణాళిక ఎలా ఉంటుందో తెలుసుకోవాలా?', planTeaseButton: 'నా 7-రోజుల ప్రణాళిక పొందండి',
       greet: { morning: 'శుభోదయం', afternoon: 'శుభ మధ్యాహ్నం', evening: 'శుభ సాయంత్రం', night: 'శుభ రాత్రి', hello: 'నమస్తే 🙏' },
       aiEyebrow: 'AI జ్యోతిష్కుడు', tryAsking: 'ఇలా అడగండి', persona: { hello: 'నమస్తే{name}! 🙏 నేను జ్యోతిర్మయ, మీ జ్యోతిష్కుడిని. ప్రేమ, ఉద్యోగం, డబ్బు, ఆరోగ్యం, రాబోయే రోజుల గురించి చెప్పగలను.' }, panchangCard: ['నేటి పంచాంగం', 'తిథి, రాహు కాలం, ముహూర్తాలు'],
       tools: { jathakam: ['జాతకం', 'మీ జన్మ కుండలి & ఫలితాలు'], festivals: ['పండుగలు', 'రాబోయే పండుగలు, సెలవులు'], match: ['జాతక పొంతన', 'గుణ మేళనం 36కి'], doshas: ['దోషాలు', 'కుజ దోషం, ఏలినాటి శని'], dasha: ['దశలు', 'ఇప్పుడు ఏ గ్రహ దశ నడుస్తోంది'], rashi: ['రాశి ఫలాలు', 'రోజు, వారం, నెల'], chat: ['AIని అడగండి', 'మీ జీవితం గురించి ప్రశ్నలు'] },
@@ -430,6 +445,7 @@
         ask: 'मेरे दिन के बारे में AI से पूछें', askQ: 'आज मेरी राशि {sign} के लिए कैसा रहेगा? मेरी कुंडली के अनुसार बताइए।', full: 'मेरी पूरी कुंडली देखें', share: 'WhatsApp पर शेयर करें',
         details: 'ग्रह-वार विवरण', transitGood: 'अनुकूल', transitCare: 'सावधानी', jump: { transits: 'ग्रह गोचर', remedies: 'उपाय', full: 'पूरी कुंडली', ask: 'AI से पूछें' }, hint: 'आज का राशिफल देखने के लिए ऊपर अपनी राशि चुनें।',
         unlock: '▶ आज का राशिफल देखें', unlockNote: 'एक छोटा विज्ञापन देखें, आज सभी राशियों का राशिफल खुल जाएगा।',
+        weekTease: '✨ जानना चाहते हैं कि यह हफ़्ता आपके लिए कैसा रहेगा?', weekTeaseButton: 'मेरा 7-दिन का फलादेश देखें',
         luckyTitle: 'शुभ संकेत', luckyDay: 'रंग और दिशा: आज सभी राशियों के लिए एक · अंक: आपकी राशि के लिए', luckySign: 'आपकी राशि के लिए खास', colour: 'रंग', numbers: 'अंक', direction: 'दिशा',
         colours: { Sun: 'केसरिया, लाल', Moon: 'सफ़ेद, चाँदी', Mars: 'लाल, मूँगिया', Mercury: 'हरा', Jupiter: 'पीला, सुनहरा', Venus: 'सफ़ेद, गुलाबी', Saturn: 'नीला, काला', Rahu: 'स्लेटी', Ketu: 'भूरा' },
         directions: { Sun: 'पूर्व', Moon: 'वायव्य', Mars: 'दक्षिण', Mercury: 'उत्तर', Jupiter: 'ईशान', Venus: 'आग्नेय', Saturn: 'पश्चिम', Rahu: 'नैऋत्य', Ketu: 'वायव्य' } },
@@ -454,7 +470,8 @@
         verdict: { excellent: 'उत्तम मिलान', good: 'अच्छा मिलान', average: 'औसत मिलान', low: 'धैर्य चाहिए' },
         text: { excellent: 'आपकी राशियाँ सहज मेल खाती हैं: आसान समझ और एक-सा नज़रिया।', good: 'आरामदायक जोड़ी, कुछ अंतर के साथ तालमेल बिठाना होगा।', average: 'कुछ अंतर पर काम करना होगा। धैर्य और बातचीत मदद करेंगे।', low: 'स्वभाव काफ़ी अलग हैं। समझ और कोशिश से बात बन सकती है।' },
         friendship: 'मन और मित्रता', family: 'परिवार और समृद्धि', dosha: 'दोनों राशियाँ एक-दूसरे से कठिन स्थिति में हैं (भकूट दोष)। कई परिवार विवाह से पहले इसे देखते हैं।',
-        full: 'पूरा 36 गुण कुंडली मिलान', note: 'केवल दो चंद्र राशियों पर आधारित। चिंतन के लिए मार्गदर्शन, भविष्यवाणी नहीं।', shareLine: '{a} + {b}: {percent}% राशि मिलान, {verdict}।' },
+        full: 'पूरा 36 गुण कुंडली मिलान', note: 'केवल दो चंद्र राशियों पर आधारित। चिंतन के लिए मार्गदर्शन, भविष्यवाणी नहीं।', shareLine: '{a} + {b}: {percent}% राशि मिलान, {verdict}।',
+        tease: '✨ जानना चाहते हैं इस मिलान के पीछे मन और परिवार के अंक?', teaseButton: 'पूरा मिलान देखें' },
       numerology: { card: ['अंक ज्योतिष', 'नाम और जन्म तिथि से आपके अंक'], title: 'अंक ज्योतिष', intro: 'आपकी जन्म तिथि और नाम से आपका मूलांक, भाग्यांक और नामांक।',
         dob: 'जन्म तिथि', name: 'नाम (अंग्रेज़ी अक्षरों में)', show: 'मेरे अंक दिखाएँ', bad: 'कृपया सही जन्म तिथि डालें।', change: 'बदलें',
         moolank: ['मूलांक', 'जन्म अंक · आपका स्वभाव'], bhagyank: ['भाग्यांक', 'भाग्य अंक · जीवन की दिशा'], nameNum: ['नामांक', 'दूसरे आपको कैसे देखते हैं'],
@@ -471,12 +488,14 @@
         cam: { hint: 'अपनी खुली हथेली को आउटलाइन के अंदर रखें', dark: 'बहुत अंधेरा है। तेज़ रोशनी में जाकर फिर दबाएँ।', gallery: 'फ़ोटो चुनें', close: 'बंद करें', snap: 'फ़ोटो लें' }, tabs: ['हथेली', 'प्रेम', 'करियर'], lines: { heart: 'हृदय रेखा', head: 'मस्तिष्क रेखा', life: 'जीवन रेखा', fate: 'भाग्य रेखा', summary: 'आपकी हथेली कहती है' },
         ready: 'आपकी हथेली की फ़ोटो तैयार है।', see: '▶ मेरी रीडिंग देखें', again: 'फिर स्कैन करें', askAi: 'मेरी हथेली के बारे में AI से पूछें', share: 'शेयर', privacy: 'आपकी फ़ोटो सिर्फ़ इसी पठन के लिए है और सेव नहीं होती।',
         askQ: 'मेरी हस्त रेखा पठन कहती है: “{summary}” अब मुझे किस पर ध्यान देना चाहिए?',
-        rekhaNote: 'ये रेखाएँ आपकी फोटो से AI के अनुमान पर आधारित हैं, केवल मार्गदर्शन के लिए — सटीक रेखाएँ नहीं।' },
+        rekhaNote: 'ये रेखाएँ आपकी फोटो से AI के अनुमान पर आधारित हैं, केवल मार्गदर्शन के लिए — सटीक रेखाएँ नहीं।',
+        tease: '✨ जानना चाहते हैं आपकी हृदय और भाग्य रेखा क्या कहती है?', teaseButton: 'मेरी पूरी हस्तरेखा देखें' },
       tarot: { card: ['टैरो', 'प्रेम, करियर, पैसे के बारे में कार्ड से पूछें'], title: 'टैरो', ask: 'आप कार्ड से क्या पूछना चाहते हैं?',
         topics: { love: 'प्रेम', career: 'करियर', money: 'पैसा', health: 'सेहत', luck: 'भाग्य', family: 'परिवार' },
         pick: '3 कार्ड चुनें', picked: '3 में से {n} चुने', shuffle: 'अपने प्रश्न पर ध्यान दें, फिर तीन कार्ड चुनें।',
         positions: ['अतीत', 'वर्तमान', 'भविष्य'], reversed: 'उल्टा', advice: 'आपके लिए संदेश', loading: 'आपके कार्ड पढ़ रहे हैं…',
         see: '▶ मेरी रीडिंग देखें', again: 'नई रीडिंग', askAi: 'इस बारे में AI से पूछें', share: 'शेयर', fallbackAdvice: 'बीच वाले कार्ड का संदेश आज याद रखें; एक-एक छोटा कदम बढ़ाएँ।',
+        tease: '✨ जानना चाहते हैं कार्ड आपके लिए क्या कहते हैं?', teaseButton: 'मेरी पूरी टैरो रीडिंग देखें',
         askQ: '{topic} टैरो रीडिंग में मुझे {cards} मिले। इसका मेरे लिए क्या अर्थ है?' },
       moon: { card: ['चंद्र राशि', 'आपकी चंद्र राशि और स्वभाव'], title: 'चंद्र राशि', nakshatra: 'नक्षत्र', pada: 'चरण',
         approx: 'अनुमानित: सटीक चंद्र राशि के लिए जन्म समय जोड़ें।', need: 'अपनी चंद्र राशि देखने के लिए जन्म तिथि जोड़ें।', add: 'जन्म विवरण जोड़ें',
@@ -489,6 +508,8 @@
           'आशावादी और ईमानदार; सीखना, यात्रा और बड़ी सोच पसंद।', 'व्यावहारिक और धैर्यवान; ज़िम्मेदार और चुपचाप महत्वाकांक्षी।',
           'स्वतंत्र और विचारशील; मिलनसार, लोगों की परवाह करते हैं।', 'स्वप्निल और दयालु; करुणामय, रचनात्मक और स्वभाव से आध्यात्मिक।'] },
       sections: { chart: 'आपकी कुंडली', palm: 'हस्त रेखा, टैरो और अंक', love: 'प्रेम और मिलान', time: 'समय और त्योहार' }, daily: 'रोज़ाना',
+      doshaTease: '✨ अपनी कुंडली के दोषों के उपाय जानना चाहते हैं?', doshaTeaseButton: 'मेरे विस्तृत उपाय देखें',
+      planTease: '✨ जानना चाहते हैं इसके लिए 7-दिन की योजना कैसी होगी?', planTeaseButton: 'मेरी 7-दिन की योजना पाएँ',
       greet: { morning: 'सुप्रभात', afternoon: 'शुभ दोपहर', evening: 'शुभ संध्या', night: 'शुभ रात्रि', hello: 'नमस्ते 🙏' },
       aiEyebrow: 'AI ज्योतिषी', tryAsking: 'ऐसे पूछें', persona: { hello: 'नमस्ते{name}! 🙏 मैं ज्योतिर्मय हूँ, आपका ज्योतिषी। प्रेम, करियर, पैसा, सेहत और आने वाले दिनों के बारे में बता सकता हूँ।' }, panchangCard: ['आज का पंचांग', 'तिथि, राहु काल और मुहूर्त'],
       tools: { jathakam: ['जन्म कुंडली', 'आपका जन्म चार्ट और फल'], festivals: ['त्योहार', 'आने वाले त्योहार और छुट्टियाँ'], match: ['कुंडली मिलान', '36 में से गुण'], doshas: ['दोष', 'मांगलिक और साढ़ेसाती'], dasha: ['दशा', 'अभी किस ग्रह की दशा है'], rashi: ['राशिफल', 'दिन, सप्ताह, महीना'], chat: ['AI से पूछें', 'जीवन के बारे में प्रश्न'] },
@@ -665,6 +686,13 @@
         fold.appendChild(list); result.appendChild(fold);
       } else {
         const offer = premiumOffer('kundli_match_full', matchContext, renderRelationship); if (offer) result.appendChild(offer);
+        scheduleEngagementPopup('kundlimatch', {
+          productId: 'kundli_match_full',
+          stillRelevant: () => currentPage === 'relationship' && state.loveMode === 'match' && !contentUnlocked('kundli_match_full', matchContext),
+          text: () => loveText().matchTease || RELATIONSHIP_COPY.en.matchTease,
+          buttonText: () => loveText().matchTeaseButton || RELATIONSHIP_COPY.en.matchTeaseButton,
+          onAction: () => { void purchaseProduct('kundli_match_full', matchContext).then(ok => { if (ok) { clearPurchaseResume('kundli_match_full'); renderRelationship(); } }); },
+        });
       }
     } catch (_error) { result.appendChild(el('p', null, copy.error)); }
   }
@@ -796,7 +824,16 @@
         ? 'For the current Saturn period, choose consistency over shortcuts, serve elders or people in need, and review finances every Saturday.'
         : 'For Saturn balance, keep promises, help someone in need on Saturdays, and build progress through small consistent actions.'));
       host.appendChild(remedies);
-    } else { const offer = premiumOffer('dosha_remedies', context, renderDoshas); if (offer) host.appendChild(offer); }
+    } else {
+      const offer = premiumOffer('dosha_remedies', context, renderDoshas); if (offer) host.appendChild(offer);
+      scheduleEngagementPopup('doshas', {
+        productId: 'dosha_remedies',
+        stillRelevant: () => currentPage === 'kundli' && state.kundliView === 'doshas' && !contentUnlocked('dosha_remedies', context),
+        text: () => toolText().doshaTease || TOOLS_COPY.en.doshaTease,
+        buttonText: () => toolText().doshaTeaseButton || TOOLS_COPY.en.doshaTeaseButton,
+        onAction: () => { void purchaseProduct('dosha_remedies', context).then(ok => { if (ok) { clearPurchaseResume('dosha_remedies'); renderDoshas(); } }); },
+      });
+    }
     if (contentUnlocked('kundli_complete', context) && playBillingActive()) {
       const complete = el('section', 'premium-result'); complete.appendChild(el('h4', null, '📜 Complete personal Kundli report'));
       for (const topic of ['life', 'career', 'money', 'study', 'marriage', 'health']) {
@@ -863,9 +900,11 @@
       if (art && art[extra.art || key]) picture.innerHTML = art[extra.art || key](); else picture.textContent = extra.emoji || '✨';
       button.append(picture, el('b', null, title), el('small', null, sub));
       if (extra.badge) button.appendChild(el('span', 'art-badge', extra.badge));
+      if (extra.premium) button.appendChild(el('span', 'premium-badge', '✨'));   // a quiet cue that something special is behind this card
       button.addEventListener('click', onClick);
       return button;
     };
+    const premium = playBillingActive();   // which home cards hint at a paid add-on, so curiosity works even before opening the page
     const section = (title, cards) => { const box = el('section', 'art-section'); const grid = el('div', 'art-grid'); grid.append(...cards); box.append(el('h3', 'home-h art-h', title), grid); return box; };
     const sections = text.sections || TOOLS_COPY.en.sections;
     const panchangCard = text.panchangCard || TOOLS_COPY.en.panchangCard;
@@ -873,17 +912,17 @@
     $('tool-grid').replaceChildren(
       section(sections.chart, [
         card('lifeguide', lgCopy().card[0], lgCopy().card[1], openLifeGuide, { badge: text.daily || TOOLS_COPY.en.daily }),
-        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily }),
+        card('rashi', copy.rashi[0], live.rashi || copy.rashi[1], open('rashi'), { badge: text.daily || TOOLS_COPY.en.daily, premium }),
         card('moon', moonCopy().card[0], ownMoon() ? `${signName(ownMoon().sign)} · ${moonCopy().card[1]}` : moonCopy().card[1], openMoonSign),
-        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'))]),
+        card('dasha', copy.dasha[0], needs('dasha'), open('kundli', 'dasha'), { premium: premium && !!state.chart })]),
       section(sections.palm || TOOLS_COPY.en.sections.palm, [
-        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm),
-        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot),
+        card('palm', palmCopy().card[0], palmCopy().card[1], openPalm, { premium }),
+        card('tarot', tarotCopy().card[0], tarotCopy().card[1], openTarot, { premium }),
         card('numerology', numCopy().card[0], numberLine() || numCopy().card[1], openNumerology)]),
       section(sections.love, [
-        card('match', copy.match[0], copy.match[1], open('relationship')),
-        card('signmatch', smCopy().card[0], smCopy().card[1], openSignMatch),
-        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'))]),
+        card('match', copy.match[0], copy.match[1], open('relationship'), { premium }),
+        card('signmatch', smCopy().card[0], smCopy().card[1], openSignMatch, { premium }),
+        card('doshas', copy.doshas[0], needs('doshas'), open('kundli', 'doshas'), { premium: premium && !!state.chart })]),
       section(sections.time, [
         // Today's Panchang first, so it is seen without swiping.
         card('panchang', panchangCard[0], todayTithi || panchangCard[1], toPanchang),
@@ -2081,9 +2120,32 @@
   }
   const tinted = tone => (tone === 'good' ? '🟢' : tone === 'caution' ? '🔴' : '🟡');
   const dayLabel = iso => { const label = calendarUI.weekdayName(state.lang, new Date(`${iso}T12:00:00Z`).getUTCDay(), 'short'); return label; };
+  // Already known from the Kundli itself (chart.input.birth_datetime), so no extra question is needed to use it.
+  function userAge() {
+    const raw = state.chart && state.chart.input && state.chart.input.birth_datetime;
+    if (!raw) return null;
+    const birth = new Date(raw);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getUTCFullYear() - birth.getUTCFullYear();
+    if (now.getUTCMonth() < birth.getUTCMonth() || (now.getUTCMonth() === birth.getUTCMonth() && now.getUTCDate() < birth.getUTCDate())) age -= 1;
+    return age;
+  }
+  const OLDER_READER_AGE = 55;   // a flowing paragraph reads easier than a list of coloured bullet points past this age
   function areaBlock(areas) {
     const box = el('div', 'rashi-areas');
-    for (const item of areas) { const row = el('p', null); row.append(el('strong', null, `${tinted(item.tone)} ${item.name}: `), item.text); box.appendChild(row); }
+    const age = userAge();
+    // The colour alone (red/green/yellow) means nothing without knowing the convention, so a plain word always
+    // goes with it (Favorable/Mixed/Needs care) — in both the list and the paragraph form below.
+    if (age !== null && age >= OLDER_READER_AGE) {
+      box.appendChild(el('p', null, areas.map(item => `${item.name} — ${item.toneWord}. ${item.text}`).join(' ')));
+      return box;
+    }
+    for (const item of areas) {
+      const row = el('p', null);
+      row.append(el('strong', null, `${tinted(item.tone)} ${item.name} (${item.toneWord}): `), item.text);
+      box.appendChild(row);
+    }
     return box;
   }
   function remedyBlock(card, lines) {
@@ -2236,6 +2298,16 @@
     document.body.appendChild(overlay);
     try { await video.play(); } catch (_error) { /* shown anyway */ }
   }
+  function schedulePalmDetailPopup(contextId) {
+    scheduleEngagementPopup('palm', {
+      productId: 'palm_detailed',
+      // Re-checked at fire time: still on the Palm result for this same photo, and still unpurchased.
+      stillRelevant: () => currentPage === 'palm' && palmState.step === 'result' && !!palmState.reading && !contentUnlocked('palm_detailed', contextId),
+      text: () => (toolText().palm || TOOLS_COPY.en.palm).tease || TOOLS_COPY.en.palm.tease,
+      buttonText: () => (toolText().palm || TOOLS_COPY.en.palm).teaseButton || TOOLS_COPY.en.palm.teaseButton,
+      onAction: () => { void purchaseProduct('palm_detailed', contextId).then(ok => { if (ok) { clearPurchaseResume('palm_detailed'); renderPalm(); } }); },
+    });
+  }
   function renderPalm() { renderPalmBody(); decorate($('palmread'), palmCopy().title); }
   function renderPalmBody() {
     const copy = palmCopy(), box = $('palmread'), art = window.JyotishaArt;
@@ -2324,7 +2396,10 @@
       });
       box.appendChild(tabs);
       panels.forEach(panel => box.appendChild(panel));
-      if (!palmUnlocked) { const offer = premiumOffer('palm_detailed', palmContext, renderPalm); if (offer) box.appendChild(offer); }
+      if (!palmUnlocked) {
+        const offer = premiumOffer('palm_detailed', palmContext, renderPalm); if (offer) box.appendChild(offer);
+        schedulePalmDetailPopup(palmContext);
+      }
     }
     const actions = el('div', 'tarot-actions');
     if (reading) {
@@ -2904,7 +2979,16 @@
       if (fullUnlocked) {
         const full = el('button', 'chip-btn', `${copy.full} ›`); full.type = 'button'; full.addEventListener('click', () => openTool('relationship'));
         box.append(full, el('p', 'num-note', copy.note));
-      } else { const offer = premiumOffer('sign_match_full', matchContext, renderSignMatch); if (offer) box.appendChild(offer); }
+      } else {
+        const offer = premiumOffer('sign_match_full', matchContext, renderSignMatch); if (offer) box.appendChild(offer);
+        scheduleEngagementPopup('signmatch', {
+          productId: 'sign_match_full',
+          stillRelevant: () => currentPage === 'signmatch' && sm.shown && `${sm.first}-${sm.second}` === matchContext && !contentUnlocked('sign_match_full', matchContext),
+          text: () => smCopy().tease || TOOLS_COPY.en.signmatch.tease,
+          buttonText: () => smCopy().teaseButton || TOOLS_COPY.en.signmatch.teaseButton,
+          onAction: () => { void purchaseProduct('sign_match_full', matchContext).then(ok => { if (ok) { clearPurchaseResume('sign_match_full'); renderSignMatch(); } }); },
+        });
+      }
     }
     // The main button, grey until both signs are chosen; a video icon marks the ad before the result.
     const see = el('button', `palm-scan${rewardedFor('signmatch') ? ' reward-btn' : ''}${ready ? '' : ' is-off'}`, copy.see); see.type = 'button'; see.disabled = !ready;
@@ -3050,7 +3134,16 @@
       box.appendChild(sec);
       lines.push(`✨ ${advice}`);
     }
-    if (!tarotUnlocked) { const offer = premiumOffer('tarot_detailed', tarotContext, renderTarot); if (offer) box.appendChild(offer); }
+    if (!tarotUnlocked) {
+      const offer = premiumOffer('tarot_detailed', tarotContext, renderTarot); if (offer) box.appendChild(offer);
+      scheduleEngagementPopup('tarot', {
+        productId: 'tarot_detailed',
+        stillRelevant: () => currentPage === 'tarot' && tarot.reading !== undefined && !contentUnlocked('tarot_detailed', tarotContext),
+        text: () => tarotCopy().tease || TOOLS_COPY.en.tarot.tease,
+        buttonText: () => tarotCopy().teaseButton || TOOLS_COPY.en.tarot.teaseButton,
+        onAction: () => { void purchaseProduct('tarot_detailed', tarotContext).then(ok => { if (ok) { clearPurchaseResume('tarot_detailed'); renderTarot(); } }); },
+      });
+    }
     const actions = el('div', 'tarot-actions');
     const askAi = el('button', 'rashi-ask', `✨ ${copy.askAi}`); askAi.type = 'button';
     askAi.addEventListener('click', () => {
@@ -3319,10 +3412,35 @@
     spot.card.open = true;                       // the details card is folded; open it, then scroll to the section
     try { spot[name].scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_error) { /* older browsers */ }
   }
+  const weekForecastContext = () => `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
+  function weekForecastTease() {
+    if (!playBillingActive() || contentUnlocked('rashiphal_forecast_7d', weekForecastContext())) return null;
+    const copy = toolText().rashi || TOOLS_COPY.en.rashi, card = el('section', 'premium-offer week-tease');
+    card.append(el('p', null, copy.weekTease || TOOLS_COPY.en.rashi.weekTease));
+    const button = el('button', 'palm-scan', `${copy.weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton} · ${productPrice('rashiphal_forecast_7d')}`);
+    button.type = 'button';
+    button.addEventListener('click', () => { state.rashiMode = 'week'; renderRashi(); });
+    card.appendChild(button);
+    return card;
+  }
+  // Fires once a day, only while the user is actually sitting on their own sign's reading — not a static banner,
+  // but a nudge that shows up because they are engaged right now.
+  function scheduleWeekForecastPopup() {
+    scheduleEngagementPopup('week', {
+      productId: 'rashiphal_forecast_7d',
+      // Re-checked at fire time: by now the user may have left Rashiphal, switched to Week themselves, or bought it.
+      stillRelevant: () => currentPage === 'rashi' && state.rashiMode === 'day' && !!state.rashiPick && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext()),
+      text: () => (toolText().rashi || TOOLS_COPY.en.rashi).weekTease || TOOLS_COPY.en.rashi.weekTease,
+      buttonText: () => (toolText().rashi || TOOLS_COPY.en.rashi).weekTeaseButton || TOOLS_COPY.en.rashi.weekTeaseButton,
+      onAction: () => { state.rashiMode = 'week'; renderRashi(); },
+    });
+  }
   function renderRashiDay() {
     const day = state.day;
     if (!day) { $('rashi-moon').textContent = t('dpUnavailable'); return; }
     $('rashi-moon').textContent = `${calendarUI.formatDate(state.lang, day.date, 'full')} · ${t('moonsign')}: ${signName(day.moon_rashi[0].index)}`;
+    const tease = weekForecastTease(); if (tease) $('rashi-list').appendChild(tease);
+    if (state.rashiPick) scheduleWeekForecastPopup();   // they picked a sign: they are actually reading, not just browsing
     const mine = state.chart ? state.chart.positions.Moon.rashi_index : 0;
     const detail = chartUI.gocharaOutlook(day, state.lang), moonCards = chartUI.rashiOutlook(day, state.lang);
     for (const item of moonCards) {
@@ -3372,7 +3490,7 @@
   }
   function renderRashiWeek() {
     const key = `${state.city}|${state.selectedDate}`;
-    const forecastContext = `${state.selectedDate}-${state.rashiPick || (state.chart && state.chart.positions.Moon.rashi_index) || 'all'}`;
+    const forecastContext = weekForecastContext();
     if (!contentUnlocked('rashiphal_forecast_7d', forecastContext)) {
       $('rashi-moon').textContent = t('viewWeek');
       const offer = premiumOffer('rashiphal_forecast_7d', forecastContext, renderRashi); if (offer) $('rashi-list').appendChild(offer);
@@ -3449,7 +3567,11 @@
     $('rashi-reading').replaceChildren();
     renderRashiPicker();
     $('rashi-title').textContent = t('rashiphal');
-    document.querySelectorAll('#rashi-mode button').forEach(button => button.classList.toggle('on', button.dataset.rmode === state.rashiMode));
+    const weekTeasing = playBillingActive() && !contentUnlocked('rashiphal_forecast_7d', weekForecastContext());
+    document.querySelectorAll('#rashi-mode button').forEach(button => {
+      button.classList.toggle('on', button.dataset.rmode === state.rashiMode);
+      if (button.dataset.rmode === 'week') button.classList.toggle('tease', weekTeasing);
+    });
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
@@ -4125,6 +4247,31 @@
     const product = state.payments && state.payments.products && state.payments.products[productId];
     return product && (product.formattedPrice || `₹${product.price_rs}`);
   }
+  // A pop-up tied to actually using a feature, not a timer that fires regardless of what the user is doing: each
+  // caller schedules one while the user is reading a specific result, and it only fires if that is still true when
+  // the delay is up — and only once a day per feature, so it nudges without nagging.
+  const ENGAGEMENT_POPUP_DELAY_MS = 4000;
+  const engagementPopupKey = id => `jyotisha.engage-popup.v1:${id}`;
+  const engagementPopupShownToday = id => { try { return window.localStorage.getItem(engagementPopupKey(id)) === localIso(new Date()); } catch (_error) { return false; } };
+  const engagementPopupTimers = {};
+  function showEngagementPopup(id, config) {
+    delete engagementPopupTimers[id];
+    if (engagementPopupShownToday(id) || !playBillingActive() || !config.stillRelevant()) return;
+    try { window.localStorage.setItem(engagementPopupKey(id), localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
+    const popup = el('div', 'curiosity-popup');
+    const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
+    const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
+    close.addEventListener('click', dismiss);
+    const button = el('button', 'palm-scan', `${config.buttonText()} · ${productPrice(config.productId)}`); button.type = 'button';
+    button.addEventListener('click', () => { dismiss(); config.onAction(); });
+    popup.append(close, el('p', null, config.text()), button);
+    document.body.appendChild(popup);
+    setTimeout(dismiss, 12000);
+  }
+  function scheduleEngagementPopup(id, config) {
+    if (engagementPopupTimers[id] || engagementPopupShownToday(id)) return;
+    engagementPopupTimers[id] = setTimeout(() => showEngagementPopup(id, config), ENGAGEMENT_POPUP_DELAY_MS);
+  }
   async function loadPlayProducts() {
     const plugin = playPlugin(), products = state.payments && state.payments.products;
     if (!plugin || !plugin.getProducts || !products) return;
@@ -4475,7 +4622,16 @@
         }
       } catch (_error) { /* entitlement remains available for this result */ }
     });
-    if (offer) { offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight; }
+    if (offer) {
+      offer.classList.add('chat-premium'); chatLog.appendChild(offer); chatLog.scrollTop = chatLog.scrollHeight;
+      scheduleEngagementPopup('actionplan', {
+        productId: 'ai_action_plan_7d',
+        stillRelevant: () => currentPage === 'chat' && !hasEntitlement('ai_action_plan_7d', context),
+        text: () => toolText().planTease || TOOLS_COPY.en.planTease,
+        buttonText: () => toolText().planTeaseButton || TOOLS_COPY.en.planTeaseButton,
+        onAction: () => offer.children[offer.children.length - 1].listeners.click(),
+      });
+    }
   }
   function removeChatChips() { try { Array.from(chatLog.children).filter(item => item.className === 'chat-chips').forEach(item => chatLog.removeChild(item)); } catch (_error) { /* optional */ } }
   const history = [];   // recent turns sent to the assistant so the chat continues instead of restarting

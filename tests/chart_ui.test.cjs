@@ -228,6 +228,11 @@ test('sign forecasts include life-area verdicts, and the week view summarises se
   const day = ui.gocharaOutlook(days[0], 'en');
   assert.deepEqual(day[0].areas.map(area => area.key), ['career', 'money', 'love', 'health', 'family']);
   assert.ok(day.every(card => card.areas.every(area => ['good', 'mixed', 'caution'].includes(area.tone) && area.text.length > 20)));
+  // A plain word for the colour (not just red/green/yellow) so the tone never depends on knowing a convention.
+  assert.ok(day.every(card => card.areas.every(area => typeof area.toneWord === 'string' && area.toneWord.length > 0)));
+  for (const code of ['te', 'hi', 'ta', 'kn', 'ml', 'mr', 'bn', 'gu']) {
+    assert.ok(ui.gocharaOutlook(days[0], code).every(card => card.areas.every(area => typeof area.toneWord === 'string' && area.toneWord.length > 0)), code);
+  }
   const week = ui.weekOutlook(days, 'en', iso => iso.slice(8));
   assert.equal(week.length, 12);
   assert.equal(week[0].strip.length, 7);
