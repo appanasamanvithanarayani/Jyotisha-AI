@@ -164,7 +164,7 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .seg button.tease::after{content:"✨";position:absolute;top:-6px;right:2px;font-size:.65rem;line-height:1}
 .week-tease{text-align:center}
 .week-tease p{font-weight:700;margin:0 0 4px}
-.curiosity-popup{position:fixed;left:16px;right:16px;bottom:calc(86px + var(--ad-height,0px) + 10px);z-index:60;padding:16px 18px;border-radius:18px;
+.curiosity-popup{position:fixed!important;left:16px;right:16px;bottom:calc(86px + var(--ad-height,0px) + 10px);z-index:60!important;padding:16px 18px;border-radius:18px;
   background:linear-gradient(145deg,color-mix(in srgb,var(--saffron) 14%,var(--surface)),var(--surface));border:1px solid color-mix(in srgb,var(--saffron) 45%,var(--line));
   box-shadow:0 14px 34px rgba(0,0,0,.35);animation:curiosity-pop-in .25s ease-out}
 .curiosity-popup p{margin:0 28px 10px 0;font-weight:700;color:var(--ink)}

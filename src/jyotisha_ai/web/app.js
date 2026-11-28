@@ -3575,7 +3575,10 @@
     const unit = state.rashiMode === 'week' ? t('viewWeek') : state.rashiMode === 'month' ? t('viewMonth') : '';
     $('rashi-prev').textContent = unit ? `‹ ${unit}` : t('previousDay');
     $('rashi-next').textContent = unit ? `${unit} ›` : t('nextDay');
-    if (state.rashiPick && rewardedFor('rashiphal') && !rashiUnlocked()) {   // once a day: one ad opens the readings
+    // Once a day one ad opens the free readings. The weekly forecast is a paid item instead: it goes straight to its
+    // purchase offer (or the bought forecast), never "watch an ad, then pay as well".
+    const paidWeek = state.rashiMode === 'week' && paidAddonsActive();
+    if (state.rashiPick && !paidWeek && rewardedFor('rashiphal') && !rashiUnlocked()) {
       const copy = toolText().rashi, box = $('rashi-reading');
       $('rashi-moon').textContent = state.day ? calendarUI.formatDate(state.lang, state.day.date, 'full') : '';
       const see = el('button', 'palm-scan reward-btn', copy.unlock || TOOLS_COPY.en.rashi.unlock); see.type = 'button';
