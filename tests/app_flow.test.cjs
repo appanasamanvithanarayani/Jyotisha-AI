@@ -33,6 +33,17 @@ test('the month-view day numbers use a colour that is readable in the dark/mysti
   assert.doesNotMatch(rule[1], /--night2/, '--night2 is not redefined for the dark/mystic themes, so text set to it disappears on their (also dark) card background');
 });
 
+test('every pop-up added straight to the page floats above it, not pushed to the bottom by the body>* rule', () => {
+  const css = fs.readFileSync(path.join(root, 'app.css'), 'utf8');
+  // body>*:not(...){position:relative} outranks a single class, so floating layers need !important to stay fixed.
+  assert.match(css, /body>\*:not\([^{]*\{position:relative/, 'the rule these layers have to beat still exists');
+  for (const name of ['curiosity-popup', 'toast', 'update-popup']) {
+    const rule = css.match(new RegExp(`\\.${name}\\{([^}]+)\\}`));
+    assert.ok(rule, `.${name} rule exists`);
+    assert.match(rule[1], /position:fixed!important/, `.${name} must stay fixed on screen`);
+  }
+});
+
 test("the Android app's hardware Back button (window.__jyotishaBack) steps back through visited screens, then exits from Home", async () => {
   const app = boot({ storage: memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false }) });
   await settle();
@@ -2044,6 +2055,26 @@ test('a paid Play purchase whose screen was lost becomes a credit, is consumed, 
   assert.deepEqual(bought, [], 'no second Google Play charge');
   assert.ok(!app.element('palmread').children.some(item => item.className === 'premium-offer'), 'the full reading is unlocked');
   assert.equal(JSON.parse(storage.getItem('jyotisha.play.credits.v1')).palm_detailed.length, 0, 'the credit is used up');
+});
+
+test('the paid weekly Rashiphal never asks for an ad first, even when the daily readings are behind an ad', async () => {
+  const ad = fakeRewardedAdMob();
+  const selectedDate = new Date().toLocaleDateString('en-CA');
+  const contextId = `${selectedDate}-4`;
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'rashiphal_forecast_7d', formattedPrice: '₹9.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: 'play-token-week-no-ad', products: ['rashiphal_forecast_7d'] }] }),
+    completePurchase: async input => input,
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });
+  storage.setItem('jyotisha.play.pending.v1:rashiphal_forecast_7d', contextId);
+  storage.setItem('jyotisha.play.resume.v1:rashiphal_forecast_7d', JSON.stringify({ contextId, createdAt: Date.now(), page: 'rashi', rashi: { selectedDate, rashiPick: 4 } }));
+  const payments = { provider: 'google_play', products: { rashiphal_forecast_7d: { title: 'Personalized 7-day forecast', price_rs: 9 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play, AdMob: ad.plugin } }, appAds: resultsConfig, payments });
+  await settle(); await settle(); await settle();
+  assert.equal(app.element('top').children.find(item => item.id === 'page-rashi').hidden, false);
+  assert.ok(!app.element('rashi-reading').children.some(item => /reward-btn/.test(item.className || '')), 'no "watch an ad" gate in front of the paid week');
+  assert.equal(storage.getItem('jyotisha.rashi-unlock.v1'), null, 'and no ad was needed to get there');
 });
 
 test('Google Play returns to the paid weekly Rashiphal after Android recreates the app', async () => {
