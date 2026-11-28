@@ -4253,15 +4253,16 @@
   }
   // A pop-up tied to actually using a feature, not a timer that fires regardless of what the user is doing: each
   // caller schedules one while the user is reading a specific result, and it only fires if that is still true when
-  // the delay is up — and only once a day per feature, so it nudges without nagging.
+  // the delay is up. Not capped to once a day — only a short cooldown (in memory, not persisted) so it cannot
+  // stack into a loop while someone stays on the same screen.
   const ENGAGEMENT_POPUP_DELAY_MS = 4000;
-  const engagementPopupKey = id => `jyotisha.engage-popup.v1:${id}`;
-  const engagementPopupShownToday = id => { try { return window.localStorage.getItem(engagementPopupKey(id)) === localIso(new Date()); } catch (_error) { return false; } };
+  const ENGAGEMENT_POPUP_COOLDOWN_MS = 60000;
   const engagementPopupTimers = {};
+  const engagementPopupLastShown = {};
   function showEngagementPopup(id, config) {
     delete engagementPopupTimers[id];
-    if (engagementPopupShownToday(id) || !paidAddonsActive() || !config.stillRelevant()) return;
-    try { window.localStorage.setItem(engagementPopupKey(id), localIso(new Date())); } catch (_error) { /* shown once best-effort; not fatal if it repeats */ }
+    if (!paidAddonsActive() || !config.stillRelevant()) return;
+    engagementPopupLastShown[id] = Date.now();
     const popup = el('div', 'curiosity-popup');
     const dismiss = () => { try { document.body.removeChild(popup); } catch (_error) { /* already gone */ } };
     const close = el('button', 'curiosity-popup-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'close');
@@ -4273,7 +4274,7 @@
     setTimeout(dismiss, 12000);
   }
   function scheduleEngagementPopup(id, config) {
-    if (engagementPopupTimers[id] || engagementPopupShownToday(id)) return;
+    if (engagementPopupTimers[id] || Date.now() - (engagementPopupLastShown[id] || 0) < ENGAGEMENT_POPUP_COOLDOWN_MS) return;
     engagementPopupTimers[id] = setTimeout(() => showEngagementPopup(id, config), ENGAGEMENT_POPUP_DELAY_MS);
   }
   async function loadPlayProducts() {
@@ -4394,8 +4395,20 @@
         const productId = purchase.products && purchase.products[0];
         if (!productId || !state.payments.products[productId]) continue;
         let contextId = '';
-        try { contextId = window.localStorage.getItem(pendingContextKey(productId)) || ''; } catch (_error) { /* cannot safely restore without its context */ }
-        if (!contextId) continue;
+        try { contextId = window.localStorage.getItem(pendingContextKey(productId)) || ''; } catch (_error) { /* no saved context */ }
+        if (!contextId) {
+          // Paid but the screen it was bought for is gone (reinstall, cleared data, app killed before saving). Skipping
+          // it would leave the money taken and the item "already owned" forever, so verify it, keep it as a credit
+          // for the next time that product is opened, then consume it so it can be bought again later.
+          const creditContext = `credit-${String(purchase.purchaseToken).slice(-16)}`;
+          const checked = await verifyPlayPurchase(productId, purchase.purchaseToken, creditContext);
+          if (checked && checked.ok && checked.body && checked.body.status === 'ok') {
+            addPurchaseCredit(productId, purchase.purchaseToken);
+            await completePlayPurchase(plugin, purchase.purchaseToken);
+            showToast({ te: 'మీ పాత చెల్లింపు దొరికింది — తదుపరి సారి ఉచితంగా అన్‌లాక్ అవుతుంది.', hi: 'आपका पिछला भुगतान मिल गया — अगली बार यह मुफ़्त में अनलॉक होगा।', en: 'We found an earlier payment — your next unlock of it is already paid for.' }[state.lang] || 'We found an earlier payment — your next unlock of it is already paid for.');
+          }
+          continue;
+        }
         const checked = await verifyPlayPurchase(productId, purchase.purchaseToken, contextId);
         if (checked && checked.ok && checked.body && checked.body.status === 'ok') {
           saveEntitlement(productId, contextId);
@@ -4451,7 +4464,28 @@
       });
     } catch (_error) { return false; }
   }
+  // Credits: verified payments whose original screen was lost. Keyed by purchase token so a restore that runs twice
+  // (e.g. consume failed and is retried) never grants the same payment twice.
+  const CREDIT_KEY = 'jyotisha.play.credits.v1';
+  function readCredits() {
+    try { const saved = JSON.parse(window.localStorage.getItem(CREDIT_KEY) || '{}'); return saved && typeof saved === 'object' ? saved : {}; } catch (_error) { return {}; }
+  }
+  const purchaseCredits = productId => (readCredits()[productId] || []).length;
+  function addPurchaseCredit(productId, token) {
+    const credits = readCredits(), list = credits[productId] || [];
+    if (list.includes(token)) return;
+    credits[productId] = [...list, token];
+    try { window.localStorage.setItem(CREDIT_KEY, JSON.stringify(credits)); } catch (_error) { /* credit lost only if storage is unavailable */ }
+  }
+  function usePurchaseCredit(productId) {
+    const credits = readCredits(), list = credits[productId] || [];
+    if (!list.length) return false;
+    credits[productId] = list.slice(1);
+    try { window.localStorage.setItem(CREDIT_KEY, JSON.stringify(credits)); } catch (_error) { return false; }
+    return true;
+  }
   async function purchaseProduct(productId, contextId) {
+    if (usePurchaseCredit(productId)) { saveEntitlement(productId, contextId); return true; }   // already paid: no second charge
     if (playBillingActive()) return purchaseProductViaPlay(productId, contextId);
     if (razorpayActive()) return purchaseProductViaRazorpay(productId, contextId);
     return false;
@@ -4470,7 +4504,8 @@
     if (!paidAddonsActive()) return null;
     const copy = paidCopy(productId), card = el('section', 'premium-offer');
     card.append(el('h4', null, `✨ ${copy.title}`), el('p', null, copy.note));
-    const button = el('button', 'palm-scan', `${copy.button} · ${productPrice(productId)}`); button.type = 'button';
+    const paidLabel = { te: 'ఇప్పటికే చెల్లించారు', hi: 'पहले ही भुगतान किया गया', en: 'already paid' }[state.lang] || 'already paid';
+    const button = el('button', 'palm-scan', `${copy.button} · ${purchaseCredits(productId) ? paidLabel : productPrice(productId)}`); button.type = 'button';
     button.addEventListener('click', async () => {
       button.disabled = true;
       const ok = await purchaseProduct(productId, contextId);

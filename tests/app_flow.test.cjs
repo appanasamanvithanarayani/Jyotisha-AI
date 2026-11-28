@@ -1090,9 +1090,14 @@ test('a pop-up toward the paid weekly forecast appears while someone is actually
   const offer = app.element('rashi-list').children.find(item => item.className === 'premium-offer');
   assert.ok(offer, 'the pop-up button leads to the same purchase offer');
   assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'tapping its button dismisses the pop-up');
-  // It only shows once per day, remembered the same way every other once-a-day nudge in this app is.
-  const today = new Date(); const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  assert.equal(storage.getItem('jyotisha.engage-popup.v1:week'), iso);
+  // Not capped to once a day: picking the sign again right away schedules another one, just not instantly
+  // (a short cooldown keeps it from stacking into a loop on the same screen).
+  app.element('rashi-picker').children[1].listeners.click();
+  await settle();
+  app.element('rashi-picker').children[0].listeners.click();
+  await settle();
+  await new Promise(resolve => setTimeout(resolve, 4100));
+  assert.ok(!app.context.document.body.children.some(item => item.className === 'curiosity-popup'), 'still inside the cooldown: not yet again');
 });
 
 test('the same engagement pop-up pattern nudges toward the paid detailed Palm reading while someone is reading their result', async () => {
@@ -1984,6 +1989,39 @@ test('Google Play restores a paid palm result after Android recreates the app du
   assert.equal(app.element('top').children.find(item => item.id === 'page-palm').hidden, false);
   assert.ok(calls.some(call => call.purchaseToken === token));
   assert.ok(app.requests.some(request => request.url === '/api/play-purchase/verify'));
+});
+
+test('a paid Play purchase whose screen was lost becomes a credit, is consumed, and unlocks the next use without charging again', async () => {
+  const token = 'play-token-orphaned-after-reinstall';
+  const consumed = [], bought = [];
+  const reading = { heart: 'H.', head: 'He.', life: 'L.', fate: 'F.', summary: 'S.' };
+  const play = {
+    getProducts: async () => ({ products: [{ productId: 'palm_detailed', formattedPrice: '₹5.00' }] }),
+    restorePurchases: async () => ({ purchases: [{ purchaseToken: token, products: ['palm_detailed'] }] }),
+    completePurchase: async input => { consumed.push(input.purchaseToken); return input; },
+    purchase: async input => { bought.push(input); return { purchaseToken: 'should-not-be-needed' }; },
+  };
+  const storage = memoryStorage({ lang: 'en', city: 'Bengaluru, IN', useLocation: false });   // no pending context: reinstall
+  const payments = { provider: 'google_play', products: { palm_detailed: { title: 'Detailed palm guidance', price_rs: 5 } } };
+  const app = boot({ storage, capacitor: { Plugins: { PlayBilling: play } }, payments, palm: { status: 'ok', reading } });
+  await settle(); await settle();
+  const verify = app.requests.find(r => r.url === '/api/play-purchase/verify');
+  assert.ok(verify && verify.body.context_id.startsWith('credit-'), 'the orphaned purchase is verified with the server instead of skipped');
+  assert.deepEqual(consumed, [token], 'and consumed, so Google Play stops saying "already owned"');
+  assert.equal(JSON.parse(storage.getItem('jyotisha.play.credits.v1')).palm_detailed.length, 1);
+
+  const inputs = fakeCamera(app);
+  homeCard(app, 'Palm reading').listeners.click();
+  app.element('palmread').children.find(item => item.className === 'palm-scan').listeners.click();
+  inputs[0].files = [{ name: 'palm.jpg' }];
+  await inputs[0].listeners.change(); await settle(); await settle();
+  const offer = app.element('palmread').children.find(item => item.className === 'premium-offer');
+  assert.match(offer.children[2].textContent, /already paid/);
+  offer.children[2].listeners.click();
+  await settle(); await settle();
+  assert.deepEqual(bought, [], 'no second Google Play charge');
+  assert.ok(!app.element('palmread').children.some(item => item.className === 'premium-offer'), 'the full reading is unlocked');
+  assert.equal(JSON.parse(storage.getItem('jyotisha.play.credits.v1')).palm_detailed.length, 0, 'the credit is used up');
 });
 
 test('Google Play returns to the paid weekly Rashiphal after Android recreates the app', async () => {
